@@ -22,6 +22,8 @@ class RateModel
     const DISLIKE = 'DISLIKES';
     const IGNORE = 'IGNORE';
 
+    const QUERY_NAME = 'link.like';
+
     /**
      * @var EventDispatcher
      */
@@ -78,6 +80,13 @@ class RateModel
         }
 
         return $result;
+    }
+
+    public function addLikeToTransaction($userId, array $data)
+    {
+        $query = $this->getLikeLinkQuery($userId, $data);
+
+        return $this->gm->addToTransaction($this::QUERY_NAME, $query);
     }
 
     //TODO: Add $this->unrate for delete-like actions
@@ -147,6 +156,11 @@ class RateModel
         return $this->buildLike($rs->current());
     }
 
+    public function commitQueries()
+    {
+        return $this->gm->executeTransaction($this::QUERY_NAME);
+    }
+
     /**
      * @param $userId
      * @param array $data
@@ -158,32 +172,9 @@ class RateModel
 
         if (empty($userId) || empty($data['id'])) return array('empty thing' => 'true'); //TODO: Fix this return
 
-        $qb = $this->gm->createQueryBuilder();
+        $query = $this->getLikeLinkQuery($userId, $data);
 
-        $qb->setParameters(array(
-            'userId' => (integer)$userId,
-            'linkId' => (integer)$data['id'],
-            'timestamp' => isset($data['timestamp']) ? $data['timestamp'] : null,
-        ));
-
-        $resource = !empty($data['resource']) ? $data['resource'] : 'nekuno';
-
-        $qb->match('(u:User)', '(l:Link)')
-            ->where('u.qnoow_id = { userId }', 'id(l) = { linkId }')
-            ->merge('(u)-[r:LIKES]->(l)')
-            ->set('r.' . $resource . '= COALESCE({ timestamp }, timestamp())')
-            //max(x,y)=(x+y+abs(x-y))/2
-            ->set('r.last_liked=( COALESCE(r.last_liked, 0) + COALESCE({ timestamp }, timestamp())
-                                    + ABS(COALESCE(r.last_liked, 0) -  COALESCE({ timestamp }, timestamp()))
-                                    )/2 ');
-
-        $qb->with('u, r, l')
-            ->optionalMatch('(u)-[a:AFFINITY|DISLIKES]-(l)')
-            ->delete('a');
-
-        $qb->returns('r', 'l.url as linkUrl');
-
-        $result = $qb->getQuery()->getResultSet();
+        $result = $query->getResultSet();
 
         $return = array();
         foreach ($result as $row) {
@@ -192,6 +183,30 @@ class RateModel
 
         return $return;
 
+    }
+
+    protected function getLikeLinkQuery ($userId, array $data = array())
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->setParameters(array(
+            'userId' => (integer)$userId,
+            'linkId' => (integer)$data['id'],
+            'timestamp' => isset($data['timestamp']) ? $data['timestamp'] : 1000*time(),
+        ));
+
+        $qb->match('(u:User)', '(l:Link)')
+            ->where('u.qnoow_id = { userId }', 'id(l) = { linkId }')
+            ->merge('(u)-[r:DISLIKES]->(l)')
+            ->set('r.disliked={timestamp}');
+
+        $qb->with('u, r, l')
+            ->optionalMatch('(u)-[a:AFFINITY|LIKES]-(l)')
+            ->delete('a');
+
+        $qb->returns('r');
+
+        return $qb->getQuery();
     }
 
     private function userDislikeLink($userId, $data)

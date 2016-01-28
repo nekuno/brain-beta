@@ -23,6 +23,11 @@ class GraphManager implements LoggerAwareInterface
      */
     protected $logger;
 
+    /**
+     * @var Query[][]
+     */
+    protected $queries;
+
     protected $lastProperties = array();
 
     public function __construct(Client $client)
@@ -61,6 +66,16 @@ class GraphManager implements LoggerAwareInterface
         return $query;
     }
 
+    public function addToTransaction($string, Query $query)
+    {
+        $this->queries[$string][] = $query;
+
+        if (count($this->queries[$string]) >= 10){
+            return $this->executeTransaction($string);
+        }
+
+        return count($this->queries[$string]);
+    }
     /**
      * @param $name
      * @return Label
@@ -282,4 +297,14 @@ class GraphManager implements LoggerAwareInterface
         return $value;
     }
 
+    public function executeTransaction($string)
+    {
+        $queries = $this->queries[$string];
+
+        $transaction = $this->client->beginTransaction();
+        $result = $this->client->addStatementsToTransaction($transaction, $queries);
+        $this->queries[$string] = array();
+
+        return $result;
+    }
 }

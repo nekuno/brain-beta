@@ -58,16 +58,15 @@ class FetcherService implements LoggerAwareInterface
     protected $options;
 
     /**
-     * @var LookUpModel
+     * @var RateModel
      */
-    protected $lookupModel;
+    protected $rateModel;
 
     /**
      * @param TokensModel $tm
      * @param LinkProcessor $linkProcessor
      * @param LinkModel $linkModel
      * @param RateModel $rateModel
-     * @param LookUpModel $lookUpModel
      * @param FetcherFactory $fetcherFactory
      * @param EventDispatcher $dispatcher
      * @param array $options
@@ -77,7 +76,6 @@ class FetcherService implements LoggerAwareInterface
         LinkProcessor $linkProcessor,
         LinkModel $linkModel,
         RateModel $rateModel,
-        LookUpModel $lookUpModel,
         FetcherFactory $fetcherFactory,
         EventDispatcher $dispatcher,
         array $options
@@ -88,7 +86,6 @@ class FetcherService implements LoggerAwareInterface
         $this->linkProcessor = $linkProcessor;
         $this->linkModel = $linkModel;
         $this->rateModel = $rateModel;
-        $this->lookupModel = $lookUpModel;
         $this->fetcherFactory = $fetcherFactory;
         $this->dispatcher = $dispatcher;
         $this->options = $options;
@@ -174,6 +171,8 @@ class FetcherService implements LoggerAwareInterface
                 } catch (\Exception $e) {
                     $this->logger->error(sprintf('Fetcher: Error processing link "%s" from resource "%s". Reason: %s', $link['url'], $resourceOwner, $e->getMessage()));
                 }
+
+                $this->rateModel->commitQueries();
             }
 
             $this->dispatcher->dispatch(\AppEvents::PROCESS_FINISH, new ProcessLinksEvent($userId, $resourceOwner, $links));
