@@ -19,7 +19,7 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
  */
 class SimilarityModel
 {
-    const numberOfSecondsToCache = 30;
+    const numberOfSecondsToCache = 3;
     const ALL = 1;
     const INTERESTS = 2;
     const QUESTIONS = 3;
