@@ -1,7 +1,4 @@
 <?php
-/**
- * @author yawmoght <yawmoght@gmail.com>
- */
 
 namespace Service\Consistency;
 
@@ -63,6 +60,21 @@ class ConsistencyCheckerService
 
     }
 
+    public function checkLink($url)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(l:Link{url: {url}})')
+            ->setParameter('userId', $url)
+            ->returns('l');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        $linkNode = $result->current()->offsetGet('l');
+
+        $this->checkNode($linkNode);
+    }
+
     /**
      * @param Node $node
      */
@@ -91,7 +103,6 @@ class ConsistencyCheckerService
             }
         }
     }
-
 
     static function getLabelNames(Node $node)
     {
