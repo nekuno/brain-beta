@@ -267,7 +267,7 @@ class ContentComparePaginatedModel implements PaginatedInterface
     // TODO: Useful for filtering by social networks
     private function buildSocialNetworkCondition($userId, $relationship)
     {
-        $tokens = $this->tokensModel->getByUserOrResource($userId);
+        $tokens = $this->tokensModel->getAll($userId);
         $socialNetworks = array();
         foreach ($tokens as $token) {
             $socialNetworks[] = $token['resourceOwner'];

@@ -41,8 +41,8 @@ class UsersSocialMediaRefreshCommand extends BaseCommand
         /* @var $resourceOwner AbstractResourceOwner */
         $resourceOwner = $this->app['api_consumer.resource_owner.' . $input->getArgument('resource')];
 
-        /* @var $tm TokensModel */
-        $tm = $this->app['users.tokens.model'];
+        /* @var $tokensModel TokensModel */
+        $tokensModel = $this->app['users.tokens.model'];
 
         foreach ($users as $user) {
 
@@ -50,12 +50,8 @@ class UsersSocialMediaRefreshCommand extends BaseCommand
             if ($user->getId()) {
 
                 try {
-                    $tokens = $tm->getByUserOrResource($user->getId(), $input->getArgument('resource'));
-                    if (!$tokens) {
-                        continue;
-                    } else {
-                        $token = current($tokens);
-                    }
+                    $token = $tokensModel->getById($user->getId(), $input->getArgument('resource'));
+
                     if ($resourceOwner instanceof FacebookResourceOwner){
                         $resourceOwner->forceRefreshAccessToken($token);
                     } else {

@@ -58,7 +58,7 @@ class LinksProcessNewCommand extends ApplicationAwareCommand
                 $preprocessedLink->setSource($resource ?: 'nekuno');
 
                 if ($userId && $resource) {
-                    $token = $this->getToken($userId, $resource);
+                    $token = $this->getToken($userId, $resource, $output);
                     $preprocessedLink->setToken($token);
                 }
 
@@ -82,7 +82,7 @@ class LinksProcessNewCommand extends ApplicationAwareCommand
         }
     }
 
-    private function getToken($userId, $resource)
+    private function getToken($userId, $resource, OutputInterface $output)
     {
         $token = array();
 
@@ -93,9 +93,11 @@ class LinksProcessNewCommand extends ApplicationAwareCommand
 
         /* @var TokensModel $tokensModel */
         $tokensModel = $this->app['users.tokens.model'];
-        $tokens = $tokensModel->getByUserOrResource($userId, $resource);
-        if (count($tokens) !== 0) {
-            $token = $tokens[0];
+        try{
+            $token = $tokensModel->getById($userId, $resource);
+        } catch (\Exception $e){
+            $output->writeln(sprintf('Couldn´t get token for user %d and resource %s', $userId, $resource));
+            $output->writeln($e->getMessage());
         }
 
         return $token;

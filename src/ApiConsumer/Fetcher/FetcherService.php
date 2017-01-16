@@ -75,7 +75,7 @@ class FetcherService implements LoggerAwareInterface
 
     public function fetchAllConnected($userId, $exclude = array())
     {
-        $tokens = $this->tokensModel->getByUserOrResource($userId);
+        $tokens = $this->tokensModel->getAll($userId);
 
         $links = array();
         foreach ($tokens as $token) {
@@ -96,7 +96,7 @@ class FetcherService implements LoggerAwareInterface
     {
         $fetchers = $this->chooseFetchers($resourceOwner, $exclude);
 
-        $tokens = $this->tokensModel->getByUserOrResource($userId, $resourceOwner);
+        $tokens = $this->tokensModel->getById($userId, $resourceOwner);
 
         //TODO: If count(tokens) > 1, error?
 
