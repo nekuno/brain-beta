@@ -57,6 +57,7 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
                     $response = $this->resourceOwner->authorizedAPIRequest($this->getUrl(), $query, $this->user);
                 }
             } catch (\Exception $e) {
+                //TODO: Set here "wait until API answers" logic (Twitter 429)
                 throw new PaginatedFetchingException($this->rawFeed, $e);
             }
 
