@@ -10,11 +10,10 @@ interface FetcherInterface
     /**
      * Fetch links using user authorization
      *
-     * @param $user
-     * @param boolean $public
+     * @param $token
      * @return PreprocessedLink[]
      */
-    public function fetchLinksFromUserFeed($user, $public);
+    public function fetchLinksFromUserFeed($token);
 
     /**
      * Fetch links using client authorization

@@ -12,10 +12,10 @@ class GoogleProfileFetcher extends AbstractFetcher{
     /**
      * Not usually used
      */
-    public function fetchLinksFromUserFeed($user, $public)
+    public function fetchLinksFromUserFeed($token, $public)
     {
-        $this->setUser($user);
-        $url = $this->buildUrl($user['googleID']);
+        $this->setUser($token);
+        $url = $this->buildUrl($token['googleID']);
         $response = $this->resourceOwner->authorizedApiRequest($url, $this->getQuery(), $this->user);
 
         return $this->parseLinks($response);

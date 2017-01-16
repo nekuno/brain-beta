@@ -68,5 +68,5 @@ abstract class AbstractFetcher implements FetcherInterface
     /**
      * {@inheritDoc}
      */
-    abstract public function fetchLinksFromUserFeed($user, $public);
+    abstract public function fetchLinksFromUserFeed($token);
 }

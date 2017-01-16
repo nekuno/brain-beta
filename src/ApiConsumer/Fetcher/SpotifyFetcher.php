@@ -26,27 +26,27 @@ class SpotifyFetcher extends BasicPaginationFetcher
     /**
      * { @inheritdoc }
      */
-    public function fetchLinksFromUserFeed($user, $public)
+    public function fetchLinksFromUserFeed($token)
     {
-        $this->user = $user;
+        $this->user = $token;
         $this->rawFeed = array();
 
-        $this->url .= 'users/' . $user['spotifyID'] . '/playlists/';
+        $this->url .= 'users/' . $token['spotifyID'] . '/playlists/';
 
         try {
             $this->setQuery(array('limit' => $this::MAX_PLAYLISTS_PER_USER));
-            $playlists = $this->getLinksByPage($public);
+            $playlists = $this->getLinksByPage();
             $this->rawFeed = array();
 
             if (isset($playlists)) {
                 foreach ($playlists as $playlist) {
-                    if ($playlist['owner']['id'] == $user['spotifyID']) {
+                    if ($playlist['owner']['id'] == $token['spotifyID']) {
 
-                        $this->url = 'users/' . $user['spotifyID'] . '/playlists/' . $playlist['id'] . '/tracks';
+                        $this->url = 'users/' . $token['spotifyID'] . '/playlists/' . $playlist['id'] . '/tracks';
 
                         try {
                             $this->setQuery(array('limit' => $this::MAX_TRACKS_PER_PLAYLIST));
-                            $this->getLinksByPage($public);
+                            $this->getLinksByPage();
 
                         } catch (\Exception $e) {
                             continue;
@@ -55,9 +55,9 @@ class SpotifyFetcher extends BasicPaginationFetcher
                 }
             }
 
-            $this->url = 'users/' . $user['spotifyID'] . '/starred/tracks';
+            $this->url = 'users/' . $token['spotifyID'] . '/starred/tracks';
             $this->setQuery(array('limit' => $this::MAX_TRACKS_PER_PLAYLIST));
-            $this->getLinksByPage($public);
+            $this->getLinksByPage();
 
             $parsed = $this->parseLinks($this->rawFeed);
 

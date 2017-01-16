@@ -34,11 +34,10 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
     }
 
     /**
-     * @param bool $public
      * @return array
      * @throws PaginatedFetchingException
      */
-    protected function getLinksByPage($public = false)
+    protected function getLinksByPage()
     {
 
         $nextPaginationId = null;
@@ -51,11 +50,7 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
             }
 
             try{
-                if (!$public) {
-                    $response = $this->resourceOwner->authorizedHttpRequest($this->getUrl(), $query, $this->user);
-                } else {
-                    $response = $this->resourceOwner->authorizedAPIRequest($this->getUrl(), $query, $this->user);
-                }
+                $response = $this->resourceOwner->request($this->getUrl(), $query, $this->user);
             } catch (\Exception $e) {
                 //TODO: Set here "wait until API answers" logic (Twitter 429)
                 throw new PaginatedFetchingException($this->rawFeed, $e);
@@ -73,13 +68,28 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
     /**
      * { @inheritdoc }
      */
-    public function fetchLinksFromUserFeed($user, $public)
+    public function fetchLinksFromUserFeed($token)
     {
-        $this->setUser($user);
+        $this->setUser($token);
         $this->rawFeed = array();
 
         try{
-            $rawFeed = $this->getLinksByPage($public);
+            $rawFeed = $this->getLinksByPage();
+        } catch (PaginatedFetchingException $e) {
+            $newLinks = $this->parseLinks($e->getLinks());
+            $e->setLinks($newLinks);
+            throw $e;
+        }
+
+        $links = $this->parseLinks($rawFeed);
+
+        return $links;
+    }
+
+    public function fetchAsClient($username)
+    {
+        try{
+            $rawFeed = $this->getLinksByPage();
         } catch (PaginatedFetchingException $e) {
             $newLinks = $this->parseLinks($e->getLinks());
             $e->setLinks($newLinks);
