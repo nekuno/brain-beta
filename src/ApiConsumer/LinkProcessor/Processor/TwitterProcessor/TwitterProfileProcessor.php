@@ -10,7 +10,7 @@ use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 use Model\Creator;
 use Model\Link;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 
 class TwitterProfileProcessor extends AbstractProcessor implements BatchProcessorInterface
 {

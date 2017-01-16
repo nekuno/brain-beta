@@ -6,7 +6,7 @@ namespace ApiConsumer\Fetcher\GetOldTweets;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use Model\Tweet;
 use Model\TweetCriteria;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 
 class GetOldTweets
 {

@@ -84,6 +84,13 @@ class LinkAnalyzer
 
         return $percent > $similarTextPercentage;
     }
+
+    public static function getUsername($url)
+    {
+        $parser = self::getUrlParser($url);
+
+        return $parser->getUsername($url);
+    }
     
     //TODO: Improve detection on host, not whole url
     private static function isFacebook($url)

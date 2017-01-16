@@ -10,7 +10,7 @@ use Model\User;
 use Model\User\GhostUser\GhostUserManager;
 use Model\User\SocialNetwork\SocialProfile;
 use Model\User\SocialNetwork\SocialProfileManager;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 

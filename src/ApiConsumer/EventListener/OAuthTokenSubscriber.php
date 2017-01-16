@@ -2,7 +2,7 @@
 namespace ApiConsumer\EventListener;
 
 use ApiConsumer\Event\OAuthTokenEvent;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use PhpAmqpLib\Exception\AMQPRuntimeException;

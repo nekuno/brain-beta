@@ -5,7 +5,7 @@ namespace ApiConsumer\ResourceOwner;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use Buzz\Exception\RequestException;
 use Buzz\Message\Response;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 use Service\LookUp\LookUp;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\TwitterResourceOwner as TwitterResourceOwnerBase;

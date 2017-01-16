@@ -20,7 +20,7 @@ use Model\Creator;
 use Model\LinkModel;
 use Model\Neo4j\Neo4jException;
 use Model\User\RateModel;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Service\EventDispatcher;

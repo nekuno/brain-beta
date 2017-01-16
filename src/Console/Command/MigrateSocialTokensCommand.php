@@ -5,7 +5,7 @@ namespace Console\Command;
 use Console\ApplicationAwareCommand;
 use Model\Exception\ValidationException;
 use Model\User\PrivacyModel;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 use Silex\Application;
 use Doctrine\DBAL\Connection;
 use Symfony\Component\Console\Input\InputInterface;

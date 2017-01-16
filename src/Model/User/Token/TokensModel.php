@@ -1,6 +1,6 @@
 <?php
 
-namespace Model\User;
+namespace Model\User\Token;
 
 use Doctrine\ORM\EntityManager;
 use Event\AccountConnectEvent;

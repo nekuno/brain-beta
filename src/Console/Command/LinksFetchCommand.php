@@ -9,7 +9,7 @@ use ApiConsumer\Fetcher\FetcherService;
 use ApiConsumer\Fetcher\ProcessorService;
 use Console\ApplicationAwareCommand;
 use Model\User\SocialNetwork\SocialProfileManager;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 use Psr\Log\LogLevel;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;

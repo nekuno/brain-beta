@@ -9,7 +9,7 @@ use ApiConsumer\Fetcher\ProcessorService;
 use Doctrine\DBAL\Connection;
 use Model\Neo4j\Neo4jException;
 use Model\User\SocialNetwork\SocialProfileManager;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Message\AMQPMessage;
 use Symfony\Component\EventDispatcher\EventDispatcher;

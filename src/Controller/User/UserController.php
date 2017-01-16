@@ -14,7 +14,7 @@ use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 use Model\User\SocialNetwork\SocialProfile;
 use ApiConsumer\Factory\ResourceOwnerFactory;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;

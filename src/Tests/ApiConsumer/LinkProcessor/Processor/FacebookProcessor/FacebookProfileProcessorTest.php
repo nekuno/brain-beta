@@ -6,7 +6,7 @@ use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookProfileProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 
 class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
 {

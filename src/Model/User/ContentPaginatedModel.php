@@ -4,6 +4,7 @@ namespace Model\User;
 
 use Everyman\Neo4j\Node;
 use Model\LinkModel;
+use Model\User\Token\TokensModel;
 use Paginator\PaginatedInterface;
 use Model\Neo4j\GraphManager;
 use Service\Validator;

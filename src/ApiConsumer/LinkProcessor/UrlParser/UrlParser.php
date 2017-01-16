@@ -75,4 +75,19 @@ class UrlParser implements UrlParserInterface
 
         return UrlParser::SCRAPPER;
     }
+
+    /**
+     * @param $url
+     * @return string | null
+     */
+    public function getUsername($url)
+    {
+        if (null !== $url) {
+            //TODO: throw UrlNotValidException
+            return null;
+        }
+        $parts = explode('/', $url);
+
+        return end($parts);
+    }
 }

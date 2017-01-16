@@ -5,7 +5,7 @@ namespace ApiConsumer\LinkProcessor\Processor\FacebookProcessor;
 use ApiConsumer\Exception\CannotProcessException;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 
 class FacebookProfileProcessor extends AbstractFacebookProcessor
 {
