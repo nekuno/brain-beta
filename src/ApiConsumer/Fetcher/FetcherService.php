@@ -5,7 +5,6 @@ namespace ApiConsumer\Fetcher;
 use ApiConsumer\Exception\PaginatedFetchingException;
 use ApiConsumer\Factory\FetcherFactory;
 use ApiConsumer\LinkProcessor\LinkAnalyzer;
-use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\SynonymousParameters;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
 use Event\ExceptionEvent;
@@ -83,7 +82,7 @@ class FetcherService implements LoggerAwareInterface
             $fetchers = $this->chooseFetchers($resourceOwner, $exclude);
 
             foreach ($fetchers as $fetcher) {
-                $links = array_merge($links, $this->fetchSingle($fetcher, $token, false, $resourceOwner));
+                $links = array_merge($links, $this->fetchSingle($fetcher, $token, $resourceOwner));
             }
         }
 
@@ -106,7 +105,7 @@ class FetcherService implements LoggerAwareInterface
         if (!empty($tokens)) {
             foreach ($tokens as $token) {
                 foreach ($fetchers as $fetcher) {
-                    $links = array_merge($links, $this->fetchSingle($fetcher, $token, false, $resourceOwner));
+                    $links = array_merge($links, $this->fetchSingle($fetcher, $token, $resourceOwner));
                 }
             }
         } else {
@@ -130,59 +129,12 @@ class FetcherService implements LoggerAwareInterface
 
     }
 
-    /**
-     * @param array $token
-     * @param array $exclude fetcher names that are not to be used
-     * @return \ApiConsumer\LinkProcessor\PreprocessedLink[]
-     * @throws \Exception
-     */
-    public function fetch($token, $exclude = array())
-    {
-        if (!$token) {
-            return array();
-        }
-
-        if (array_key_exists('id', $token)) {
-            $userId = $token['id'];
-        } else {
-            return array();
-        }
-
-        $resourceOwner = isset($token['resourceOwner']) ? $token['resourceOwner'] : null;
-
-        $public = isset($token['public']) ? $token['public'] : false;
-
-        /* @var $links PreprocessedLink[] */
-        $links = array();
-        try {
-
-            $this->dispatcher->dispatch(\AppEvents::FETCH_START, new FetchEvent($userId, $resourceOwner));
-
-            $fetchers = $this->chooseFetchers($resourceOwner, $exclude);
-            foreach ($fetchers as $fetcher) {
-                $links = array_merge($links, $this->fetchSingle($fetcher, $token, $public, $resourceOwner));
-            }
-
-            foreach ($links as $link) {
-                $link->setToken($token);
-                $link->setSource($resourceOwner);
-            }
-
-            $this->dispatcher->dispatch(\AppEvents::FETCH_FINISH, new FetchEvent($userId, $resourceOwner));
-
-        } catch (\Exception $e) {
-            throw new \Exception(sprintf('Fetcher: Error fetching from resource "%s" for user "%d". Message: %s on file %s in line %d', $resourceOwner, $userId, $e->getMessage(), $e->getFile(), $e->getLine()), 1);
-        }
-
-        return $links;
-    }
-
-    private function fetchSingle(FetcherInterface $fetcher, $token, $public, $resourceOwner)
+    private function fetchSingle(FetcherInterface $fetcher, $token, $resourceOwner)
     {
         $userId = $token['id'];
 
         try {
-            $links = $fetcher->fetchLinksFromUserFeed($token, $public);
+            $links = $fetcher->fetchLinksFromUserFeed($token);
 
             return $links;
         } catch (PaginatedFetchingException $e) {
