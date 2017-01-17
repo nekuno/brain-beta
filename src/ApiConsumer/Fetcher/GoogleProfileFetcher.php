@@ -12,11 +12,11 @@ class GoogleProfileFetcher extends AbstractFetcher{
     /**
      * Not usually used
      */
-    public function fetchLinksFromUserFeed($token, $public)
+    public function fetchLinksFromUserFeed($token)
     {
-        $this->setUser($token);
-        $url = $this->buildUrl($token['googleID']);
-        $response = $this->resourceOwner->authorizedApiRequest($url, $this->getQuery(), $this->user);
+        $this->setToken($token);
+        $url = $this->getUrl($token['googleID']);
+        $response = $this->resourceOwner->authorizedApiRequest($url, $this->getQuery(), $this->token);
 
         return $this->parseLinks($response);
     }
@@ -26,16 +26,16 @@ class GoogleProfileFetcher extends AbstractFetcher{
      */
     public function fetchAsClient($username)
     {
-        $url = $this->buildUrl($username);
+        $url = $this->getUrl($username);
 
-        $response = $this->resourceOwner->authorizedApiRequest($url, $this->getQuery(), $this->user);
+        $response = $this->resourceOwner->authorizedApiRequest($url, $this->getQuery(), $this->token);
 
         return $this->parseLinks($response);
     }
 
-    protected function buildUrl($username)
+    public function getUrl($username = null)
     {
-        return $this->getUrl() . $username;
+        return  $username ? $this->url . $username : $this->url;
     }
 
     protected function parseLinks($response)

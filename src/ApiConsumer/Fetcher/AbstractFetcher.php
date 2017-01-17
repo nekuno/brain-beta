@@ -25,7 +25,7 @@ abstract class AbstractFetcher implements FetcherInterface
     /**
      * @var array
      */
-    protected $user;
+    protected $token;
 
     /**
      * @param ResourceOwnerInterface $resourceOwner
@@ -55,14 +55,14 @@ abstract class AbstractFetcher implements FetcherInterface
         return array();
     }
 
-    public function getUser()
+    public function getToken()
     {
-        return $this->user;
+        return $this->token;
     }
 
-    public function setUser($user)
+    public function setToken($token)
     {
-        $this->user = $user;
+        $this->token = $token;
     }
 
     /**

@@ -37,12 +37,12 @@ class FacebookLinksFetcher extends AbstractFacebookFetcher
         return $paginationId;
     }
 
-    public function getUrl()
+    public function getUrl($userId = null)
     {
-        return parent::getUrl() . '/posts';
+        return parent::getUrl($userId) . '/posts';
     }
 
-    protected function getQuery()
+    protected function getQuery($username = null)
     {
         $thisQuery = array('fields' => 'link,created_time,attachments{type}');
         if (isset ($this->until)) {

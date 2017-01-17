@@ -22,7 +22,6 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
      */
     protected $rawFeed = array();
 
-
     /**
      * Get pagination field
      *
@@ -33,28 +32,31 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
         return $this->paginationField;
     }
 
+    protected function getQuery($paginationId = null)
+    {
+        $query = parent::getQuery();
+
+        if ($paginationId) {
+            $paginationQuery = array($this->getPaginationField() => $paginationId);
+            $query = array_merge($query, $paginationQuery);
+        }
+
+        return $query;
+    }
+
     /**
      * @return array
      * @throws PaginatedFetchingException
      */
     protected function getLinksByPage()
     {
-
         $nextPaginationId = null;
 
         do {
-            $query = $this->getQuery();
+            $url = $this->getUrl();
+            $query = $this->getQuery($nextPaginationId);
 
-            if ($nextPaginationId) {
-                $query = array_merge($query, array($this->getPaginationField() => $nextPaginationId));
-            }
-
-            try{
-                $response = $this->resourceOwner->request($this->getUrl(), $query, $this->user);
-            } catch (\Exception $e) {
-                //TODO: Set here "wait until API answers" logic (Twitter 429)
-                throw new PaginatedFetchingException($this->rawFeed, $e);
-            }
+            $response = $this->request($url, $query);
 
             $this->rawFeed = array_merge($this->rawFeed, $this->getItemsFromResponse($response));
 
@@ -65,15 +67,27 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
         return $this->rawFeed;
     }
 
+    protected function request($url, $query)
+    {
+        try {
+            $response = $this->resourceOwner->request($url, $query, $this->token);
+        } catch (\Exception $e) {
+            //TODO: Set here "wait until API answers" logic (Twitter 429)
+            throw new PaginatedFetchingException($this->rawFeed, $e);
+        }
+
+        return $response;
+    }
+
     /**
      * { @inheritdoc }
      */
     public function fetchLinksFromUserFeed($token)
     {
-        $this->setUser($token);
+        $this->setToken($token);
         $this->rawFeed = array();
 
-        try{
+        try {
             $rawFeed = $this->getLinksByPage();
         } catch (PaginatedFetchingException $e) {
             $newLinks = $this->parseLinks($e->getLinks());
@@ -88,7 +102,7 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
 
     public function fetchAsClient($username)
     {
-        try{
+        try {
             $rawFeed = $this->getLinksByPage();
         } catch (PaginatedFetchingException $e) {
             $newLinks = $this->parseLinks($e->getLinks());

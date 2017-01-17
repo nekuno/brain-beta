@@ -28,7 +28,7 @@ class SpotifyFetcher extends BasicPaginationFetcher
      */
     public function fetchLinksFromUserFeed($token)
     {
-        $this->user = $token;
+        $this->token = $token;
         $this->rawFeed = array();
 
         $this->url .= 'users/' . $token['spotifyID'] . '/playlists/';

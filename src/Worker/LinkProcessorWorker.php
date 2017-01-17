@@ -4,6 +4,7 @@ namespace Worker;
 
 use ApiConsumer\Fetcher\FetcherService;
 use ApiConsumer\Fetcher\ProcessorService;
+use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use Doctrine\DBAL\Connection;
 use ApiConsumer\Factory\ResourceOwnerFactory;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
@@ -139,9 +140,9 @@ class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerI
             $profiles = $this->socialProfileManager->getSocialProfiles($userId, $resourceOwner, true);
             foreach ($profiles as $profile) {
 
+                $username = LinkAnalyzer::getUsername($profile->getUrl());
                 /** @var TwitterResourceOwner $twitterResourceOwner */
                 $twitterResourceOwner = $this->resourceOwnerFactory->build($resourceOwner);
-                $username = $twitterResourceOwner->getUsername(array('url' => $profile->getUrl()));
                 try {
                     $twitterResourceOwner->dispatchChannel(
                         array(

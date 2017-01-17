@@ -27,7 +27,7 @@ class YoutubeFetcher extends BasicPaginationFetcher
     /**
      * {@inheritDoc}
      */
-    protected function getQuery()
+    protected function getQuery($paginationId = null)
     {
         return $this->query;
     }
@@ -148,7 +148,7 @@ class YoutubeFetcher extends BasicPaginationFetcher
      */
     public function fetchLinksFromUserFeed($token)
     {
-        $this->user = $token;
+        $this->token = $token;
         $this->rawFeed = array();
 
         $channels = $this->getChannelsFromUser();
@@ -158,7 +158,7 @@ class YoutubeFetcher extends BasicPaginationFetcher
         return $this->parseLinks($links);
     }
 
-    public function getChannelsFromUser($username = null)
+    protected function getChannelsFromUser($username = null)
     {
 
         $this->setUrl('youtube/v3/channels');
@@ -181,7 +181,7 @@ class YoutubeFetcher extends BasicPaginationFetcher
      * @param array $channels
      * @return array
      */
-    private function getVideosFromChannels(array $channels)
+    protected function getVideosFromChannels(array $channels)
     {
 
         $links = array();

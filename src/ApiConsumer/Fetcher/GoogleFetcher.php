@@ -2,6 +2,7 @@
 
 namespace ApiConsumer\Fetcher;
 
+use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use Model\Link;
 
@@ -13,10 +14,10 @@ class GoogleFetcher extends BasicPaginationFetcher
 
     protected $paginationId = null;
 
-    public function setUser($user){
-        parent::setUser($user);
-        if (!array_key_exists('googleID', $this->user)){
-            $this->user['googleID'] = $this->resourceOwner->getUsername($this->user);
+    public function setToken($token){
+        parent::setToken($token);
+        if (!array_key_exists('googleID', $token)){
+            $this->token['googleID'] = $this->resourceOwner->getUsername($token);
         }
     }
 
@@ -25,7 +26,7 @@ class GoogleFetcher extends BasicPaginationFetcher
      */
     public function getUrl()
     {
-        return 'plus/v1/people/' . $this->user['googleID'] . '/activities/public';
+        return 'plus/v1/people/' . $this->token['googleID'] . '/activities/public';
     }
 
     /**
