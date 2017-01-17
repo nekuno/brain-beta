@@ -10,7 +10,6 @@ use HWI\Bundle\OAuthBundle\DependencyInjection\Configuration;
 use Model\Entity\DataStatus;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
-use Model\User\SocialNetwork\SocialProfile;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;

@@ -6,6 +6,7 @@ use ApiConsumer\Event\OAuthTokenEvent;
 use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
 use Buzz\Client\ClientInterface as HttpClientInterface;
 use ApiConsumer\Exception\TokenException;
+use Buzz\Message\Response;
 use HWI\Bundle\OAuthBundle\DependencyInjection\Configuration;
 use HWI\Bundle\OAuthBundle\OAuth\RequestDataStorageInterface;
 use HWI\Bundle\OAuthBundle\Security\OAuthUtils;
@@ -15,14 +16,6 @@ use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use Symfony\Component\Security\Http\HttpUtils;
 use Buzz\Message\RequestInterface as HttpRequestInterface;
 
-/**
- * Trait AbstractResourceOwnerTrait
- *
- * @package ApiConsumer\ResourceOwner
- * @method normalizeUrl ($a, $b)
- * @method generateNonce
- * @method getResponseContent($a)
- */
 trait AbstractResourceOwnerTrait
 {
     /**
@@ -180,44 +173,74 @@ trait AbstractResourceOwnerTrait
         }
     }
 
-    /**
-     * @param $url
-     * @param array $query
-     * @param array $token
-     * @return \HttpResponse
-     */
     protected function sendAuthorizedRequest($url, array $query = array(), array $token = array())
     {
         if (Configuration::getResourceOwnerType($this->name) == 'oauth2') {
-            // oauth2
-            $query = array_merge($query, array('access_token' => $token['oauthToken']));
-
-            return $this->httpRequest($this->normalizeUrl($url, $query));
+            $query = $this->buildOauth2Query($query, $token);
         } else {
-            // oauth1
-            $parameters = array_merge(
-                array(
-                    'oauth_consumer_key' => $this->options['consumer_key'],
-                    'oauth_timestamp' => time(),
-                    'oauth_nonce' => $this->generateNonce(),
-                    'oauth_version' => '1.0',
-                    'oauth_signature_method' => $this->options['signature_method'],
-                    'oauth_token' => isset($token['oauthToken']) ? $token['oauthToken'] : null,
-                ),
-                $query
-            );
-
-            $parameters['oauth_signature'] = OAuthUtils::signRequest(
-                HttpRequestInterface::METHOD_GET,
-                $url,
-                $parameters,
-                $this->options['consumer_secret'],
-                isset($token['oauthTokenSecret']) ? $token['oauthTokenSecret'] : null,
-                $this->options['signature_method']
-            );
-
-            return $this->httpRequest($this->normalizeUrl($url, $parameters));
+            $query = $this->buildOauth1Query($url, $query, $token);
         }
+
+        $normalizedUrl = $this->normalizeUrl($url, $query);
+        return  $this->executeHttpRequest($normalizedUrl);
+    }
+
+    protected function buildOauth2Query($query, $token)
+    {
+        $query = array_merge($query, array('access_token' => $token['oauthToken']));
+        return $query;
+    }
+
+    protected function buildOauth1Query($url, $query, $token)
+    {
+        $parameters = array_merge(
+            array(
+                'oauth_consumer_key' => $this->options['consumer_key'],
+                'oauth_timestamp' => time(),
+                'oauth_nonce' => $this->generateNonce(),
+                'oauth_version' => '1.0',
+                'oauth_signature_method' => $this->options['signature_method'],
+                'oauth_token' => isset($token['oauthToken']) ? $token['oauthToken'] : null,
+            ),
+            $query
+        );
+
+        $parameters['oauth_signature'] = $this->buildOauthSignature($url, $parameters, $token);
+
+        return $parameters;
+    }
+
+    protected function buildOauthSignature($url, $parameters, $token)
+    {
+        return OAuthUtils::signRequest(
+            HttpRequestInterface::METHOD_GET,
+            $url,
+            $parameters,
+            $this->options['consumer_secret'],
+            isset($token['oauthTokenSecret']) ? $token['oauthTokenSecret'] : null,
+            $this->options['signature_method']
+        );
+    }
+
+    protected function executeHttpRequest($url, $content = null, $headers = array(), $method = null)
+    {
+        $response = $this->httpRequest($url, $content, $headers, $method);
+
+        if ($this->isAPILimitReached($response)){
+            $this->waitForAPILimit();
+            $response = $this->httpRequest($url);
+        }
+
+        return $response;
+    }
+
+    protected function isAPILimitReached(Response $response)
+    {
+        return false;
+    }
+
+    protected function waitForAPILimit()
+    {
     }
 
     protected function needsRefreshing($token)
@@ -242,7 +265,7 @@ trait AbstractResourceOwnerTrait
     /** Request as Nekuno */
     public function authorizedAPIRequest($url, array $query = array(), array $token = array())
     {
-        $response = $this->httpRequest($this->normalizeUrl($this->options['base_url'] . $url, $query));
+        $response = $this->executeHttpRequest($this->normalizeUrl($this->options['base_url'] . $url, $query));
 
         return $this->getResponseContent($response);
     }

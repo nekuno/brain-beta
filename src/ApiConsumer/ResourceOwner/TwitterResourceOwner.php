@@ -94,20 +94,25 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
 		//TODO: Array to string conversion here
 		foreach ($chunks as $chunk) {
 			$query = array($parameter => implode(',', $chunk));
-            /** @var Response $response */
 			$response = $this->sendAuthorizedRequest($url, $query, $token);
-            //TODO: Generalize "if too many requests, wait this->time_window and retry"
-            if ($response->getStatusCode() === 429){
-                sleep(60*15);
-                $response = $this->sendAuthorizedRequest($url, $query, $token);
-            }
 			$responses[] = $response;
 		}
 
 		return $responses;
 	}
 
-	public function buildProfilesFromLookup(Response $response)
+    protected function isAPILimitReached(Response $response)
+    {
+        return $response->getStatusCode() === 429;
+    }
+
+    protected function waitForAPILimit()
+    {
+        $fifteenMinutes = 60*15;
+        sleep($fifteenMinutes);
+    }
+
+    public function buildProfilesFromLookup(Response $response)
     {
         $content = $this->getResponseContent($response);
 
