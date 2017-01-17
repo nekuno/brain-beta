@@ -322,55 +322,6 @@ class TokensModel
 
     }
 
-    /**
-     * @param int $id User id
-     * @param string $resourceOwner Resource owner
-     * @return array
-     */
-    public function getByUserOrResource($id = null, $resourceOwner = null)
-    {
-
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(user:User)<-[:TOKEN_OF]-(token:Token)');
-
-        if ($id || $resourceOwner) {
-
-            $wheres = array();
-            if ($id) {
-                $qb->setParameter('id', (integer)$id);
-                $wheres[] = 'user.qnoow_id = { id }';
-            }
-            if ($resourceOwner) {
-                $qb->setParameter('resourceOwner', $resourceOwner);
-                $wheres[] = 'token.resourceOwner = { resourceOwner }';
-            }
-
-            $qb->where($wheres);
-
-        }
-        $qb->returns('user', 'token')
-            ->orderBy('user.qnoow_id', 'token.resourceOwner');
-
-        $result = $qb->getQuery()->getResultSet();
-
-        $return = array();
-        /* @var $row Row */
-        foreach ($result as $row) {
-            /* @var $user Node */
-            $user = $row->offsetGet('user');
-            $ids = array(
-                'facebookID' => $user->getProperty('facebookID'),
-                'googleID' => $user->getProperty('googleID'),
-                'twitterID' => $user->getProperty('twitterID'),
-                'spotifyID' => $user->getProperty('spotifyID'),
-            );
-
-            $return[] = array_merge($this->build($row), $ids);
-        }
-
-        return $return;
-    }
-
     public function getUnconnectedNetworks($userId)
     {
         $tokens = $this->getAll($userId);
@@ -405,28 +356,28 @@ class TokensModel
         return $resourceOwners;
     }
 
-    /**
-     * For now, build just array for public fetching
-     * @param SocialProfile $profile
-     * @return array
-     */
-    public function buildFromSocialProfile(SocialProfile $profile)
-    {
-        return array(
-            'id' => $profile->getUserId(),
-            'url' => $profile->getUrl(),
-            'resourceOwner' => $profile->getResource(),
-        );
-    }
-
     protected function build(Row $row)
     {
         /* @var $user Node */
         $user = $row->offsetGet('user');
-        /* @var $node Node */
-        $node = $row->offsetGet('token');
-        $properties = $node->getProperties();
+        /* @var $tokenNode Node */
+        $tokenNode = $row->offsetGet('token');
+        $properties = $tokenNode->getProperties();
 
+        $properties = $this->orderProperties($properties);
+
+        return array_merge(
+            array(
+                'id' => $user->getProperty('qnoow_id'),
+                'username' => $user->getProperty('username'),
+                'email' => $user->getProperty('email')
+            ),
+            $properties
+        );
+    }
+
+    protected function orderProperties($properties)
+    {
         $ordered = array();
         foreach (array_keys($this->getMetadata()) as $key) {
             if (array_key_exists($key, $properties)) {
@@ -437,16 +388,7 @@ class TokensModel
             }
         }
 
-        $properties = $ordered + $properties;
-
-        return array_merge(
-            array(
-                'id' => $user->getProperty('qnoow_id'),
-                'username' => $user->getProperty('username'),
-                'email' => $user->getProperty('email')
-            ),
-            $properties
-        );
+        return $ordered + $properties;
     }
 
     protected function getMetadata()
