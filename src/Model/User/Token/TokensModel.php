@@ -114,7 +114,7 @@ class TokensModel
      * @param int $id
      * @param string $resourceOwner
      * @param array $data
-     * @return array
+     * @return Token
      * @throws ValidationException|NotFoundHttpException|MethodNotAllowedHttpException
      */
     public function create($id, $resourceOwner, array $data)
@@ -158,7 +158,7 @@ class TokensModel
      * @param int $id
      * @param string $resourceOwner
      * @param array $data
-     * @return array
+     * @return Token
      * @throws ValidationException|NotFoundHttpException
      */
     public function update($id, $resourceOwner, array $data)
@@ -184,7 +184,7 @@ class TokensModel
     /**
      * @param int $id
      * @param string $resourceOwner
-     * @return array
+     * @return Token
      */
     public function remove($id, $resourceOwner)
     {

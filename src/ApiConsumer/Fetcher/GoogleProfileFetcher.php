@@ -4,6 +4,7 @@ namespace ApiConsumer\Fetcher;
 
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use Model\User\Token\Token;
 
 class GoogleProfileFetcher extends AbstractFetcher{
 
@@ -11,11 +12,12 @@ class GoogleProfileFetcher extends AbstractFetcher{
 
     /**
      * Not usually used
+     * @inheritdoc
      */
-    public function fetchLinksFromUserFeed($token)
+    public function fetchLinksFromUserFeed(Token $token)
     {
         $this->setToken($token);
-        $url = $this->getUrl($token['googleID']);
+        $url = $this->getUrl($token->getResourceId());
         $response = $this->resourceOwner->authorizedApiRequest($url, $this->getQuery(), $this->token);
 
         return $this->parseLinks($response);

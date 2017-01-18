@@ -11,6 +11,7 @@ use Event\ExceptionEvent;
 use Event\FetchEvent;
 use GuzzleHttp\Exception\RequestException;
 use Model\User\SocialNetwork\SocialProfileManager;
+use Model\User\Token\Token;
 use Model\User\Token\TokensModel;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
@@ -139,9 +140,9 @@ class FetcherService implements LoggerAwareInterface
         return $links;
     }
 
-    private function fetchSingle(FetcherInterface $fetcher, $token, $resourceOwner)
+    private function fetchSingle(FetcherInterface $fetcher, Token $token, $resourceOwner)
     {
-        $userId = $token['id'];
+        $userId = $token->getUserId();
 
         try {
             $links = $fetcher->fetchLinksFromUserFeed($token);

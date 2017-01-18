@@ -4,6 +4,7 @@ namespace ApiConsumer\Fetcher;
 
 use ApiConsumer\Exception\PaginatedFetchingException;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use Model\User\Token\Token;
 
 abstract class BasicPaginationFetcher extends AbstractFetcher
 {
@@ -82,10 +83,9 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
     /**
      * { @inheritdoc }
      */
-    public function fetchLinksFromUserFeed($token)
+    public function fetchLinksFromUserFeed(Token $token)
     {
-        $this->setToken($token);
-        $this->rawFeed = array();
+        $this->setUp($token);
 
         try {
             $rawFeed = $this->getLinksByPage();
@@ -98,6 +98,12 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
         $links = $this->parseLinks($rawFeed);
 
         return $links;
+    }
+
+    protected function setUp(Token $token)
+    {
+        $this->setToken($token);
+        $this->rawFeed = array();
     }
 
     public function fetchAsClient($username)

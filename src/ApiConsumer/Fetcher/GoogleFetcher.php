@@ -5,6 +5,7 @@ namespace ApiConsumer\Fetcher;
 use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use Model\Link;
+use Model\User\Token\Token;
 
 class GoogleFetcher extends BasicPaginationFetcher
 {
@@ -13,13 +14,6 @@ class GoogleFetcher extends BasicPaginationFetcher
     protected $pageLength = 20;
 
     protected $paginationId = null;
-
-    public function setToken($token){
-        parent::setToken($token);
-        if (!array_key_exists('googleID', $token)){
-            $this->token['googleID'] = $this->resourceOwner->getUsername($token);
-        }
-    }
 
     /**
      * {@inheritDoc}

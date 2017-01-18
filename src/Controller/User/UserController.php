@@ -2,13 +2,14 @@
 
 namespace Controller\User;
 
+use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 use Model\User\ContentPaginatedModel;
-use Model\User\Group\GroupModel;
 use Model\User\ProfileFilterModel;
 use Model\User\RateModel;
 use Model\User\UserStatsManager;
 use Manager\UserManager;
 use Model\User;
+use Service\AuthService;
 use Service\Recommendator;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -161,15 +162,16 @@ class UserController
 
                 $token = $facebookResourceOwner->extend($token);
 
-                if (array_key_exists('refreshToken', $token) && is_null($token['refreshToken'])) {
+                if ($token->getRefreshToken()) {
                     $token = $facebookResourceOwner->forceRefreshAccessToken($token);
                 }
             }
 
             // TODO: This will not be executed since we only use Facebook for registration
             if ($resourceOwner == TokensModel::TWITTER) {
-                $resourceOwnerObject = $resourceOwnerFactory->build($resourceOwner);
-                $profileUrl = $resourceOwnerObject->getProfileUrl($token);
+                /** @var TwitterResourceOwner $twitterResourceOwner */
+                $twitterResourceOwner = $resourceOwnerFactory->build($resourceOwner);
+                $profileUrl = $twitterResourceOwner->getProfileUrl($token);
                 if (!$profileUrl) {
                     //TODO: Add information about this if it happens
                     return $app->json($token, 201);

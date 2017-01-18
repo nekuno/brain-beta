@@ -3,6 +3,7 @@
 namespace ApiConsumer\Fetcher;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use Model\User\Token\Token;
 
 interface FetcherInterface
 {
@@ -13,7 +14,7 @@ interface FetcherInterface
      * @param $token
      * @return PreprocessedLink[]
      */
-    public function fetchLinksFromUserFeed($token);
+    public function fetchLinksFromUserFeed(Token $token);
 
     /**
      * Fetch links using client authorization

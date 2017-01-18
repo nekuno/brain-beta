@@ -7,6 +7,7 @@ use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\SynonymousParameters;
 use ApiConsumer\ResourceOwner\GoogleResourceOwner;
 use Model\Link;
+use Model\User\Token\Token;
 
 class YoutubeFetcher extends BasicPaginationFetcher
 {
@@ -146,10 +147,9 @@ class YoutubeFetcher extends BasicPaginationFetcher
     /**
      * {@inheritDoc}
      */
-    public function fetchLinksFromUserFeed($token)
+    public function fetchLinksFromUserFeed(Token $token)
     {
-        $this->token = $token;
-        $this->rawFeed = array();
+        $this->setUp($token);
 
         $channels = $this->getChannelsFromUser();
         $links = $this->getVideosFromChannels($channels);
