@@ -15,6 +15,7 @@ use Model\User\Token\TokensModel;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Class FetcherService
@@ -78,7 +79,7 @@ class FetcherService implements LoggerAwareInterface
 
         $links = array();
         foreach ($tokens as $token) {
-            $resourceOwner = $token['resourceOwner'];
+            $resourceOwner = $token->getResourceOwner();
             $fetchers = $this->chooseFetchers($resourceOwner, $exclude);
 
             foreach ($fetchers as $fetcher) {
@@ -95,38 +96,47 @@ class FetcherService implements LoggerAwareInterface
     {
         $fetchers = $this->chooseFetchers($resourceOwner, $exclude);
 
-        $tokens = $this->tokensModel->getById($userId, $resourceOwner);
-
-        //TODO: If count(tokens) > 1, error?
-
-        $this->dispatcher->dispatch(\AppEvents::FETCH_START, new FetchEvent($userId, $resourceOwner));
-
-        $links = array();
-        if (!empty($tokens)) {
-            foreach ($tokens as $token) {
-                foreach ($fetchers as $fetcher) {
-                    $links = array_merge($links, $this->fetchSingle($fetcher, $token, $resourceOwner));
-                }
-            }
-        } else {
-
-            $socialProfiles = $this->socialProfileManager->getSocialProfiles($userId, $resourceOwner);
-
-            //TODO: If count(socialProfiles) > 1, log, not always error
-            foreach ($socialProfiles as $socialProfile){
-                $url = $socialProfile->getUrl();
-
-                $username = LinkAnalyzer::getUsername($url);
-
-                foreach ($fetchers as $fetcher)
-                {
-                    $links = array_merge($links, $this->fetchPublic($fetcher, $userId, $username, $resourceOwner));
-                }
-            }
+        try{
+            $links = $this->fetchFromToken($userId, $resourceOwner, $fetchers);
+        } catch (NotFoundHttpException $e){
+            $links = $this->fetchFromSocialProfile($userId, $resourceOwner, $fetchers);
         }
 
         $this->dispatcher->dispatch(\AppEvents::FETCH_FINISH, new FetchEvent($userId, $resourceOwner));
 
+        return $links;
+    }
+
+    private function fetchFromToken($userId, $resourceOwner, $fetchers)
+    {
+        $links = array();
+        $token = $this->tokensModel->getById($userId, $resourceOwner);
+
+        foreach ($fetchers as $fetcher) {
+            $links = array_merge($links, $this->fetchSingle($fetcher, $token, $resourceOwner));
+        }
+
+        return $links;
+    }
+
+    private function fetchFromSocialProfile($userId, $resourceOwner, $fetchers)
+    {
+        $links = array();
+        $socialProfiles = $this->socialProfileManager->getSocialProfiles($userId, $resourceOwner);
+
+        //TODO: If count(socialProfiles) > 1, log, not always error
+        foreach ($socialProfiles as $socialProfile){
+            $url = $socialProfile->getUrl();
+
+            $username = LinkAnalyzer::getUsername($url);
+
+            foreach ($fetchers as $fetcher)
+            {
+                $links = array_merge($links, $this->fetchPublic($fetcher, $userId, $username, $resourceOwner));
+            }
+        }
+
+        return $links;
     }
 
     private function fetchSingle(FetcherInterface $fetcher, $token, $resourceOwner)

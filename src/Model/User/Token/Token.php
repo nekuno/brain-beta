@@ -2,7 +2,7 @@
 
 namespace Model\User\Token;
 
-class Token
+class Token implements \JsonSerializable
 {
     protected $userId;
 
@@ -33,6 +33,12 @@ class Token
 
         return $array;
     }
+
+    function jsonSerialize()
+    {
+        return $this->toArray();
+    }
+
     /**
      * @return mixed
      */

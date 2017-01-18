@@ -91,7 +91,7 @@ class OAuthTokenSubscriber implements EventSubscriberInterface
      */
     protected function sendMail(array $user)
     {
-
+//TODO: When this is used, pick username and email from user, resourceOwner from token
         $loginUrl = 'http://qnoow.dev.com/app_dev.php/connect/' . $user['resourceOwner'];
 
         $message = \Swift_Message::newInstance('Action required');

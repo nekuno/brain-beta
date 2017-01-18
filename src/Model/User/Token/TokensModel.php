@@ -55,9 +55,12 @@ class TokensModel
         );
     }
 
+    /**
+     * @param $id
+     * @return Token[]
+     */
     public function getAll($id)
     {
-
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(user:User)<-[:TOKEN_OF]-(token:Token)')
             ->where('user.qnoow_id = { id }')
@@ -78,12 +81,11 @@ class TokensModel
     /**
      * @param int $id
      * @param string $resourceOwner
-     * @return array
+     * @return Token
      * @throws NotFoundHttpException
      */
     public function getById($id, $resourceOwner)
     {
-
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(user:User)<-[:TOKEN_OF]-(token:Token)')
             ->where('user.qnoow_id = { id }', 'token.resourceOwner = { resourceOwner }')
@@ -330,7 +332,7 @@ class TokensModel
         foreach ($resourceOwners as $resource) {
             $connected = false;
             foreach ($tokens as $token) {
-                if ($token['resourceOwner'] == $resource) {
+                if ($token->getResourceOwner() == $resource) {
                     $connected = true;
                 }
             }
@@ -349,7 +351,7 @@ class TokensModel
 
         $resourceOwners = array();
         foreach ($tokens as $token) {
-            $resourceOwners[] = $token['resourceOwner'];
+            $resourceOwners[] = $token->getResourceOwner();
         }
 
         return $resourceOwners;
@@ -357,37 +359,23 @@ class TokensModel
 
     protected function build(Row $row)
     {
-        /* @var $user Node */
-        $user = $row->offsetGet('user');
+        /* @var $userNode Node */
+        $userNode = $row->offsetGet('user');
         /* @var $tokenNode Node */
         $tokenNode = $row->offsetGet('token');
-        $properties = $tokenNode->getProperties();
 
-        $properties = $this->orderProperties($properties);
+        $token = new Token();
+        $token->setUserId($userNode->getProperty('qnoow_id'));
+        $token->setCreatedTime($tokenNode->getProperty('createdTime'));
+        $token->setExpireTime($tokenNode->getProperty('createdTime'));
+        $token->setResourceOwner($tokenNode->getProperty('resourceOwner'));
+        $token->setUpdatedTime($tokenNode->getProperty('updatedTime'));
+        $token->setResourceId($tokenNode->getProperty('resourceId'));
+        $token->setOauthToken($tokenNode->getProperty('oauthToken'));
+        $token->setOauthTokenSecret($tokenNode->getProperty('oauthTokenSecret'));
+        $token->setRefreshToken($tokenNode->getProperty('refreshToken'));
 
-        return array_merge(
-            array(
-                'id' => $user->getProperty('qnoow_id'),
-                'username' => $user->getProperty('username'),
-                'email' => $user->getProperty('email')
-            ),
-            $properties
-        );
-    }
-
-    protected function orderProperties($properties)
-    {
-        $ordered = array();
-        foreach (array_keys($this->getMetadata()) as $key) {
-            if (array_key_exists($key, $properties)) {
-                $ordered[$key] = $properties[$key];
-                unset($properties[$key]);
-            } else {
-                $ordered[$key] = null;
-            }
-        }
-
-        return $ordered + $properties;
+        return $token;
     }
 
     protected function getMetadata()
