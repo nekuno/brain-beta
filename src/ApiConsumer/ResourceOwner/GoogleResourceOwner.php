@@ -3,6 +3,7 @@
 namespace ApiConsumer\ResourceOwner;
 
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
+use Model\User\Token\Token;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\GoogleResourceOwner as GoogleResourceOwnerBase;
 
@@ -22,7 +23,7 @@ class GoogleResourceOwner extends GoogleResourceOwnerBase
         $this->traitConstructor($httpClient, $httpUtils, $options, $name, $storage, $dispatcher);
     }
 
-    protected function sendAuthorizedRequest($url, array $query = array(), array $token = array())
+    protected function sendAuthorizedRequest($url, array $query = array(), Token $token = null)
     {
         $query += $this->getOauthToken($token);
 
@@ -39,8 +40,11 @@ class GoogleResourceOwner extends GoogleResourceOwnerBase
         return $this->getResponseContent($response);
     }
 
-    protected function getOauthToken($token) {
-        return isset($token['oauthToken']) ? array('access_token' => $token['oauthToken']) : array('key' => $this->getOption('client_credential')['application_token']);
+    protected function getOauthToken(Token $token) {
+        $applicationToken = $this->getOption('client_credential')['application_token'];
+        $oauthToken = $token->getOauthToken();
+
+        return $oauthToken ? array('access_token' => $oauthToken) : array('key' => $applicationToken);
     }
 
     /**
@@ -73,15 +77,6 @@ class GoogleResourceOwner extends GoogleResourceOwnerBase
         $data = $this->getResponseContent($response);
 
         return $data;
-    }
-
-    protected function addOauthData($data, $token)
-    {
-        $token['oauthToken'] = $data['access_token'];
-        $token['expireTime'] = time() + (int)$data['expires_in'] - $this->expire_time_margin;
-        $token['refreshToken'] = isset($data['refreshToken']) ? $data['refreshToken'] : isset($token['refreshToken']) ? $token['refreshToken'] : null;
-
-        return $token;
     }
 
     public function requestVideoSearch($queryString)

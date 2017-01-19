@@ -7,6 +7,7 @@ use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use Event\ExceptionEvent;
 use GuzzleHttp\Exception\RequestException;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\FacebookResourceOwner as FacebookResourceOwnerBase;
+use Model\User\Token\Token;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 
 class FacebookResourceOwner extends FacebookResourceOwnerBase
@@ -52,7 +53,6 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
      */
 	public function refreshAccessToken($token, array $extraParameters = array())
 	{
-
 		$getCodeURL = 'https://graph.facebook.com/oauth/client_code';
 		$query = array(
 			'access_token' => $token['oauthToken'],
@@ -88,10 +88,10 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 
 	}
 
-	public function forceRefreshAccessToken($token)
+	public function forceRefreshAccessToken(Token $token)
 	{
-		$data = $this->refreshAccessToken($token);
-		$token = $this->addOauthData($data, $token);
+		$data = $this->refreshAccessToken($token->toArray());
+		$this->addOauthData($data, $token);
 		$event = new OAuthTokenEvent($token);
 		$this->dispatcher->dispatch(\AppEvents::TOKEN_REFRESHED, $event);
 
@@ -103,14 +103,14 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
         return true;
     }
 
-    public function extend($token)
+    public function extend(Token $token)
 	{
 		$getCodeURL = 'https://graph.facebook.com/oauth/access_token';
 		$query = array(
 			'grant_type' => 'fb_exchange_token',
 			'client_id' => $this->getOption('consumer_key'),
 			'client_secret' => $this->getOption('consumer_secret'),
-			'fb_exchange_token' => $token['oauthToken'],
+			'fb_exchange_token' => $token->getOauthToken(),
 		);
 
 		try {
@@ -124,7 +124,7 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 			throw $e;
 		}
 
-		$token = $this->addOauthData($data, $token);
+		$this->addOauthData($data, $token);
 		$event = new OAuthTokenEvent($token);
 		$this->dispatcher->dispatch(\AppEvents::TOKEN_REFRESHED, $event);
 
@@ -132,7 +132,7 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 	}
 
 	//Not needed now but useful later
-	public function requestPicture($id, $token, $size = 'large')
+	public function requestPicture($id, Token $token, $size = 'large')
 	{
 	    //TODO: Try to move out of here
 		if ($this->urlParser->isStatusId($id)){
@@ -146,13 +146,11 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 		);
 
 		try {
-			$response = $this->sendAuthorizedRequest($this->options['base_url'] . $url, $query, $token);
+			$response = $this->authorizedHttpRequest($url, $query, $token);
 		} catch (RequestException $e) {
 			$this->dispatcher->dispatch(\AppEvents::EXCEPTION_ERROR, new ExceptionEvent($e, 'Error getting facebook image by API'));
 			throw $e;
 		}
-
-		$response = $this->getResponseContent($response);
 
 		return isset($response['data']['url']) ? $response['data']['url'] : null;
 	}

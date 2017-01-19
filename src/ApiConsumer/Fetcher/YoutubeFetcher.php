@@ -149,7 +149,7 @@ class YoutubeFetcher extends BasicPaginationFetcher
      */
     public function fetchLinksFromUserFeed(Token $token)
     {
-        $this->setUp($token);
+        $this->setUpToken($token);
 
         $channels = $this->getChannelsFromUser();
         $links = $this->getVideosFromChannels($channels);

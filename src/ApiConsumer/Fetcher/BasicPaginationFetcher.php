@@ -23,6 +23,8 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
      */
     protected $rawFeed = array();
 
+    protected $username;
+
     /**
      * Get pagination field
      *
@@ -35,12 +37,7 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
 
     protected function getQuery($paginationId = null)
     {
-        $query = parent::getQuery();
-
-        if ($paginationId) {
-            $paginationQuery = array($this->getPaginationField() => $paginationId);
-            $query = array_merge($query, $paginationQuery);
-        }
+        $query = null == $paginationId ? array() : array($this->getPaginationField() => $paginationId);
 
         return $query;
     }
@@ -73,7 +70,6 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
         try {
             $response = $this->resourceOwner->request($url, $query, $this->token);
         } catch (\Exception $e) {
-            //TODO: Set here "wait until API answers" logic (Twitter 429)
             throw new PaginatedFetchingException($this->rawFeed, $e);
         }
 
@@ -85,7 +81,7 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
      */
     public function fetchLinksFromUserFeed(Token $token)
     {
-        $this->setUp($token);
+        $this->setUpToken($token);
 
         try {
             $rawFeed = $this->getLinksByPage();
@@ -100,7 +96,7 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
         return $links;
     }
 
-    protected function setUp(Token $token)
+    protected function setUpToken(Token $token)
     {
         $this->setToken($token);
         $this->rawFeed = array();
@@ -108,6 +104,8 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
 
     public function fetchAsClient($username)
     {
+        $this->setUpUsername($username);
+
         try {
             $rawFeed = $this->getLinksByPage();
         } catch (PaginatedFetchingException $e) {
@@ -119,6 +117,12 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
         $links = $this->parseLinks($rawFeed);
 
         return $links;
+    }
+
+    protected function setUpUsername($username)
+    {
+        $this->username = $username;
+        $this->rawFeed = array();
     }
 
     abstract protected function getItemsFromResponse($response);

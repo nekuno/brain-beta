@@ -13,11 +13,11 @@ class FacebookLikesFetcher extends AbstractFacebookFetcher
         return parent::getUrl($userId) . '/likes';
     }
 
-    protected function getQuery($username = null)
+    protected function getQuery($paginationId = null)
     {
         return array_merge(
             array('fields' => 'id,link,website,created_time'),
-            parent::getQuery()
+            parent::getQuery($paginationId)
         );
     }
 

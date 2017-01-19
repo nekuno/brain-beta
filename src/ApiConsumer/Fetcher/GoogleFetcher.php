@@ -26,11 +26,14 @@ class GoogleFetcher extends BasicPaginationFetcher
     /**
      * {@inheritDoc}
      */
-    protected function getQuery()
+    protected function getQuery($paginationId = null)
     {
-        return array(
-            'maxResults' => $this->pageLength,
-            'fields' => 'items(object(attachments(content,displayName,id,objectType,url)),title,published,updated),nextPageToken'
+        return array_merge(
+            parent::getQuery($paginationId),
+            array(
+                'maxResults' => $this->pageLength,
+                'fields' => 'items(object(attachments(content,displayName,id,objectType,url)),title,published,updated),nextPageToken'
+            )
         );
     }
 

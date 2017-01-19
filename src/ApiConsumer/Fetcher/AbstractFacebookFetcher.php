@@ -25,10 +25,13 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
     /**
      * @inheritdoc
      */
-    protected function getQuery($username = null)
+    protected function getQuery($paginationId = null)
     {
-        return array(
-            'limit' => $this->pageLength,
+        $query = parent::getQuery($paginationId);
+
+        return array_merge(
+            $query,
+            array('limit' => $this->pageLength)
         );
     }
 

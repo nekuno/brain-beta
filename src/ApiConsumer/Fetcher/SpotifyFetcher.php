@@ -29,7 +29,7 @@ class SpotifyFetcher extends BasicPaginationFetcher
      */
     public function fetchLinksFromUserFeed(Token $token)
     {
-        $this->setUp($token);
+        $this->setUpToken($token);
 
         $spotifyId = $token->getResourceId();
 
@@ -115,10 +115,7 @@ class SpotifyFetcher extends BasicPaginationFetcher
         return $parsed;
     }
 
-    /**
-     * @return array
-     */
-    public function getQuery()
+    public function getQuery($paginationId = null)
     {
         return $this->query;
     }

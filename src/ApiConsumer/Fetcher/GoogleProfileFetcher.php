@@ -18,7 +18,8 @@ class GoogleProfileFetcher extends AbstractFetcher{
     {
         $this->setToken($token);
         $url = $this->getUrl($token->getResourceId());
-        $response = $this->resourceOwner->authorizedApiRequest($url, $this->getQuery(), $this->token);
+        $query = array();
+        $response = $this->resourceOwner->authorizedHttpRequest($url, $query, $token);
 
         return $this->parseLinks($response);
     }
@@ -29,8 +30,9 @@ class GoogleProfileFetcher extends AbstractFetcher{
     public function fetchAsClient($username)
     {
         $url = $this->getUrl($username);
+        $query = array();
 
-        $response = $this->resourceOwner->authorizedApiRequest($url, $this->getQuery(), $this->token);
+        $response = $this->resourceOwner->authorizedApiRequest($url, $query, $this->token);
 
         return $this->parseLinks($response);
     }

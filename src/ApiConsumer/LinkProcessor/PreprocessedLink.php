@@ -4,6 +4,7 @@ namespace ApiConsumer\LinkProcessor;
 
 
 use Model\Link;
+use Model\User\Token\Token;
 
 class PreprocessedLink
 {
@@ -25,9 +26,9 @@ class PreprocessedLink
     protected $links;
 
     /**
-     * @var array Token which was used for fetching
+     * @var Token which was used for fetching
      */
-    protected $token = array();
+    protected $token;
 
     protected $source;
 
@@ -139,7 +140,7 @@ class PreprocessedLink
     }
 
     /**
-     * @return mixed
+     * @return Token
      */
     public function getToken()
     {
@@ -147,9 +148,9 @@ class PreprocessedLink
     }
 
     /**
-     * @param mixed $token
+     * @param Token $token
      */
-    public function setToken($token)
+    public function setToken(Token $token)
     {
         $this->token = $token;
     }

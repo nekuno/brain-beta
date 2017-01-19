@@ -46,15 +46,6 @@ abstract class AbstractFetcher implements FetcherInterface
         $this->url = $url;
     }
 
-    /**
-     * Get query
-     *
-     * @return array
-     */
-    protected function getQuery()
-    {
-        return array();
-    }
 
     public function getToken()
     {

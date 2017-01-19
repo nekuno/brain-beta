@@ -12,7 +12,6 @@ class SpotifyResourceOwner extends SpotifyResourceOwnerBase
 {
 	use AbstractResourceOwnerTrait {
 		AbstractResourceOwnerTrait::configureOptions as traitConfigureOptions;
-		AbstractResourceOwnerTrait::addOauthData as traitAddOauthData;
 		AbstractResourceOwnerTrait::__construct as private traitConstructor;
 	}
 
@@ -56,15 +55,6 @@ class SpotifyResourceOwner extends SpotifyResourceOwnerBase
 		$response = $this->httpRequest($this->normalizeUrl($url, $body), null, $headers, HttpRequestInterface::METHOD_POST);
 
 		return $this->getResponseContent($response);
-	}
-
-	protected function addOauthData($data, $token)
-	{
-		$newToken = $this->traitAddOauthData($data, $token);
-		if (!isset($newToken['refreshToken']) && isset($token['refreshToken'])){
-			$newToken['refreshToken'] = $token['refreshToken'];
-		}
-		return $newToken;
 	}
 
 	public function requestTrack($trackId)

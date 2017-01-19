@@ -10,6 +10,7 @@ use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 use Model\Creator;
 use Model\Link;
+use Model\User\Token\Token;
 use Model\User\Token\TokensModel;
 
 class TwitterProfileProcessor extends AbstractProcessor implements BatchProcessorInterface
@@ -27,7 +28,7 @@ class TwitterProfileProcessor extends AbstractProcessor implements BatchProcesso
     protected function requestItem(PreprocessedLink $preprocessedLink)
     {
         $userId = $this->getUserId($preprocessedLink);
-        $token = $preprocessedLink->getSource() == TokensModel::TWITTER ? $preprocessedLink->getToken() : array();
+        $token = $preprocessedLink->getSource() == TokensModel::TWITTER ? $preprocessedLink->getToken() : null;
         $key = array_keys($userId)[0];
 
         $response = $this->resourceOwner->lookupUsersBy($key, array($userId[$key]), $token);
@@ -113,20 +114,20 @@ class TwitterProfileProcessor extends AbstractProcessor implements BatchProcesso
 
     /**
      * @param $batch PreprocessedLink[]
-     * @return array
+     * @return Token
      */
     protected function getTokenFromBatch(array $batch)
     {
         foreach ($batch as $preprocessedLink) {
-            if (!empty($token = $preprocessedLink->getToken())) {
+            if ($token = $preprocessedLink->getToken()) {
                 return $token;
             }
         }
 
-        return array();
+        return null;
     }
 
-    protected function requestLookup(array $userIds, $token)
+    protected function requestLookup(array $userIds, Token $token)
     {
         $lookupResponses = array();
         foreach ($userIds as $key => $ids) {
