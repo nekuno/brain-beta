@@ -131,7 +131,6 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 		return $token;
 	}
 
-	//Not needed now but useful later
 	public function requestPicture($id, Token $token, $size = 'large')
 	{
 	    //TODO: Try to move out of here

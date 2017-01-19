@@ -36,7 +36,8 @@ class FacebookVideoProcessor extends AbstractFacebookProcessor
 
     public function getImages(PreprocessedLink $preprocessedLink, array $data)
     {
-        return isset($data['picture']) ? array($data['picture']) : array();
+        $picture = $this->resourceOwner->requestPicture($preprocessedLink->getResourceItemId(), $preprocessedLink->getToken());
+        return array($picture);
     }
 
     protected function getItemIdFromParser($url)
