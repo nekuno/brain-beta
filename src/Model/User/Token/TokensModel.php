@@ -367,7 +367,7 @@ class TokensModel
         $token = new Token();
         $token->setUserId($userNode->getProperty('qnoow_id'));
         $token->setCreatedTime($tokenNode->getProperty('createdTime'));
-        $token->setExpireTime($tokenNode->getProperty('createdTime'));
+        $token->setExpireTime($tokenNode->getProperty('expireTime'));
         $token->setResourceOwner($tokenNode->getProperty('resourceOwner'));
         $token->setUpdatedTime($tokenNode->getProperty('updatedTime'));
         $token->setResourceId($tokenNode->getProperty('resourceId'));

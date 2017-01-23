@@ -95,6 +95,8 @@ class FetcherService implements LoggerAwareInterface
 
     public function fetchUser($userId, $resourceOwner, $exclude = array())
     {
+        $this->dispatcher->dispatch(\AppEvents::FETCH_START, new FetchEvent($userId, $resourceOwner));
+
         $fetchers = $this->chooseFetchers($resourceOwner, $exclude);
 
         try{

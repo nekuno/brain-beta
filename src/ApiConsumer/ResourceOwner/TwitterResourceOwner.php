@@ -82,7 +82,7 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
         }
 
         $chunks = array_chunk($userIds, self::PROFILES_PER_LOOKUP);
-        $url = 'users/lookup.json';
+        $url = $this->options['base_url'] . 'users/lookup.json';
 
         $responses = array();
         //TODO: Array to string conversion here

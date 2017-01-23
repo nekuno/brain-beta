@@ -19,7 +19,7 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
      */
     public function getUrl($userId = null)
     {
-        return $userId ?: $this->token['facebookID'];
+        return $userId ?: $this->token->getUserId();
     }
 
     /**
@@ -40,7 +40,7 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
      */
     protected function getItemsFromResponse($response)
     {
-        return $response['data'] ?: array();
+        return isset($response['data']) ? $response['data'] : array();
     }
 
     /**

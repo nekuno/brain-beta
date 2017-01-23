@@ -110,7 +110,7 @@ trait AbstractResourceOwnerTrait
      */
     public function request($url, array $query = array(), Token $token = null)
     {
-        if (null == $token) {
+        if (null != $token) {
             return $this->authorizedHttpRequest($url, $query, $token);
         } else {
             return $this->authorizedAPIRequest($url, $query);
