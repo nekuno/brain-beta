@@ -94,7 +94,6 @@ class RabbitMQConsumeCommand extends ApplicationAwareCommand
                     $processorService,
                     $this->app['api_consumer.resource_owner_factory'],
                     $this->app['users.socialprofile.manager'],
-                    $this->app['dbs']['mysql_social'],
                     $this->app['dbs']['mysql_brain']);
                 $worker->setLogger($logger);
                 $logger->notice('Processing fetching queue');
@@ -113,7 +112,6 @@ class RabbitMQConsumeCommand extends ApplicationAwareCommand
                     $this->app['users.similarity.model'],
                     $this->app['questionnaire.questions.model'],
                     $this->app['affinityRecalculations.service'],
-                    $this->app['dbs']['mysql_social'],
                     $this->app['dbs']['mysql_brain'],
                     $dispatcher);
                 $worker->setLogger($logger);
