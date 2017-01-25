@@ -94,31 +94,31 @@ class GoogleResourceOwner extends GoogleResourceOwnerBase
         return isset($content['items']) ? $content['items'] : array();
     }
 
-    public function requestVideo(array $itemId)
+    public function requestVideo(array $itemId, Token $token = null)
     {
         $url = 'youtube/v3/videos';
         $itemApiParts = 'snippet,statistics,topicDetails';
 
-        return $this->requestYoutubeItem($url, $itemApiParts, $itemId);
+        return $this->requestYoutubeItem($url, $itemApiParts, $itemId, $token);
     }
 
-    public function requestChannel(array $itemId)
+    public function requestChannel(array $itemId, Token $token = null)
     {
         $url = 'youtube/v3/channels';
         $itemApiParts = 'snippet,brandingSettings,contentDetails,invideoPromotion,statistics,topicDetails';
 
-        return $this->requestYoutubeItem($url, $itemApiParts, $itemId);
+        return $this->requestYoutubeItem($url, $itemApiParts, $itemId, $token);
     }
 
-    public function requestPlaylist(array $itemId)
+    public function requestPlaylist(array $itemId, Token $token = null)
     {
         $url = 'youtube/v3/playlists';
         $itemApiParts = 'snippet,status';
 
-        return $this->requestYoutubeItem($url, $itemApiParts, $itemId);
+        return $this->requestYoutubeItem($url, $itemApiParts, $itemId, $token);
     }
 
-    private function requestYoutubeItem($url, $parts, array $itemId)
+    private function requestYoutubeItem($url, $parts, array $itemId, Token $token = null)
     {
         $itemKey = array_keys($itemId)[0];
 
@@ -127,9 +127,9 @@ class GoogleResourceOwner extends GoogleResourceOwnerBase
             $itemKey => $itemId[$itemKey],
         );
 
-        $response = $this->sendAuthorizedRequest($this->options['base_url'] . $url, $query);
+        $response = $this->request($url, $query, $token);
 
-        return $this->getResponseContent($response);
+        return $response;
 
     }
 }

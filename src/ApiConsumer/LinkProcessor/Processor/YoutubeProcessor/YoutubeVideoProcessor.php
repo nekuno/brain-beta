@@ -3,6 +3,7 @@
 namespace ApiConsumer\LinkProcessor\Processor\YoutubeProcessor;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use Model\User\Token\Token;
 use Model\Video;
 
 class YoutubeVideoProcessor extends AbstractYoutubeProcessor
@@ -54,9 +55,9 @@ class YoutubeVideoProcessor extends AbstractYoutubeProcessor
         }
     }
 
-    protected function requestSpecificItem($id)
+    protected function requestSpecificItem($id, Token $token = null)
     {
-        return $this->resourceOwner->requestVideo($id);
+        return $this->resourceOwner->requestVideo($id, $token);
     }
 
     private function imageResolutions()

@@ -20,7 +20,8 @@ class GoogleFetcher extends BasicPaginationFetcher
      */
     public function getUrl()
     {
-        return 'plus/v1/people/' . $this->token['googleID'] . '/activities/public';
+        $googleId = $this->token->getResourceId();
+        return 'plus/v1/people/' . $googleId . '/activities/public';
     }
 
     /**

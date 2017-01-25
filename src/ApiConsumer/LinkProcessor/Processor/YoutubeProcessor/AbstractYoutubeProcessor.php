@@ -6,6 +6,7 @@ use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\AbstractProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
 use ApiConsumer\ResourceOwner\GoogleResourceOwner;
+use Model\User\Token\Token;
 
 abstract class AbstractYoutubeProcessor extends AbstractProcessor
 {
@@ -26,8 +27,9 @@ abstract class AbstractYoutubeProcessor extends AbstractProcessor
     {
         $itemId = $this->getItemId($preprocessedLink->getUrl());
         $preprocessedLink->setResourceItemId(reset($itemId));
+        $token = $preprocessedLink->getToken();
 
-        $response = $this->requestSpecificItem($itemId);
+        $response = $this->requestSpecificItem($itemId, $token);
 
         return $response;
     }
@@ -46,6 +48,6 @@ abstract class AbstractYoutubeProcessor extends AbstractProcessor
         $link->setDescription($snippet['description']);
     }
 
-    abstract protected function requestSpecificItem($id);
+    abstract protected function requestSpecificItem($id, Token $token = null);
 
 }
