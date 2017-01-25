@@ -181,6 +181,35 @@ class UserManager implements PaginatedInterface
     }
 
     /**
+     * @param $id
+     * @return User
+     * @throws Neo4jException
+     * @throws NotFoundHttpException
+     */
+    public function getPublicById($id)
+    {
+
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match('(u:User {qnoow_id: { id }})')
+            ->setParameter('id', (int)$id)
+            ->where('NOT u:' . GhostUserManager::LABEL_GHOST_USER);
+
+        $qb->returns('u');
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        if ($result->count() < 1) {
+            throw new NotFoundHttpException(sprintf('User "%d" not found', $id));
+        }
+
+        /* @var $row Row */
+        $row = $result->current();
+
+        return $this->buildPublic($row);
+    }
+
+    /**
      * @param array $criteria
      * @return User
      * @throws Neo4jException
@@ -1123,6 +1152,41 @@ class UserManager implements PaginatedInterface
                     continue;
                 }
                 $user->{$method}($value);
+            }
+        }
+
+        return $user;
+    }
+
+    public function buildPublic(Row $row)
+    {
+
+        /* @var $node Node */
+        $node = $row->offsetGet('u');
+        $properties = $node->getProperties();
+        if (isset($properties['qnoow_id'])) {
+            $properties['id'] = $properties['qnoow_id'];
+            unset($properties['qnoow_id']);
+        }
+        $user = $this->createUser();
+        $photo = $this->pm->createProfilePhoto();
+        $photo->setUserId($user->getId());
+        $user->setPhoto($photo);
+        $user->setUsername($user->getUsername());
+        $user->setPhoto($photo);
+
+        foreach ($properties as $key => $value) {
+            switch ($key) {
+                case 'id':
+                    $user->setId($value);
+                    break;
+                case 'username':
+                    $user->setUsername($value);
+                    break;
+                case 'photo':
+                    $photo->setPath($value);
+                    $user->setPhoto($photo);
+                    break;
             }
         }
 
