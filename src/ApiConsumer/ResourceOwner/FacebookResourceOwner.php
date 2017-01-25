@@ -131,7 +131,7 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 		return $token;
 	}
 
-	public function requestPicture($id, Token $token, $size = 'large')
+	public function requestPicture($id, Token $token = null, $size = 'large')
 	{
 	    //TODO: Try to move out of here
 		if ($this->urlParser->isStatusId($id)){
@@ -145,7 +145,7 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 		);
 
 		try {
-			$response = $this->authorizedHttpRequest($url, $query, $token);
+			$response = $this->request($url, $query, $token);
 		} catch (RequestException $e) {
 			$this->dispatcher->dispatch(\AppEvents::EXCEPTION_ERROR, new ExceptionEvent($e, 'Error getting facebook image by API'));
 			throw $e;

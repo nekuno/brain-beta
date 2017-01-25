@@ -117,7 +117,8 @@ class SpotifyFetcher extends BasicPaginationFetcher
 
     public function getQuery($paginationId = null)
     {
-        return $this->query;
+        $parentQuery = parent::getQuery($paginationId);
+        return array_merge($parentQuery, $this->query);
     }
 
     /**

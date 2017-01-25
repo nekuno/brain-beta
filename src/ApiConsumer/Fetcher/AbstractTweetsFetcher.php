@@ -26,7 +26,7 @@ abstract class AbstractTweetsFetcher extends AbstractTwitterFetcher
         }
 
         $lastItem = end($response);
-        $paginationId = isset($lastItem['id_str']) ? $lastItem : null;
+        $paginationId = isset($lastItem['id_str']) ? $lastItem['id_str'] : null;
 
         if ($paginationId == $this->lastPaginationId) {
             return null;
