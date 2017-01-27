@@ -88,6 +88,25 @@ class UserController
 
     /**
      * @param Application $app
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function getPublicAction(Application $app, $id)
+    {
+        /* @var $model UserManager */
+        $model = $app['users.manager'];
+        $userArray = $model->getPublicById($id)->jsonSerialize();
+        $userArray = $model->deleteOtherUserFields($userArray);
+
+        if (empty($userArray)) {
+            return $app->json([], 404);
+        }
+
+        return $app->json($userArray);
+    }
+
+    /**
+     * @param Application $app
      * @param string $username
      * @throws NotFoundHttpException
      * @return JsonResponse
