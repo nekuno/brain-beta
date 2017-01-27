@@ -12,7 +12,7 @@ $app->post('/login', 'auth.controller:loginAction');
 
 $app->get('/users', 'users.controller:getAction');
 $app->get('/users/{id}', 'users.controller:getOtherAction');
-$app->get('/public/users/{id}', 'users.controller:getPublicAction');
+$app->get('/public/users/{slug}', 'users.controller:getPublicAction');
 $app->post('/users', 'users.controller:postAction');
 $app->put('/users', 'users.controller:putAction');
 $app->post('/users/validate', 'users.controller:validateAction');

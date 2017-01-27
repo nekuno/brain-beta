@@ -181,26 +181,31 @@ class UserManager implements PaginatedInterface
     }
 
     /**
-     * @param $id
+     * @param $slug
      * @return User
      * @throws Neo4jException
      * @throws NotFoundHttpException
      */
-    public function getPublicById($id)
+    public function getPublicBySlug($slug)
     {
-
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(u:User {qnoow_id: { id }})')
-            ->setParameter('id', (int)$id)
-            ->where('NOT u:' . GhostUserManager::LABEL_GHOST_USER);
-
-        $qb->returns('u');
-
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
+        $result = $this->getResultBySlug($slug);
 
         if ($result->count() < 1) {
-            throw new NotFoundHttpException(sprintf('User "%d" not found', $id));
+            $usernameCanonical = urldecode($slug);
+            $qb = $this->gm->createQueryBuilder();
+            $qb->match('(u:User{usernameCanonical: { usernameCanonical }})')
+                ->setParameter('usernameCanonical', $usernameCanonical)
+                ->where('NOT u:' . GhostUserManager::LABEL_GHOST_USER)
+                ->set('u.slug = { slug }')
+                ->setParameter('slug', $slug)
+                ->returns('u');
+
+            $query = $qb->getQuery();
+            $result = $query->getResultSet();
+
+            if ($result->count() < 1) {
+                throw new NotFoundHttpException('User not found');
+            }
         }
 
         /* @var $row Row */
@@ -1183,6 +1188,9 @@ class UserManager implements PaginatedInterface
                 case 'username':
                     $user->setUsername($value);
                     break;
+                case 'slug':
+                    $user->setSlug($value);
+                    break;
                 case 'photo':
                     $photo->setPath($value);
                     $user->setPhoto($photo);
@@ -1375,6 +1383,9 @@ class UserManager implements PaginatedInterface
         if (isset($user['email'])) {
             $user['emailCanonical'] = $this->canonicalize($user['email']);
         }
+        if (isset($user['usernameCanonical'])) {
+            $user['slug'] = urlencode($user['usernameCanonical']);
+        }
     }
 
     protected function updatePassword(array &$user)
@@ -1396,6 +1407,19 @@ class UserManager implements PaginatedInterface
             $user['photo'] = 'uploads/user/' . $user['usernameCanonical'] . '_' . time() . '.jpg';
             $this->pm->saveProfilePhoto($user['photo'], file_get_contents($url));
         }
+    }
+
+    private function getResultBySlug($slug)
+    {
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match('(u:User {slug: { slug }})')
+            ->setParameter('slug', $slug)
+            ->where('NOT u:' . GhostUserManager::LABEL_GHOST_USER);
+
+        $qb->returns('u');
+        $query = $qb->getQuery();
+
+        return $query->getResultSet();
     }
 
     private function getNodeId($userId)
