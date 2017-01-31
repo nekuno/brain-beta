@@ -21,7 +21,7 @@ class UsersSetSlugCommand extends ApplicationAwareCommand
         /* @var $manager UserManager */
         $manager = $this->app['users.manager'];
 
-        $usersCount = $manager->setSlugs();
+        $usersCount = $manager->setSlugs($output);
         $output->writeln($usersCount . ' users with slug');
         $output->writeln('Done.');
     }

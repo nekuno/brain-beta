@@ -19,6 +19,7 @@ use Model\User\TokensModel;
 use Model\User\UserComparedStatsModel;
 use Model\User\UserStatusModel;
 use Paginator\PaginatedInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface;
@@ -1155,20 +1156,23 @@ class UserManager implements PaginatedInterface
         return $this->gm->fuseNodes($this->getNodeId($userId1), $this->getNodeId($userId2));
     }
 
-    public function setSlugs()
+    public function setSlugs(OutputInterface $output)
     {
         $users = $this->getAll(true);
 
-        foreach ($users as $index => $user) {
+        foreach ($users as $user) {
+            $slug = $user->getSlug() ?: urlencode($user->getUsernameCanonical());
             $qb = $this->gm->createQueryBuilder();
-            $qb->match("(u$index:User {qnoow_id: { id$index }})")
-                ->setParameter("id$index", $user->getId())
-                ->set("u$index.slug = COALESCE(u$index.slug, { slug$index })")
-                ->setParameter("slug$index", urlencode($user->getUsernameCanonical()))
-                ->returns("u$index.slug AS slug$index");
+            $qb->match("(u:User {qnoow_id: { id }})")
+                ->setParameter("id", $user->getId())
+                ->set("u.slug = { slug }")
+                ->setParameter("slug", $slug)
+                ->returns("u.slug");
 
             $query = $qb->getQuery();
             $query->getResultSet();
+
+            $output->writeln("Slug " . $slug . " set for user " . $user->getUsername() . " (" . $user->getId() . ")");
         }
 
         return count($users);
