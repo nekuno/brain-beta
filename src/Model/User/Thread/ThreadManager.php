@@ -81,10 +81,7 @@ class ThreadManager
             throw new NotFoundHttpException('Thread with id ' . $id . ' not found');
         }
 
-        /** @var Node $threadNode */
-        $threadNode = $result->current()->offsetGet('thread');
-
-        return $this->buildThread($threadNode);
+        return $this->build($result->current());
     }
 
     /**
@@ -135,6 +132,18 @@ class ThreadManager
         $threadNode = $result->current()->offsetExists('thread') ? $result->offsetGet('thread') : null;
 
         return $this->buildThread($threadNode);
+    }
+
+    public function build(Row $row)
+    {
+        $threadNode = $row->offsetGet('thread');
+        $thread = $this->buildThread($threadNode);
+
+        if ($groupId = $row->offsetExists('groupId') ? $row->offsetGet('groupId') : null) {
+            $thread->setGroupId($groupId);
+        };
+
+        return $thread;
     }
 
     /**
@@ -443,8 +452,7 @@ class ThreadManager
             return null;
         }
 
-        $threadNode = $result->current()->offsetGet('thread');
-        $thread = $this->buildThread($threadNode);
+        $thread = $this->build($result->current());
 
         return $this->updateFromFilters($thread, $data);
 
@@ -506,11 +514,7 @@ class ThreadManager
             throw new NotFoundHttpException('Thread with id ' . $thread->getId() . ' not found');
         }
 
-        /** @var Node $threadNode */
-        $threadNode = $result->current()->offsetGet('thread');
-
-        return $this->buildThread($threadNode);
-
+        return $this->build($result->current());
     }
 
     public function deleteById($id)
@@ -555,6 +559,55 @@ class ThreadManager
                 }
             }
         }
+    }
+
+    public function createGroupThread(Group $group, $userId)
+    {
+        $groupData = $this->getGroupThreadData($group, $userId);
+        $thread = $this->create($userId, $groupData);
+        $thread = $this->joinToGroup($thread, $group);
+
+        return $thread;
+    }
+
+    private function joinToGroup(Thread $thread, Group $group)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+        $qb->match('(thread:Thread)')
+            ->where('id(thread) = {threadId}')
+            ->setParameter('threadId', $thread->getId());
+        $qb->match('(group:Group)')
+            ->where('id(group) = {groupId}')
+            ->setParameter('groupId', $group->getId());
+        $qb->set('thread:ThreadGroup');
+        $qb->merge('(thread)-[:IS_FROM_GROUP]->(group)');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() < 1) {
+            throw new NotFoundHttpException(sprintf('Thread with id %s or group with id %s not found', $thread->getId(), $group->getId()));
+        }
+
+        return $this->getById($thread->getId());
+    }
+
+    public function getFromUserAndGroup(User $user, Group $group)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+        $qb->match('(user:User)')
+            ->where('user.qnoow_id = {userId}')
+            ->setParameter('userId', $user->getId());
+        $qb->match('(group:Group)')
+            ->where('id(group) = {groupId}')
+            ->setParameter('groupId', $group->getId());
+
+        $qb->match('(u)-[:HAS_THREAD]->(thread:Thread)-[:IS_FROM_GROUP]->(group)')
+            ->returns('thread', 'id(group) AS groupId');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        return $this->build($result->current());
+
     }
 
     public function getGroupThreadData(Group $group, $userId)
