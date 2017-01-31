@@ -1158,18 +1158,18 @@ class UserManager implements PaginatedInterface
     public function setSlugs()
     {
         $users = $this->getAll(true);
-        $qb = $this->gm->createQueryBuilder();
+
         foreach ($users as $index => $user) {
+            $qb = $this->gm->createQueryBuilder();
             $qb->match("(u$index:User {qnoow_id: { id$index }})")
                 ->setParameter("id$index", $user->getId())
                 ->set("u$index.slug = COALESCE(u$index.slug, { slug$index })")
                 ->setParameter("slug$index", urlencode($user->getUsernameCanonical()))
-                ->with("u$index.slug AS slug$index");
-        }
-        $qb->returns("1");
+                ->returns("u$index.slug AS slug$index");
 
-        $query = $qb->getQuery();
-        $query->getResultSet();
+            $query = $qb->getQuery();
+            $query->getResultSet();
+        }
 
         return count($users);
     }
