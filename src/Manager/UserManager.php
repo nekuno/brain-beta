@@ -1158,7 +1158,7 @@ class UserManager implements PaginatedInterface
 
     public function setSlugs(OutputInterface $output)
     {
-        $users = $this->getAll(true);
+        $users = $this->getAll();
 
         foreach ($users as $user) {
             $slug = $user->getSlug() ?: urlencode($user->getUsernameCanonical());
