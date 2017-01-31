@@ -182,6 +182,41 @@ class UserManager implements PaginatedInterface
 
     /**
      * @param $slug
+     * @param bool $includeGhost
+     * @return User
+     * @throws Neo4jException
+     * @throws NotFoundHttpException
+     */
+    public function getBySlug($slug, $includeGhost = false)
+    {
+
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match('(u:User {slug: { slug }})')
+            ->setParameter('slug', $slug);
+        if (!$includeGhost) {
+            $qb->where('NOT u:' . GhostUserManager::LABEL_GHOST_USER);
+        }
+
+        $qb->returns('u');
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        if ($result->count() < 1) {
+            $result = $this->createSlug($slug);
+            if ($result->count() < 1) {
+                throw new NotFoundHttpException('User not found');
+            }
+        }
+
+        /* @var $row Row */
+        $row = $result->current();
+
+        return $this->build($row);
+    }
+
+    /**
+     * @param $slug
      * @return User
      * @throws Neo4jException
      * @throws NotFoundHttpException
@@ -191,18 +226,7 @@ class UserManager implements PaginatedInterface
         $result = $this->getResultBySlug($slug);
 
         if ($result->count() < 1) {
-            $usernameCanonical = urldecode($slug);
-            $qb = $this->gm->createQueryBuilder();
-            $qb->match('(u:User{usernameCanonical: { usernameCanonical }})')
-                ->setParameter('usernameCanonical', $usernameCanonical)
-                ->where('NOT u:' . GhostUserManager::LABEL_GHOST_USER)
-                ->set('u.slug = { slug }')
-                ->setParameter('slug', $slug)
-                ->returns('u');
-
-            $query = $qb->getQuery();
-            $result = $query->getResultSet();
-
+            $result = $this->createSlug($slug);
             if ($result->count() < 1) {
                 throw new NotFoundHttpException('User not found');
             }
@@ -1131,6 +1155,25 @@ class UserManager implements PaginatedInterface
         return $this->gm->fuseNodes($this->getNodeId($userId1), $this->getNodeId($userId2));
     }
 
+    public function setSlugs()
+    {
+        $users = $this->getAll(true);
+        $qb = $this->gm->createQueryBuilder();
+        foreach ($users as $index => $user) {
+            $qb->match("(u$index:User {qnoow_id: { id$index }})")
+                ->setParameter("id$index", $user->getId())
+                ->set("u$index.slug = COALESCE(u$index.slug, { slug$index })")
+                ->setParameter("slug$index", urlencode($user->getUsernameCanonical()))
+                ->with("u$index.slug AS slug$index");
+        }
+        $qb->returns("1");
+
+        $query = $qb->getQuery();
+        $query->getResultSet();
+
+        return count($users);
+    }
+
     public function build(Row $row)
     {
 
@@ -1417,6 +1460,22 @@ class UserManager implements PaginatedInterface
             ->where('NOT u:' . GhostUserManager::LABEL_GHOST_USER);
 
         $qb->returns('u');
+        $query = $qb->getQuery();
+
+        return $query->getResultSet();
+    }
+
+    private function createSlug($slug)
+    {
+        $usernameCanonical = urldecode($slug);
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match('(u:User{usernameCanonical: { usernameCanonical }})')
+            ->setParameter('usernameCanonical', $usernameCanonical)
+            ->where('NOT u:' . GhostUserManager::LABEL_GHOST_USER)
+            ->set('u.slug = { slug }')
+            ->setParameter('slug', $slug)
+            ->returns('u');
+
         $query = $qb->getQuery();
 
         return $query->getResultSet();

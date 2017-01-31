@@ -69,14 +69,14 @@ class UserController
 
     /**
      * @param Application $app
-     * @param int $id
+     * @param string $slug
      * @return JsonResponse
      */
-    public function getOtherAction(Application $app, $id)
+    public function getOtherAction(Application $app, $slug)
     {
         /* @var $model UserManager */
         $model = $app['users.manager'];
-        $userArray = $model->getById($id)->jsonSerialize();
+        $userArray = $model->getBySlug($slug)->jsonSerialize();
         $userArray = $model->deleteOtherUserFields($userArray);
 
         if (empty($userArray)) {
