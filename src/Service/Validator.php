@@ -340,8 +340,10 @@ class Validator
                             continue;
                         }
 
-                        if (count($dataValue) > $fieldData['max_choices']) {
-                            $fieldErrors[] = sprintf('Option length "%s" is too long. "%s" is the maximum', count($dataValue), $fieldData['max_choices']);
+                        if (isset($fieldData['max_choices'])) {
+                            if (count($dataValue) > $fieldData['max_choices']) {
+                                $fieldErrors[] = sprintf('Option length "%s" is too long. "%s" is the maximum', count($dataValue), $fieldData['max_choices']);
+                            }
                         }
                         foreach ($dataValue as $singleValue) {
                             if (!in_array($singleValue, $multipleChoices)) {
