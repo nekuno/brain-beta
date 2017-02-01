@@ -20,8 +20,9 @@ class ThreadManager
     const LABEL_THREAD_CONTENT = 'ThreadContent';
     const SCENARIO_DEFAULT = 'default';
     const SCENARIO_DEFAULT_LITE = 'default_lite';
+    const SCENARIO_NONE = 'none';
 
-    static public $scenarios = array(ThreadManager::SCENARIO_DEFAULT, ThreadManager::SCENARIO_DEFAULT_LITE);
+    static public $scenarios = array(ThreadManager::SCENARIO_DEFAULT, ThreadManager::SCENARIO_DEFAULT_LITE, ThreadManager::SCENARIO_NONE);
 
     /** @var  GraphManager */
     protected $graphManager;
@@ -322,7 +323,10 @@ class ThreadManager
                     ),
                     'default' => true,
                 ),
-            )
+            ),
+            ThreadManager::SCENARIO_NONE => array(
+
+            ),
         );
 
         if (!isset($threads[$scenario])) {
@@ -581,14 +585,14 @@ class ThreadManager
             ->setParameter('groupId', $group->getId());
         $qb->set('thread:ThreadGroup');
         $qb->merge('(thread)-[:IS_FROM_GROUP]->(group)');
-
+        $qb->returns('thread', 'id(group) AS groupId');
         $result = $qb->getQuery()->getResultSet();
 
         if ($result->count() < 1) {
             throw new NotFoundHttpException(sprintf('Thread with id %s or group with id %s not found', $thread->getId(), $group->getId()));
         }
 
-        return $this->getById($thread->getId());
+        return $this->build($result->current());
     }
 
     public function getFromUserAndGroup(User $user, Group $group)
@@ -629,7 +633,7 @@ class ThreadManager
                     'groups' => array($group->getId()),
                 )
             ),
-            'default' => true,
+            'default' => false,
         );
     }
 
