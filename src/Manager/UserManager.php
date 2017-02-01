@@ -1161,6 +1161,19 @@ class UserManager implements PaginatedInterface
         $users = $this->getAll();
 
         foreach ($users as $user) {
+            if (!$user->getUsernameCanonical() && $user->getSlug() == '') {
+                $qb = $this->gm->createQueryBuilder();
+                $qb->match("(u:User {qnoow_id: { id }})")
+                    ->setParameter("id", $user->getId())
+                    ->remove("u.slug")
+                    ->returns("u");
+
+                $query = $qb->getQuery();
+                $query->getResultSet();
+
+                $output->writeln("Removed void slug for user " . $user->getUsername() . " (" . $user->getId() . ")");
+                continue;
+            }
             $slug = $user->getSlug() ?: urlencode($user->getUsernameCanonical());
             $qb = $this->gm->createQueryBuilder();
             $qb->match("(u:User {qnoow_id: { id }})")
