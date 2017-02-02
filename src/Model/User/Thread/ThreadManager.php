@@ -73,8 +73,9 @@ class ThreadManager
     {
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(thread:Thread)')
-            ->where('id(thread) = {id}')
-            ->returns('thread');
+            ->where('id(thread) = {id}');
+        $qb->optionalMatch('(thread)-[:IS_FROM_GROUP]->(group:Group)')
+            ->returns('thread', 'id(group) AS groupId');
         $qb->setParameter('id', (integer)$id);
         $result = $qb->getQuery()->getResultSet();
 
