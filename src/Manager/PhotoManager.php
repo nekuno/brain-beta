@@ -43,8 +43,13 @@ class PhotoManager
 
     public function saveProfilePhoto($file, $photo)
     {
-        $filename = $this->base . $file;
-        file_put_contents($filename, $photo);
+        $success = false;
+        if ($photo) {
+            $filename = $this->base . $file;
+            $success = file_put_contents($filename, $photo);
+        }
+
+        return $success;
     }
 
     public function createGalleryPhoto()

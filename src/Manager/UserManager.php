@@ -1466,7 +1466,10 @@ class UserManager implements PaginatedInterface
             $url = $user['photo'];
             // TODO: Validate size and set proper extension
             $user['photo'] = 'uploads/user/' . $user['usernameCanonical'] . '_' . time() . '.jpg';
-            $this->pm->saveProfilePhoto($user['photo'], file_get_contents($url));
+            $success = $this->pm->saveProfilePhoto($user['photo'], @file_get_contents($url));
+            if (!$success) {
+                unset($user['photo']);
+            }
         }
     }
 
