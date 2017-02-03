@@ -455,13 +455,14 @@ class UserManager implements PaginatedInterface
 
     public function validateUsername($userId, $username)
     {
+        $usernameCanonical = $this->canonicalize($username);
         $qb = $this->gm->createQueryBuilder();
-        $qb->match('(u:User {username: { username }})')
+        $qb->match('(u:User {usernameCanonical: { usernameCanonical }})')
             ->where('u.qnoow_id <> { userId }')
             ->setParameters(
                 array(
                     'userId' => $userId,
-                    'username' => $username,
+                    'usernameCanonical' => $usernameCanonical,
                 )
             )
             ->returns('u AS users')
