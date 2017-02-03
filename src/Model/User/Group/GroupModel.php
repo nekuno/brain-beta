@@ -425,10 +425,10 @@ class GroupModel
 
             $this->dispatcher->dispatch(\AppEvents::GROUP_ADDED, new GroupEvent($group, $userId));
 
-            return true;
+            return $group;
         }
 
-        return false;
+        return null;
     }
 
     public function addGhostUser($id, $userId)
