@@ -165,11 +165,9 @@ class ProcessorService implements LoggerAwareInterface
         $links = array();
         foreach ($preprocessedLinks as $key => $preprocessedLink) {
             $this->logNotice(sprintf('Reprocessing link %s', $preprocessedLink->getUrl()));
-            $link = $this->fullReprocessSingle($preprocessedLink);
+            $reprocessedLinks = $this->fullReprocessSingle($preprocessedLink);
 
-            if ($link) {
-                $links[$key] = $link;
-            }
+            $links = array_merge($links, $reprocessedLinks);
         }
 
         $links = array_merge($links, $this->reprocessLastLinks($source));
@@ -187,9 +185,9 @@ class ProcessorService implements LoggerAwareInterface
             $preprocessedLink->setFirstLink($processedLink);
             $preprocessedLink->setSource($source);
 
-            $this->save($preprocessedLink);
+            $savedLinks = $this->save($preprocessedLink);
 
-            $links[] = $processedLink->toArray();
+            $links = array_merge($links, $savedLinks);
         }
 
         return $links;
