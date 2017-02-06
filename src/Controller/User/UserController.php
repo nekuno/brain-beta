@@ -120,7 +120,7 @@ class UserController
         }
         /* @var $model UserManager */
         $model = $app['users.manager'];
-        $model->validateUsername(null, $username);
+        $model->validateUsername(0, $username);
 
         return $app->json();
     }
