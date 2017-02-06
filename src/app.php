@@ -56,6 +56,7 @@ $app->register(new ServicesServiceProvider());
 $app->register(new ModelsServiceProvider());
 $app->register(new \Provider\OAuthServiceProvider());
 $app->register(new Silex\Provider\SecurityServiceProvider());
+$app->register(new Cocur\Slugify\Bridge\Silex\SlugifyServiceProvider());
 $app['security.jwt'] = array(
     'secret_key' => $app['secret'],
     'life_time' => $app['life_time'],

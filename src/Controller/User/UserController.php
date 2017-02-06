@@ -120,13 +120,9 @@ class UserController
         }
         /* @var $model UserManager */
         $model = $app['users.manager'];
-        try {
-            $model->findUserBy(array('usernameCanonical' => mb_strtolower($username)));
-        } catch (NotFoundHttpException $e) {
-            return $app->json();
-        }
+        $model->validateUsername(null, $username);
 
-        throw new NotFoundHttpException('Username not available');
+        return $app->json();
     }
 
     /**

@@ -37,7 +37,8 @@
         "cnam/security-jwt-service-provider": "1.*",
         "sorien/silex-pimple-dumper": "~1.0",
         "yawmoght/getoldtweets-php": "dev-master",
-        "hwi/oauth-bundle": "^0.4.1"
+        "hwi/oauth-bundle": "^0.4.1",
+        "cocur/slugify": "^2.3"
     },
     "require-dev": {
         "phpunit/phpunit": "~3.7"
