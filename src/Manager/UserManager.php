@@ -455,6 +455,7 @@ class UserManager implements PaginatedInterface
 
     public function validateUsername($userId, $username)
     {
+        $username = trim($username);
         if(!ctype_alnum(str_replace('_', '', $username))) {
             throw new ValidationException(array(
                 'username' => array('Invalid username. Only letters, numbers and _ are valid.'))
@@ -502,8 +503,7 @@ class UserManager implements PaginatedInterface
         $this->validate($data);
 
         $data['userId'] = $this->getNextId();
-        $data['username'] = $this->getVerifiedUsername($data['username']);
-        $this->validateUsername(0, $data['username']);
+        $data['username'] = $this->getVerifiedUsername(trim($data['username']));
 
         $qb = $this->gm->createQueryBuilder();
         $qb->create('(u:User)')
@@ -534,6 +534,7 @@ class UserManager implements PaginatedInterface
         $this->validate($data, true);
 
         if (isset($data['username'])) {
+            $data['username'] = trim($data['username']);
             $this->validateUsername($data['userId'], $data['username']);
         }
 
@@ -1303,17 +1304,10 @@ class UserManager implements PaginatedInterface
         $username = $username ?: 'user1';
 
         while ($exists) {
-            $qb = $this->gm->createQueryBuilder();
-            $qb->match('(u:User {username: { username }})')
-                ->setParameter('username', $username)
-                ->returns('u AS users')
-                ->limit(1);
-
-            $query = $qb->getQuery();
-            $result = $query->getResultSet();
-
-            $exists = $result->count() > 0;
-            if ($exists) {
+            try {
+                $this->validateUsername(0, $username);
+                $exists = false;
+            } catch (ValidationException $e) {
                 $username = 'user' . $suffix++;
             }
         }
