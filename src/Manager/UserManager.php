@@ -469,9 +469,12 @@ class UserManager implements PaginatedInterface
         $slug = $this->slugify->slugify($username);
         foreach (array('usernameCanonical' => $usernameCanonical, 'slug' => $slug) as $key => $value) {
             $qb = $this->gm->createQueryBuilder();
-            $qb->match("(u:User { $key : '$value' })")
+            $qb->match("(u:User { $key : { value$key }})")
                 ->where('u.qnoow_id <> { userId }')
-                ->setParameter('userId', $userId)
+                ->setParameters(array(
+                    'userId' => $userId,
+                    "value$key" => $value,
+                ))
                 ->returns('u AS users')
                 ->limit(1);
 
