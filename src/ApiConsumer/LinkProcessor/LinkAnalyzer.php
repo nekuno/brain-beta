@@ -9,6 +9,7 @@ use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\UrlParserInterface;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
+use Model\User\TokensModel;
 
 class LinkAnalyzer
 {
@@ -34,6 +35,27 @@ class LinkAnalyzer
         }
 
         return $type;
+    }
+
+    public static function getResource($url) {
+
+        if (self::isYouTube($url)) {
+            return TokensModel::GOOGLE;
+        }
+
+        if (self::isSpotify($url)) {
+            return TokensModel::SPOTIFY;
+        }
+
+        if (self::isFacebook($url)) {
+            return TokensModel::FACEBOOK;
+        }
+
+        if (self::isTwitter($url)) {
+            return TokensModel::TWITTER;
+        }
+
+        return null;
     }
 
     public static function mustResolve(PreprocessedLink $link)

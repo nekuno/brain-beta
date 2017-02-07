@@ -5,6 +5,7 @@ namespace Model\User\Token;
 use Doctrine\ORM\EntityManager;
 use Event\AccountConnectEvent;
 use Everyman\Neo4j\Node;
+use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
 use HWI\Bundle\OAuthBundle\DependencyInjection\Configuration;
 use Model\Entity\DataStatus;
@@ -323,6 +324,55 @@ class TokensModel
 
     }
 
+    public function getByLikedUrl($url, $resource)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(l:Link{url: {url}})')
+            ->with('l')
+            ->limit(1)
+            ->setParameter('url', $url);
+
+        $qb->match('(l)<-[:LIKES]-(user:User)<-[:TOKEN_OF]-(token:Token)')
+            ->where('token.resource = {resource}')
+            ->with('token')
+            ->limit(1)
+            ->setParameter('resource', $resource);
+
+        $qb->returns('user', 'token');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() == 0) {
+            return null;
+        }
+
+        return $this->build($result->current());
+    }
+
+    public function getOneByResource($resource)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(token:Token)')
+            ->where('token.resource = {resource}')
+            ->with('token')
+            ->limit(1)
+            ->setParameter('resource', $resource);
+
+        $qb->match('(token)-[:TOKEN_OF]->(user:User)');
+
+        $qb->returns('user', 'token');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() == 0) {
+            return null;
+        }
+
+        return $this->build($result->current());
+    }
+
     public function getUnconnectedNetworks($userId)
     {
         $tokens = $this->getAll($userId);
@@ -430,14 +480,14 @@ class TokensModel
             $userNode->save();
         }
 
-	    $type = Configuration::getResourceOwnerType($resourceOwner);
-	    if ($type == 'oauth1' && $data['oauthToken']) {
-		    $oauthToken = substr($data['oauthToken'], 0, strpos($data['oauthToken'], ':'));
-		    $oauthTokenSecret = substr($data['oauthToken'], strpos($data['oauthToken'], ':') + 1, strpos($data['oauthToken'], '@') - strpos($data['oauthToken'], ':') - 1);
+        $type = Configuration::getResourceOwnerType($resourceOwner);
+        if ($type == 'oauth1' && $data['oauthToken']) {
+            $oauthToken = substr($data['oauthToken'], 0, strpos($data['oauthToken'], ':'));
+            $oauthTokenSecret = substr($data['oauthToken'], strpos($data['oauthToken'], ':') + 1, strpos($data['oauthToken'], '@') - strpos($data['oauthToken'], ':') - 1);
 
-		    $data['oauthToken'] = $oauthToken;
-		    $data['oauthTokenSecret'] = $oauthTokenSecret;
-	    }
+            $data['oauthToken'] = $oauthToken;
+            $data['oauthTokenSecret'] = $oauthTokenSecret;
+        }
 
         $tokenNode->setProperty('resourceOwner', $resourceOwner);
         $tokenNode->setProperty('updatedTime', time());

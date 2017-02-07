@@ -8,17 +8,20 @@ use ApiConsumer\LinkProcessor\Processor\BatchProcessorInterface;
 use ApiConsumer\LinkProcessor\Processor\ProcessorInterface;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use Model\Link;
+use Model\User\Token\TokensModel;
 
 class LinkProcessor
 {
     private $processorFactory;
     private $imageAnalyzer;
+    private $tokensModel;
     private $batch = array();
 
-    public function __construct(ProcessorFactory $processorFactory, ImageAnalyzer $imageAnalyzer)
+    public function __construct(ProcessorFactory $processorFactory, ImageAnalyzer $imageAnalyzer, TokensModel $tokensModel)
     {
         $this->processorFactory = $processorFactory;
         $this->imageAnalyzer = $imageAnalyzer;
+        $this->tokensModel = $tokensModel;
     }
 
     public function scrape(PreprocessedLink $preprocessedLink)
@@ -45,6 +48,8 @@ class LinkProcessor
 
     public function process(PreprocessedLink $preprocessedLink)
     {
+        $this->fixToken($preprocessedLink);
+
         $processor = $this->selectProcessor($preprocessedLink);
 
         if ($processor instanceof BatchProcessorInterface) {
@@ -59,6 +64,40 @@ class LinkProcessor
         }
 
         return $links;
+    }
+
+    protected function fixToken(PreprocessedLink $preprocessedLink)
+    {
+        if (!$this->needsToken($preprocessedLink)){
+            return;
+        }
+
+        $bestToken = $this->findBestToken($preprocessedLink);
+
+        if (!empty($bestToken)){
+            $preprocessedLink->setToken($bestToken);
+        }
+    }
+
+    protected function needsToken(PreprocessedLink $preprocessedLink)
+    {
+        //Improve to detect useful token
+        return empty($preprocessedLink->getToken());
+    }
+
+    protected function findBestToken(PreprocessedLink $preprocessedLink)
+    {
+        $resource = LinkAnalyzer::getResource($preprocessedLink->getUrl());
+
+        $token = $this->tokensModel->getByLikedUrl($preprocessedLink->getUrl(), $resource);
+
+        if (null !== $token){
+            return $token;
+        }
+
+        $token = $this->tokensModel->getOneByResource($resource);
+
+        return $token;
     }
 
     /**
