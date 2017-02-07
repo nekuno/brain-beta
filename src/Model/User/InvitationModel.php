@@ -646,6 +646,9 @@ class InvitationModel
 
         $result = $query->getResultSet();
 
+        if ($result->count() === 0 && substr($token, 0, 12) === "shared_user-") {
+            $result = $this->createFromSharedUser($token);
+        }
         if ($result->count() > 0) {
             /* @var $row Row */
             $row = $result->current();
@@ -777,5 +780,25 @@ class InvitationModel
         $row = $result->current();
 
         return (integer)$row->offsetGet('available');
+    }
+
+    private function createFromSharedUser($token)
+    {
+        $otherUserId = substr($token, 12);
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match('(u:User {qnoow_id: { otherUserId }})')
+            ->merge('(u)-[:CREATED_INVITATION]-(inv:Invitation:InvitationSharedUser {token: { token }})')
+            ->set('inv.available = COALESCE(inv.available, 10000) - 1', 'inv.consumed = COALESCE(inv.consumed, 0) + 1', 'inv.createdAt = COALESCE(inv.createdAt , timestamp())', 'inv.orientationRequired = true')
+            ->returns('inv AS invitation')
+            ->setParameters(
+                array(
+                    'otherUserId' => (integer)$otherUserId,
+                    'token' => (string)$token,
+                )
+            );
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        return $result;
     }
 }

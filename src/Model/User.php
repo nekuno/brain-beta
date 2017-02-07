@@ -29,6 +29,11 @@ class User implements UserInterface, \JsonSerializable
     /**
      * @var string
      */
+    protected $slug;
+
+    /**
+     * @var string
+     */
     protected $email;
 
     /**
@@ -199,6 +204,7 @@ class User implements UserInterface, \JsonSerializable
                 $this->password,
                 $this->salt,
                 $this->usernameCanonical,
+                $this->slug,
                 $this->username,
                 $this->expired,
                 $this->locked,
@@ -225,6 +231,7 @@ class User implements UserInterface, \JsonSerializable
             $this->password,
             $this->salt,
             $this->usernameCanonical,
+            $this->slug,
             $this->username,
             $this->expired,
             $this->locked,
@@ -260,6 +267,11 @@ class User implements UserInterface, \JsonSerializable
     public function getUsernameCanonical()
     {
         return $this->usernameCanonical;
+    }
+
+    public function getSlug()
+    {
+        return $this->slug;
     }
 
     public function isGuest()
@@ -425,6 +437,13 @@ class User implements UserInterface, \JsonSerializable
     public function setUsernameCanonical($usernameCanonical)
     {
         $this->usernameCanonical = $usernameCanonical;
+
+        return $this;
+    }
+
+    public function setSlug($slug)
+    {
+        $this->slug = $slug;
 
         return $this;
     }

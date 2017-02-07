@@ -615,8 +615,8 @@ filters:
         groups:
             type: multiple_choices
             label:
-                en: 'Groups'
-                es: 'Grupos'
+                en: 'Badges'
+                es: 'Insignias'
         compatibility:
             type: integer
             min: 50

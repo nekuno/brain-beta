@@ -156,7 +156,7 @@ class ProcessorService implements LoggerAwareInterface
 
     /**
      * @param PreprocessedLink[] $preprocessedLinks
-     * @return array
+     * @return array[]
      */
     public function reprocess(array $preprocessedLinks)
     {
@@ -165,11 +165,9 @@ class ProcessorService implements LoggerAwareInterface
         $links = array();
         foreach ($preprocessedLinks as $key => $preprocessedLink) {
             $this->logNotice(sprintf('Reprocessing link %s', $preprocessedLink->getUrl()));
-            $link = $this->fullReprocessSingle($preprocessedLink);
+            $reprocessedLinks = $this->fullReprocessSingle($preprocessedLink);
 
-            if ($link) {
-                $links[$key] = $link;
-            }
+            $links = array_merge($links, $reprocessedLinks);
         }
 
         $links = array_merge($links, $this->reprocessLastLinks($source));
@@ -179,17 +177,20 @@ class ProcessorService implements LoggerAwareInterface
 
     private function reprocessLastLinks($source)
     {
-        $processedLinks = $this->linkProcessor->processLastLinks();
+        $links = array();
 
+        $processedLinks = $this->linkProcessor->processLastLinks();
         foreach ($processedLinks as $processedLink) {
             $preprocessedLink = new PreprocessedLink($processedLink->getUrl());
             $preprocessedLink->setFirstLink($processedLink);
             $preprocessedLink->setSource($source);
 
-            $this->save($preprocessedLink);
+            $savedLinks = $this->save($preprocessedLink);
+
+            $links = array_merge($links, $savedLinks);
         }
 
-        return $processedLinks;
+        return $links;
     }
 
     private function fullReprocessSingle(PreprocessedLink $preprocessedLink)
@@ -198,9 +199,9 @@ class ProcessorService implements LoggerAwareInterface
             $this->resolve($preprocessedLink);
         } catch (CouldNotResolveException $e) {
             $this->manageError($e, sprintf('resolving url %s while reprocessing', $preprocessedLink->getUrl()));
-            $link = $this->overwrite($preprocessedLink);
+            $links = $this->overwrite($preprocessedLink);
 
-            return $link;
+            return $links;
         } catch (UrlChangedException $e) {
             $this->manageChangedUrl($e->getOldUrl(), $e->getNewUrl());
         }
@@ -221,9 +222,9 @@ class ProcessorService implements LoggerAwareInterface
             return $this->fullReprocessSingle($preprocessedLink);
 
         } catch (\Exception $e) {
-            $this->manageError($e, sprintf('saving link %s from resource %s', $preprocessedLink->getUrl(), $preprocessedLink->getSource()));
+            $this->manageError($e, sprintf('reprocessing link %s', $preprocessedLink->getUrl()));
 
-            return null;
+            return array();
         }
     }
 

@@ -41,19 +41,25 @@ class GroupModel
     protected $validator;
 
     /**
+     * @var string
+     */
+    protected $invitationImagesRoot;
+
+    /**
      * @param GraphManager $gm
      * @param EventDispatcher $dispatcher
      * @param UserManager $um
      * @param FilterUsersManager $filterUsersManager
      * @param Validator $validator
      */
-    public function __construct(GraphManager $gm, EventDispatcher $dispatcher, UserManager $um, FilterUsersManager $filterUsersManager, Validator $validator)
+    public function __construct(GraphManager $gm, EventDispatcher $dispatcher, UserManager $um, FilterUsersManager $filterUsersManager, Validator $validator, $invitationImagesRoot)
     {
         $this->gm = $gm;
         $this->um = $um;
         $this->dispatcher = $dispatcher;
         $this->filterUsersManager = $filterUsersManager;
         $this->validator = $validator;
+        $this->invitationImagesRoot = $invitationImagesRoot;
     }
 
     public function getAll()
@@ -419,10 +425,10 @@ class GroupModel
 
             $this->dispatcher->dispatch(\AppEvents::GROUP_ADDED, new GroupEvent($group, $userId));
 
-            return true;
+            return $group;
         }
 
-        return false;
+        return null;
     }
 
     public function addGhostUser($id, $userId)
@@ -629,6 +635,7 @@ class GroupModel
                     'invitation_id' => $invitationNode->getId(),
                     'invitation_token' => $invitationNode->getProperty('token'),
                     'invitation_image_path' => $invitationNode->getProperty('image_path'),
+                    'invitation_image_url' => $this->invitationImagesRoot . $invitationNode->getProperty('image_path'),
                 );
             }
         }

@@ -22,6 +22,8 @@ class Thread implements \JsonSerializable
     
     protected $recommendationUrl;
 
+    protected $groupId;
+
     function __construct($id, $name)
     {
         $this->id = $id;
@@ -156,6 +158,22 @@ class Thread implements \JsonSerializable
         $this->recommendationUrl = $recommendationUrl;
     }
 
+    /**
+     * @return mixed
+     */
+    public function getGroupId()
+    {
+        return $this->groupId;
+    }
+
+    /**
+     * @param mixed $groupId
+     */
+    public function setGroupId($groupId)
+    {
+        $this->groupId = $groupId;
+    }
+
     
     /**
      * Specify data which should be serialized to JSON
@@ -175,6 +193,7 @@ class Thread implements \JsonSerializable
             'cached' => $this->getCached(),
             'recommendationUrl' => $this->getRecommendationUrl(),
             'totalResults' => $this->getTotalResults(),
+            'groupId' => $this->getGroupId()
         );
     }
 
