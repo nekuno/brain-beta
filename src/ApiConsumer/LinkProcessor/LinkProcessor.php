@@ -68,13 +68,13 @@ class LinkProcessor
 
     protected function fixToken(PreprocessedLink $preprocessedLink)
     {
-        if (!$this->needsToken($preprocessedLink)){
+        if (!$this->needsToken($preprocessedLink)) {
             return;
         }
 
         $bestToken = $this->findBestToken($preprocessedLink);
 
-        if (!empty($bestToken)){
+        if (!empty($bestToken)) {
             $preprocessedLink->setToken($bestToken);
         }
     }
@@ -91,7 +91,7 @@ class LinkProcessor
 
         $token = $this->tokensModel->getByLikedUrl($preprocessedLink->getUrl(), $resource);
 
-        if (null !== $token){
+        if (null !== $token) {
             return $token;
         }
 

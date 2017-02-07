@@ -60,7 +60,7 @@ class SpotifyResourceOwner extends SpotifyResourceOwnerBase
 	public function requestTrack($trackId)
     {
         $urlTrack = 'tracks/' . $trackId;
-        $track = $this->authorizedAPIRequest($urlTrack, array());
+        $track = $this->requestAsClient($urlTrack, array());
 
         return $track;
     }
@@ -68,7 +68,7 @@ class SpotifyResourceOwner extends SpotifyResourceOwnerBase
     public function requestAlbum($albumId)
     {
         $urlAlbum = 'albums/' . $albumId;
-        $album = $this->authorizedAPIRequest($urlAlbum, array());
+        $album = $this->requestAsClient($urlAlbum, array());
 
         return $album;
     }
@@ -76,7 +76,7 @@ class SpotifyResourceOwner extends SpotifyResourceOwnerBase
     public function requestArtist($artistId)
     {
         $urlArtist = 'artists/' . $artistId;
-        $artist = $this->authorizedAPIRequest($urlArtist, array());
+        $artist = $this->requestAsClient($urlArtist, array());
 
         return $artist;
     }

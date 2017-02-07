@@ -12,8 +12,8 @@ class FacebookProfileProcessor extends AbstractFacebookProcessor
     protected function requestItem(PreprocessedLink $preprocessedLink)
     {
         //TODO: When Facebook App Token is implemented, include option to request public if source != facebook
-        if (!($preprocessedLink->getSource() == TokensModel::FACEBOOK && $preprocessedLink->getResourceItemId())) {
-            throw new CannotProcessException($preprocessedLink->getUrl(), 'Cannot process as a facebook page because for lacking token or id');
+        if ($preprocessedLink->getResourceItemId()) {
+            throw new CannotProcessException($preprocessedLink->getUrl(), 'Cannot process as a facebook page because for lacking id');
         }
 
         $id = $preprocessedLink->getResourceItemId();
@@ -40,6 +40,12 @@ class FacebookProfileProcessor extends AbstractFacebookProcessor
     public function getImages(PreprocessedLink $preprocessedLink, array $data)
     {
         return isset($data['picture']) && isset($data['picture']['data']['url']) ? array($data['picture']['data']['url']) : array();
+    }
+
+    protected function isValidResponse(array $response)
+    {
+        $isError = isset($response['error']);
+        return !$isError && parent::isValidResponse($response);
     }
 
 }

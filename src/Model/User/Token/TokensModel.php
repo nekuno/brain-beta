@@ -334,8 +334,8 @@ class TokensModel
             ->setParameter('url', $url);
 
         $qb->match('(l)<-[:LIKES]-(user:User)<-[:TOKEN_OF]-(token:Token)')
-            ->where('token.resource = {resource}')
-            ->with('token')
+            ->where('token.resourceOwner = {resource}')
+            ->with('token', 'user')
             ->limit(1)
             ->setParameter('resource', $resource);
 
@@ -355,7 +355,7 @@ class TokensModel
         $qb = $this->gm->createQueryBuilder();
 
         $qb->match('(token:Token)')
-            ->where('token.resource = {resource}')
+            ->where('token.resourceOwner = {resource}')
             ->with('token')
             ->limit(1)
             ->setParameter('resource', $resource);

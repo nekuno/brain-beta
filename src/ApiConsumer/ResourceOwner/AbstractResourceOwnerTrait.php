@@ -111,15 +111,13 @@ trait AbstractResourceOwnerTrait
     public function request($url, array $query = array(), Token $token = null)
     {
         if (null != $token) {
-            return $this->authorizedHttpRequest($url, $query, $token);
+            return $this->requestAsUser($url, $query, $token);
         } else {
-            return $this->authorizedAPIRequest($url, $query);
+            return $this->requestAsClient($url, $query);
         }
     }
 
-    /**
-     * Performs an authorized HTTP request as User
-     *
+    /***
      * @param string $url The url to fetch
      * @param array $query The query of the request
      * @param Token $token
@@ -129,7 +127,7 @@ trait AbstractResourceOwnerTrait
      * @throws \Exception
      * @return array
      */
-    public function authorizedHttpRequest($url, array $query = array(), Token $token)
+    public function requestAsUser($url, array $query = array(), Token $token)
     {
         if ($this->needsRefreshing($token)) {
             if (!$this->canRefresh($token)) {
@@ -259,8 +257,7 @@ trait AbstractResourceOwnerTrait
         $token->setRefreshToken(isset($data['refreshToken']) ? $data['refreshToken'] : $token->getRefreshToken());
     }
 
-    /** Request as Nekuno */
-    public function authorizedAPIRequest($url, array $query = array())
+    public function requestAsClient($url, array $query = array())
     {
         $response = $this->executeHttpRequest($this->normalizeUrl($this->options['base_url'] . $url, $query));
 

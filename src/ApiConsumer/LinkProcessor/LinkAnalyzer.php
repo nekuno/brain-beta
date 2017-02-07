@@ -9,7 +9,7 @@ use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\UrlParserInterface;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 
 class LinkAnalyzer
 {
@@ -24,8 +24,6 @@ class LinkAnalyzer
         }
 
         $url = $link->getUrl();
-
-        (new UrlParser())->checkUrlValid($url);
 
         try{
             $parser = self::getUrlParser($url);

@@ -43,7 +43,7 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
         );
     }
 
-    public function authorizedAPIRequest($url, array $query = array())
+    public function requestAsClient($url, array $query = array())
     {
         $clientToken = $this->getOption('client_credential')['application_token'];
         $url = $this->getOption('base_url') . $url;
@@ -141,7 +141,7 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
     {
         try {
             $settingsUrl = 'account/settings.json';
-            $account = $this->authorizedHttpRequest($settingsUrl, array(), $token);
+            $account = $this->requestAsUser($settingsUrl, array(), $token);
         } catch (RequestException $e) {
             return null;
         }
@@ -157,7 +157,7 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
     public function requestStatus($statusId)
     {
         $query = array('id' => (int)$statusId);
-        $apiResponse = $this->authorizedAPIRequest('statuses/show.json', $query);
+        $apiResponse = $this->requestAsClient('statuses/show.json', $query);
 
         return $apiResponse;
     }
