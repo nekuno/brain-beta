@@ -8,7 +8,6 @@ use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
-
 class PhotoController
 {
 
@@ -40,19 +39,18 @@ class PhotoController
         if ($request->request->has('base64')) {
             $base64 = $request->request->get('base64');
             $file = base64_decode($base64);
-        } else {
-            if ($request->request->has('url')) {
-                $url = $request->request->get('url');
-                if (filter_var($url, FILTER_VALIDATE_URL) === false) {
-                    throw new ValidationException(array('photo' => array('Invalid "url" provided')));
-                }
-                $file = file_get_contents($url);
-                if (!$file) {
-                    throw new ValidationException(array('photo' => array('Unable to get photo from "url"')));
-                }
-            } else {
-                throw new ValidationException(array('photo' => array('Invalid photo provided, param "base64" or "url" must be provided')));
+        } elseif ($request->request->has('url')) {
+            $url = $request->request->get('url');
+            if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+                throw new ValidationException(array('photo' => array('Invalid "url" provided')));
             }
+            $file = @file_get_contents($url);
+            if (!$file) {
+                throw new ValidationException(array('photo' => array('Unable to get photo from "url"')));
+            }
+        } else {
+            throw new ValidationException(array('photo' => array('Invalid photo provided, param "base64" or "url" must be provided')));
+
         }
 
         $photo = $manager->create($user, $file);

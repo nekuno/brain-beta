@@ -49,7 +49,7 @@ class UserSubscriber implements EventSubscriberInterface
         $userId = $groupEvent->getUserId();
         $group = $groupEvent->getGroup();
 
-//        $this->threadManager->create($userId, $this->threadManager->getGroupThreadData($group, $userId));
+        $this->threadManager->createGroupThread($group, $userId);
     }
 
     public function onGroupRemoved(GroupEvent $groupEvent)

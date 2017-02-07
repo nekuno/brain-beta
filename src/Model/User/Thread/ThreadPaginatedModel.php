@@ -57,8 +57,9 @@ class ThreadPaginatedModel implements PaginatedInterface
         );
 
         $qb->match('(user:User {qnoow_id: { userId }})')
-            ->match('(user)-[:HAS_THREAD]->(thread:Thread)')
-            ->returns('thread')
+            ->match('(user)-[:HAS_THREAD]->(thread:Thread)');
+        $qb->optionalMatch('(thread)-[:IS_FROM_GROUP]->(group:Group)')
+            ->returns('thread', 'id(group) AS groupId')
             ->orderBy('thread.updatedAt DESC')
             ->skip('{offset}')
             ->limit('{limit}');
@@ -68,7 +69,7 @@ class ThreadPaginatedModel implements PaginatedInterface
         $threads = array();
         foreach ($result as $row) {
             /* @var $row Row */
-            $threads[] = $this->threadManager->buildThread($row->offsetGet('thread'));
+            $threads[] = $this->threadManager->build($row);
         }
 
         return $threads;

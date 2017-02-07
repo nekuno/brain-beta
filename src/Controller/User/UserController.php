@@ -70,14 +70,33 @@ class UserController
 
     /**
      * @param Application $app
-     * @param int $id
+     * @param string $slug
      * @return JsonResponse
      */
-    public function getOtherAction(Application $app, $id)
+    public function getOtherAction(Application $app, $slug)
     {
         /* @var $model UserManager */
         $model = $app['users.manager'];
-        $userArray = $model->getById($id)->jsonSerialize();
+        $userArray = $model->getBySlug($slug)->jsonSerialize();
+        $userArray = $model->deleteOtherUserFields($userArray);
+
+        if (empty($userArray)) {
+            return $app->json([], 404);
+        }
+
+        return $app->json($userArray);
+    }
+
+    /**
+     * @param Application $app
+     * @param string $slug
+     * @return JsonResponse
+     */
+    public function getPublicAction(Application $app, $slug)
+    {
+        /* @var $model UserManager */
+        $model = $app['users.manager'];
+        $userArray = $model->getPublicBySlug($slug)->jsonSerialize();
         $userArray = $model->deleteOtherUserFields($userArray);
 
         if (empty($userArray)) {
@@ -102,13 +121,9 @@ class UserController
         }
         /* @var $model UserManager */
         $model = $app['users.manager'];
-        try {
-            $model->findUserBy(array('usernameCanonical' => mb_strtolower($username)));
-        } catch (NotFoundHttpException $e) {
-            return $app->json();
-        }
+        $model->validateUsername(0, $username);
 
-        throw new NotFoundHttpException('Username not available');
+        return $app->json();
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace Manager;
 
+use Cocur\Slugify\Slugify;
 use Event\UserEvent;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\ResultSet;
@@ -19,6 +20,7 @@ use Model\User\Token\TokensModel;
 use Model\User\UserComparedStatsModel;
 use Model\User\UserStatusModel;
 use Paginator\PaginatedInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface;
@@ -48,12 +50,18 @@ class UserManager implements PaginatedInterface
      */
     protected $pm;
 
-    public function __construct(EventDispatcher $dispatcher, GraphManager $gm, PasswordEncoderInterface $encoder, PhotoManager $pm)
+    /**
+     * @var Slugify
+     */
+    protected $slugify;
+
+    public function __construct(EventDispatcher $dispatcher, GraphManager $gm, PasswordEncoderInterface $encoder, PhotoManager $pm, Slugify $slugify)
     {
         $this->dispatcher = $dispatcher;
         $this->gm = $gm;
         $this->encoder = $encoder;
         $this->pm = $pm;
+        $this->slugify = $slugify;
     }
 
     /**
@@ -178,6 +186,57 @@ class UserManager implements PaginatedInterface
         $row = $result->current();
 
         return $this->build($row);
+    }
+
+    /**
+     * @param $slug
+     * @param bool $includeGhost
+     * @return User
+     * @throws Neo4jException
+     * @throws NotFoundHttpException
+     */
+    public function getBySlug($slug, $includeGhost = false)
+    {
+
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match('(u:User {slug: { slug }})')
+            ->setParameter('slug', $slug);
+        if (!$includeGhost) {
+            $qb->where('NOT u:' . GhostUserManager::LABEL_GHOST_USER);
+        }
+
+        $qb->returns('u');
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        if ($result->count() < 1) {
+            throw new NotFoundHttpException('User not found');
+        }
+
+        /* @var $row Row */
+        $row = $result->current();
+
+        return $this->build($row);
+    }
+
+    /**
+     * @param $slug
+     * @return User
+     * @throws Neo4jException
+     * @throws NotFoundHttpException
+     */
+    public function getPublicBySlug($slug)
+    {
+        $result = $this->getResultBySlug($slug);
+        if ($result->count() < 1) {
+            throw new NotFoundHttpException('User not found');
+        }
+
+        /* @var $row Row */
+        $row = $result->current();
+
+        return $this->buildPublic($row);
     }
 
     /**
@@ -396,27 +455,40 @@ class UserManager implements PaginatedInterface
 
     public function validateUsername($userId, $username)
     {
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(u:User {username: { username }})')
-            ->where('u.qnoow_id <> { userId }')
-            ->setParameters(
-                array(
-                    'userId' => $userId,
-                    'username' => $username,
-                )
-            )
-            ->returns('u AS users')
-            ->limit(1);
-
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
-
-        if ($result->count() > 0 || !$username) {
-            throw new ValidationException(
-                array(
-                    'username' => array('Invalid username')
-                )
+        $username = trim($username);
+        if(!ctype_alnum(str_replace('_', '', $username))) {
+            throw new ValidationException(array(
+                'username' => array('Invalid username. Only letters, numbers and _ are valid.'))
             );
+        }
+        if (strlen($username) > 25) {
+            throw new ValidationException(array(
+                    'username' => array('Invalid username. Max 25 characters.'))
+            );
+        }
+        $usernameCanonical = $this->canonicalize($username);
+        $slug = $this->slugify->slugify($username);
+        foreach (array('usernameCanonical' => $usernameCanonical, 'slug' => $slug) as $key => $value) {
+            $qb = $this->gm->createQueryBuilder();
+            $qb->match("(u:User { $key: { value$key }})")
+                ->where('u.qnoow_id <> { userId }')
+                ->setParameters(array(
+                    'userId' => $userId,
+                    "value$key" => $value,
+                ))
+                ->returns('u AS users')
+                ->limit(1);
+
+            $query = $qb->getQuery();
+            $result = $query->getResultSet();
+
+            if ($result->count() > 0 || !$username) {
+                throw new ValidationException(
+                    array(
+                        'username' => array('Invalid username. Username already exists')
+                    )
+                );
+            }
         }
     }
 
@@ -431,7 +503,7 @@ class UserManager implements PaginatedInterface
         $this->validate($data);
 
         $data['userId'] = $this->getNextId();
-        $data['username'] = $this->getVerifiedUsername($data['username']);
+        $data['username'] = $this->getVerifiedUsername(trim($data['username']));
 
         $qb = $this->gm->createQueryBuilder();
         $qb->create('(u:User)')
@@ -462,6 +534,7 @@ class UserManager implements PaginatedInterface
         $this->validate($data, true);
 
         if (isset($data['username'])) {
+            $data['username'] = trim($data['username']);
             $this->validateUsername($data['userId'], $data['username']);
         }
 
@@ -1097,6 +1170,41 @@ class UserManager implements PaginatedInterface
         return $this->gm->fuseNodes($this->getNodeId($userId1), $this->getNodeId($userId2));
     }
 
+    public function setSlugs(OutputInterface $output)
+    {
+        $users = $this->getAll();
+
+        foreach ($users as $user) {
+            if (!$user->getUsernameCanonical() && $user->getSlug() == '') {
+                $qb = $this->gm->createQueryBuilder();
+                $qb->match("(u:User {qnoow_id: { id }})")
+                    ->setParameter("id", $user->getId())
+                    ->remove("u.slug")
+                    ->returns("u");
+
+                $query = $qb->getQuery();
+                $query->getResultSet();
+
+                $output->writeln("Removed void slug for user " . $user->getUsername() . " (" . $user->getId() . ")");
+                continue;
+            }
+            $slug = $user->getSlug() ?: $this->slugify->slugify($user->getUsernameCanonical());
+            $qb = $this->gm->createQueryBuilder();
+            $qb->match("(u:User {qnoow_id: { id }})")
+                ->setParameter("id", $user->getId())
+                ->set("u.slug = { slug }")
+                ->setParameter("slug", $slug)
+                ->returns("u.slug");
+
+            $query = $qb->getQuery();
+            $query->getResultSet();
+
+            $output->writeln("Slug " . $slug . " set for user " . $user->getUsername() . " (" . $user->getId() . ")");
+        }
+
+        return count($users);
+    }
+
     public function build(Row $row)
     {
 
@@ -1123,6 +1231,44 @@ class UserManager implements PaginatedInterface
                     continue;
                 }
                 $user->{$method}($value);
+            }
+        }
+
+        return $user;
+    }
+
+    public function buildPublic(Row $row)
+    {
+
+        /* @var $node Node */
+        $node = $row->offsetGet('u');
+        $properties = $node->getProperties();
+        if (isset($properties['qnoow_id'])) {
+            $properties['id'] = $properties['qnoow_id'];
+            unset($properties['qnoow_id']);
+        }
+        $user = $this->createUser();
+        $photo = $this->pm->createProfilePhoto();
+        $photo->setUserId($user->getId());
+        $user->setPhoto($photo);
+        $user->setUsername($user->getUsername());
+        $user->setPhoto($photo);
+
+        foreach ($properties as $key => $value) {
+            switch ($key) {
+                case 'id':
+                    $user->setId($value);
+                    break;
+                case 'username':
+                    $user->setUsername($value);
+                    break;
+                case 'slug':
+                    $user->setSlug($value);
+                    break;
+                case 'photo':
+                    $photo->setPath($value);
+                    $user->setPhoto($photo);
+                    break;
             }
         }
 
@@ -1158,17 +1304,10 @@ class UserManager implements PaginatedInterface
         $username = $username ?: 'user1';
 
         while ($exists) {
-            $qb = $this->gm->createQueryBuilder();
-            $qb->match('(u:User {username: { username }})')
-                ->setParameter('username', $username)
-                ->returns('u AS users')
-                ->limit(1);
-
-            $query = $qb->getQuery();
-            $result = $query->getResultSet();
-
-            $exists = $result->count() > 0;
-            if ($exists) {
+            try {
+                $this->validateUsername(0, $username);
+                $exists = false;
+            } catch (ValidationException $e) {
                 $username = 'user' . $suffix++;
             }
         }
@@ -1311,6 +1450,9 @@ class UserManager implements PaginatedInterface
         if (isset($user['email'])) {
             $user['emailCanonical'] = $this->canonicalize($user['email']);
         }
+        if (isset($user['usernameCanonical'])) {
+            $user['slug'] = $this->slugify->slugify($user['usernameCanonical']);
+        }
     }
 
     protected function updatePassword(array &$user)
@@ -1330,8 +1472,40 @@ class UserManager implements PaginatedInterface
             $url = $user['photo'];
             // TODO: Validate size and set proper extension
             $user['photo'] = 'uploads/user/' . $user['usernameCanonical'] . '_' . time() . '.jpg';
-            $this->pm->saveProfilePhoto($user['photo'], file_get_contents($url));
+            $success = $this->pm->saveProfilePhoto($user['photo'], @file_get_contents($url));
+            if (!$success) {
+                unset($user['photo']);
+            }
         }
+    }
+
+    private function getResultBySlug($slug)
+    {
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match('(u:User {slug: { slug }})')
+            ->setParameter('slug', $slug)
+            ->where('NOT u:' . GhostUserManager::LABEL_GHOST_USER);
+
+        $qb->returns('u');
+        $query = $qb->getQuery();
+
+        return $query->getResultSet();
+    }
+
+    private function createSlug($slug)
+    {
+        $usernameCanonical = urldecode($slug);
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match('(u:User{usernameCanonical: { usernameCanonical }})')
+            ->setParameter('usernameCanonical', $usernameCanonical)
+            ->where('NOT u:' . GhostUserManager::LABEL_GHOST_USER)
+            ->set('u.slug = { slug }')
+            ->setParameter('slug', $slug)
+            ->returns('u');
+
+        $query = $qb->getQuery();
+
+        return $query->getResultSet();
     }
 
     private function getNodeId($userId)
