@@ -14,6 +14,7 @@ $app->get('/users', 'users.controller:getAction');
 $app->get('/users/{slug}', 'users.controller:getOtherAction');
 $app->get('/public/users/{slug}', 'users.controller:getPublicAction');
 $app->post('/users', 'users.controller:postAction');
+$app->post('/register/{token}', 'users.controller:registerAction');
 $app->put('/users', 'users.controller:putAction');
 $app->post('/users/validate', 'users.controller:validateAction');
 $app->get('/users/available/{username}', 'users.controller:availableAction');
