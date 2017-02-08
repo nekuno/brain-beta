@@ -100,10 +100,10 @@ class RegisterService
         if (isset($oauthData)) {
             $this->setOAuthData($user, $oauthData);
         }
-        $profile = $this->pm->create($user->getId(), $profileData);
+        $this->pm->create($user->getId(), $profileData);
         $invitation = $this->im->consume($token, $user->getId());
         if (isset($invitation['invitation']['group']['id'])) {
-            $group = $this->gm->addUser($invitation['invitation']['group']['id'], $user->getId());
+            $this->gm->addUser($invitation['invitation']['group']['id'], $user->getId());
         }
         $threads = $this->threadManager->getDefaultThreads($user, User\Thread\ThreadManager::SCENARIO_DEFAULT_LITE);
         try {
@@ -115,7 +115,7 @@ class RegisterService
 
         if (count($createdThreads) < count ($threads) ) {
             sleep(5);
-            $createdThreads = $this->threadManager->createBatchForUser($user->getId(), $threads);
+            $this->threadManager->createBatchForUser($user->getId(), $threads);
         }
 
         return $user->jsonSerialize();
