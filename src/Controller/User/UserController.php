@@ -209,6 +209,21 @@ class UserController
         return $app->json($user, 201);
     }
 
+
+    /**
+     * @param Application $app
+     * @param Request $request
+     * @param string $token
+     * @return JsonResponse
+     */
+    public function registerAction(Application $app, Request $request, $token)
+    {
+        $data = $request->request->all();
+        $user = $app['register.service']->register($data['user'], $data['profile'], $token);
+
+        return $app->json($user, 201);
+    }
+
     /**
      * @param Application $app
      * @param Request $request
