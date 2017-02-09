@@ -117,6 +117,7 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
         $qb->returns(
             'anyUser.qnoow_id AS id',
             'anyUser.username AS username',
+            'anyUser.slug AS slug',
             'anyUser.photo AS photo',
             'p.birthday AS birthday',
             'p AS profile',
@@ -307,7 +308,7 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
                         $conditions[] = $this->buildMatchingCondition($value);
                         break;
                     case 'similarity':
-                        $conditions[] = $this->buildsimilarityCondition($value);
+                        $conditions[] = $this->buildSimilarityCondition($value);
                         break;
                 }
             }
@@ -382,6 +383,7 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
             $user = new UserRecommendation();
             $user->setId($row->offsetGet('id'));
             $user->setUsername($row->offsetGet('username'));
+            $user->setSlug($row->offsetGet('slug'));
             $user->setPhoto($photo);
             $user->setMatching($row->offsetGet('matching_questions'));
             $user->setSimilarity($row->offsetGet('similarity'));
@@ -413,7 +415,7 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
         return "($valuePerOne <= matching_questions)";
     }
 
-    protected function buildsimilarityCondition($value)
+    protected function buildSimilarityCondition($value)
     {
         $valuePerOne = intval($value) / 100;
 
