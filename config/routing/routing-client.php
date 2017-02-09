@@ -149,6 +149,7 @@ $app->post('/invitations/{id}/send', 'users.invitations.controller:sendAction');
  */
 
 $app->post('/tokens/{resourceOwner}', 'users.tokens.controller:postAction');
+$app->put('/tokens/{resourceOwner}', 'users.tokens.controller:putAction');
 
 /**
  * Client routes
