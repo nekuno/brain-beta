@@ -12,6 +12,7 @@ use Service\EventDispatcher;
 use Service\ImageTransformations;
 use Service\NotificationManager;
 use Service\Recommendator;
+use Service\RegisterService;
 use Service\SocialNetwork;
 use Service\TokenGenerator;
 use Service\UserAggregator;
@@ -33,6 +34,12 @@ class ServicesServiceProvider implements ServiceProviderInterface
         $app['auth.service'] = $app->share(
             function (Application $app) {
                 return new AuthService($app['users.manager'], $app['security.password_encoder'], $app['security.jwt.encoder'], $app['oauth.service']);
+            }
+        );
+
+        $app['register.service'] = $app->share(
+            function (Application $app) {
+                return new RegisterService($app['users.manager'], $app['users.ghostuser.manager'], $app['users.tokens.model'], $app['users.profile.model'], $app['users.socialprofile.manager'], $app['users.invitations.model'], $app['users.groups.model'], $app['users.threads.manager'], $app['api_consumer.resource_owner_factory']);
             }
         );
 

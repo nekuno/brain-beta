@@ -57,22 +57,6 @@ class ProfileController
      * @param User $user
      * @return JsonResponse
      */
-    public function postAction(Request $request, Application $app, User $user)
-    {
-        /* @var $model ProfileModel */
-        $model = $app['users.profile.model'];
-
-        $profile = $model->create($user->getId(), $request->request->all());
-
-        return $app->json($profile, 201);
-    }
-
-    /**
-     * @param Request $request
-     * @param Application $app
-     * @param User $user
-     * @return JsonResponse
-     */
     public function putAction(Request $request, Application $app, User $user)
     {
         /* @var $model ProfileModel */

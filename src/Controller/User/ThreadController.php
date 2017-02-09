@@ -74,26 +74,6 @@ class ThreadController
         return $app->json($thread, 201);
     }
 
-    public function createDefaultAction(Application $app, User $user)
-    {
-        $threadManager = $app['users.threads.manager'];
-
-        $threads = $threadManager->getDefaultThreads($user, User\Thread\ThreadManager::SCENARIO_DEFAULT_LITE);
-        try{
-            $createdThreads = $threadManager->createBatchForUser($user->getId(), $threads);
-        } catch (\Exception $e) {
-            sleep(5);
-            $createdThreads = $threadManager->createBatchForUser($user->getId(), $threads);
-        }
-
-        if (count($createdThreads) < count ($threads) ) {
-            sleep(5);
-            $createdThreads = $threadManager->createBatchForUser($user->getId(), $threads);
-        }
-
-        return $app->json($createdThreads, 201);
-    }
-
     /**
      * @param Application $app
      * @param Request $request

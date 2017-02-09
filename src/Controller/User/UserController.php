@@ -145,68 +145,10 @@ class UserController
      * @param Request $request
      * @return JsonResponse
      */
-    public function postAction(Application $app, Request $request)
+    public function registerAction(Application $app, Request $request)
     {
         $data = $request->request->all();
-        if (isset($data['oauth'])) {
-            $oauthData = $data['oauth'];
-            unset($data['oauth']);
-        }
-        /* @var $userManager UserManager */
-        $userManager = $app['users.manager'];
-        $user = $userManager->create($data);
-
-        if (isset($data['enabled']) && $data['enabled'] === false) {
-            $app['users.ghostuser.manager']->saveAsGhost($user->getId());
-        }
-
-        if (isset($oauthData)) {
-            /* @var $tokensModel TokensModel */
-            $tokensModel = $app['users.tokens.model'];
-            $resourceOwner = $oauthData['resourceOwner'];
-
-            $token = $tokensModel->create($user->getId(), $resourceOwner, $oauthData);
-
-            /* @var $resourceOwnerFactory ResourceOwnerFactory */
-            $resourceOwnerFactory = $app['api_consumer.resource_owner_factory'];
-
-            if ($resourceOwner === TokensModel::FACEBOOK) {
-
-                /* @var $facebookResourceOwner FacebookResourceOwner */
-                $facebookResourceOwner = $resourceOwnerFactory->build(TokensModel::FACEBOOK);
-
-                $token = $facebookResourceOwner->extend($token);
-
-                if ($token->getRefreshToken()) {
-                    $token = $facebookResourceOwner->forceRefreshAccessToken($token);
-                }
-            }
-
-            // TODO: This will not be executed since we only use Facebook for registration
-            if ($resourceOwner == TokensModel::TWITTER) {
-                /** @var TwitterResourceOwner $twitterResourceOwner */
-                $twitterResourceOwner = $resourceOwnerFactory->build($resourceOwner);
-                $profileUrl = $twitterResourceOwner->getProfileUrl($token);
-                if (!$profileUrl) {
-                    //TODO: Add information about this if it happens
-                    return $app->json($token, 201);
-                }
-                $profile = new SocialProfile($user->getId(), $profileUrl, $resourceOwner);
-
-                /* @var $ghostUserManager GhostUserManager */
-                $ghostUserManager = $app['users.ghostuser.manager'];
-                if ($ghostUser = $ghostUserManager->getBySocialProfile($profile)) {
-                    /* @var $userManager UserManager */
-                    $userManager = $app['users.manager'];
-                    $userManager->fuseUsers($user->getId(), $ghostUser->getId());
-                    $ghostUserManager->saveAsUser($user->getId());
-                } else {
-                    /** @var $socialProfilesManager SocialProfileManager */
-                    $socialProfilesManager = $app['users.socialprofile.manager'];
-                    $socialProfilesManager->addSocialProfile($profile);
-                }
-            }
-        }
+        $user = $app['register.service']->register($data['user'], $data['profile'], $data['token']);
 
         return $app->json($user, 201);
     }
