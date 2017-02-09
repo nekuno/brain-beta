@@ -14,16 +14,20 @@ use Model\User\Token\TokensModel;
 class LinkAnalyzer
 {
     /**
-     * @param PreprocessedLink $link
+     * @param PreprocessedLink $preprocessedLink
      * @return string
      */
-    public static function getProcessorName(PreprocessedLink $link)
+    public static function getProcessorName(PreprocessedLink $preprocessedLink)
     {
-        if ($link->getType()) {
-            return $link->getType();
+        if ($preprocessedLink->getType()) {
+            return $preprocessedLink->getType();
         }
 
-        $url = $link->getUrl();
+        if ($type = self::getTypeFromId($preprocessedLink)){
+            return $type;
+        }
+
+        $url = $preprocessedLink->getUrl();
 
         try{
             $parser = self::getUrlParser($url);
@@ -33,6 +37,18 @@ class LinkAnalyzer
         }
 
         return $type;
+    }
+
+    protected static function getTypeFromId(PreprocessedLink $preprocessedLink)
+    {
+        if (self::isFacebook($preprocessedLink->getUrl())){
+            $parser = new FacebookUrlParser();
+            if ($parser->isStatusId($preprocessedLink->getResourceItemId())){
+                return FacebookUrlParser::FACEBOOK_STATUS;
+            }
+        }
+
+        return null;
     }
 
     public static function getResource($url) {

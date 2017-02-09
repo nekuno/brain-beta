@@ -63,6 +63,14 @@ api_consumer.config:
             class: ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookProfileProcessor
             parser: ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser
             resourceOwner: facebook
+        facebook_page:
+            class: ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookPageProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser
+            resourceOwner: facebook
+        facebook_status:
+            class: ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookStatusProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser
+            resourceOwner: facebook
         facebook_video:
             class: ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookVideoProcessor
             parser: ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser

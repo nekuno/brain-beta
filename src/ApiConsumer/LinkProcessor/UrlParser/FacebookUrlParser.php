@@ -10,6 +10,7 @@ class FacebookUrlParser extends UrlParser
     const FACEBOOK_VIDEO = 'facebook_video';
     const FACEBOOK_PROFILE = 'facebook_profile';
     const FACEBOOK_PAGE = 'facebook_page';
+    const FACEBOOK_STATUS = 'facebook_status';
 
     static function FACEBOOK_VIDEO_TYPES(){
         return array('video_inline', 'video_autoplay');

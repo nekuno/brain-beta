@@ -115,9 +115,9 @@ class LinkProcessor
         return $links;
     }
 
-    protected function selectProcessor(PreprocessedLink $link)
+    protected function selectProcessor(PreprocessedLink $preprocessedLink)
     {
-        $processorName = LinkAnalyzer::getProcessorName($link);
+        $processorName = LinkAnalyzer::getProcessorName($preprocessedLink);
 
         return $this->processorFactory->build($processorName);
     }
