@@ -21,4 +21,6 @@ interface UrlParserInterface
 	 */
 	public function extractURLsFromText($string);
 
+	public function getUsername($url);
+
 }

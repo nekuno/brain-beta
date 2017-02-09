@@ -2,6 +2,7 @@
 
 namespace Service;
 
+use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 use Manager\UserManager;
 use Model\User\ProfileModel;
 use Model\User\SocialNetwork\SocialProfile;
@@ -11,7 +12,7 @@ use Model\User\Group\GroupModel;
 use Model\User\GhostUser\GhostUserManager;
 use Model\User\Thread\ThreadManager;
 use Model\User;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 use ApiConsumer\Factory\ResourceOwnerFactory;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;
 
@@ -135,6 +136,7 @@ class RegisterService
         }
         // TODO: This will not be executed since we only use Facebook for registration
         if ($resourceOwner == TokensModel::TWITTER) {
+            /** @var TwitterResourceOwner $resourceOwnerObject */
             $resourceOwnerObject = $this->resourceOwnerFactory->build($resourceOwner);
             $profileUrl = $resourceOwnerObject->getProfileUrl($token);
             if ($profileUrl) {

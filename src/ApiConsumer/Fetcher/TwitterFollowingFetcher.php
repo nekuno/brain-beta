@@ -3,10 +3,9 @@
 namespace ApiConsumer\Fetcher;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 use Model\Creator;
 
-class TwitterFollowingFetcher extends BasicPaginationFetcher
+class TwitterFollowingFetcher extends AbstractTwitterFetcher
 {
     protected $url = 'friends/ids.json';
 
@@ -14,18 +13,14 @@ class TwitterFollowingFetcher extends BasicPaginationFetcher
 
     protected $pageLength = 5000;
 
-    /**
-     * @var TwitterResourceOwner
-     */
-    protected $resourceOwner;
-
-    protected function getQuery()
+    protected function getQuery($paginationId = null)
     {
-
-        return array(
-            'count' => $this->pageLength,
+        return array_merge(
+            parent::getQuery($paginationId),
+            array(
+                'count' => $this->pageLength,
+            )
         );
-
     }
 
     protected function getItemsFromResponse($response)
@@ -44,13 +39,12 @@ class TwitterFollowingFetcher extends BasicPaginationFetcher
         return $paginationId;
     }
 
-    //TODO: Refactor to use RO->processMultipleProfiles
     /**
      * @inheritdoc
      */
     protected function parseLinks(array $rawFeed)
     {
-        $lookups = $this->resourceOwner->lookupUsersBy('user_id', $rawFeed);
+        $lookups = $this->resourceOwner->lookupUsersBy('user_id', $rawFeed, $this->token);
 
         $links = array();
         foreach ($lookups as $lookupResponse){

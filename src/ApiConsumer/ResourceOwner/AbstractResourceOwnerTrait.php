@@ -6,23 +6,17 @@ use ApiConsumer\Event\OAuthTokenEvent;
 use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
 use Buzz\Client\ClientInterface as HttpClientInterface;
 use ApiConsumer\Exception\TokenException;
+use Buzz\Message\Response;
 use HWI\Bundle\OAuthBundle\DependencyInjection\Configuration;
 use HWI\Bundle\OAuthBundle\OAuth\RequestDataStorageInterface;
 use HWI\Bundle\OAuthBundle\Security\OAuthUtils;
+use Model\User\Token\Token;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use Symfony\Component\Security\Http\HttpUtils;
 use Buzz\Message\RequestInterface as HttpRequestInterface;
 
-/**
- * Trait AbstractResourceOwnerTrait
- *
- * @package ApiConsumer\ResourceOwner
- * @method normalizeUrl ($a, $b)
- * @method generateNonce
- * @method getResponseContent($a)
- */
 trait AbstractResourceOwnerTrait
 {
     /**
@@ -111,45 +105,43 @@ trait AbstractResourceOwnerTrait
      * Performs request as an user if token is provided, as Nekuno otherwise
      * @param $url
      * @param array $query
-     * @param array $token
+     * @param Token $token
      * @return array
      */
-    public function request($url, array $query = array(), array $token = array())
+    public function request($url, array $query = array(), Token $token = null)
     {
-        if (!empty($token)) {
-            return $this->authorizedHttpRequest($url, $query, $token);
+        if (null != $token) {
+            return $this->requestAsUser($url, $query, $token);
         } else {
-            return $this->authorizedAPIRequest($url, $query);
+            return $this->requestAsClient($url, $query);
         }
     }
 
-    /**
-     * Performs an authorized HTTP request as User
-     *
+    /***
      * @param string $url The url to fetch
      * @param array $query The query of the request
-     * @param array $token The token values as an array
+     * @param Token $token
      *
      * @throws \Exception
      * @throws \GuzzleHttp\Exception\RequestException
      * @throws \Exception
      * @return array
      */
-    public function authorizedHttpRequest($url, array $query = array(), array $token = array())
+    public function requestAsUser($url, array $query = array(), Token $token)
     {
         if ($this->needsRefreshing($token)) {
             if (!$this->canRefresh($token)) {
-                $this->manageTokenExpired($token, sprintf('Refresh token not present for user "%s"', $token['username']));
+                $this->manageTokenExpired($token, sprintf('Refresh token not present for user "%s"', $token->getUserId()));
             }
 
             try {
-                $data = $this->refreshAccessToken($token);
+                $data = $this->refreshAccessToken($token->toArray());
             } catch (\Exception $e) {
                 $data = array();
                 $this->manageTokenExpired($token, $e->getMessage());
             }
 
-            $token = $this->addOauthData($data, $token);
+            $this->addOauthData($data, $token);
             $event = new OAuthTokenEvent($token);
             $this->dispatcher->dispatch(\AppEvents::TOKEN_REFRESHED, $event);
         }
@@ -159,7 +151,7 @@ trait AbstractResourceOwnerTrait
         return $this->getResponseContent($response);
     }
 
-    protected function manageTokenExpired($token, $message)
+    protected function manageTokenExpired(Token $token, $message)
     {
         $this->dispatchTokenExpired($token);
         $e = new TokenException($message);
@@ -167,77 +159,107 @@ trait AbstractResourceOwnerTrait
         throw $e;
     }
 
-    private function dispatchTokenExpired($token)
+    private function dispatchTokenExpired(Token $token)
     {
-        if (isset($token['network']) && $token['network'] == $this->getName()) {
-            $event = new OAuthTokenEvent($token);
-            $this->dispatcher->dispatch(\AppEvents::TOKEN_EXPIRED, $event);
-        }
+        $event = new OAuthTokenEvent($token);
+        $this->dispatcher->dispatch(\AppEvents::TOKEN_EXPIRED, $event);
     }
 
-    /**
-     * @param $url
-     * @param array $query
-     * @param array $token
-     * @return \HttpResponse
-     */
-    protected function sendAuthorizedRequest($url, array $query = array(), array $token = array())
+    protected function sendAuthorizedRequest($url, array $query = array(), Token $token = null)
     {
         if (Configuration::getResourceOwnerType($this->name) == 'oauth2') {
-            // oauth2
-            $query = array_merge($query, array('access_token' => $token['oauthToken']));
-
-            return $this->httpRequest($this->normalizeUrl($url, $query));
+            $query = $this->buildOauth2Query($query, $token);
         } else {
-            // oauth1
-            $parameters = array_merge(
-                array(
-                    'oauth_consumer_key' => $this->options['consumer_key'],
-                    'oauth_timestamp' => time(),
-                    'oauth_nonce' => $this->generateNonce(),
-                    'oauth_version' => '1.0',
-                    'oauth_signature_method' => $this->options['signature_method'],
-                    'oauth_token' => isset($token['oauthToken']) ? $token['oauthToken'] : null,
-                ),
-                $query
-            );
-
-            $parameters['oauth_signature'] = OAuthUtils::signRequest(
-                HttpRequestInterface::METHOD_GET,
-                $url,
-                $parameters,
-                $this->options['consumer_secret'],
-                isset($token['oauthTokenSecret']) ? $token['oauthTokenSecret'] : null,
-                $this->options['signature_method']
-            );
-
-            return $this->httpRequest($this->normalizeUrl($url, $parameters));
+            $query = $this->buildOauth1Query($url, $query, $token);
         }
+
+        $normalizedUrl = $this->normalizeUrl($url, $query);
+
+        return $this->executeHttpRequest($normalizedUrl);
     }
 
-    protected function needsRefreshing($token)
+    protected function buildOauth2Query($query, Token $token)
     {
-        return isset($token['expireTime']) && ($token['expireTime'] <= time() && $token['expireTime'] != 0);
+        $query = array_merge($query, array('access_token' => $token->getOauthToken()));
+
+        return $query;
     }
 
-    protected function canRefresh($token)
+    protected function buildOauth1Query($url, $query, Token $token)
     {
-        return isset($token['refreshToken']);
+        $parameters = array_merge(
+            array(
+                'oauth_consumer_key' => $this->options['consumer_key'],
+                'oauth_timestamp' => time(),
+                'oauth_nonce' => $this->generateNonce(),
+                'oauth_version' => '1.0',
+                'oauth_signature_method' => $this->options['signature_method'],
+                'oauth_token' => $token->getOauthToken(),
+            ),
+            $query
+        );
+
+        $parameters['oauth_signature'] = $this->buildOauthSignature($url, $parameters, $token);
+
+        return $parameters;
     }
 
-    protected function addOauthData($data, $token)
+    protected function buildOauthSignature($url, $parameters, Token $token)
     {
-        $token['oauthToken'] = $data['access_token'];
-        $token['expireTime'] = (int)$token['createdTime'] + (int)$data['expires_in'] - $this->expire_time_margin;
-        $token['refreshToken'] = isset($data['refreshToken']) ? $data['refreshToken'] : isset($token['refreshToken']) ? $token['refreshToken'] : null;
-
-        return $token;
+        return OAuthUtils::signRequest(
+            HttpRequestInterface::METHOD_GET,
+            $url,
+            $parameters,
+            $this->options['consumer_secret'],
+            $token->getOauthTokenSecret(),
+            $this->options['signature_method']
+        );
     }
 
-    /** Request as Nekuno */
-    public function authorizedAPIRequest($url, array $query = array(), array $token = array())
+    protected function executeHttpRequest($url, $content = null, $headers = array(), $method = null)
     {
-        $response = $this->httpRequest($this->normalizeUrl($this->options['base_url'] . $url, $query));
+        $response = $this->httpRequest($url, $content, $headers, $method);
+
+        if ($this->isAPILimitReached($response)) {
+            $this->waitForAPILimit();
+            $response = $this->httpRequest($url);
+        }
+
+        return $response;
+    }
+
+    protected function isAPILimitReached(Response $response)
+    {
+        return false;
+    }
+
+    protected function waitForAPILimit()
+    {
+    }
+
+    protected function needsRefreshing(Token $token)
+    {
+        $hasExpirationTime = $token->getExpireTime() != 0;
+        $hasExpired = $token->getExpireTime() <= time();
+
+        return $hasExpirationTime && $hasExpired;
+    }
+
+    protected function canRefresh(Token $token)
+    {
+        return $token->getRefreshToken();
+    }
+
+    protected function addOauthData($data, Token $token)
+    {
+        $token->setOauthToken($data['access_token']);
+        $token->setExpireTime(time() + (int)$data['expires_in'] - $this->expire_time_margin);
+        $token->setRefreshToken(isset($data['refreshToken']) ? $data['refreshToken'] : $token->getRefreshToken());
+    }
+
+    public function requestAsClient($url, array $query = array())
+    {
+        $response = $this->executeHttpRequest($this->normalizeUrl($this->options['base_url'] . $url, $query));
 
         return $this->getResponseContent($response);
     }
@@ -269,20 +291,5 @@ trait AbstractResourceOwnerTrait
                 'client_secret' => '',
             )
         );
-    }
-
-    /**
-     * @param $user
-     * @return string | null
-     */
-    public function getUsername($user)
-    {
-        if (!$user) {
-            return null;
-        }
-        $url = array_key_exists('url', $user) ? $user['url'] : null;
-        $parts = explode('/', $url);
-
-        return end($parts);
     }
 }

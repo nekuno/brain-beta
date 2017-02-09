@@ -4,33 +4,64 @@ namespace ApiConsumer\Fetcher;
 
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use Model\User\Token\Token;
 
 class GoogleProfileFetcher extends AbstractFetcher{
 
+    protected $url = 'plus/v1/people/';
+
+    /**
+     * Not usually used
+     * @inheritdoc
+     */
+    public function fetchLinksFromUserFeed(Token $token)
+    {
+        $this->setToken($token);
+        $url = $this->getUrl($token->getResourceId());
+        $query = array();
+        $response = $this->resourceOwner->requestAsUser($url, $query, $token);
+
+        return $this->parseLinks($response);
+    }
 
     /**
      * {@inheritDoc}
      */
-    public function fetchLinksFromUserFeed($user, $public)
+    public function fetchAsClient($username)
     {
-        $this->setUser($user);
-        $response = $this->resourceOwner->authorizedApiRequest($this->getUrl(), $this->getQuery(), $this->user);
+        $url = $this->getUrl($username);
+        $query = array();
 
-        $preprocessedLink = new PreprocessedLink($response['url']);
-        $link = array('resource' => $this->resourceOwner->getName());
-        $preprocessedLink->setFirstLink($link);
-        return array($preprocessedLink);
+        $response = $this->resourceOwner->requestAsClient($url, $query, $this->token);
+
+        return $this->parseLinks($response);
     }
 
-    public function getUrl()
+    public function getUrl($username = null)
     {
-        return 'plus/v1/people/' . $this->user['googleID'];
+        return  $username ? $this->url . $username : $this->url;
     }
 
-    public function getResourceOwner()
+    protected function parseLinks($response)
     {
-        return $this->resourceOwner;
+        $preprocessedLinks = array();
+        if (isset($response['url'])){
+            $preprocessedLinks[] = $this->buildPreprocessedLink($response['url']);
+        }
+        if (isset($response['urls'])){
+            foreach ($response['urls'] as $url){
+                $preprocessedLinks[] = $this->buildPreprocessedLink($url);
+            }
+        }
+
+        return $preprocessedLinks;
     }
 
+    protected function buildPreprocessedLink($url)
+    {
+        $preprocessedLink = new PreprocessedLink($url['value']);
+        $preprocessedLink->setSource($this->resourceOwner->getName());
+        return $preprocessedLink;
+    }
 
 }

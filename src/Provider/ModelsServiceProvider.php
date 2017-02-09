@@ -46,7 +46,7 @@ use Model\User\Thread\ContentThreadManager;
 use Model\User\Thread\ThreadManager;
 use Model\User\Thread\ThreadPaginatedModel;
 use Model\User\Thread\UsersThreadManager;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 use Model\User\UserFilterModel;
 use Model\User\UserStatsManager;
 use Manager\UserManager;

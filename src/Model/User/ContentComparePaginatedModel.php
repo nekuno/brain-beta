@@ -4,6 +4,7 @@ namespace Model\User;
 
 use Everyman\Neo4j\Node;
 use Model\LinkModel;
+use Model\User\Token\TokensModel;
 use Paginator\PaginatedInterface;
 use Model\Neo4j\GraphManager;
 use Service\Validator;
@@ -266,11 +267,7 @@ class ContentComparePaginatedModel implements PaginatedInterface
     // TODO: Useful for filtering by social networks
     private function buildSocialNetworkCondition($userId, $relationship)
     {
-        $tokens = $this->tokensModel->getByUserOrResource($userId);
-        $socialNetworks = array();
-        foreach ($tokens as $token) {
-            $socialNetworks[] = $token['resourceOwner'];
-        }
+        $socialNetworks = $this->tokensModel->getConnectedNetworks($userId);
         $whereSocialNetwork = array();
         foreach ($socialNetworks as $socialNetwork) {
             $whereSocialNetwork[] = "EXISTS ($relationship.$socialNetwork)";

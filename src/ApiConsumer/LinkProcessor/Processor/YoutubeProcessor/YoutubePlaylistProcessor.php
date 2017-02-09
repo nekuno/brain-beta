@@ -3,6 +3,7 @@
 namespace ApiConsumer\LinkProcessor\Processor\YoutubeProcessor;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use Model\User\Token\Token;
 use Model\Video;
 
 class YoutubePlaylistProcessor extends AbstractYoutubeProcessor
@@ -26,9 +27,9 @@ class YoutubePlaylistProcessor extends AbstractYoutubeProcessor
         return $this->parser->getPlaylistId($url);
     }
 
-    protected function requestSpecificItem($id)
+    protected function requestSpecificItem($id, Token $token = null)
     {
-        return $this->resourceOwner->requestPlaylist($id);
+        return $this->resourceOwner->requestPlaylist($id, $token);
     }
 
 }

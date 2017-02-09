@@ -4,6 +4,7 @@ namespace ApiConsumer\Fetcher;
 
 use ApiConsumer\ResourceOwner\AbstractResourceOwnerTrait;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwnerInterface;
+use Model\User\Token\Token;
 
 abstract class AbstractFetcher implements FetcherInterface
 {
@@ -23,9 +24,9 @@ abstract class AbstractFetcher implements FetcherInterface
     protected $resourceOwner;
 
     /**
-     * @var array
+     * @var Token
      */
-    protected $user;
+    protected $token;
 
     /**
      * @param ResourceOwnerInterface $resourceOwner
@@ -45,28 +46,14 @@ abstract class AbstractFetcher implements FetcherInterface
         $this->url = $url;
     }
 
-    /**
-     * Get query
-     *
-     * @return array
-     */
-    protected function getQuery()
+
+    public function getToken()
     {
-        return array();
+        return $this->token;
     }
 
-    public function getUser()
+    public function setToken(Token $token)
     {
-        return $this->user;
+        $this->token = $token;
     }
-
-    public function setUser($user)
-    {
-        $this->user = $user;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    abstract public function fetchLinksFromUserFeed($user, $public);
 }

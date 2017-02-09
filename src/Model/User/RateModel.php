@@ -8,6 +8,7 @@ use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
+use Model\User\Token\TokensModel;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 

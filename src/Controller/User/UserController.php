@@ -2,19 +2,20 @@
 
 namespace Controller\User;
 
+use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 use Model\User\ContentPaginatedModel;
-use Model\User\Group\GroupModel;
 use Model\User\ProfileFilterModel;
 use Model\User\RateModel;
 use Model\User\UserStatsManager;
 use Manager\UserManager;
 use Model\User;
+use Service\AuthService;
 use Service\Recommendator;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 use Model\User\SocialNetwork\SocialProfile;
 use ApiConsumer\Factory\ResourceOwnerFactory;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;

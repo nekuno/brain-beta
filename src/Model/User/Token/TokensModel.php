@@ -1,16 +1,16 @@
 <?php
 
-namespace Model\User;
+namespace Model\User\Token;
 
 use Doctrine\ORM\EntityManager;
 use Event\AccountConnectEvent;
 use Everyman\Neo4j\Node;
+use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
 use HWI\Bundle\OAuthBundle\DependencyInjection\Configuration;
 use Model\Entity\DataStatus;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
-use Model\User\SocialNetwork\SocialProfile;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -56,9 +56,12 @@ class TokensModel
         );
     }
 
+    /**
+     * @param $id
+     * @return Token[]
+     */
     public function getAll($id)
     {
-
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(user:User)<-[:TOKEN_OF]-(token:Token)')
             ->where('user.qnoow_id = { id }')
@@ -79,12 +82,11 @@ class TokensModel
     /**
      * @param int $id
      * @param string $resourceOwner
-     * @return array
+     * @return Token
      * @throws NotFoundHttpException
      */
     public function getById($id, $resourceOwner)
     {
-
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(user:User)<-[:TOKEN_OF]-(token:Token)')
             ->where('user.qnoow_id = { id }', 'token.resourceOwner = { resourceOwner }')
@@ -113,7 +115,7 @@ class TokensModel
      * @param int $id
      * @param string $resourceOwner
      * @param array $data
-     * @return array
+     * @return Token
      * @throws ValidationException|NotFoundHttpException|MethodNotAllowedHttpException
      */
     public function create($id, $resourceOwner, array $data)
@@ -157,7 +159,7 @@ class TokensModel
      * @param int $id
      * @param string $resourceOwner
      * @param array $data
-     * @return array
+     * @return Token
      * @throws ValidationException|NotFoundHttpException
      */
     public function update($id, $resourceOwner, array $data)
@@ -183,7 +185,7 @@ class TokensModel
     /**
      * @param int $id
      * @param string $resourceOwner
-     * @return array
+     * @return Token
      */
     public function remove($id, $resourceOwner)
     {
@@ -322,53 +324,53 @@ class TokensModel
 
     }
 
-    /**
-     * @param int $id User id
-     * @param string $resourceOwner Resource owner
-     * @return array
-     */
-    public function getByUserOrResource($id = null, $resourceOwner = null)
+    public function getByLikedUrl($url, $resource)
     {
-
         $qb = $this->gm->createQueryBuilder();
-        $qb->match('(user:User)<-[:TOKEN_OF]-(token:Token)');
 
-        if ($id || $resourceOwner) {
+        $qb->match('(l:Link{url: {url}})')
+            ->with('l')
+            ->limit(1)
+            ->setParameter('url', $url);
 
-            $wheres = array();
-            if ($id) {
-                $qb->setParameter('id', (integer)$id);
-                $wheres[] = 'user.qnoow_id = { id }';
-            }
-            if ($resourceOwner) {
-                $qb->setParameter('resourceOwner', $resourceOwner);
-                $wheres[] = 'token.resourceOwner = { resourceOwner }';
-            }
+        $qb->match('(l)<-[:LIKES]-(user:User)<-[:TOKEN_OF]-(token:Token)')
+            ->where('token.resourceOwner = {resource}')
+            ->with('token', 'user')
+            ->limit(1)
+            ->setParameter('resource', $resource);
 
-            $qb->where($wheres);
-
-        }
-        $qb->returns('user', 'token')
-            ->orderBy('user.qnoow_id', 'token.resourceOwner');
+        $qb->returns('user', 'token');
 
         $result = $qb->getQuery()->getResultSet();
 
-        $return = array();
-        /* @var $row Row */
-        foreach ($result as $row) {
-            /* @var $user Node */
-            $user = $row->offsetGet('user');
-            $ids = array(
-                'facebookID' => $user->getProperty('facebookID'),
-                'googleID' => $user->getProperty('googleID'),
-                'twitterID' => $user->getProperty('twitterID'),
-                'spotifyID' => $user->getProperty('spotifyID'),
-            );
-
-            $return[] = array_merge($this->build($row), $ids);
+        if ($result->count() == 0) {
+            return null;
         }
 
-        return $return;
+        return $this->build($result->current());
+    }
+
+    public function getOneByResource($resource)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(token:Token)')
+            ->where('token.resourceOwner = {resource}')
+            ->with('token')
+            ->limit(1)
+            ->setParameter('resource', $resource);
+
+        $qb->match('(token)-[:TOKEN_OF]->(user:User)');
+
+        $qb->returns('user', 'token');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() == 0) {
+            return null;
+        }
+
+        return $this->build($result->current());
     }
 
     public function getUnconnectedNetworks($userId)
@@ -380,7 +382,7 @@ class TokensModel
         foreach ($resourceOwners as $resource) {
             $connected = false;
             foreach ($tokens as $token) {
-                if ($token['resourceOwner'] == $resource) {
+                if ($token->getResourceOwner() == $resource) {
                     $connected = true;
                 }
             }
@@ -399,54 +401,31 @@ class TokensModel
 
         $resourceOwners = array();
         foreach ($tokens as $token) {
-            $resourceOwners[] = $token['resourceOwner'];
+            $resourceOwners[] = $token->getResourceOwner();
         }
 
         return $resourceOwners;
     }
 
-    /**
-     * For now, build just array for public fetching
-     * @param SocialProfile $profile
-     * @return array
-     */
-    public function buildFromSocialProfile(SocialProfile $profile)
-    {
-        return array(
-            'id' => $profile->getUserId(),
-            'url' => $profile->getUrl(),
-            'resourceOwner' => $profile->getResource(),
-        );
-    }
-
     protected function build(Row $row)
     {
-        /* @var $user Node */
-        $user = $row->offsetGet('user');
-        /* @var $node Node */
-        $node = $row->offsetGet('token');
-        $properties = $node->getProperties();
+        /* @var $userNode Node */
+        $userNode = $row->offsetGet('user');
+        /* @var $tokenNode Node */
+        $tokenNode = $row->offsetGet('token');
 
-        $ordered = array();
-        foreach (array_keys($this->getMetadata()) as $key) {
-            if (array_key_exists($key, $properties)) {
-                $ordered[$key] = $properties[$key];
-                unset($properties[$key]);
-            } else {
-                $ordered[$key] = null;
-            }
-        }
+        $token = new Token();
+        $token->setUserId($userNode->getProperty('qnoow_id'));
+        $token->setCreatedTime($tokenNode->getProperty('createdTime'));
+        $token->setExpireTime($tokenNode->getProperty('expireTime'));
+        $token->setResourceOwner($tokenNode->getProperty('resourceOwner'));
+        $token->setUpdatedTime($tokenNode->getProperty('updatedTime'));
+        $token->setResourceId($tokenNode->getProperty('resourceId'));
+        $token->setOauthToken($tokenNode->getProperty('oauthToken'));
+        $token->setOauthTokenSecret($tokenNode->getProperty('oauthTokenSecret'));
+        $token->setRefreshToken($tokenNode->getProperty('refreshToken'));
 
-        $properties = $ordered + $properties;
-
-        return array_merge(
-            array(
-                'id' => $user->getProperty('qnoow_id'),
-                'username' => $user->getProperty('username'),
-                'email' => $user->getProperty('email')
-            ),
-            $properties
-        );
+        return $token;
     }
 
     protected function getMetadata()
@@ -501,14 +480,14 @@ class TokensModel
             $userNode->save();
         }
 
-	    $type = Configuration::getResourceOwnerType($resourceOwner);
-	    if ($type == 'oauth1' && $data['oauthToken']) {
-		    $oauthToken = substr($data['oauthToken'], 0, strpos($data['oauthToken'], ':'));
-		    $oauthTokenSecret = substr($data['oauthToken'], strpos($data['oauthToken'], ':') + 1, strpos($data['oauthToken'], '@') - strpos($data['oauthToken'], ':') - 1);
+        $type = Configuration::getResourceOwnerType($resourceOwner);
+        if ($type == 'oauth1' && $data['oauthToken']) {
+            $oauthToken = substr($data['oauthToken'], 0, strpos($data['oauthToken'], ':'));
+            $oauthTokenSecret = substr($data['oauthToken'], strpos($data['oauthToken'], ':') + 1, strpos($data['oauthToken'], '@') - strpos($data['oauthToken'], ':') - 1);
 
-		    $data['oauthToken'] = $oauthToken;
-		    $data['oauthTokenSecret'] = $oauthTokenSecret;
-	    }
+            $data['oauthToken'] = $oauthToken;
+            $data['oauthTokenSecret'] = $oauthTokenSecret;
+        }
 
         $tokenNode->setProperty('resourceOwner', $resourceOwner);
         $tokenNode->setProperty('updatedTime', time());

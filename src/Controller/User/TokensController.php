@@ -5,12 +5,13 @@ namespace Controller\User;
 
 use ApiConsumer\Factory\ResourceOwnerFactory;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;
+use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 use Manager\UserManager;
 use Model\User;
 use Model\User\GhostUser\GhostUserManager;
 use Model\User\SocialNetwork\SocialProfile;
 use Model\User\SocialNetwork\SocialProfileManager;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -36,14 +37,15 @@ class TokensController
                 $token = $facebookResourceOwner->extend($token);
             }
 
-            if (array_key_exists('refreshToken', $token) && is_null($token['refreshToken'])) {
+            if ($token->getRefreshToken()) {
                 $token = $facebookResourceOwner->forceRefreshAccessToken($token);
             }
         }
 
         if ($resourceOwner == TokensModel::TWITTER) {
-            $resourceOwnerObject = $resourceOwnerFactory->build($resourceOwner);
-            $profileUrl = $resourceOwnerObject->getProfileUrl($token);
+            /** @var TwitterResourceOwner $twitterResourceOwner */
+            $twitterResourceOwner = $resourceOwnerFactory->build($resourceOwner);
+            $profileUrl = $twitterResourceOwner->getProfileUrl($token);
             if (!$profileUrl) {
                 //TODO: Add information about this if it happens
                 return $app->json($token, 201);

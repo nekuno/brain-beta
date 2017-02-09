@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManager;
 use Event\LookUpSocialNetworksEvent;
 use Model\Neo4j\GraphManager;
 use Model\Entity\LookUpData;
+use Model\User\Token\TokensModel;
 use Service\LookUp\LookUp;
 use Service\LookUp\LookUpFullContact;
 use Service\LookUp\LookUpPeopleGraph;

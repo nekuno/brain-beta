@@ -3,20 +3,14 @@
 namespace ApiConsumer\Fetcher;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 use Model\Link;
 
-abstract class AbstractTweetsFetcher extends BasicPaginationFetcher
+abstract class AbstractTweetsFetcher extends AbstractTwitterFetcher
 {
 
     protected $paginationField = 'max_id';
 
     protected $pageLength = 200;
-
-    /**
-     * @var TwitterResourceOwner
-     */
-    protected $resourceOwner;
 
     protected $lastPaginationId = "";
 
@@ -32,7 +26,7 @@ abstract class AbstractTweetsFetcher extends BasicPaginationFetcher
         }
 
         $lastItem = end($response);
-        $paginationId = isset($lastItem['id_str']) ? $lastItem : null;
+        $paginationId = isset($lastItem['id_str']) ? $lastItem['id_str'] : null;
 
         if ($paginationId == $this->lastPaginationId) {
             return null;

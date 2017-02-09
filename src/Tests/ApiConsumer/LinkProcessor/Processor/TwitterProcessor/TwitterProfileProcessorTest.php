@@ -7,7 +7,7 @@ use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterProfileProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 
 class TwitterProfileProcessorTest extends \PHPUnit_Framework_TestCase
 {

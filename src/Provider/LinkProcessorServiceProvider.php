@@ -62,7 +62,7 @@ class LinkProcessorServiceProvider implements ServiceProviderInterface
         $app['api_consumer.link_processor'] = $app->share(
             function ($app) {
                 return new LinkProcessor(
-                    $app['api_consumer.processor_factory'], $app['api_consumer.link_processor.image_analyzer']
+                    $app['api_consumer.processor_factory'], $app['api_consumer.link_processor.image_analyzer'], $app['users.tokens.model']
                 );
             }
         );
