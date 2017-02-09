@@ -264,6 +264,11 @@ trait AbstractResourceOwnerTrait
         return $this->getResponseContent($response);
     }
 
+    public function canRequestAsClient()
+    {
+        return false;
+    }
+
     /**
      * Configure the option resolver
      *
