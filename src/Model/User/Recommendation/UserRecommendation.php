@@ -192,6 +192,7 @@ class UserRecommendation implements \JsonSerializable
         return array(
             'id' => $this->getId(),
             'username' => $this->getUsername(),
+            'slug' => $this->getSlug(),
             'photo' => $this->getPhoto(),
             'matching' => $this->getMatching(),
             'similarity' => $this->getSimilarity(),
