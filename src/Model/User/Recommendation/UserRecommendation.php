@@ -8,6 +8,7 @@ class UserRecommendation implements \JsonSerializable
 {
     protected $id;
     protected $username;
+    protected $slug;
     /**
      * @var ProfilePhoto
      */
@@ -49,6 +50,22 @@ class UserRecommendation implements \JsonSerializable
     public function setUsername($username)
     {
         $this->username = $username;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getSlug()
+    {
+        return $this->slug;
+    }
+
+    /**
+     * @param mixed $slug
+     */
+    public function setSlug($slug)
+    {
+        $this->slug = $slug;
     }
 
     /**
