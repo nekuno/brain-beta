@@ -466,9 +466,9 @@ class UserManager implements PaginatedInterface
                     'username' => array('Invalid username. Max 25 characters.'))
             );
         }
-        $usernameCanonical = $this->canonicalize($username);
-        $slug = $this->slugify->slugify($username);
-        foreach (array('usernameCanonical' => $usernameCanonical, 'slug' => $slug) as $key => $value) {
+        $user = array('username' => $username);
+        $this->updateCanonicalFields($user);
+        foreach (array('usernameCanonical' => $user['usernameCanonical'], 'slug' => $user['slug']) as $key => $value) {
             $qb = $this->gm->createQueryBuilder();
             $qb->match("(u:User { $key: { value$key }})")
                 ->where('u.qnoow_id <> { userId }')
@@ -1188,7 +1188,7 @@ class UserManager implements PaginatedInterface
                 $output->writeln("Removed void slug for user " . $user->getUsername() . " (" . $user->getId() . ")");
                 continue;
             }
-            $slug = $user->getSlug() ?: $this->slugify->slugify($user->getUsernameCanonical());
+            $slug = $this->slugify->slugify($user->getUsernameCanonical(), '_');
             $qb = $this->gm->createQueryBuilder();
             $qb->match("(u:User {qnoow_id: { id }})")
                 ->setParameter("id", $user->getId())
@@ -1451,7 +1451,7 @@ class UserManager implements PaginatedInterface
             $user['emailCanonical'] = $this->canonicalize($user['email']);
         }
         if (isset($user['usernameCanonical'])) {
-            $user['slug'] = $this->slugify->slugify($user['usernameCanonical']);
+            $user['slug'] = $this->slugify->slugify($user['usernameCanonical'], '_');
         }
     }
 
