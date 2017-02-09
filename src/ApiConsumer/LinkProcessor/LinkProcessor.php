@@ -87,7 +87,7 @@ class LinkProcessor
         $hasToken = null != $preprocessedLink->getToken() && $preprocessedLink->getToken() instanceof Token;
 
         if (!$hasToken) {
-            return false;
+            return true;
         }
 
         $resource = LinkAnalyzer::getResource($preprocessedLink->getUrl());

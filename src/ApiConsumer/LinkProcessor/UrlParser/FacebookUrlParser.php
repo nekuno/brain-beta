@@ -16,10 +16,14 @@ class FacebookUrlParser extends UrlParser
         return array('video_inline', 'video_autoplay');
     }
 
+    static function FACEBOOK_PAGE_TYPES(){
+        return array('avatar');
+    }
+
     public function getUrlType($url)
     {
-        if ($this->isFacebookProfile($url)) {
-            return self::FACEBOOK_PROFILE;
+        if ($this->isFacebookPage($url)) {
+            return self::FACEBOOK_PAGE;
         }
 
         throw new UrlNotValidException($url);
@@ -43,7 +47,7 @@ class FacebookUrlParser extends UrlParser
      * @param $url
      * @return bool
      */
-    protected function isFacebookProfile($url)
+    protected function isFacebookPage($url)
     {
         $reserved_urls = array('photo.php', 'settings', 'support', '#', 'groups', 'help');
 
