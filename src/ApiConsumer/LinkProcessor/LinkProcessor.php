@@ -51,7 +51,7 @@ class LinkProcessor
     {
         $processor = $this->selectProcessor($preprocessedLink);
 
-        if (!$processor->getResourceOwner()->canRequestAsClient()){
+        if (null != $processor->getResourceOwner() && !$processor->getResourceOwner()->canRequestAsClient()){
             $this->fixToken($preprocessedLink);
         }
 
