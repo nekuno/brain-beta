@@ -79,6 +79,7 @@ class UserRecommendationPaginatedModel extends AbstractUserPaginatedModel
         $qb->returns(
             'anyUser.qnoow_id AS id,
              anyUser.username AS username,
+             anyUser.slug AS slug,
              anyUser.photo AS photo,
              p.birthday AS birthday,
              p AS profile,

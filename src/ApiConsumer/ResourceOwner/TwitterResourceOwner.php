@@ -58,6 +58,11 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
         return $this->getResponseContent($response);
     }
 
+    public function canRequestAsClient()
+    {
+        return true;
+    }
+
     public function refreshAccessToken($token, array $extraParameters = array())
     {
         $refreshToken = $token['refreshToken'];

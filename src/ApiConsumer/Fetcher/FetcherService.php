@@ -18,10 +18,6 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-/**
- * Class FetcherService
- * @package ApiConsumer\Fetcher
- */
 class FetcherService implements LoggerAwareInterface
 {
 
@@ -90,8 +86,6 @@ class FetcherService implements LoggerAwareInterface
 
         return $links;
     }
-
-    //public function fetAllUnconnected($userId, $exclude = array())
 
     public function fetchUser($userId, $resourceOwner, $exclude = array())
     {

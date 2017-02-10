@@ -93,7 +93,7 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
 
         $links = $this->parseLinks($rawFeed);
 
-        $this->addSource($links);
+        $this->addSourceAndToken($links, $token);
 
         return $links;
     }
@@ -118,7 +118,7 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
 
         $links = $this->parseLinks($rawFeed);
 
-        $this->addSource($links);
+        $this->addSourceAndToken($links);
 
         return $links;
     }
@@ -129,12 +129,16 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
         $this->rawFeed = array();
     }
 
-    /** @param $links PreprocessedLink[] */
-    protected function addSource($links)
+    /**
+     * @param $links PreprocessedLink[]
+     * @param null $token
+     */
+    protected function addSourceAndToken($links, $token = null)
     {
         foreach ($links as $link) {
             $source = $link->getSource() ?: $this->resourceOwner->getName();
             $link->setSource($source);
+            $link->setToken($token);
         }
     }
 

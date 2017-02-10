@@ -8,6 +8,7 @@ use ApiConsumer\LinkProcessor\Processor\BatchProcessorInterface;
 use ApiConsumer\LinkProcessor\Processor\ProcessorInterface;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use Model\Link;
+use Model\User\Token\Token;
 use Model\User\Token\TokensModel;
 
 class LinkProcessor
@@ -48,9 +49,11 @@ class LinkProcessor
 
     public function process(PreprocessedLink $preprocessedLink)
     {
-        $this->fixToken($preprocessedLink);
-
         $processor = $this->selectProcessor($preprocessedLink);
+
+        if (null != $processor->getResourceOwner() && !$processor->getResourceOwner()->canRequestAsClient()){
+            $this->fixToken($preprocessedLink);
+        }
 
         if ($processor instanceof BatchProcessorInterface) {
             $links = $this->executeBatchProcessing($preprocessedLink, $processor);
@@ -81,8 +84,16 @@ class LinkProcessor
 
     protected function needsToken(PreprocessedLink $preprocessedLink)
     {
-        //Improve to detect useful token
-        return empty($preprocessedLink->getToken());
+        $hasToken = null != $preprocessedLink->getToken() && $preprocessedLink->getToken() instanceof Token;
+
+        if (!$hasToken) {
+            return true;
+        }
+
+        $resource = LinkAnalyzer::getResource($preprocessedLink->getUrl());
+        $isCorrectToken = $preprocessedLink->getToken()->getResourceOwner() == $resource;
+
+        return !$isCorrectToken;
     }
 
     protected function findBestToken(PreprocessedLink $preprocessedLink)

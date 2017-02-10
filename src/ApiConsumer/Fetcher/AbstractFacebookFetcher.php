@@ -142,6 +142,9 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
                 if (in_array($attachment['type'], FacebookUrlParser::FACEBOOK_VIDEO_TYPES())) {
                     $link->setType(FacebookUrlParser::FACEBOOK_VIDEO);
                 }
+                if (in_array($attachment['type'], FacebookUrlParser::FACEBOOK_PAGE_TYPES())) {
+                    $link->setType(FacebookUrlParser::FACEBOOK_PAGE);
+                }
             }
         }
     }
