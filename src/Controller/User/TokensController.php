@@ -69,4 +69,29 @@ class TokensController
         return $app->json($token, 201);
     }
 
+    public function putAction(Request $request, Application $app, User $user, $resourceOwner)
+    {
+        /* @var $model TokensModel */
+        $model = $app['users.tokens.model'];
+
+        $token = $model->update($user->getId(), $resourceOwner, $request->request->all());
+
+        /* @var $resourceOwnerFactory ResourceOwnerFactory */
+        $resourceOwnerFactory = $app['api_consumer.resource_owner_factory'];
+        if ($resourceOwner === TokensModel::FACEBOOK) {
+
+            /* @var $facebookResourceOwner FacebookResourceOwner */
+            $facebookResourceOwner = $resourceOwnerFactory->build(TokensModel::FACEBOOK);
+
+            if ($request->query->has('extend')) {
+                $token = $facebookResourceOwner->extend($token);
+            }
+
+            if ($token->getRefreshToken()) {
+                $token = $facebookResourceOwner->forceRefreshAccessToken($token);
+            }
+        }
+
+        return $app->json($token);
+    }
 }
