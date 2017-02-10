@@ -138,7 +138,7 @@ class UserController
      * @param Application $app
      * @param Request $request
      * @return JsonResponse
-     * @throws \Exception
+     * @throws ValidationException
      */
     public function registerAction(Application $app, Request $request)
     {
