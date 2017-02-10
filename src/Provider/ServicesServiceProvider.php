@@ -39,7 +39,7 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['register.service'] = $app->share(
             function (Application $app) {
-                return new RegisterService($app['users.manager'], $app['users.ghostuser.manager'], $app['users.tokens.model'], $app['users.profile.model'], $app['users.socialprofile.manager'], $app['users.invitations.model'], $app['users.groups.model'], $app['users.threads.manager'], $app['api_consumer.resource_owner_factory']);
+                return new RegisterService($app['users.manager'], $app['users.ghostuser.manager'], $app['users.tokens.model'], $app['users.profile.model'], $app['users.invitations.model'], $app['users.groups.model'], $app['dispatcher']);
             }
         );
 

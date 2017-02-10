@@ -78,9 +78,8 @@ class RegisterService
         if (isset($userData['enabled']) && $userData['enabled'] === false) {
             $this->gum->saveAsGhost($user->getId());
         }
-        if (isset($oauth)) {
-            $this->tm->create($user->getId(), $oauth['resourceOwner'], $oauth);
-        }
+
+        $this->tm->create($user->getId(), $oauth['resourceOwner'], $oauth);
         $this->pm->create($user->getId(), $profileData);
         $invitation = $this->im->consume($token, $user->getId());
         if (isset($invitation['invitation']['group']['id'])) {
