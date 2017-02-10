@@ -1,0 +1,11 @@
+Error registrando usuario.
+
+Error {{ e.code }}
+Mensaje de error: {{ e.message }}
+Archivo: {{ e.file }}
+Línea: {{ e.line }}
+Trazado: {{ e.traceAsString }}
+
+{% for key, value in request %}
+    {{ key }}: {{ value }}
+{% endfor %}

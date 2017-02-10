@@ -142,11 +142,27 @@ class UserController
      */
     public function registerAction(Application $app, Request $request)
     {
-        $data = $request->request->all();
-        if (!isset($data['user']) || !isset($data['profile']) || !isset($data['token']) || !isset($data['oauth'])) {
-            throw new ValidationException(array('registration' => 'Bad format'));
+        try {
+            $data = $request->request->all();
+            if (!isset($data['user']) || !isset($data['profile']) || !isset($data['token']) || !isset($data['oauth'])) {
+                throw new ValidationException(array('registration' => 'Bad format'));
+            }
+            $user = $app['register.service']->register($data['user'], $data['profile'], $data['token'], $data['oauth']);
+        } catch (\Exception $e) {
+            $message = \Swift_Message::newInstance()
+                ->setSubject('Nekuno registration error')
+                ->setFrom('enredos@nekuno.com', 'Nekuno')
+                ->setTo($app['support_emails'])
+                ->setContentType('text/html')
+                ->setBody($app['twig']->render('email-notifications/registration-error-notification.html.twig', array(
+                    'e' => $e,
+                    'request' => $request->request->all(),
+                )));
+
+            $app['mailer']->send($message);
+
+            throw new ValidationException(array('registration' => "Error registering user"));
         }
-        $user = $app['register.service']->register($data['user'], $data['profile'], $data['token'], $data['oauth']);
 
         return $app->json($user, 201);
     }
