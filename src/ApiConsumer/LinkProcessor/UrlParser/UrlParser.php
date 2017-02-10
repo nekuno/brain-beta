@@ -82,7 +82,7 @@ class UrlParser implements UrlParserInterface
      */
     public function getUsername($url)
     {
-        if (null !== $url) {
+        if (null == $url) {
             //TODO: throw UrlNotValidException
             return null;
         }

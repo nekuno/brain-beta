@@ -35,7 +35,7 @@ class FacebookPageProcessor extends AbstractFacebookProcessor
 
     protected function isProfileResponse(array $response)
     {
-        return isset($response['error']) && isset($response['error']['code']) && $response['error']['code'] = 803;
+        return isset($response['error']) && isset($response['error']['code']) && $response['error']['code'] == 803;
     }
 
 }
