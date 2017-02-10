@@ -152,7 +152,7 @@ class UserController
             $message = \Swift_Message::newInstance()
                 ->setSubject('Nekuno registration error')
                 ->setFrom('enredos@nekuno.com', 'Nekuno')
-                ->setTo($app['support_emails'])
+                ->setTo($app['params']['support_emails'])
                 ->setContentType('text/html')
                 ->setBody($app['twig']->render('email-notifications/registration-error-notification.html.twig', array(
                     'e' => $e,
