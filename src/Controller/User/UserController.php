@@ -2,7 +2,7 @@
 
 namespace Controller\User;
 
-use ApiConsumer\ResourceOwner\TwitterResourceOwner;
+use Model\Exception\ValidationException;
 use Model\User\ContentPaginatedModel;
 use Model\User\ProfileFilterModel;
 use Model\User\RateModel;
@@ -15,12 +15,6 @@ use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Model\User\Token\TokensModel;
-use Model\User\SocialNetwork\SocialProfile;
-use ApiConsumer\Factory\ResourceOwnerFactory;
-use ApiConsumer\ResourceOwner\FacebookResourceOwner;
-use Model\User\GhostUser\GhostUserManager;
-use Model\User\SocialNetwork\SocialProfileManager;
 
 
 class UserController
@@ -144,11 +138,31 @@ class UserController
      * @param Application $app
      * @param Request $request
      * @return JsonResponse
+     * @throws ValidationException
      */
     public function registerAction(Application $app, Request $request)
     {
-        $data = $request->request->all();
-        $user = $app['register.service']->register($data['user'], $data['profile'], $data['token']);
+        try {
+            $data = $request->request->all();
+            if (!isset($data['user']) || !isset($data['profile']) || !isset($data['token']) || !isset($data['oauth'])) {
+                throw new ValidationException(array('registration' => 'Bad format'));
+            }
+            $user = $app['register.service']->register($data['user'], $data['profile'], $data['token'], $data['oauth']);
+        } catch (\Exception $e) {
+            $message = \Swift_Message::newInstance()
+                ->setSubject('Nekuno registration error')
+                ->setFrom('enredos@nekuno.com', 'Nekuno')
+                ->setTo($app['support_emails'])
+                ->setContentType('text/html')
+                ->setBody($app['twig']->render('email-notifications/registration-error-notification.html.twig', array(
+                    'e' => $e,
+                    'request' => $request->request->all(),
+                )));
+
+            $app['mailer']->send($message);
+
+            throw new ValidationException(array('registration' => "Error registering user"));
+        }
 
         return $app->json($user, 201);
     }

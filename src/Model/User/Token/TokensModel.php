@@ -149,10 +149,11 @@ class TokensModel
         $tokenNode = $row->offsetGet('token');
 
         $this->saveTokenData($userNode, $tokenNode, $resourceOwner, $data);
+        $token = $this->getById($id, $resourceOwner);
 
-        $this->dispatcher->dispatch(\AppEvents::ACCOUNT_CONNECTED, new AccountConnectEvent($id, $resourceOwner));
+        $this->dispatcher->dispatch(\AppEvents::ACCOUNT_CONNECTED, new AccountConnectEvent($id, $resourceOwner, $token));
 
-        return $this->getById($id, $resourceOwner);
+        return $token;
     }
 
     /**

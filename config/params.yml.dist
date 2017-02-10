@@ -9,6 +9,11 @@ params:
     dev_custom_ip_3:
     dev_custom_ip_4:
 
+    ## Emails to report errors
+    support_email_1: 'juanlu@comakai.com'
+    support_email_2: 'manolez@gmail.com'
+    support_email_3: 'yawmoght@gmail.com'
+
     ## Locale
     locale.default: en
 
