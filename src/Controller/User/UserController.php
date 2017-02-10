@@ -2,7 +2,7 @@
 
 namespace Controller\User;
 
-use ApiConsumer\ResourceOwner\TwitterResourceOwner;
+use Model\Exception\ValidationException;
 use Model\User\ContentPaginatedModel;
 use Model\User\ProfileFilterModel;
 use Model\User\RateModel;
@@ -15,12 +15,6 @@ use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Model\User\Token\TokensModel;
-use Model\User\SocialNetwork\SocialProfile;
-use ApiConsumer\Factory\ResourceOwnerFactory;
-use ApiConsumer\ResourceOwner\FacebookResourceOwner;
-use Model\User\GhostUser\GhostUserManager;
-use Model\User\SocialNetwork\SocialProfileManager;
 
 
 class UserController
@@ -144,11 +138,15 @@ class UserController
      * @param Application $app
      * @param Request $request
      * @return JsonResponse
+     * @throws \Exception
      */
     public function registerAction(Application $app, Request $request)
     {
         $data = $request->request->all();
-        $user = $app['register.service']->register($data['user'], $data['profile'], $data['token']);
+        if (!isset($data['user']) || !isset($data['profile']) || !isset($data['token']) || !isset($data['oauth'])) {
+            throw new ValidationException(array('registration' => 'Bad format'));
+        }
+        $user = $app['register.service']->register($data['user'], $data['profile'], $data['token'], $data['oauth']);
 
         return $app->json($user, 201);
     }
