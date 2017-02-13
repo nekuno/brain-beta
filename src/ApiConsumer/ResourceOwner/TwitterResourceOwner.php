@@ -80,6 +80,12 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
         return $data;
     }
 
+    /**
+     * @param $parameter
+     * @param array $userIds
+     * @param Token|null $token
+     * @return array[]|bool Array of user arrays
+     */
     public function lookupUsersBy($parameter, array $userIds, Token $token = null)
     {
         if (!in_array($parameter, array('user_id', 'screen_name'))) {
@@ -87,14 +93,14 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
         }
 
         $chunks = array_chunk($userIds, self::PROFILES_PER_LOOKUP);
-        $url = $this->options['base_url'] . 'users/lookup.json';
+        $url = 'users/lookup.json';
 
         $responses = array();
         //TODO: Array to string conversion here
         foreach ($chunks as $chunk) {
             $query = array($parameter => implode(',', $chunk));
-            $response = $this->sendAuthorizedRequest($url, $query, $token);
-            $responses[] = $response;
+            $response = $this->request($url, $query, $token);
+            $responses = array_merge($responses, $response);
         }
 
         return $responses;
@@ -111,10 +117,12 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
         sleep($fifteenMinutes);
     }
 
-    public function buildProfilesFromLookup(Response $response)
+    /**
+     * @param $content array[]
+     * @return array[]
+     */
+    public function buildProfilesFromLookup(array $content)
     {
-        $content = $this->getResponseContent($response);
-
         foreach ($content as &$user) {
             $user = $this->buildProfileFromLookup($user);
         }
@@ -122,7 +130,11 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
         return $content;
     }
 
-    public function buildProfileFromLookup($user)
+    /**
+     * @param $user array
+     * @return array
+     */
+    public function buildProfileFromLookup(array $user)
     {
         if (!$user) {
             return $user;

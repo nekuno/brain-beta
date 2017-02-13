@@ -3,6 +3,7 @@
 namespace ApiConsumer\LinkProcessor\Processor;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use Model\Link;
 
 interface BatchProcessorInterface
 {
@@ -14,7 +15,7 @@ interface BatchProcessorInterface
 
     /**
      * @param $batch PreprocessedLink[]
-     * @return array
+     * @return Link[]
      */
     public function requestBatchLinks(array $batch);
 }
