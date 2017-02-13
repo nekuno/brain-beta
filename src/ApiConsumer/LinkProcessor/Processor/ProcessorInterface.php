@@ -30,7 +30,7 @@ interface ProcessorInterface
     /**
      * @param PreprocessedLink $preprocessedLink
      * @param array $data
-     * @return array
+     * @return array of image urls
      */
     public function getImages(PreprocessedLink $preprocessedLink, array $data);
 

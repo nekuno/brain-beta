@@ -17,44 +17,39 @@ class SpotifyTrackProcessor extends AbstractSpotifyProcessor
 
         $track = $this->resourceOwner->requestTrack($id);
 
-        if (!(isset($track['album']) && isset($track['name']) && isset($track['artists']))) {
-            throw new CannotProcessException($preprocessedLink->getUrl());
-        }
+        return $track;
+    }
 
-        $album = $this->resourceOwner->requestAlbum($track['album']['id']);
+    protected function isValidResponse(array $response)
+    {
+        $hasAlbumData = isset($response['album']);
+        $hasName = isset($response['name']);
+        $hasArtistsData = isset($response['artists']);
 
-        return array('track' => $track, 'album' => $album);
+        return parent::isValidResponse($response) && $hasAlbumData && $hasName && $hasArtistsData;
     }
 
     public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
     {
         $link = $preprocessedLink->getFirstLink();
 
-        $track = $data['track'];
+        $artistList = $this->buildArtistList($data);
 
-        $artistList = $this->buildArtistList($track);
-
-        $link->setTitle($track['name']);
-        $link->setDescription($track['album']['name'] . ' : ' . implode(', ', $artistList));
+        $link->setTitle($data['name']);
+        $link->setDescription($data['album']['name'] . ' : ' . implode(', ', $artistList));
 
         $link = Audio::buildFromLink($link);
         $link->setEmbedType('spotify');
-        $link->setEmbedId($track['uri']);
+        $link->setEmbedId($data['uri']);
 
         $preprocessedLink->setFirstLink($link);
     }
 
     public function getImages(PreprocessedLink $preprocessedLink, array $data)
     {
-        $images = isset($track['album']['images']) && is_array($track['album']['images']) ? $track['album']['images'] : array();
+        $albumData = $data['album'];
 
-        $imageUrls = array();
-        foreach ($images as $image){
-            if (isset($image['url'])){
-                $imageUrls[] = $image['url'];
-            }
-        }
-        return $imageUrls;
+        return parent::getImages($preprocessedLink, $albumData);
     }
 
     public function addTags(PreprocessedLink $preprocessedLink, array $data)
@@ -68,20 +63,18 @@ class SpotifyTrackProcessor extends AbstractSpotifyProcessor
             }
         }
 
-        $track = $data['track'];
-        foreach ($track['artists'] as $artist) {
+        foreach ($data['artists'] as $artist) {
             $link->addTag($this->buildArtistTag($artist));
         }
 
         $link->addTag($this->buildAlbumTag($album));
-        $link->addTag($this->buildSongTag($track));
+        $link->addTag($this->buildSongTag($data));
     }
 
     public function getSynonymousParameters(PreprocessedLink $preprocessedLink, array $data)
     {
-        $track = $data['track'];
-        $artistList = $this->buildArtistList($track);
-        $song = $track['name'];
+        $artistList = $this->buildArtistList($data);
+        $song = $data['name'];
 
         $queryString = implode(', ', $artistList) . ' ' . $song;
 
