@@ -130,7 +130,8 @@ class TokensModel
             throw new MethodNotAllowedHttpException(array('PUT'), 'Token already exists');
         }
 
-        $this->validate($id, $resourceOwner, $data);
+        $data['resourceOwner'] = $resourceOwner;
+        $this->validate($data, $id);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(user:User)')
@@ -176,7 +177,8 @@ class TokensModel
             throw new NotFoundHttpException('Token not found');
         }
 
-        $this->validate($id, $resourceOwner, $data);
+        $data['resourceOwner'] = $resourceOwner;
+        $this->validate($data, $id);
 
         $this->saveTokenData($userNode, $tokenNode, $resourceOwner, $data);
 
@@ -231,17 +233,14 @@ class TokensModel
     }
 
     /**
-     * @param string $id
-     * @param string $resourceOwner
      * @param array $data
+     * @param string $id
      * @throws ValidationException
      */
-    public function validate($id, $resourceOwner, array $data)
+    public function validate(array $data, $id = null)
     {
 
         $errors = array();
-
-        $data['resourceOwner'] = $resourceOwner;
 
         $metadata = $this->getMetadata();
 
@@ -281,9 +280,11 @@ class TokensModel
                 }
 
                 if ($fieldName === 'resourceId') {
+                    $condition = $id ? 'user.qnoow_id <> { id } AND user.' . $data['resourceOwner'] . 'ID = { resourceId }'
+                        : 'user.' . $data['resourceOwner'] . 'ID = { resourceId }';
                     $qb = $this->gm->createQueryBuilder();
                     $qb->match('(user:User)')
-                        ->where('user.qnoow_id <> { id } AND user.' . $resourceOwner . 'ID = { resourceId }')
+                        ->where($condition)
                         ->setParameter('id', (integer)$id)
                         ->setParameter('resourceId', $fieldValue)
                         ->returns('user');

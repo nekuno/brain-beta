@@ -72,7 +72,7 @@ class RegisterService
         $this->im->validateToken($token);
         $this->um->validate($userData);
         $this->pm->validate($profileData);
-        $this->tm->validate(0, $oauth['resourceOwner'], $oauth);
+        $this->tm->validate($oauth);
 
         $user = $this->um->create($userData);
         if (isset($userData['enabled']) && $userData['enabled'] === false) {
