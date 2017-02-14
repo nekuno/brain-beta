@@ -114,14 +114,17 @@ class UsersTest extends UsersAPITest
     {
         $this->assertArrayHasKey('qnoow_id', $user, "User has not qnoow_id key");
         $this->assertArrayHasKey('username', $user, "User has not username key");
-        $this->assertArrayHasKey('email', $user, "User has not email key");
+        //$this->assertArrayHasKey('email', $user, "User has not email key");
         $this->assertEquals(2, $user['qnoow_id'], "qnoow_id is not 2");
         $this->assertEquals('JaneDoe', $user['username'], "username is not JaneDoe");
-        $this->assertEquals('nekuno-janedoe@gmail.com', $user['email'], "email is not nekuno-janedoe@gmail.com");
+        //$this->assertEquals('nekuno-janedoe@gmail.com', $user['email'], "email is not nekuno-janedoe@gmail.com");
     }
 
-    protected function assertEditedUserAFormat($user)
+    protected function assertEditedUserAFormat($response)
     {
+        $this->assertArrayHasKey('user', $response, "User response has not user key");
+        $this->assertArrayHasKey('jwt', $response, "User response has not jwt key");
+        $user = $response['user'];
         $this->assertArrayHasKey('qnoow_id', $user, "User has not qnoow_id key");
         $this->assertArrayHasKey('username', $user, "User has not username key");
         $this->assertArrayHasKey('email', $user, "User has not email key");
