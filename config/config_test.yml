@@ -1,8 +1,6 @@
 imports:
     - { resource: config_dev.yml }
 
-support_emails: [%testing_email%, %testing_email%, %testing_email%]
-
 locale.options:
     default: en
 
@@ -28,5 +26,5 @@ userB.resource: %userB.resource%
 userB.access_token: %userB.access_token%
 userB.resource_id: %userB.resource_id%
 
-swiftmailer.options:
+swiftmailer:
     disable_delivery: true

@@ -163,7 +163,7 @@ abstract class APITest extends WebTestCase
                 'oauthToken' => $this->app['userA.access_token'],
                 'resourceId' => $this->app['userA.resource_id'],
                 'expireTime' => strtotime("+1 week"),
-                'refreshToken' => '123456'
+                'refreshToken' => null
             )
         );
     }
@@ -182,7 +182,7 @@ abstract class APITest extends WebTestCase
                 'oauthToken' => $this->app['userB.access_token'],
                 'resourceId' => $this->app['userB.resource_id'],
                 'expireTime' => strtotime("+1 week"),
-                'refreshToken' => '123457'
+                'refreshToken' => null
             )
         );
     }
