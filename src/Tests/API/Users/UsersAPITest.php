@@ -26,8 +26,8 @@ abstract class UsersAPITest extends APITest
         return $this->getResponseByRoute('/users', 'GET', array(), $loggedInUser);
     }
 
-    protected function getOtherUser($userId, $loggedInUser = 1)
+    protected function getOtherUser($slug, $loggedInUser = 1)
     {
-        return $this->getResponseByRoute('/users/' . $userId, 'GET', array(), $loggedInUser);
+        return $this->getResponseByRoute('/users/' . $slug, 'GET', array(), $loggedInUser);
     }
 }

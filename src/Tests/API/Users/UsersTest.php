@@ -20,7 +20,7 @@ class UsersTest extends UsersAPITest
 
     protected function assertGetUserWithoutCredentialsResponse()
     {
-        $response = $this->getOtherUser(2);
+        $response = $this->getOtherUser('janedoe');
         $this->assertStatusCode($response, 401, "Get User without credentials");
     }
 
@@ -72,7 +72,7 @@ class UsersTest extends UsersAPITest
 
     protected function assertGetOtherUserResponse()
     {
-        $response = $this->getOtherUser(2);
+        $response = $this->getOtherUser('janedoe');
         $formattedResponse = $this->assertJsonResponse($response, 200, "Get User B");
         $this->assertUserBFormat($formattedResponse, "Bad user B response");
     }
@@ -170,26 +170,59 @@ class UsersTest extends UsersAPITest
     private function getUserWithStatusFixtures()
     {
         return array(
-            'username' => 'JohnDoe',
-            'email' => 'nekuno-johndoe_updated@gmail.com',
-            'status' => 'complete'
+            'user' => array(
+                'username' => 'JohnDoe',
+                'email' => 'nekuno-johndoe_updated@gmail.com',
+                'status' => 'complete'
+            ),
+            'profile' => array(),
+            'token' => 'join',
+            'oauth' => array(
+                'resourceOwner' => 'facebook',
+                'oauthToken' => '12345',
+                'resourceId' => 12345,
+                'expireTime' => strtotime("+1 week"),
+                'refreshToken' => '123456'
+            )
         );
     }
 
     private function getUserWithSaltFixtures()
     {
         return array(
-            'username' => 'JohnDoe',
-            'email' => 'nekuno-johndoe_updated@gmail.com',
-            'salt' => 'foo'
+            'user' => array(
+                'username' => 'JohnDoe',
+                'email' => 'nekuno-johndoe_updated@gmail.com',
+                'salt' => 'foo'
+            ),
+            'profile' => array(),
+            'token' => 'join',
+            'oauth' => array(
+                'resourceOwner' => 'facebook',
+                'oauthToken' => '12345',
+                'resourceId' => 12345,
+                'expireTime' => strtotime("+1 week"),
+                'refreshToken' => '123456'
+            )
         );
     }
 
     private function getUserWithNumericUsername()
     {
         return array(
-            'username' => 1,
-            'email' => 'nekuno-johndoe_updated@gmail.com',
+            'user' => array(
+                'username' => 1,
+                'email' => 'nekuno-johndoe_updated@gmail.com',
+            ),
+            'profile' => array(),
+            'token' => 'join',
+            'oauth' => array(
+                'resourceOwner' => 'facebook',
+                'oauthToken' => '12345',
+                'resourceId' => 12345,
+                'expireTime' => strtotime("+1 week"),
+                'refreshToken' => '123456'
+            )
         );
     }
 }

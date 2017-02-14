@@ -118,14 +118,14 @@ abstract class APITest extends WebTestCase
 
     protected function createAndLoginUserA()
     {
-        $userData = $this->getUserAFixtures();
+        $userData = $this->getUserARegisterFixtures();
         $this->createUser($userData);
         $this->loginUser($userData);
     }
 
     protected function createAndLoginUserB()
     {
-        $userData = $this->getUserBFixtures();
+        $userData = $this->getUserBRegisterFixtures();
         $this->createUser($userData);
         $this->loginUser($userData);
     }
