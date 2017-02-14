@@ -161,7 +161,7 @@ abstract class APITest extends WebTestCase
             'oauth' => array(
                 'resourceOwner' => 'facebook',
                 'oauthToken' => '12345',
-                'resourceId' => 12345,
+                'resourceId' => '12345',
                 'expireTime' => strtotime("+1 week"),
                 'refreshToken' => '123456'
             )
@@ -180,7 +180,7 @@ abstract class APITest extends WebTestCase
             'oauth' => array(
                 'resourceOwner' => 'facebook',
                 'oauthToken' => '12346',
-                'resourceId' => 12346,
+                'resourceId' => '12346',
                 'expireTime' => strtotime("+1 week"),
                 'refreshToken' => '123457'
             )

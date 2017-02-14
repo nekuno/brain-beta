@@ -172,7 +172,7 @@ class UsersTest extends UsersAPITest
             'oauth' => array(
                 'resourceOwner' => 'facebook',
                 'oauthToken' => '12345',
-                'resourceId' => 12345,
+                'resourceId' => '12345',
                 'expireTime' => strtotime("+1 week"),
                 'refreshToken' => '123456'
             )
@@ -192,7 +192,7 @@ class UsersTest extends UsersAPITest
             'oauth' => array(
                 'resourceOwner' => 'facebook',
                 'oauthToken' => '12345',
-                'resourceId' => 12345,
+                'resourceId' => '12345',
                 'expireTime' => strtotime("+1 week"),
                 'refreshToken' => '123456'
             )
@@ -211,7 +211,7 @@ class UsersTest extends UsersAPITest
             'oauth' => array(
                 'resourceOwner' => 'facebook',
                 'oauthToken' => '12345',
-                'resourceId' => 12345,
+                'resourceId' => '12345',
                 'expireTime' => strtotime("+1 week"),
                 'refreshToken' => '123456'
             )
