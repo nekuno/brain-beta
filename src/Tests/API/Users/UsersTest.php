@@ -76,10 +76,10 @@ class UsersTest extends UsersAPITest
         $formattedResponse = $this->assertJsonResponse($response, 200, "Edit UserA");
         $this->assertEditedUserAFormat($formattedResponse, "Bad User response on edit user A");
 
-        $userData = $this->getUserAFixtures();
+        $userData = $this->getUserAEditionFixtures();
         $response = $this->editOwnUser($userData);
         $formattedResponse = $this->assertJsonResponse($response, 200, "Edit UserA");
-        $this->assertUserAFormat($formattedResponse, "Bad User response on edit user A");
+        $this->assertEditedOriginalUserAFormat($formattedResponse, "Bad User response on edit user A");
     }
 
     protected function assertValidationErrorsResponse()
@@ -87,17 +87,17 @@ class UsersTest extends UsersAPITest
         $userData = $this->getUserWithStatusFixtures();
         $response = $this->createUser($userData);
         $formattedResponse = $this->assertJsonResponse($response, 422, "Edit user with status error");
-        $this->assertStatusValidationErrorFormat($formattedResponse);
+        $this->assertUserValidationErrorFormat($formattedResponse);
 
         $userData = $this->getUserWithSaltFixtures();
         $response = $this->createUser($userData);
         $formattedResponse = $this->assertJsonResponse($response, 422, "Edit user with salt error");
-        $this->assertSaltValidationErrorFormat($formattedResponse);
+        $this->assertUserValidationErrorFormat($formattedResponse);
 
         $userData = $this->getUserWithNumericUsername();
         $response = $this->createUser($userData);
         $formattedResponse = $this->assertJsonResponse($response, 422, "Edit user with username error");
-        $this->assertUsernameValidationErrorFormat($formattedResponse);
+        $this->assertUserValidationErrorFormat($formattedResponse);
     }
 
     protected function assertUserAFormat($user)
@@ -114,10 +114,8 @@ class UsersTest extends UsersAPITest
     {
         $this->assertArrayHasKey('qnoow_id', $user, "User has not qnoow_id key");
         $this->assertArrayHasKey('username', $user, "User has not username key");
-        //$this->assertArrayHasKey('email', $user, "User has not email key");
         $this->assertEquals(2, $user['qnoow_id'], "qnoow_id is not 2");
         $this->assertEquals('JaneDoe', $user['username'], "username is not JaneDoe");
-        //$this->assertEquals('nekuno-janedoe@gmail.com', $user['email'], "email is not nekuno-janedoe@gmail.com");
     }
 
     protected function assertEditedUserAFormat($response)
@@ -133,25 +131,24 @@ class UsersTest extends UsersAPITest
         $this->assertEquals('nekuno-johndoe_updated@gmail.com', $user['email'], "email is not nekuno-johndoe_updated@gmail.com");
     }
 
-    protected function assertStatusValidationErrorFormat($exception)
+    protected function assertEditedOriginalUserAFormat($response)
     {
-        $this->assertValidationErrorFormat($exception);
-        $this->assertArrayHasKey('status', $exception['validationErrors'], "User validation error does not have invalid key \"status\"'");
-        $this->assertEquals('Invalid key "status"', $exception['validationErrors']['status'][0], "status key is not Invalid key \"status\"");
+        $this->assertArrayHasKey('user', $response, "User response has not user key");
+        $this->assertArrayHasKey('jwt', $response, "User response has not jwt key");
+        $user = $response['user'];
+        $this->assertArrayHasKey('qnoow_id', $user, "User has not qnoow_id key");
+        $this->assertArrayHasKey('username', $user, "User has not username key");
+        $this->assertArrayHasKey('email', $user, "User has not email key");
+        $this->assertEquals(1, $user['qnoow_id'], "qnoow_id is not 1");
+        $this->assertEquals('JohnDoe', $user['username'], "username is not JohnDoe");
+        $this->assertEquals('nekuno-johndoe@gmail.com', $user['email'], "email is not nekuno-johndoe@gmail.com");
     }
 
-    protected function assertSaltValidationErrorFormat($exception)
+    protected function assertUserValidationErrorFormat($exception)
     {
         $this->assertValidationErrorFormat($exception);
-        $this->assertArrayHasKey('salt', $exception['validationErrors'], "User validation error does not have invalid key \"salt\"'");
-        $this->assertEquals('Invalid key "salt"', $exception['validationErrors']['salt'][0], "salt key is not Invalid key \"salt\"");
-    }
-
-    protected function assertUsernameValidationErrorFormat($exception)
-    {
-        $this->assertValidationErrorFormat($exception);
-        $this->assertArrayHasKey('username', $exception['validationErrors'], "User validation error does not have invalid key \"username\"'");
-        $this->assertEquals('"username" must be an string', $exception['validationErrors']['username'][0], "username key is not \"username\" must be an string");
+        $this->assertArrayHasKey('registration', $exception['validationErrors'], "User validation error does not have invalid key \"registration\"'");
+        $this->assertEquals('Error registering user', $exception['validationErrors']['registration'], "registration key is not \"Error registering user\"");
     }
 
     private function getEditedUserAFixtures()

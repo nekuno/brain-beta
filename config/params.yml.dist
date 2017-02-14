@@ -15,6 +15,14 @@ params:
     support_email_3: 'yawmoght@gmail.com'
     testing_email: 'manolez@gmail.com'
 
+    ## Testing users
+    userA.resource: ''
+    userA.access_token: ''
+    userA.resource_id: ''
+    userB.resource: ''
+    userB.access_token: ''
+    userB.resource_id: ''
+
     ## Locale
     locale.default: en
 

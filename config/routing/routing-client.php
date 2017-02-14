@@ -22,7 +22,6 @@ $app->get('/profile', 'users.profile.controller:getAction');
 $app->get('/profile/{id}', 'users.profile.controller:getOtherAction')->value('id', null);
 $app->put('/profile', 'users.profile.controller:putAction');
 $app->post('/profile/validate', 'users.profile.controller:validateAction');
-$app->delete('/profile', 'users.profile.controller:deleteAction');
 $app->get('/profile/metadata', 'users.profile.controller:getMetadataAction');
 $app->get('/profile/categories', 'users.profile.controller:getCategoriesAction');
 $app->get('/profile/filters', 'users.profile.controller:getFiltersAction');

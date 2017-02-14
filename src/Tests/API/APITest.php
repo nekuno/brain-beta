@@ -159,9 +159,9 @@ abstract class APITest extends WebTestCase
             'profile' => array(),
             'token' => 'join',
             'oauth' => array(
-                'resourceOwner' => 'facebook',
-                'oauthToken' => '12345',
-                'resourceId' => '12345',
+                'resourceOwner' => $this->app['userA.resource'],
+                'oauthToken' => $this->app['userA.access_token'],
+                'resourceId' => $this->app['userA.resource_id'],
                 'expireTime' => strtotime("+1 week"),
                 'refreshToken' => '123456'
             )
@@ -178,12 +178,20 @@ abstract class APITest extends WebTestCase
             'profile' => array(),
             'token' => 'join',
             'oauth' => array(
-                'resourceOwner' => 'facebook',
-                'oauthToken' => '12346',
-                'resourceId' => '12346',
+                'resourceOwner' => $this->app['userB.resource'],
+                'oauthToken' => $this->app['userB.access_token'],
+                'resourceId' => $this->app['userB.resource_id'],
                 'expireTime' => strtotime("+1 week"),
                 'refreshToken' => '123457'
             )
+        );
+    }
+
+    protected function getUserAEditionFixtures()
+    {
+        return array(
+            'username' => 'JohnDoe',
+            'email' => 'nekuno-johndoe@gmail.com',
         );
     }
 

@@ -9,17 +9,15 @@ class ProfileTest extends ProfileAPITest
         $this->assertProfileOptionsCommandDisplay();
         $this->assertGetProfileWithoutCredentialsResponse();
         $this->createAndLoginUserA();
-        $this->createUserProfile();
+        $this->createUserProfile(1);
         $this->assertGetNoneExistentProfileResponse();
         $this->createAndLoginUserB();
-        $this->createUserProfile();
+        $this->createUserProfile(2);
         $this->assertValidateProfileFormat();
         $this->assertGetExistentProfileResponse();
         $this->assertGetOwnProfileResponse();
         $this->assertEditOwnProfileResponse();
-        $this->assertGetDeletedProfileResponse();
         $this->assertValidationErrorsResponse();
-        $this->assertCreateComplexProfileResponse();
         $this->assertEditComplexProfileResponse();
         $this->assetsGetProfileMetadataResponse();
         $this->assetsGetProfileFiltersResponse();
@@ -80,50 +78,32 @@ class ProfileTest extends ProfileAPITest
         $this->assertProfileFormat($formattedResponse, "Bad Profile response on edit profile A");
     }
 
-    protected function assertGetDeletedProfileResponse()
-    {
-        $response = $this->deleteProfile();
-        $formattedResponse = $this->assertJsonResponse($response, 200, "Delete Profile");
-        $this->assertProfileFormat($formattedResponse, "Bad Profile response on delete profile A");
-
-        $response = $this->getOwnProfile();
-        $this->assertStatusCode($response, 404, "Get deleted profile");
-    }
-
     protected function assertValidationErrorsResponse()
     {
         $profileData = $this->getProfileWithMalformedBirthdayFixtures();
-        $response = $this->createProfile($profileData);
+        $response = $this->editProfile($profileData);
         $formattedResponse = $this->assertJsonResponse($response, 422, "Create Profile with birthday error");
         $this->assertBirthdayValidationErrorFormat($formattedResponse);
 
         $profileData = $this->getProfileWithMalformedLocationFixtures();
-        $response = $this->createProfile($profileData);
+        $response = $this->editProfile($profileData);
         $formattedResponse = $this->assertJsonResponse($response, 422, "Create Profile with location error");
         $this->assertLocationValidationErrorFormat($formattedResponse);
 
         $profileData = $this->getProfileWithMalformedGenderFixtures();
-        $response = $this->createProfile($profileData);
+        $response = $this->editProfile($profileData);
         $formattedResponse = $this->assertJsonResponse($response, 422, "Create Profile with gender error");
         $this->assertGenderValidationErrorFormat($formattedResponse);
 
         $profileData = $this->getProfileWithMalformedOrientationFixtures();
-        $response = $this->createProfile($profileData);
+        $response = $this->editProfile($profileData);
         $formattedResponse = $this->assertJsonResponse($response, 422, "Create Profile with orientation error");
         $this->assertOrientationValidationErrorFormat($formattedResponse);
 
         $profileData = $this->getProfileWithMalformedInterfaceLanguageFixtures();
-        $response = $this->createProfile($profileData);
+        $response = $this->editProfile($profileData);
         $formattedResponse = $this->assertJsonResponse($response, 422, "Create Profile with interfaceLanguage error");
         $this->assertInterfaceLanguageValidationErrorFormat($formattedResponse);
-    }
-
-    protected function assertCreateComplexProfileResponse()
-    {
-        $profileData = $this->getComplexProfileFixtures();
-        $response = $this->createProfile($profileData);
-        $formattedResponse = $this->assertJsonResponse($response, 201, "Create Complex ProfileA");
-        $this->assertComplexProfileFormat($formattedResponse, "Bad complex profile response on create profile A");
     }
 
     protected function assertEditComplexProfileResponse()
@@ -150,17 +130,11 @@ class ProfileTest extends ProfileAPITest
 
     protected function assetsGetProfileTagsResponse()
     {
-        $response = $this->getProfileTags('allergy');
-        $formattedResponse = $this->assertJsonResponse($response, 200, "Get Profile tags for allergy type");
-        $this->assertArrayHasKey('items', $formattedResponse, "Profile tag has not items key");
-        $this->assertArrayHasKey(0, $formattedResponse['items'], "Profile tag items has not 0 key");
-        $this->assertGetProfileTagFormat($formattedResponse['items'][0], 'pollen', "Bad response on get profile tags for allergy type");
-
         $response = $this->getProfileTags('profession');
         $formattedResponse = $this->assertJsonResponse($response, 200, "Get Profile tags for profession type");
         $this->assertArrayHasKey('items', $formattedResponse, "Profile tag has not items key");
         $this->assertArrayHasKey(0, $formattedResponse['items'], "Profile tag items has not 0 key");
-        $this->assertGetProfileTagFormat($formattedResponse['items'][0], 'programmer', "Bad response on get profile tags for profession type");
+        $this->assertGetProfileTagFormat($formattedResponse['items'][0], 'writer', "Bad response on get profile tags for profession type");
     }
 
     protected function assertProfileFormat($profile)
@@ -300,9 +274,9 @@ class ProfileTest extends ProfileAPITest
         $this->assertArrayHasKey(0, $profile['language'], "Profile has not language[0] key");
         $this->assertArrayHasKey(1, $profile['language'], "Profile has not language[1] key");
         $this->assertArrayHasKey('tag', $profile['language'][0], "Profile has not language[0]['tag'] key");
-        $this->assertArrayHasKey('detail', $profile['language'][0], "Profile has not language[0]['detail'] key");
+        $this->assertArrayHasKey('choice', $profile['language'][0], "Profile has not language[0]['choice'] key");
         $this->assertArrayHasKey('tag', $profile['language'][1], "Profile has not language[1]['tag'] key");
-        $this->assertArrayHasKey('detail', $profile['language'][1], "Profile has not language[1]['detail'] key");
+        $this->assertArrayHasKey('choice', $profile['language'][1], "Profile has not language[1]['choice'] key");
         $this->assertArrayNotHasKey('education', $profile, "Profile has education key");
         $this->assertArrayHasKey('profession', $profile, "Profile has not profession key");
         $this->assertArrayHasKey(0, $profile['profession'], "Profile has not profession[0] key");
@@ -325,9 +299,9 @@ class ProfileTest extends ProfileAPITest
         $this->assertEquals('black', $profile['hairColor'], "hairColor is not black");
         $this->assertEquals('friendship', $profile['relationshipInterest'], "relationshipInterest is not friendship");
         $this->assertRegExp('/^(German)|(Japanese)$/', $profile['language'][0]['tag'], "language[0]['tag'] is not German or Japanese");
-        $this->assertRegExp('/^(professional_working)|(native)$/', $profile['language'][0]['detail'], "language[0]['detail'] is not professional_working or native");
+        $this->assertRegExp('/^(professional_working)|(native)$/', $profile['language'][0]['choice'], "language[0]['choice'] is not professional_working or native");
         $this->assertRegExp('/^(German)|(Japanese)$/', $profile['language'][1]['tag'], "language[1]['tag'] is not German or Japanese");
-        $this->assertRegExp('/^(professional_working)|(native)$/', $profile['language'][1]['detail'], "language[1]['detail'] is not professional_working or native");
+        $this->assertRegExp('/^(professional_working)|(native)$/', $profile['language'][1]['choice'], "language[1]['choice'] is not professional_working or native");
         $this->assertEquals('writer', $profile['profession'][0], "profession[0] detail is not writer");
     }
 
@@ -391,10 +365,10 @@ class ProfileTest extends ProfileAPITest
         $this->assertContains('Option with value "none-existent" is not valid, possible values are', $exception['validationErrors']['interfaceLanguage'][0], "interfaceLanguage key is not Option with value \"none-existent\" is not valid, possible values are");
     }
 
-    private function createUserProfile()
+    private function createUserProfile($userId = 1)
     {
         $profileData = $this->getProfileFixtures();
-        $this->createProfile($profileData);
+        $this->editProfile($profileData, $userId);
     }
 
     private function getProfileFixtures()
