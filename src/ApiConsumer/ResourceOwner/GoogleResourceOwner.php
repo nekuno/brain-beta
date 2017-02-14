@@ -87,9 +87,7 @@ class GoogleResourceOwner extends GoogleResourceOwnerBase
             'part' => 'id,snippet',
             'type' => 'video'
         );
-        $response = $this->sendAuthorizedRequest($this->options['base_url'] . $url, $query);
-
-        $content = $this->getResponseContent($response);
+        $content = $this->request($url, $query);
 
         return isset($content['items']) ? $content['items'] : array();
     }

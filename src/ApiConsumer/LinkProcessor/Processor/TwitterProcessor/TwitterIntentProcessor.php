@@ -57,9 +57,10 @@ class TwitterIntentProcessor extends AbstractProcessor
 
         if (isset($userId['user_id'])) {
             $token = $preprocessedLink->getToken();
-            $response = $this->resourceOwner->lookupUsersBy('user_id', array($userId['user_id']), $token);
-            $link = $this->resourceOwner->buildProfileFromLookup($response);
+            $users = $this->resourceOwner->lookupUsersBy('user_id', array($userId['user_id']), $token);
+            $links = $this->resourceOwner->buildProfilesFromLookup($users);
 
+            $link = reset($links);
             return $link['url'];
         }
 

@@ -160,7 +160,7 @@ class LinkProcessor
     {
         $processorName = LinkAnalyzer::getProcessorName($preprocessedLink);
 
-        $this->batch[$processorName] = $this->batch[$processorName] ?: array();
+        $this->batch[$processorName] = isset($this->batch[$processorName]) ? $this->batch[$processorName] : array();
         $this->batch[$processorName][] = $preprocessedLink;
 
         $links = array(new Link());

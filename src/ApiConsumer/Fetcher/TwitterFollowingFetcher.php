@@ -45,11 +45,7 @@ class TwitterFollowingFetcher extends AbstractTwitterFetcher
     protected function parseLinks(array $rawFeed)
     {
         $lookups = $this->resourceOwner->lookupUsersBy('user_id', $rawFeed, $this->token);
-
-        $links = array();
-        foreach ($lookups as $lookupResponse){
-            $links = array_merge($links, $this->resourceOwner->buildProfilesFromLookup($lookupResponse));
-        }
+        $links = $this->resourceOwner->buildProfilesFromLookup($lookups);
 
         $preprocessedLinks = array();
         if ($links == false || empty($links)) {
