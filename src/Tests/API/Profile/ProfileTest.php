@@ -12,7 +12,6 @@ class ProfileTest extends ProfileAPITest
         $this->assertGetNoneExistentProfileResponse();
         $this->createAndLoginUserB();
         $this->assertValidateProfileFormat();
-        $this->assertCreateProfilesResponse();
         $this->assertGetExistentProfileResponse();
         $this->assertGetOwnProfileResponse();
         $this->assertEditOwnProfileResponse();
@@ -48,22 +47,6 @@ class ProfileTest extends ProfileAPITest
         $profileData = $this->getProfileFixtures();
         $response = $this->validateProfile($profileData);
         $this->assertStatusCode($response, 200, "Bad response on validate profile");
-    }
-
-    protected function assertCreateProfilesResponse()
-    {
-        $userData = $this->getUserAFixtures();
-        $this->loginUser($userData);
-        $profileData = $this->getProfileFixtures();
-        $response = $this->createProfile($profileData);
-        $formattedResponse = $this->assertJsonResponse($response, 201, "Create ProfileA");
-        $this->assertProfileFormat($formattedResponse, "Bad profile response on create profile A");
-
-        $userData = $this->getUserBFixtures();
-        $this->loginUser($userData);
-        $response = $this->createProfile($profileData, 2);
-        $formattedResponse = $this->assertJsonResponse($response, 201, "Create ProfileB");
-        $this->assertProfileFormat($formattedResponse, "Bad profile response on create profile B");
     }
 
     protected function assertGetExistentProfileResponse()

@@ -113,7 +113,7 @@ abstract class APITest extends WebTestCase
 
     protected function createUser($userData)
     {
-        return $this->getResponseByRoute('/users', 'POST', $userData);
+        return $this->getResponseByRoute('/register', 'POST', $userData);
     }
 
     protected function createAndLoginUserA()
@@ -133,18 +133,54 @@ abstract class APITest extends WebTestCase
     protected function getUserAFixtures()
     {
         return array(
-            'username' => 'JohnDoe',
-            'email' => 'nekuno-johndoe@gmail.com',
-            'plainPassword' => 'test'
+            'resourceOwner' => 'facebook',
+            'accessToken' => '12345',
         );
     }
 
     protected function getUserBFixtures()
     {
         return array(
-            'username' => 'JaneDoe',
-            'email' => 'nekuno-janedoe@gmail.com',
-            'plainPassword' => 'test'
+            'resourceOwner' => 'facebook',
+            'accessToken' => '12346',
+        );
+    }
+
+    protected function getUserARegisterFixtures()
+    {
+        return array(
+            'user' => array(
+                'username' => 'JohnDoe',
+                'email' => 'nekuno-johndoe@gmail.com',
+            ),
+            'profile' => array(),
+            'token' => 'join',
+            'oauth' => array(
+                'resourceOwner' => 'facebook',
+                'oauthToken' => '12345',
+                'resourceId' => 12345,
+                'expireTime' => strtotime("+1 week"),
+                'refreshToken' => '123456'
+            )
+        );
+    }
+
+    protected function getUserBRegisterFixtures()
+    {
+        return array(
+            'user' => array(
+                'username' => 'JaneDoe',
+                'email' => 'nekuno-janedoe@gmail.com',
+            ),
+            'profile' => array(),
+            'token' => 'join',
+            'oauth' => array(
+                'resourceOwner' => 'facebook',
+                'oauthToken' => '12346',
+                'resourceId' => 12346,
+                'expireTime' => strtotime("+1 week"),
+                'refreshToken' => '123457'
+            )
         );
     }
 
