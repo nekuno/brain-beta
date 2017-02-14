@@ -8,7 +8,6 @@ class UsersTest extends UsersAPITest
     {
         $this->assertGetUserWithoutCredentialsResponse();
         $this->assertGetUnusedUsernameAvailableResponse();
-        $this->assertValidateUserResponse();
         $this->assertCreateUsersResponse();
         $this->assertGetExistingUsernameAvailableResponse();
         $this->assertLoginUserResponse();
@@ -28,13 +27,6 @@ class UsersTest extends UsersAPITest
     {
         $response = $this->getUserAvailable('JohnDoe');
         $this->assertStatusCode($response, 200, "Bad response on get unused available username JohnDoe");
-    }
-
-    protected function assertValidateUserResponse()
-    {
-        $userData = $this->getUserAFixtures();
-        $response = $this->validateUserA($userData);
-        $this->assertStatusCode($response, 200, "Bad response on validate user A");
     }
 
     protected function assertCreateUsersResponse()
