@@ -5,6 +5,7 @@ namespace ApiConsumer\Fetcher;
 use ApiConsumer\Event\ChannelEvent;
 use ApiConsumer\Exception\CannotProcessException;
 use ApiConsumer\Exception\CouldNotResolveException;
+use ApiConsumer\Exception\TokenException;
 use ApiConsumer\Exception\UrlChangedException;
 use ApiConsumer\Exception\UrlNotValidException;
 use ApiConsumer\LinkProcessor\LinkAnalyzer;
@@ -77,10 +78,18 @@ class ProcessorService implements LoggerAwareInterface
 
             $this->dispatcher->dispatch(\AppEvents::PROCESS_LINK, new ProcessLinkEvent($userId, $source, $preprocessedLink));
 
-            $link = $this->fullProcessSingle($preprocessedLink, $userId);
+            try {
+                $processedLinks = $this->fullProcessSingle($preprocessedLink, $userId);
+                $links = array_merge($links, $processedLinks);
 
-            if ($link) {
-                $links[$key] = $link;
+            } catch (TokenException $e) {
+                $this->removeToken($preprocessedLinks);
+
+                $message = sprintf('Processing with the token for user %d and resource %s', $e->getToken()->getUserId(), $e->getToken()->getResourceOwner());
+                $this->manageError($e, $message);
+
+                $processedLinks = $this->fullProcessSingle($preprocessedLink, $userId);
+                $links = array_merge($links, $processedLinks);
             }
         }
         $links = array_merge($links, $this->processLastLinks($userId, $source));
@@ -123,6 +132,8 @@ class ProcessorService implements LoggerAwareInterface
                 return $this->scrape($preprocessedLink);
             }
 
+        } catch (TokenException $e) {
+            throw $e;
         } catch (\Exception $e) {
             $this->manageError($e, sprintf('processing url %s for user %d', $preprocessedLink->getUrl(), $userId));
 
@@ -165,14 +176,34 @@ class ProcessorService implements LoggerAwareInterface
         $links = array();
         foreach ($preprocessedLinks as $key => $preprocessedLink) {
             $this->logNotice(sprintf('Reprocessing link %s', $preprocessedLink->getUrl()));
-            $reprocessedLinks = $this->fullReprocessSingle($preprocessedLink);
+            try {
+                $reprocessedLinks = $this->fullReprocessSingle($preprocessedLink);
+                $links = array_merge($links, $reprocessedLinks);
 
-            $links = array_merge($links, $reprocessedLinks);
+            } catch (TokenException $e) {
+                $this->removeToken($preprocessedLinks);
+
+                $message = sprintf('Reprocessing with the token for user %d and resource %s', $e->getToken()->getUserId(), $e->getToken()->getResourceOwner());
+                $this->manageError($e, $message);
+
+                $reprocessedLinks = $this->fullReprocessSingle($preprocessedLink);
+                $links = array_merge($links, $reprocessedLinks);
+            }
         }
 
         $links = array_merge($links, $this->reprocessLastLinks($source));
 
         return $links;
+    }
+
+    /**
+     * @param PreprocessedLink[] $preprocessedLinks
+     */
+    private function removeToken(array $preprocessedLinks)
+    {
+        foreach ($preprocessedLinks as $preprocessedLink) {
+            $preprocessedLink->setToken(null);
+        }
     }
 
     private function reprocessLastLinks($source)
@@ -221,6 +252,8 @@ class ProcessorService implements LoggerAwareInterface
 
             return $this->fullReprocessSingle($preprocessedLink);
 
+        } catch (TokenException $e) {
+            throw $e;
         } catch (\Exception $e) {
             $this->manageError($e, sprintf('reprocessing link %s', $preprocessedLink->getUrl()));
 

@@ -343,6 +343,11 @@ class LinkModel
         return $linkArray;
     }
 
+    /**
+     * @param array $data
+     * @param bool $processed Flag indicating if this can overwrite well processed links.
+     * @return array
+     */
     public function updateLink(array $data, $processed = false)
     {
         $this->validateLinkData($data);
