@@ -17,9 +17,9 @@ if (!is_dir(NEO4J_PATH)) {
     exec('echo nekuno:SHA-256,F9C128A993975A8C867C996FBAD87CE1E557D9748B5451FF6F5257C19F56BA04,5A9123556B2846896AF655440E3966EC: > ' . NEO4J_PATH . '/data/dbms/auth');
 }
 
-$output_ssh = shell_exec('ssh vagrant@local.nekuno.com -o LogLevel=verbose ./../../vagrant/brain/' . NEO4J_BIN . DIRECTORY_SEPARATOR . 'neo4j start');
+exec('ssh vagrant@local.nekuno.com -o LogLevel=verbose ./../../vagrant/brain/' . NEO4J_BIN . DIRECTORY_SEPARATOR . 'neo4j start 2>&1 /dev/null', $outputSsh, $code);
 
-if ($output_ssh === null) {
+if ($code !== 0) {
     if (IS_WINDOWS) {
         exec(NEO4J_BIN . DIRECTORY_SEPARATOR . 'neo4j.bat status', $outputStatus, $code);
         echo implode("\n", $outputStatus) . "\n";
