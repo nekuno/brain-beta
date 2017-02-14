@@ -13,6 +13,7 @@ params:
     support_email_1: 'juanlu@comakai.com'
     support_email_2: 'manolez@gmail.com'
     support_email_3: 'yawmoght@gmail.com'
+    testing_email: 'manolez@gmail.com'
 
     ## Locale
     locale.default: en

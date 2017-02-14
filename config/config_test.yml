@@ -1,6 +1,8 @@
 imports:
     - { resource: config_dev.yml }
 
+support_emails: [%testing_email%]
+
 locale.options:
     default: en
 
