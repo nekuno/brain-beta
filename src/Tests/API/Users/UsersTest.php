@@ -45,7 +45,7 @@ class UsersTest extends UsersAPITest
     protected function assertGetExistingUsernameAvailableResponse()
     {
         $response = $this->getUserAvailable('JohnDoe');
-        $this->assertStatusCode($response, 404, "Bad response on get existing available username JohnDoe");
+        $this->assertStatusCode($response, 422, "Bad response on get existing available username JohnDoe");
     }
 
     protected function assertLoginUserResponse()

@@ -9,8 +9,10 @@ class ProfileTest extends ProfileAPITest
         $this->assertProfileOptionsCommandDisplay();
         $this->assertGetProfileWithoutCredentialsResponse();
         $this->createAndLoginUserA();
+        $this->createUserProfile();
         $this->assertGetNoneExistentProfileResponse();
         $this->createAndLoginUserB();
+        $this->createUserProfile();
         $this->assertValidateProfileFormat();
         $this->assertGetExistentProfileResponse();
         $this->assertGetOwnProfileResponse();
@@ -387,6 +389,12 @@ class ProfileTest extends ProfileAPITest
         $this->assertValidationErrorFormat($exception);
         $this->assertArrayHasKey('interfaceLanguage', $exception['validationErrors'], "Profile has not interfaceLanguage key");
         $this->assertContains('Option with value "none-existent" is not valid, possible values are', $exception['validationErrors']['interfaceLanguage'][0], "interfaceLanguage key is not Option with value \"none-existent\" is not valid, possible values are");
+    }
+
+    private function createUserProfile()
+    {
+        $profileData = $this->getProfileFixtures();
+        $this->createProfile($profileData);
     }
 
     private function getProfileFixtures()
