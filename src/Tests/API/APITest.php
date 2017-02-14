@@ -36,7 +36,7 @@ abstract class APITest extends WebTestCase
         /* @var $app Application */
         $app = $this->app;
         // Clean the database
-        $query = new Query($app['neo4j.client'], 'MATCH (n) OPTIONAL MATCH n-[r]-m DELETE r, n, m;');
+        $query = new Query($app['neo4j.client'], 'MATCH (n) OPTIONAL MATCH (n)-[r]-(m) DELETE r, n, m');
         $query->getResultSet();
         // Create default invitation
         $query = new Query($app['neo4j.client'], 'CREATE (i:Invitation) SET i.token = "join", i.consumed = 0, i.available = 1000, i.expiresAt = 9999999999999999, i.createdAt = 11111111');
