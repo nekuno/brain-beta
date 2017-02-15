@@ -26,5 +26,3 @@ userB.resource: %userB.resource%
 userB.access_token: %userB.access_token%
 userB.resource_id: %userB.resource_id%
 
-swiftmailer:
-    disable_delivery: true
