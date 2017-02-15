@@ -153,16 +153,18 @@ class ProcessorService implements LoggerAwareInterface
     {
         $processedLinks = $this->linkProcessor->processLastLinks();
 
+        $links = array();
         foreach ($processedLinks as $processedLink) {
             $preprocessedLink = new PreprocessedLink($processedLink->getUrl());
             $preprocessedLink->setFirstLink($processedLink);
             $preprocessedLink->setSource($source);
 
-            $links = $this->save($preprocessedLink);
-            $this->like($userId, $links, $preprocessedLink);
+            $savedLinks = $this->save($preprocessedLink);
+            $this->like($userId, $savedLinks, $preprocessedLink);
+            $links = array_merge($links, $savedLinks);
         }
 
-        return $processedLinks;
+        return $links;
     }
 
     /**
@@ -208,16 +210,15 @@ class ProcessorService implements LoggerAwareInterface
 
     private function reprocessLastLinks($source)
     {
-        $links = array();
-
         $processedLinks = $this->linkProcessor->processLastLinks();
+
+        $links = array();
         foreach ($processedLinks as $processedLink) {
             $preprocessedLink = new PreprocessedLink($processedLink->getUrl());
             $preprocessedLink->setFirstLink($processedLink);
             $preprocessedLink->setSource($source);
 
             $savedLinks = $this->save($preprocessedLink);
-
             $links = array_merge($links, $savedLinks);
         }
 

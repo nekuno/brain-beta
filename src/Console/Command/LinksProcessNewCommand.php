@@ -5,7 +5,6 @@ namespace Console\Command;
 use ApiConsumer\Fetcher\ProcessorService;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use Console\ApplicationAwareCommand;
-use Model\Link;
 use Model\User\Token\TokensModel;
 use Psr\Log\LogLevel;
 use Symfony\Component\Console\Input\InputArgument;
@@ -104,11 +103,11 @@ class LinksProcessNewCommand extends ApplicationAwareCommand
         return $token;
     }
 
-    private function outputLink(Link $link, OutputInterface $output)
+    private function outputLink(array $link, OutputInterface $output)
     {
         if (OutputInterface::VERBOSITY_NORMAL < $output->getVerbosity()) {
             $output->writeln('----------Link outputted------------');
-            foreach ($link->toArray() as $key => $value) {
+            foreach ($link as $key => $value) {
                 $value = is_array($value) ? json_encode($value) : $value;
                 $output->writeln(sprintf('%s => %s', $key, $value));
             }

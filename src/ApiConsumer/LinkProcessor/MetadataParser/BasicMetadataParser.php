@@ -103,7 +103,7 @@ class BasicMetadataParser implements MetadataParserInterface
     public function getImages(Crawler $crawler)
     {
         try {
-            $images = $crawler->filter('image')->each(
+            $images = $crawler->filter('img')->each(
                 function ($node) {
                     /* @var $node Crawler */
                     return $node->attr('src');
