@@ -70,12 +70,21 @@ class UsersThreadsCreateCommand extends ApplicationAwareCommand
 
         foreach ($users as $user) {
 
-            if ($user->isGuest()){
+            if ($user->isGuest()) {
                 continue;
             }
 
             $output->writeln('-----------------------------------------------------------------------');
-            $threads = $threadManager->getDefaultThreads($user, $scenario);
+
+            if ($clear) {
+                $existingThreads = $threadManager->getByUser($user->getId());
+                foreach ($existingThreads as $existingThread) {
+//                    if ($existingThread->getDefault() == true) {
+                    $threadManager->deleteById($existingThread->getId());
+//                    }
+                }
+                $output->writeln(sprintf('Deleted threads for user %d', $user->getId()));
+            }
 
             if ($groupsOption) {
                 $groups = $groupModel->getAllByUserId($user->getId());
@@ -83,19 +92,11 @@ class UsersThreadsCreateCommand extends ApplicationAwareCommand
                 foreach ($groups as $group) {
                     $threadManager->createGroupThread($group, $user->getId());
                 }
-            }
-
-            if ($clear) {
-                $existingThreads = $threadManager->getByUser($user->getId());
-                foreach ($existingThreads as $existingThread) {
-//                    if ($existingThread->getDefault() == true) {
-                        $threadManager->deleteById($existingThread->getId());
-//                    }
-                }
-                $output->writeln(sprintf('Deleted threads for user %d', $user->getId()));
+                $output->writeln(sprintf('Created %d group threads for user %d', count($groups), $user->getId()));
             }
 
             try {
+                $threads = $threadManager->getDefaultThreads($user, $scenario);
                 $createdThreads = $threadManager->createBatchForUser($user->getId(), $threads);
                 $output->writeln('Added threads for scenario ' . $scenario . ' and user with id ' . $user->getId());
                 foreach ($createdThreads as $createdThread) {
