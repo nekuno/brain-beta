@@ -95,9 +95,8 @@ class GroupModel
             ->setParameter('userId', $userId)
             ->optionalMatch('(g)-[:LOCATION]->(l:Location)')
             ->optionalMatch('(g)-[:HAS_FILTER]->(f:FilterUsers)')
-            ->optionalMatch('(g)<-[:HAS_GROUP]-(i:Invitation)')
             ->optionalMatch('(g)-[b:BELONGS_TO]-(:User)')
-            ->returns('g', 'l', 'f', 'i', 'count(b) AS usersCount');
+            ->returns('g', 'l', 'f', 'count(b) AS usersCount');
 
         $query = $qb->getQuery();
 
