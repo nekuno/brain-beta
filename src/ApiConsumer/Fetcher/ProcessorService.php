@@ -117,7 +117,7 @@ class ProcessorService implements LoggerAwareInterface
             $link = $this->linkModel->findLinkByUrl($preprocessedLink->getUrl());
             $this->like($userId, array($link), $preprocessedLink);
 
-            return null;
+            return array();
         }
 
         try {
@@ -137,7 +137,7 @@ class ProcessorService implements LoggerAwareInterface
         } catch (\Exception $e) {
             $this->manageError($e, sprintf('processing url %s for user %d', $preprocessedLink->getUrl(), $userId));
 
-            return null;
+            return array();
         }
 
         $this->addSynonymous($preprocessedLink);
@@ -153,16 +153,18 @@ class ProcessorService implements LoggerAwareInterface
     {
         $processedLinks = $this->linkProcessor->processLastLinks();
 
+        $links = array();
         foreach ($processedLinks as $processedLink) {
             $preprocessedLink = new PreprocessedLink($processedLink->getUrl());
             $preprocessedLink->setFirstLink($processedLink);
             $preprocessedLink->setSource($source);
 
-            $links = $this->save($preprocessedLink);
-            $this->like($userId, $links, $preprocessedLink);
+            $savedLinks = $this->save($preprocessedLink);
+            $this->like($userId, $savedLinks, $preprocessedLink);
+            $links = array_merge($links, $savedLinks);
         }
 
-        return $processedLinks;
+        return $links;
     }
 
     /**
@@ -208,16 +210,15 @@ class ProcessorService implements LoggerAwareInterface
 
     private function reprocessLastLinks($source)
     {
-        $links = array();
-
         $processedLinks = $this->linkProcessor->processLastLinks();
+
+        $links = array();
         foreach ($processedLinks as $processedLink) {
             $preprocessedLink = new PreprocessedLink($processedLink->getUrl());
             $preprocessedLink->setFirstLink($processedLink);
             $preprocessedLink->setSource($source);
 
             $savedLinks = $this->save($preprocessedLink);
-
             $links = array_merge($links, $savedLinks);
         }
 
@@ -358,7 +359,7 @@ class ProcessorService implements LoggerAwareInterface
     private function isLinkSavedAndProcessed(PreprocessedLink $preprocessedLink)
     {
         try {
-            $linkUrl = $preprocessedLink->getUrl() ?: $preprocessedLink->getUrl();
+            $linkUrl = $preprocessedLink->getUrl();
             $storedLink = $this->linkModel->findLinkByUrl($linkUrl);
 
             return $storedLink && isset($storedLink['processed']) && $storedLink['processed'] == '1';

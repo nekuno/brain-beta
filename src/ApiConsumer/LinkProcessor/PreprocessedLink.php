@@ -150,7 +150,7 @@ class PreprocessedLink
     /**
      * @param Token $token
      */
-    public function setToken(Token $token)
+    public function setToken(Token $token = null)
     {
         $this->token = $token;
     }
