@@ -13,13 +13,6 @@ instant.host: %instant.host%
 guzzle.verify: %guzzle.verify%
 
 dbs.options:
-    mysql_social:
-        driver: %dbs.mysql_social.driver%
-        host: %dbs.mysql_social.host%
-        dbname: %dbs.mysql_social.dbname%
-        user: %dbs.mysql_social.user%
-        password: %dbs.mysql_social.pass%
-        charset: utf8mb4
     mysql_brain:
         driver: %dbs.mysql_brain.driver%
         host: %dbs.mysql_brain.host%

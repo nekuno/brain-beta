@@ -33,12 +33,6 @@ params:
     guzzle.verify: null
 
     ## Doctrine
-    dbs.mysql_social.driver: pdo_mysql
-    dbs.mysql_social.host: localhost
-    dbs.mysql_social.dbname: nekuno
-    dbs.mysql_social.user: root
-    dbs.mysql_social.pass: root
-
     dbs.mysql_brain.driver: pdo_mysql
     dbs.mysql_brain.host: localhost
     dbs.mysql_brain.dbname: nekuno_brain
