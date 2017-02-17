@@ -7,7 +7,6 @@ use Model\User\Token\Token;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\GoogleResourceOwner as GoogleResourceOwnerBase;
 
-
 class GoogleResourceOwner extends GoogleResourceOwnerBase
 {
     use AbstractResourceOwnerTrait {
@@ -21,6 +20,23 @@ class GoogleResourceOwner extends GoogleResourceOwnerBase
     public function __construct($httpClient, $httpUtils, $options, $name, $storage, $dispatcher)
     {
         $this->traitConstructor($httpClient, $httpUtils, $options, $name, $storage, $dispatcher);
+    }
+
+    public function canRequestAsClient()
+    {
+        return true;
+    }
+
+    public function requestAsClient($url, array $query = array())
+    {
+        $url = $this->options['base_url'] . $url;
+
+        $token = $this->getOption('client_credential')['application_token'];
+        $query += array('key' => $token);
+
+        $response = $this->httpRequest($this->normalizeUrl($url, $query));
+
+        return $this->getResponseContent($response);
     }
 
     protected function sendAuthorizedRequest($url, array $query = array(), Token $token = null)
@@ -40,7 +56,8 @@ class GoogleResourceOwner extends GoogleResourceOwnerBase
         return $this->getResponseContent($response);
     }
 
-    protected function getOauthToken(Token $token) {
+    protected function getOauthToken(Token $token)
+    {
         $applicationToken = $this->getOption('client_credential')['application_token'];
         $oauthToken = $token->getOauthToken();
 
@@ -128,6 +145,5 @@ class GoogleResourceOwner extends GoogleResourceOwnerBase
         $response = $this->request($url, $query, $token);
 
         return $response;
-
     }
 }
