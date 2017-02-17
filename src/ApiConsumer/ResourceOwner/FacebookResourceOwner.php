@@ -43,6 +43,23 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 		$resolver->setDefined('redirect_uri');
 	}
 
+    public function canRequestAsClient()
+    {
+        return true;
+    }
+
+    public function requestAsClient($url, array $query = array())
+    {
+        $url = $this->options['base_url'] . $url;
+
+        $token = $this->getOption('consumer_key'). '|' . $this->getOption('consumer_secret');
+        $query += array('access_token' => $token);
+
+        $response = $this->httpRequest($this->normalizeUrl($url, $query));
+
+        return $this->getResponseContent($response);
+    }
+
     /**
      * We use Facebook system for getting new long-lived tokens
      * and assume machine-id as a non-obligatory refreshToken
