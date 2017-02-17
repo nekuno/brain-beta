@@ -23,7 +23,12 @@ class SpotifyResourceOwner extends SpotifyResourceOwnerBase
 		$this->traitConstructor($httpClient, $httpUtils, $options, $name, $storage, $dispatcher);
 	}
 
-	/**
+    public function canRequestAsClient()
+    {
+        return true;
+    }
+
+    /**
 	 * {@inheritDoc}
 	 */
 	protected function configureOptions(OptionsResolverInterface $resolver)
