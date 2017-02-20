@@ -45,7 +45,7 @@ class TokensController
         if ($resourceOwner == TokensModel::TWITTER) {
             /** @var TwitterResourceOwner $twitterResourceOwner */
             $twitterResourceOwner = $resourceOwnerFactory->build($resourceOwner);
-            $profileUrl = $twitterResourceOwner->getProfileUrl($token);
+            $profileUrl = $twitterResourceOwner->requestProfileUrl($token);
             if (!$profileUrl) {
                 //TODO: Add information about this if it happens
                 return $app->json($token, 201);

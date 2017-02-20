@@ -74,7 +74,7 @@ class AccountConnectSubscriber implements EventSubscriberInterface
             /* @var $facebookResourceOwner FacebookResourceOwner */
             $facebookResourceOwner = $this->resourceOwnerFactory->build(TokensModel::FACEBOOK);
             $token = $facebookResourceOwner->extend($token);
-            if (array_key_exists('refreshToken', $token) && is_null($token['refreshToken'])) {
+            if ($token->getRefreshToken()) {
                 $token = $facebookResourceOwner->forceRefreshAccessToken($token);
             }
         }
@@ -82,7 +82,7 @@ class AccountConnectSubscriber implements EventSubscriberInterface
         if ($resourceOwner == TokensModel::TWITTER) {
             /** @var TwitterResourceOwner $resourceOwnerObject */
             $resourceOwnerObject = $this->resourceOwnerFactory->build($resourceOwner);
-            $profileUrl = $resourceOwnerObject->getProfileUrl($token);
+            $profileUrl = $resourceOwnerObject->requestProfileUrl($token);
             if ($profileUrl) {
                 $profile = new SocialProfile($userId, $profileUrl, $resourceOwner);
 

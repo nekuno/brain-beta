@@ -142,7 +142,7 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
 
         $profile = array(
             'description' => isset($user['description']) ? $user['description'] : $user['name'],
-            'url' => isset($user['screen_name']) ? $this->urlParser->buildUserUrl($user['screen_name']) : null,
+            'url' => $this->getUserUrl($user),
             'thumbnail' => isset($user['profile_image_url']) ? str_replace('_normal', '', $user['profile_image_url']) : null,
             'additionalLabels' => array('Creator'),
             'resource' => TokensModel::TWITTER,
@@ -154,7 +154,7 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
         return $profile;
     }
 
-    public function getProfileUrl(Token $token)
+    public function requestProfileUrl(Token $token)
     {
         try {
             $settingsUrl = 'account/settings.json';
@@ -163,12 +163,12 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
             return null;
         }
 
-        if (!isset($account['screen_name'])) {
-            return null;
-        }
-        $screenName = $account['screen_name'];
+        return $this->getUserUrl($account);
+    }
 
-        return $this->urlParser->buildUserUrl($screenName);
+    public function getUserUrl(array $user)
+    {
+        return isset($user['screen_name']) ? $this->urlParser->buildUserUrl($user['screen_name']) : null;
     }
 
     public function requestStatus($statusId)
