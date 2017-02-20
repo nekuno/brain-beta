@@ -5,13 +5,4 @@
 <p>Archivo: {{ e.file }}</p>
 <p>Línea: {{ e.line }}</p>
 <p>Trazado: {{ e.traceAsString }}</p>
-<p>Petición:</p>
-{% for key, data in request %}
-    {% if data is iterable %}
-        {% for key2, singleData in data %}
-            {{ key2 }}: {{ singleData }}
-        {% endfor %}
-    {% else %}
-        {{ key }}: {{ data }}
-    {% endif %}
-{% endfor %}
+<p>Petición: {{ data }}</p>

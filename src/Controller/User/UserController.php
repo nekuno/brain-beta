@@ -156,7 +156,7 @@ class UserController
                 ->setContentType('text/html')
                 ->setBody($app['twig']->render('email-notifications/registration-error-notification.html.twig', array(
                     'e' => $e,
-                    'request' => $request->request->all(),
+                    'data' => json_encode($request->request->all()),
                 )));
 
             $app['mailer']->send($message);
