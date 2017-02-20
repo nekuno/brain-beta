@@ -105,6 +105,7 @@ class TwitterUrlParser extends UrlParser
                 'intent',
                 'hashtag',
                 'search',
+                'search-home',
                 'who_to_follow',
                 'about',
                 'tos',
