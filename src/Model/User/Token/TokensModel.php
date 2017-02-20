@@ -441,7 +441,7 @@ class TokensModel
             'updatedTime' => array('type' => 'integer', 'editable' => false),
             'expireTime' => array('type' => 'integer', 'required' => false),
             'refreshToken' => array('type' => 'string', 'required' => false),
-            'resourceId' => array('type' => 'string', 'required' => false),
+            'resourceId' => array('type' => 'string', 'required' => true),
         );
     }
 
