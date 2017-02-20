@@ -7,9 +7,10 @@ use ApiConsumer\Exception\UrlNotValidException;
 
 class FacebookUrlParser extends UrlParser
 {
+    const FACEBOOK_PAGE = 'facebook_page';
+    //Types managed outside of here:
     const FACEBOOK_VIDEO = 'facebook_video';
     const FACEBOOK_PROFILE = 'facebook_profile';
-    const FACEBOOK_PAGE = 'facebook_page';
     const FACEBOOK_STATUS = 'facebook_status';
 
     static function FACEBOOK_VIDEO_TYPES(){

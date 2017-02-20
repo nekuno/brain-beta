@@ -56,7 +56,7 @@ class TwitterIntentProcessorTest extends \PHPUnit_Framework_TestCase
     /**
      * @dataProvider getProfileForRequestItem
      */
-    public function testRequestItem($url, $id, $profiles, $link)
+    public function testRequestItem($url, $id, $profiles, $links)
     {
         $this->parser->expects($this->once())
             ->method('getProfileId')
@@ -67,13 +67,13 @@ class TwitterIntentProcessorTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($profiles));
 
         $this->resourceOwner->expects($this->once())
-            ->method('buildProfileFromLookup')
-            ->will($this->returnValue($link));
+            ->method('buildProfilesFromLookup')
+            ->will($this->returnValue($links));
 
         $this->setExpectedException('ApiConsumer\Exception\UrlChangedException', 'Url changed from https://twitter.com/intent/user?screen_name=yawmoght to https://twitter.com/yawmoght');
 
-        $link = new PreprocessedLink($url);
-        $this->processor->getResponse($link);
+        $preprocessedLink = new PreprocessedLink($url);
+        $this->processor->getResponse($preprocessedLink);
     }
 
     public function getBadUrls()
@@ -90,7 +90,7 @@ class TwitterIntentProcessorTest extends \PHPUnit_Framework_TestCase
                 $this->getProfileUrl(),
                 $this->getProfileId(),
                 $this->getProfileResponse(),
-                $this->getProfileLink(),
+                array($this->getProfileLink()),
             )
         );
     }

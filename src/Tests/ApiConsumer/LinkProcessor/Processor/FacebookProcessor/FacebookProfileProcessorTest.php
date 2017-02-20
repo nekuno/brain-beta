@@ -40,15 +40,15 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
     /**
      * @dataProvider getProfileForRequestItem
      */
-    public function testRequestItem($url, $id, $isStatus, $profiles)
+    public function testRequestItem($url, $id, $isStatus, $profile)
     {
         $this->parser->expects($this->any())
             ->method('isStatusId')
             ->will($this->returnValue($isStatus));
 
         $this->resourceOwner->expects($this->once())
-            ->method('requestPage')
-            ->will($this->returnValue($profiles));
+            ->method('requestProfile')
+            ->will($this->returnValue($profile));
 
         $link = new PreprocessedLink($url);
         $link->setResourceItemId($id);
@@ -56,7 +56,7 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
         $link->setSource(TokensModel::FACEBOOK);
         $response = $this->processor->getResponse($link);
 
-        $this->assertEquals($response, $profiles, 'Asserting correct response for ' . $url);
+        $this->assertEquals($response, $profile, 'Asserting correct response for ' . $url);
     }
 
     /**

@@ -56,7 +56,7 @@ class TwitterProfileProcessorTest extends \PHPUnit_Framework_TestCase
     /**
      * @dataProvider getProfileForRequestItem
      */
-    public function testRequestItem($url, $id, $profiles)
+    public function testRequestItem($url, $id, $profile)
     {
         $this->parser->expects($this->once())
             ->method('getProfileId')
@@ -64,22 +64,22 @@ class TwitterProfileProcessorTest extends \PHPUnit_Framework_TestCase
 
         $this->resourceOwner->expects($this->once())
             ->method('lookupUsersBy')
-            ->will($this->returnValue($profiles));
+            ->will($this->returnValue($profile));
 
         $link = new PreprocessedLink($url);
         $response = $this->processor->getResponse($link);
 
-        $this->assertEquals($response, $profiles[0], 'Asserting correct response for ' . $url);
+        $this->assertEquals($response, $profile, 'Asserting correct response for ' . $url);
     }
 
     /**
      * @dataProvider getResponseHydration
      */
-    public function testHydrateLink($url, $response, $linkArray, $expectedArray, $expectedId)
+    public function testHydrateLink($url, $response, $linkArrays, $expectedArray, $expectedId)
     {
         $this->resourceOwner->expects($this->once())
-            ->method('buildProfileFromLookup')
-            ->will($this->returnValue($linkArray));
+            ->method('buildProfilesFromLookup')
+            ->will($this->returnValue($linkArrays));
 
         $link = new PreprocessedLink($url);
         $this->processor->hydrateLink($link, $response);
@@ -127,7 +127,7 @@ class TwitterProfileProcessorTest extends \PHPUnit_Framework_TestCase
             array(
                 $this->getProfileUrl(),
                 $this->getProfileItemResponse(),
-                $this->getProfileLink(),
+                array($this->getProfileLink()),
                 array(
                     'title' => 'yawmoght',
                     'description' => 'Tool developer & data junkie',

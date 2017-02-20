@@ -59,7 +59,7 @@ class SpotifyTrackProcessorTest extends \PHPUnit_Framework_TestCase
      */
     public function testBadResponseRequestItem($url, $id, $response)
     {
-        $this->setExpectedException('ApiConsumer\Exception\CannotProcessException', 'Could not process url ' . $url);
+        $this->setExpectedException('ApiConsumer\Exception\CannotProcessException', 'Response for url ' . $url . ' is not valid');
 
         $this->parser->expects($this->once())
             ->method('getSpotifyId')
@@ -76,7 +76,7 @@ class SpotifyTrackProcessorTest extends \PHPUnit_Framework_TestCase
     /**
      * @dataProvider getTrackForRequestItem
      */
-    public function testRequestItem($url, $id, $track, $album)
+    public function testRequestItem($url, $id, $track)
     {
         $this->parser->expects($this->once())
             ->method('getSpotifyId')
@@ -86,14 +86,10 @@ class SpotifyTrackProcessorTest extends \PHPUnit_Framework_TestCase
             ->method('requestTrack')
             ->will($this->returnValue($track));
 
-        $this->resourceOwner->expects($this->once())
-            ->method('requestAlbum')
-            ->will($this->returnValue($album));
-
         $link = new PreprocessedLink($url);
         $response = $this->processor->getResponse($link);
 
-        $this->assertEquals(array('track' => $track, 'album' => $album), $response, 'Asserting correct track response for ' . $url);
+        $this->assertEquals($track, $response, 'Asserting correct track response for ' . $url);
     }
 
     /**
@@ -140,15 +136,6 @@ class SpotifyTrackProcessorTest extends \PHPUnit_Framework_TestCase
         );
     }
 
-    public function getUrls()
-    {
-        return array(
-            array($this->getTrackUrl(), SpotifyUrlParser::TRACK_URL),
-            array($this->getAlbumUrl(), SpotifyUrlParser::ALBUM_URL),
-            array($this->getArtistUrl(), SpotifyUrlParser::ARTIST_URL),
-        );
-    }
-
     public function getTrackId()
     {
         return '4vLYewWIvqHfKtJDk8c8tq';
@@ -166,7 +153,6 @@ class SpotifyTrackProcessorTest extends \PHPUnit_Framework_TestCase
                 'https://open.spotify.com/track/4vLYewWIvqHfKtJDk8c8tq',
                 '4vLYewWIvqHfKtJDk8c8tq',
                 $this->getTrackResponse(),
-                $this->getAlbumResponse(),
             )
         );
     }
@@ -176,10 +162,7 @@ class SpotifyTrackProcessorTest extends \PHPUnit_Framework_TestCase
         return array(
             array(
                 'https://open.spotify.com/track/4vLYewWIvqHfKtJDk8c8tq',
-                array(
-                    'track' => $this->getTrackResponse(),
-                    'album' => $this->getAlbumResponse(),
-                ),
+                $this->getTrackResponse(),
                 array(
                     'title' => 'So What',
                     'description' => 'Kind Of Blue (Legacy Edition) : Miles Davis',
@@ -205,10 +188,7 @@ class SpotifyTrackProcessorTest extends \PHPUnit_Framework_TestCase
         return array(
             array(
                 'https://open.spotify.com/track/4vLYewWIvqHfKtJDk8c8tq',
-                array(
-                    'track' => $this->getTrackResponse(),
-                    'album' => $this->getAlbumResponse(),
-                ),
+                $this->getTrackResponse(),
                 $this->getTrackTags(),
             )
         );
@@ -224,10 +204,7 @@ class SpotifyTrackProcessorTest extends \PHPUnit_Framework_TestCase
         return array(
             array(
                 'https://open.spotify.com/track/4vLYewWIvqHfKtJDk8c8tq',
-                array(
-                    'track' => $this->getTrackResponse(),
-                    'album' => $this->getAlbumResponse(),
-                ),
+                $this->getTrackResponse(),
                 $parameters,
             )
         );
@@ -357,15 +334,15 @@ class SpotifyTrackProcessorTest extends \PHPUnit_Framework_TestCase
                             'spotifyId' => '4sb0eMpDn3upAFfyi4q2rw',
                         ),
                 ),
+//            2 =>
+//                array(
+//                    'name' => 'Jazz',
+//                    'additionalLabels' =>
+//                        array(
+//                            0 => 'MusicalGenre',
+//                        ),
+//                ),
             2 =>
-                array(
-                    'name' => 'Jazz',
-                    'additionalLabels' =>
-                        array(
-                            0 => 'MusicalGenre',
-                        ),
-                ),
-            3 =>
                 array(
                     'name' => 'Miles Davis',
                     'additionalLabels' =>
@@ -379,59 +356,4 @@ class SpotifyTrackProcessorTest extends \PHPUnit_Framework_TestCase
                 ),
         );
     }
-
-    public function getAlbumUrl()
-    {
-        return 'http://open.spotify.com/album/4sb0eMpDn3upAFfyi4q2rw';
-    }
-
-    public function getAlbumResponse()
-    {
-        return array(
-            'album_type' => 'album',
-            'artists' => array(
-                0 => array(
-                    'external_urls' => array(
-                        'spotify' => 'https://open.spotify.com/artist/0kbYTNQb4Pb1rPbbaF0pT4',
-                    ),
-                    'href' => 'https://api.spotify.com/v1/artists/0kbYTNQb4Pb1rPbbaF0pT4',
-                    'id' => '0kbYTNQb4Pb1rPbbaF0pT4',
-                    'name' => 'Miles Davis',
-                    'type' => 'artist',
-                    'uri' => 'spotify:artist:0kbYTNQb4Pb1rPbbaF0pT4',
-                ),
-            ),
-            'external_ids' => array(
-                'upc' => '888880696069',
-            ),
-            'external_urls' => array(
-                'spotify' => 'https://open.spotify.com/album/4sb0eMpDn3upAFfyi4q2rw',
-            ),
-            'genres' => array(
-                0 => 'Jazz',
-            ),
-            'href' => 'https://api.spotify.com/v1/albums/4sb0eMpDn3upAFfyi4q2rw',
-            'id' => '4sb0eMpDn3upAFfyi4q2rw',
-            'images' => array(
-                0 => array(
-                    'height' => 640,
-                    'url' => 'https://i.scdn.co/image/d3a5855bc9c50767090e4e29f2d207061114888d',
-                    'width' => 640,
-                ),
-            ),
-            'name' => 'Kind Of Blue (Legacy Edition)',
-            'popularity' => 71,
-            'release_date' => '1959',
-            'release_date_precision' => 'year',
-            'tracks' => array(),
-            'type' => 'album',
-            'uri' => 'spotify:album:4sb0eMpDn3upAFfyi4q2rw',
-        );
-    }
-
-    public function getArtistUrl()
-    {
-        return 'https://open.spotify.com/artist/4Ww5mwS7BWYjoZTUIrMHfC';
-    }
-
 }
