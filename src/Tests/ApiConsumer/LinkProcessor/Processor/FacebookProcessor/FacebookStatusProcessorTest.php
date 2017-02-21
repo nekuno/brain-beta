@@ -3,12 +3,12 @@
 namespace Tests\ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookProfileProcessor;
+use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookStatusProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;
 use Model\User\Token\TokensModel;
 
-class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
+class FacebookStatusProcessorTest extends \PHPUnit_Framework_TestCase
 {
     /**
      * @var FacebookResourceOwner|\PHPUnit_Framework_MockObject_MockObject
@@ -21,7 +21,7 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
     protected $parser;
 
     /**
-     * @var FacebookProfileProcessor
+     * @var FacebookStatusProcessor
      */
     protected $processor;
 
@@ -34,11 +34,11 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser')
             ->getMock();
 
-        $this->processor = new FacebookProfileProcessor($this->resourceOwner, $this->parser);
+        $this->processor = new FacebookStatusProcessor($this->resourceOwner, $this->parser);
     }
 
     /**
-     * @dataProvider getProfileForRequestItem
+     * @dataProvider getStatusForRequestItem
      */
     public function testRequestItem($url, $id, $isStatus, $profile)
     {
@@ -47,7 +47,7 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($isStatus));
 
         $this->resourceOwner->expects($this->once())
-            ->method('requestProfile')
+            ->method('requestStatus')
             ->will($this->returnValue($profile));
 
         $link = new PreprocessedLink($url);
@@ -92,14 +92,14 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
         );
     }
 
-    public function getProfileForRequestItem()
+    public function getStatusForRequestItem()
     {
         return array(
             array(
-                $this->getProfileUrl(),
-                $this->getProfileId(),
-                false,
-                $this->getProfileResponse(),
+                $this->getStatusUrl(),
+                $this->getStatusId(),
+                true,
+                $this->getStatusResponse(),
             )
         );
     }
@@ -108,11 +108,11 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
     {
         return array(
             array(
-                $this->getProfileUrl(),
-                $this->getProfileItemResponse(),
+                $this->getStatusUrl(),
+                $this->getStatusItemResponse(),
                 array(
                     'title' => $this->getTitle(),
-                    'description' => $this->getTitle(),
+                    'description' => $this->getDescription(),
                     'thumbnail' => null,
                     'url' => null,
                     'id' => null,
@@ -131,38 +131,49 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
     {
         return array(
             array(
-                $this->getProfileUrl(),
-                $this->getProfileItemResponse(),
+                $this->getStatusUrl(),
+                $this->getStatusItemResponse(),
                 $this->getProfileTags(),
             )
         );
     }
 
-    public function getProfileResponse()
+    public function getStatusResponse()
     {
-        return $this->getProfileItemResponse();
+        return $this->getStatusItemResponse();
     }
 
-    public function getProfileItemResponse()
+    public function getStatusItemResponse()
     {
         return array(
             "name" => $this->getTitle(),
+            "description" => $this->getDescription(),
             "picture" => array(
                 "data" => array(
                     "is_silhouette" => false,
                     "url" => $this->getThumbnailUrl(),
                 )
             ),
-            "id" => "10153571968389307"
+            "id" => "10153571968389307_10155807625414307"
         );
     }
 
-    public function getProfileUrl()
+    public function getDescription()
+    {
+        return "A veces un pequeño cambio en el orden de las palabras es suficiente para darnos cuenta de la barbaridad que estamos diciendo. Ante la afirmación \"somos adi";
+    }
+
+    public function getTitle()
+    {
+        return "Desmontando \"Salvados: conectados\" y la adicción al móvil - blogoff";
+    }
+
+    public function getStatusUrl()
     {
         return 'https://www.facebook.com/vips';
     }
 
-    public function getProfileId()
+    public function getStatusId()
     {
         return array('vips');
     }
@@ -174,11 +185,7 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
 
     public function getThumbnailUrl()
     {
-        return "https://scontent.xx.fbcdn.net/v/t1.0-1/p200x200/1936476_10154428007884307_1240327335205953613_n.jpg?oh=2f4b121a7b7baf85328495f15ebd368e&oe=594A6F24";
+        return "https://external.xx.fbcdn.net/safe_image.php?d=AQACtmgJeS0HzivW&w=130&h=130&url=http%3A%2F%2Fwww.blogoff.es%2Fwp-content%2Fuploads%2F2017%2F02%2Flacie-3.jpg&cfs=1&sx=497&sy=0&sw=994&sh=994&_nc_hash=AQBOtGIg5toSeT1_";
     }
 
-    public function getTitle()
-    {
-        return "Roberto Martinez Pallarola";
-    }
 }

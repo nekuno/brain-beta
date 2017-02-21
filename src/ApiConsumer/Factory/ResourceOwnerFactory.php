@@ -2,6 +2,7 @@
 
 namespace ApiConsumer\Factory;
 
+use ApiConsumer\ResourceOwner\AbstractResourceOwnerTrait;
 use Buzz\Client\Curl;
 use HWI\Bundle\OAuthBundle\OAuth\RequestDataStorageInterface;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwnerInterface;

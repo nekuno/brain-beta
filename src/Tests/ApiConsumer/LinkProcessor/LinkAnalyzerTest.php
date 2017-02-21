@@ -32,11 +32,11 @@ class LinkAnalyzerTest extends \PHPUnit_Framework_TestCase
      */
     public function testBadProcessorName($url)
     {
-        $this->setExpectedException(UrlNotValidException::class, 'Url ' . $url . ' not valid');
         $link = new PreprocessedLink($url);
-        $link->setUrl($url);
 
-        LinkAnalyzer::getProcessorName($link);
+        $type = LinkAnalyzer::getProcessorName($link);
+
+        $this->assertEquals(UrlParser::SCRAPPER, $type);
     }
 
     /**
@@ -83,8 +83,8 @@ class LinkAnalyzerTest extends \PHPUnit_Framework_TestCase
             array('https://open.spotify.com/album/02dncVzAWXSAI3e8oJnoug/6BEocXyX92zZ2vLc4yxewo', SpotifyUrlParser::ALBUM_TRACK_URL),
             array('http://open.spotify.com/album/4sb0eMpDn3upAFfyi4q2rw', SpotifyUrlParser::ALBUM_URL),
             array('http://open.spotify.com/artist/4Ww5mwS7BWYjoZTUIrMHfC', SpotifyUrlParser::ARTIST_URL),
-            array('http://www.facebook.com/vips', FacebookUrlParser::FACEBOOK_PROFILE),
-            array('https://www.facebook.com/roberto.m.pallarola', FacebookUrlParser::FACEBOOK_PROFILE),
+            array('http://www.facebook.com/vips', FacebookUrlParser::FACEBOOK_PAGE),
+            array('https://www.facebook.com/roberto.m.pallarola', FacebookUrlParser::FACEBOOK_PAGE),
         );
     }
 
