@@ -9,6 +9,7 @@ use ApiConsumer\LinkProcessor\MetadataParser\BasicMetadataParser;
 use ApiConsumer\LinkProcessor\MetadataParser\FacebookMetadataParser;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\SynonymousParameters;
+use ApiConsumer\ResourceOwner\AbstractResourceOwnerTrait;
 use Goutte\Client;
 use GuzzleHttp\Exception\RequestException;
 use Model\Image;
@@ -168,5 +169,10 @@ class ScraperProcessor implements ProcessorInterface
     public function getSynonymousParameters(PreprocessedLink $preprocessedLink, array $data)
     {
         return new SynonymousParameters();
+    }
+
+    public function getResourceOwner()
+    {
+        return null;
     }
 }

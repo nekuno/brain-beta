@@ -1,4 +1,5 @@
 valid_ips: ['127.0.0.1', %dev_custom_ip_1%, %dev_custom_ip_2%, %dev_custom_ip_3%, %dev_custom_ip_4%]
+support_emails: [%support_email_1%, %support_email_2%, %support_email_3%]
 
 secret: %secret%
 life_time: 5184000 # 60 days
@@ -12,13 +13,6 @@ instant.host: %instant.host%
 guzzle.verify: %guzzle.verify%
 
 dbs.options:
-    mysql_social:
-        driver: %dbs.mysql_social.driver%
-        host: %dbs.mysql_social.host%
-        dbname: %dbs.mysql_social.dbname%
-        user: %dbs.mysql_social.user%
-        password: %dbs.mysql_social.pass%
-        charset: utf8mb4
     mysql_brain:
         driver: %dbs.mysql_brain.driver%
         host: %dbs.mysql_brain.host%

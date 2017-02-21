@@ -36,9 +36,12 @@ abstract class APITest extends WebTestCase
         /* @var $app Application */
         $app = $this->app;
         // Clean the database
-        $query = new Query($app['neo4j.client'], 'MATCH (n) OPTIONAL MATCH n-[r]-m DELETE r, n, m;');
+        $query = new Query($app['neo4j.client'], 'MATCH (n) OPTIONAL MATCH (n)-[r]-(m) DELETE r, n, m');
         $query->getResultSet();
-
+        // Create default invitation
+        $query = new Query($app['neo4j.client'], 'CREATE (i:Invitation) SET i.token = "join", i.consumed = 0, i.available = 1000, i.expiresAt = 9999999999999999, i.createdAt = 11111111');
+        $query->getResultSet();
+        // Create brain DB
         $em = $app['orm.ems']['mysql_brain'];
         $schemaTool = new SchemaTool($em);
         $schemaTool->dropDatabase();
@@ -113,19 +116,19 @@ abstract class APITest extends WebTestCase
 
     protected function createUser($userData)
     {
-        return $this->getResponseByRoute('/users', 'POST', $userData);
+        return $this->getResponseByRoute('/register', 'POST', $userData);
     }
 
     protected function createAndLoginUserA()
     {
-        $userData = $this->getUserAFixtures();
+        $userData = $this->getUserARegisterFixtures();
         $this->createUser($userData);
         $this->loginUser($userData);
     }
 
     protected function createAndLoginUserB()
     {
-        $userData = $this->getUserBFixtures();
+        $userData = $this->getUserBRegisterFixtures();
         $this->createUser($userData);
         $this->loginUser($userData);
     }
@@ -133,18 +136,62 @@ abstract class APITest extends WebTestCase
     protected function getUserAFixtures()
     {
         return array(
-            'username' => 'JohnDoe',
-            'email' => 'nekuno-johndoe@gmail.com',
-            'plainPassword' => 'test'
+            'resourceOwner' => 'facebook',
+            'accessToken' => '12345',
         );
     }
 
     protected function getUserBFixtures()
     {
         return array(
-            'username' => 'JaneDoe',
-            'email' => 'nekuno-janedoe@gmail.com',
-            'plainPassword' => 'test'
+            'resourceOwner' => 'facebook',
+            'accessToken' => '12346',
+        );
+    }
+
+    protected function getUserARegisterFixtures()
+    {
+        return array(
+            'user' => array(
+                'username' => 'JohnDoe',
+                'email' => 'nekuno-johndoe@gmail.com',
+            ),
+            'profile' => array(),
+            'token' => 'join',
+            'oauth' => array(
+                'resourceOwner' => $this->app['userA.resource'],
+                'oauthToken' => $this->app['userA.access_token'],
+                'resourceId' => $this->app['userA.resource_id'],
+                'expireTime' => strtotime("+1 week"),
+                'refreshToken' => null
+            )
+        );
+    }
+
+    protected function getUserBRegisterFixtures()
+    {
+        return array(
+            'user' => array(
+                'username' => 'JaneDoe',
+                'email' => 'nekuno-janedoe@gmail.com',
+            ),
+            'profile' => array(),
+            'token' => 'join',
+            'oauth' => array(
+                'resourceOwner' => $this->app['userB.resource'],
+                'oauthToken' => $this->app['userB.access_token'],
+                'resourceId' => $this->app['userB.resource_id'],
+                'expireTime' => strtotime("+1 week"),
+                'refreshToken' => null
+            )
+        );
+    }
+
+    protected function getUserAEditionFixtures()
+    {
+        return array(
+            'username' => 'JohnDoe',
+            'email' => 'nekuno-johndoe@gmail.com',
         );
     }
 

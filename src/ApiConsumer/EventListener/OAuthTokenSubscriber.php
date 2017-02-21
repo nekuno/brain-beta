@@ -2,7 +2,7 @@
 namespace ApiConsumer\EventListener;
 
 use ApiConsumer\Event\OAuthTokenEvent;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use PhpAmqpLib\Exception\AMQPRuntimeException;
@@ -75,12 +75,12 @@ class OAuthTokenSubscriber implements EventSubscriberInterface
         $token = $event->getToken();
 
         $this->tm->update(
-            $token['id'],
-            $token['resourceOwner'],
+            $token->getUserId(),
+            $token->getResourceOwner(),
             array(
-                'oauthToken' => $token['oauthToken'],
-                'expireTime' => $token['expireTime'],
-                'refreshToken' => $token['refreshToken'],
+                'oauthToken' => $token->getOauthToken(),
+                'expireTime' => $token->getExpireTime(),
+                'refreshToken' => $token->getRefreshToken(),
             )
         );
     }
@@ -91,7 +91,7 @@ class OAuthTokenSubscriber implements EventSubscriberInterface
      */
     protected function sendMail(array $user)
     {
-
+//TODO: When this is used, pick username and email from user, resourceOwner from token
         $loginUrl = 'http://qnoow.dev.com/app_dev.php/connect/' . $user['resourceOwner'];
 
         $message = \Swift_Message::newInstance('Action required');

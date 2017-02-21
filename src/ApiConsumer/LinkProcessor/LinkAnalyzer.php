@@ -9,22 +9,25 @@ use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\UrlParserInterface;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
+use Model\User\Token\TokensModel;
 
 class LinkAnalyzer
 {
     /**
-     * @param PreprocessedLink $link
+     * @param PreprocessedLink $preprocessedLink
      * @return string
      */
-    public static function getProcessorName(PreprocessedLink $link)
+    public static function getProcessorName(PreprocessedLink $preprocessedLink)
     {
-        if ($link->getType()) {
-            return $link->getType();
+        if ($preprocessedLink->getType()) {
+            return $preprocessedLink->getType();
         }
 
-        $url = $link->getUrl();
+        if ($type = self::getTypeFromId($preprocessedLink)){
+            return $type;
+        }
 
-        (new UrlParser())->checkUrlValid($url);
+        $url = $preprocessedLink->getUrl();
 
         try{
             $parser = self::getUrlParser($url);
@@ -34,6 +37,39 @@ class LinkAnalyzer
         }
 
         return $type;
+    }
+
+    protected static function getTypeFromId(PreprocessedLink $preprocessedLink)
+    {
+        if (self::isFacebook($preprocessedLink->getUrl())){
+            $parser = new FacebookUrlParser();
+            if ($parser->isStatusId($preprocessedLink->getResourceItemId())){
+                return FacebookUrlParser::FACEBOOK_STATUS;
+            }
+        }
+
+        return null;
+    }
+
+    public static function getResource($url) {
+
+        if (self::isYouTube($url)) {
+            return TokensModel::GOOGLE;
+        }
+
+        if (self::isSpotify($url)) {
+            return TokensModel::SPOTIFY;
+        }
+
+        if (self::isFacebook($url)) {
+            return TokensModel::FACEBOOK;
+        }
+
+        if (self::isTwitter($url)) {
+            return TokensModel::TWITTER;
+        }
+
+        return null;
     }
 
     public static function mustResolve(PreprocessedLink $link)
@@ -83,6 +119,13 @@ class LinkAnalyzer
         similar_text($text1, $text2, $percent);
 
         return $percent > $similarTextPercentage;
+    }
+
+    public static function getUsername($url)
+    {
+        $parser = self::getUrlParser($url);
+
+        return $parser->getUsername($url);
     }
     
     //TODO: Improve detection on host, not whole url

@@ -21,8 +21,7 @@ class TwitterIntentProcessor extends AbstractProcessor
     protected function requestItem(PreprocessedLink $preprocessedLink)
     {
         try {
-            $userId = $this->getUserId($preprocessedLink);
-            $profileUrl = $this->buildProfileUrl($userId);
+            $profileUrl = $this->buildProfileUrl($preprocessedLink);
         } catch (UrlNotValidException $e) {
             throw new CannotProcessException($e->getUrl(), 'Getting userId from a twitter intent url');
         }
@@ -39,7 +38,7 @@ class TwitterIntentProcessor extends AbstractProcessor
     {
     }
 
-    private function getUserIdFromResourceId(PreprocessedLink $preprocessedLink)
+    protected function getUserIdFromResourceId(PreprocessedLink $preprocessedLink)
     {
         if ($resourceId = $preprocessedLink->getResourceItemId()) {
             return array('id' => $resourceId);
@@ -48,16 +47,20 @@ class TwitterIntentProcessor extends AbstractProcessor
         return array();
     }
 
-    public function buildProfileUrl(array $userId)
+    protected function buildProfileUrl(PreprocessedLink $preprocessedLink)
     {
+        $userId = $this->getUserId($preprocessedLink);
+
         if (isset($userId['screen_name'])) {
             return $this->parser->buildUserUrl($userId['screen_name']);
         }
 
         if (isset($userId['user_id'])) {
-            $response = $this->resourceOwner->lookupUsersBy('user_id', array($userId['user_id']));
-            $link = $this->resourceOwner->buildProfileFromLookup($response);
+            $token = $preprocessedLink->getToken();
+            $users = $this->resourceOwner->lookupUsersBy('user_id', array($userId['user_id']), $token);
+            $links = $this->resourceOwner->buildProfilesFromLookup($users);
 
+            $link = reset($links);
             return $link['url'];
         }
 

@@ -32,16 +32,12 @@ class UserSubscriber implements EventSubscriberInterface
             \AppEvents::GROUP_ADDED => array('onGroupAdded'),
             \AppEvents::GROUP_REMOVED => array('onGroupRemoved'),
             \AppEvents::PROFILE_CREATED => array('onProfileCreated'),
+            \AppEvents::USER_REGISTERED => array('onUserRegistered'),
         );
     }
 
     public function onUserCreated(UserEvent $event)
     {
-        $user = $event->getUser();
-        //$threads = $this->threadManager->getDefaultThreads($user);
-
-        //$createdThreads = $this->threadManager->createBatchForUser($user->getId(), $threads);
-        // TODO: Enqueue thread recommendation
     }
 
     public function onGroupAdded(GroupEvent $groupEvent)
@@ -74,9 +70,16 @@ class UserSubscriber implements EventSubscriberInterface
         try {
             $this->chat->createDefaultMessage($id, $locale);
         } catch (RequestException $e) {
-
+            return false;
         }
 
         return true;
+    }
+
+    public function onUserRegistered(UserEvent $event)
+    {
+        $user = $event->getUser();
+        $threads = $this->threadManager->getDefaultThreads($user, ThreadManager::SCENARIO_DEFAULT_LITE);
+        $this->threadManager->createBatchForUser($user->getId(), $threads);
     }
 }

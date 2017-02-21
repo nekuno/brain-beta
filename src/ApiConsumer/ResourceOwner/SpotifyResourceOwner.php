@@ -12,7 +12,6 @@ class SpotifyResourceOwner extends SpotifyResourceOwnerBase
 {
 	use AbstractResourceOwnerTrait {
 		AbstractResourceOwnerTrait::configureOptions as traitConfigureOptions;
-		AbstractResourceOwnerTrait::addOauthData as traitAddOauthData;
 		AbstractResourceOwnerTrait::__construct as private traitConstructor;
 	}
 
@@ -24,7 +23,12 @@ class SpotifyResourceOwner extends SpotifyResourceOwnerBase
 		$this->traitConstructor($httpClient, $httpUtils, $options, $name, $storage, $dispatcher);
 	}
 
-	/**
+    public function canRequestAsClient()
+    {
+        return true;
+    }
+
+    /**
 	 * {@inheritDoc}
 	 */
 	protected function configureOptions(OptionsResolverInterface $resolver)
@@ -58,19 +62,10 @@ class SpotifyResourceOwner extends SpotifyResourceOwnerBase
 		return $this->getResponseContent($response);
 	}
 
-	protected function addOauthData($data, $token)
-	{
-		$newToken = $this->traitAddOauthData($data, $token);
-		if (!isset($newToken['refreshToken']) && isset($token['refreshToken'])){
-			$newToken['refreshToken'] = $token['refreshToken'];
-		}
-		return $newToken;
-	}
-
 	public function requestTrack($trackId)
     {
         $urlTrack = 'tracks/' . $trackId;
-        $track = $this->authorizedAPIRequest($urlTrack, array());
+        $track = $this->requestAsClient($urlTrack, array());
 
         return $track;
     }
@@ -78,7 +73,7 @@ class SpotifyResourceOwner extends SpotifyResourceOwnerBase
     public function requestAlbum($albumId)
     {
         $urlAlbum = 'albums/' . $albumId;
-        $album = $this->authorizedAPIRequest($urlAlbum, array());
+        $album = $this->requestAsClient($urlAlbum, array());
 
         return $album;
     }
@@ -86,7 +81,7 @@ class SpotifyResourceOwner extends SpotifyResourceOwnerBase
     public function requestArtist($artistId)
     {
         $urlArtist = 'artists/' . $artistId;
-        $artist = $this->authorizedAPIRequest($urlArtist, array());
+        $artist = $this->requestAsClient($urlArtist, array());
 
         return $artist;
     }

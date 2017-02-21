@@ -8,7 +8,6 @@ class UsersTest extends UsersAPITest
     {
         $this->assertGetUserWithoutCredentialsResponse();
         $this->assertGetUnusedUsernameAvailableResponse();
-        $this->assertValidateUserResponse();
         $this->assertCreateUsersResponse();
         $this->assertGetExistingUsernameAvailableResponse();
         $this->assertLoginUserResponse();
@@ -20,7 +19,7 @@ class UsersTest extends UsersAPITest
 
     protected function assertGetUserWithoutCredentialsResponse()
     {
-        $response = $this->getOtherUser(2);
+        $response = $this->getOtherUser('janedoe');
         $this->assertStatusCode($response, 401, "Get User without credentials");
     }
 
@@ -30,21 +29,14 @@ class UsersTest extends UsersAPITest
         $this->assertStatusCode($response, 200, "Bad response on get unused available username JohnDoe");
     }
 
-    protected function assertValidateUserResponse()
-    {
-        $userData = $this->getUserAFixtures();
-        $response = $this->validateUserA($userData);
-        $this->assertStatusCode($response, 200, "Bad response on validate user A");
-    }
-
     protected function assertCreateUsersResponse()
     {
-        $userData = $this->getUserAFixtures();
+        $userData = $this->getUserARegisterFixtures();
         $response = $this->createUser($userData);
         $formattedResponse = $this->assertJsonResponse($response, 201, "Create UserA");
         $this->assertUserAFormat($formattedResponse, "Bad User response on create user A");
 
-        $userData = $this->getUserBFixtures();
+        $userData = $this->getUserBRegisterFixtures();
         $response = $this->createUser($userData);
         $formattedResponse = $this->assertJsonResponse($response, 201, "Create UserB");
         $this->assertUserBFormat($formattedResponse, "Bad User response on create user B");
@@ -53,7 +45,7 @@ class UsersTest extends UsersAPITest
     protected function assertGetExistingUsernameAvailableResponse()
     {
         $response = $this->getUserAvailable('JohnDoe');
-        $this->assertStatusCode($response, 404, "Bad response on get existing available username JohnDoe");
+        $this->assertStatusCode($response, 422, "Bad response on get existing available username JohnDoe");
     }
 
     protected function assertLoginUserResponse()
@@ -72,7 +64,7 @@ class UsersTest extends UsersAPITest
 
     protected function assertGetOtherUserResponse()
     {
-        $response = $this->getOtherUser(2);
+        $response = $this->getOtherUser('janedoe');
         $formattedResponse = $this->assertJsonResponse($response, 200, "Get User B");
         $this->assertUserBFormat($formattedResponse, "Bad user B response");
     }
@@ -84,33 +76,28 @@ class UsersTest extends UsersAPITest
         $formattedResponse = $this->assertJsonResponse($response, 200, "Edit UserA");
         $this->assertEditedUserAFormat($formattedResponse, "Bad User response on edit user A");
 
-        $userData = $this->getUserAFixtures();
+        $userData = $this->getUserAEditionFixtures();
         $response = $this->editOwnUser($userData);
         $formattedResponse = $this->assertJsonResponse($response, 200, "Edit UserA");
-        $this->assertUserAFormat($formattedResponse, "Bad User response on edit user A");
+        $this->assertEditedOriginalUserAFormat($formattedResponse, "Bad User response on edit user A");
     }
 
     protected function assertValidationErrorsResponse()
     {
-        $userData = $this->getUserWithPasswordFixtures();
-        $response = $this->createUser($userData);
-        $formattedResponse = $this->assertJsonResponse($response, 422, "Edit user with password error");
-        $this->assertPasswordValidationErrorFormat($formattedResponse);
-
         $userData = $this->getUserWithStatusFixtures();
         $response = $this->createUser($userData);
         $formattedResponse = $this->assertJsonResponse($response, 422, "Edit user with status error");
-        $this->assertStatusValidationErrorFormat($formattedResponse);
+        $this->assertUserValidationErrorFormat($formattedResponse);
 
         $userData = $this->getUserWithSaltFixtures();
         $response = $this->createUser($userData);
         $formattedResponse = $this->assertJsonResponse($response, 422, "Edit user with salt error");
-        $this->assertSaltValidationErrorFormat($formattedResponse);
+        $this->assertUserValidationErrorFormat($formattedResponse);
 
         $userData = $this->getUserWithNumericUsername();
         $response = $this->createUser($userData);
         $formattedResponse = $this->assertJsonResponse($response, 422, "Edit user with username error");
-        $this->assertUsernameValidationErrorFormat($formattedResponse);
+        $this->assertUserValidationErrorFormat($formattedResponse);
     }
 
     protected function assertUserAFormat($user)
@@ -118,7 +105,6 @@ class UsersTest extends UsersAPITest
         $this->assertArrayHasKey('qnoow_id', $user, "User has not qnoow_id key");
         $this->assertArrayHasKey('username', $user, "User has not username key");
         $this->assertArrayHasKey('email', $user, "User has not email key");
-        $this->assertArrayNotHasKey('plainPassword', $user, "User has plainPassword key");
         $this->assertEquals(1, $user['qnoow_id'], "qnoow_id is not 1");
         $this->assertEquals('JohnDoe', $user['username'], "username is not JohnDoe");
         $this->assertEquals('nekuno-johndoe@gmail.com', $user['email'], "email is not nekuno-johndoe@gmail.com");
@@ -128,50 +114,41 @@ class UsersTest extends UsersAPITest
     {
         $this->assertArrayHasKey('qnoow_id', $user, "User has not qnoow_id key");
         $this->assertArrayHasKey('username', $user, "User has not username key");
-        $this->assertArrayHasKey('email', $user, "User has not email key");
-        $this->assertArrayNotHasKey('plainPassword', $user, "User has plainPassword key");
         $this->assertEquals(2, $user['qnoow_id'], "qnoow_id is not 2");
         $this->assertEquals('JaneDoe', $user['username'], "username is not JaneDoe");
-        $this->assertEquals('nekuno-janedoe@gmail.com', $user['email'], "email is not nekuno-janedoe@gmail.com");
     }
 
-    protected function assertEditedUserAFormat($user)
+    protected function assertEditedUserAFormat($response)
     {
+        $this->assertArrayHasKey('user', $response, "User response has not user key");
+        $this->assertArrayHasKey('jwt', $response, "User response has not jwt key");
+        $user = $response['user'];
         $this->assertArrayHasKey('qnoow_id', $user, "User has not qnoow_id key");
         $this->assertArrayHasKey('username', $user, "User has not username key");
         $this->assertArrayHasKey('email', $user, "User has not email key");
-        $this->assertArrayNotHasKey('plainPassword', $user, "User has plainPassword key");
         $this->assertEquals(1, $user['qnoow_id'], "qnoow_id is not 1");
         $this->assertEquals('JohnDoe', $user['username'], "username is not JohnDoe");
         $this->assertEquals('nekuno-johndoe_updated@gmail.com', $user['email'], "email is not nekuno-johndoe_updated@gmail.com");
     }
 
-    protected function assertPasswordValidationErrorFormat($exception)
+    protected function assertEditedOriginalUserAFormat($response)
     {
-        $this->assertValidationErrorFormat($exception);
-        $this->assertArrayHasKey('password', $exception['validationErrors'], "User validation error does not have invalid key \"password\"'");
-        $this->assertEquals('Invalid key "password"', $exception['validationErrors']['password'][0], "password key is not Invalid key \"password\"");
+        $this->assertArrayHasKey('user', $response, "User response has not user key");
+        $this->assertArrayHasKey('jwt', $response, "User response has not jwt key");
+        $user = $response['user'];
+        $this->assertArrayHasKey('qnoow_id', $user, "User has not qnoow_id key");
+        $this->assertArrayHasKey('username', $user, "User has not username key");
+        $this->assertArrayHasKey('email', $user, "User has not email key");
+        $this->assertEquals(1, $user['qnoow_id'], "qnoow_id is not 1");
+        $this->assertEquals('JohnDoe', $user['username'], "username is not JohnDoe");
+        $this->assertEquals('nekuno-johndoe@gmail.com', $user['email'], "email is not nekuno-johndoe@gmail.com");
     }
 
-    protected function assertStatusValidationErrorFormat($exception)
+    protected function assertUserValidationErrorFormat($exception)
     {
         $this->assertValidationErrorFormat($exception);
-        $this->assertArrayHasKey('status', $exception['validationErrors'], "User validation error does not have invalid key \"status\"'");
-        $this->assertEquals('Invalid key "status"', $exception['validationErrors']['status'][0], "status key is not Invalid key \"status\"");
-    }
-
-    protected function assertSaltValidationErrorFormat($exception)
-    {
-        $this->assertValidationErrorFormat($exception);
-        $this->assertArrayHasKey('salt', $exception['validationErrors'], "User validation error does not have invalid key \"salt\"'");
-        $this->assertEquals('Invalid key "salt"', $exception['validationErrors']['salt'][0], "salt key is not Invalid key \"salt\"");
-    }
-
-    protected function assertUsernameValidationErrorFormat($exception)
-    {
-        $this->assertValidationErrorFormat($exception);
-        $this->assertArrayHasKey('username', $exception['validationErrors'], "User validation error does not have invalid key \"username\"'");
-        $this->assertEquals('"username" must be an string', $exception['validationErrors']['username'][0], "username key is not \"username\" must be an string");
+        $this->assertArrayHasKey('registration', $exception['validationErrors'], "User validation error does not have invalid key \"registration\"'");
+        $this->assertEquals('Error registering user', $exception['validationErrors']['registration'], "registration key is not \"Error registering user\"");
     }
 
     private function getEditedUserAFixtures()
@@ -179,46 +156,65 @@ class UsersTest extends UsersAPITest
         return array(
             'username' => 'JohnDoe',
             'email' => 'nekuno-johndoe_updated@gmail.com',
-            'plainPassword' => 'test_updated'
-        );
-    }
-
-    private function getUserWithPasswordFixtures()
-    {
-        return array(
-            'username' => 'JohnDoe',
-            'email' => 'nekuno-johndoe_updated@gmail.com',
-            'plainPassword' => 'test_updated',
-            'password' => 'test'
         );
     }
 
     private function getUserWithStatusFixtures()
     {
         return array(
-            'username' => 'JohnDoe',
-            'email' => 'nekuno-johndoe_updated@gmail.com',
-            'plainPassword' => 'test_updated',
-            'status' => 'complete'
+            'user' => array(
+                'username' => 'JohnDoe',
+                'email' => 'nekuno-johndoe_updated@gmail.com',
+                'status' => 'complete'
+            ),
+            'profile' => array(),
+            'token' => 'join',
+            'oauth' => array(
+                'resourceOwner' => 'facebook',
+                'oauthToken' => '12345',
+                'resourceId' => '12345',
+                'expireTime' => strtotime("+1 week"),
+                'refreshToken' => '123456'
+            )
         );
     }
 
     private function getUserWithSaltFixtures()
     {
         return array(
-            'username' => 'JohnDoe',
-            'email' => 'nekuno-johndoe_updated@gmail.com',
-            'plainPassword' => 'test_updated',
-            'salt' => 'foo'
+            'user' => array(
+                'username' => 'JohnDoe',
+                'email' => 'nekuno-johndoe_updated@gmail.com',
+                'salt' => 'foo'
+            ),
+            'profile' => array(),
+            'token' => 'join',
+            'oauth' => array(
+                'resourceOwner' => 'facebook',
+                'oauthToken' => '12345',
+                'resourceId' => '12345',
+                'expireTime' => strtotime("+1 week"),
+                'refreshToken' => '123456'
+            )
         );
     }
 
     private function getUserWithNumericUsername()
     {
         return array(
-            'username' => 1,
-            'email' => 'nekuno-johndoe_updated@gmail.com',
-            'plainPassword' => 'test_updated',
+            'user' => array(
+                'username' => 1,
+                'email' => 'nekuno-johndoe_updated@gmail.com',
+            ),
+            'profile' => array(),
+            'token' => 'join',
+            'oauth' => array(
+                'resourceOwner' => 'facebook',
+                'oauthToken' => '12345',
+                'resourceId' => '12345',
+                'expireTime' => strtotime("+1 week"),
+                'refreshToken' => '123456'
+            )
         );
     }
 }

@@ -10,6 +10,7 @@ class YoutubeUrlParser extends UrlParser
     const VIDEO_URL = 'youtube_video';
     const CHANNEL_URL = 'youtube_channel';
     const PLAYLIST_URL = 'youtube_playlist';
+    const GENERAL_URL = 'youtube';
 
     public function getUrlType($url)
     {

@@ -17,18 +17,21 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
     /**
      * @inheritdoc
      */
-    public function getUrl()
+    public function getUrl($userId = null)
     {
-        return $this->user['facebookID'];
+        return $userId ?: $this->token->getResourceId();
     }
 
     /**
      * @inheritdoc
      */
-    protected function getQuery()
+    protected function getQuery($paginationId = null)
     {
-        return array(
-            'limit' => $this->pageLength,
+        $query = parent::getQuery($paginationId);
+
+        return array_merge(
+            $query,
+            array('limit' => $this->pageLength)
         );
     }
 
@@ -37,7 +40,7 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
      */
     protected function getItemsFromResponse($response)
     {
-        return $response['data'] ?: array();
+        return isset($response['data']) ? $response['data'] : array();
     }
 
     /**
@@ -136,8 +139,11 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
     {
         if (array_key_exists('attachments', $item)) {
             foreach ($item['attachments']['data'] as $attachment) {
-                if(in_array($attachment['type'], FacebookUrlParser::FACEBOOK_VIDEO_TYPES())){
+                if (in_array($attachment['type'], FacebookUrlParser::FACEBOOK_VIDEO_TYPES())) {
                     $link->setType(FacebookUrlParser::FACEBOOK_VIDEO);
+                }
+                if (in_array($attachment['type'], FacebookUrlParser::FACEBOOK_PAGE_TYPES())) {
+                    $link->setType(FacebookUrlParser::FACEBOOK_PAGE);
                 }
             }
         }

@@ -42,6 +42,11 @@ final class AppEvents
     const PROCESS_FINISH = 'process.finish';
 
     /**
+     * Fired when user is registered
+     */
+    const USER_REGISTERED = 'user.registered';
+
+    /**
      * Fired when user created
      */
     const USER_CREATED = 'user.created';

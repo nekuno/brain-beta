@@ -19,7 +19,6 @@ class FacebookUrlParserTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @param $url
      * @dataProvider getBadUrls
      */
     public function testBadUrls($url){
@@ -28,8 +27,6 @@ class FacebookUrlParserTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @param $url
-     * @param $expectedType
      * @dataProvider getUrlsForType
      */
     public function testType($url, $expectedType)
@@ -77,8 +74,8 @@ class FacebookUrlParserTest extends \PHPUnit_Framework_TestCase
     public function getUrlsForType()
     {
         return array(
-            array('http://www.facebook.com/vips', FacebookUrlParser::FACEBOOK_PROFILE),
-            array('https://www.facebook.com/roberto.m.pallarola', FacebookUrlParser::FACEBOOK_PROFILE),
+            array('http://www.facebook.com/vips', FacebookUrlParser::FACEBOOK_PAGE),
+            array('https://www.facebook.com/roberto.m.pallarola', FacebookUrlParser::FACEBOOK_PAGE),
         );
     }
 

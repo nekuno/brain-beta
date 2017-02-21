@@ -2,6 +2,7 @@
 
 namespace ApiConsumer\LinkProcessor\Processor\SpotifyProcessor;
 
+use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\AbstractProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
 use ApiConsumer\ResourceOwner\SpotifyResourceOwner;
@@ -72,5 +73,21 @@ abstract class AbstractSpotifyProcessor extends AbstractProcessor
         }
 
         return $artistList;
+    }
+
+    public function getImages(PreprocessedLink $preprocessedLink, array $data)
+    {
+        if (!isset($data['images'])) {
+            return array();
+        }
+
+        $images = array();
+        foreach ($data['images'] as $imageArray) {
+            if (isset($imageArray['url'])) {
+                $images[] = $imageArray['url'];
+            }
+        }
+
+        return $images;
     }
 }

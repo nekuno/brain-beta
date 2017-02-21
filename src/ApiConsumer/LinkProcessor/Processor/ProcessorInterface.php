@@ -6,10 +6,14 @@ use ApiConsumer\Exception\CannotProcessException;
 use ApiConsumer\Exception\UrlChangedException;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\SynonymousParameters;
+use ApiConsumer\ResourceOwner\AbstractResourceOwnerTrait;
 use Symfony\Component\DomCrawler\Crawler;
 
 interface ProcessorInterface
 {
+    /** @return AbstractResourceOwnerTrait */
+    public function getResourceOwner();
+
     /**
      * @param PreprocessedLink $preprocessedLink
      * @return array|Crawler
@@ -26,7 +30,7 @@ interface ProcessorInterface
     /**
      * @param PreprocessedLink $preprocessedLink
      * @param array $data
-     * @return array
+     * @return array of image urls
      */
     public function getImages(PreprocessedLink $preprocessedLink, array $data);
 

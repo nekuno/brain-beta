@@ -8,17 +8,21 @@ use ApiConsumer\LinkProcessor\Processor\BatchProcessorInterface;
 use ApiConsumer\LinkProcessor\Processor\ProcessorInterface;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use Model\Link;
+use Model\User\Token\Token;
+use Model\User\Token\TokensModel;
 
 class LinkProcessor
 {
     private $processorFactory;
     private $imageAnalyzer;
+    private $tokensModel;
     private $batch = array();
 
-    public function __construct(ProcessorFactory $processorFactory, ImageAnalyzer $imageAnalyzer)
+    public function __construct(ProcessorFactory $processorFactory, ImageAnalyzer $imageAnalyzer, TokensModel $tokensModel)
     {
         $this->processorFactory = $processorFactory;
         $this->imageAnalyzer = $imageAnalyzer;
+        $this->tokensModel = $tokensModel;
     }
 
     public function scrape(PreprocessedLink $preprocessedLink)
@@ -47,6 +51,10 @@ class LinkProcessor
     {
         $processor = $this->selectProcessor($preprocessedLink);
 
+        if (null != $processor->getResourceOwner() && !$processor->getResourceOwner()->canRequestAsClient()){
+            $this->fixToken($preprocessedLink);
+        }
+
         if ($processor instanceof BatchProcessorInterface) {
             $links = $this->executeBatchProcessing($preprocessedLink, $processor);
         } else {
@@ -59,6 +67,48 @@ class LinkProcessor
         }
 
         return $links;
+    }
+
+    protected function fixToken(PreprocessedLink $preprocessedLink)
+    {
+        if (!$this->needsToken($preprocessedLink)) {
+            return;
+        }
+
+        $bestToken = $this->findBestToken($preprocessedLink);
+
+        if (!empty($bestToken)) {
+            $preprocessedLink->setToken($bestToken);
+        }
+    }
+
+    protected function needsToken(PreprocessedLink $preprocessedLink)
+    {
+        $hasToken = null != $preprocessedLink->getToken() && $preprocessedLink->getToken() instanceof Token;
+
+        if (!$hasToken) {
+            return true;
+        }
+
+        $resource = LinkAnalyzer::getResource($preprocessedLink->getUrl());
+        $isCorrectToken = $preprocessedLink->getToken()->getResourceOwner() == $resource;
+
+        return !$isCorrectToken;
+    }
+
+    protected function findBestToken(PreprocessedLink $preprocessedLink)
+    {
+        $resource = LinkAnalyzer::getResource($preprocessedLink->getUrl());
+
+        $token = $this->tokensModel->getByLikedUrl($preprocessedLink->getUrl(), $resource);
+
+        if (null !== $token) {
+            return $token;
+        }
+
+        $token = $this->tokensModel->getOneByResource($resource);
+
+        return $token;
     }
 
     /**
@@ -76,9 +126,9 @@ class LinkProcessor
         return $links;
     }
 
-    protected function selectProcessor(PreprocessedLink $link)
+    protected function selectProcessor(PreprocessedLink $preprocessedLink)
     {
-        $processorName = LinkAnalyzer::getProcessorName($link);
+        $processorName = LinkAnalyzer::getProcessorName($preprocessedLink);
 
         return $this->processorFactory->build($processorName);
     }
@@ -110,7 +160,7 @@ class LinkProcessor
     {
         $processorName = LinkAnalyzer::getProcessorName($preprocessedLink);
 
-        $this->batch[$processorName] = $this->batch[$processorName] ?: array();
+        $this->batch[$processorName] = isset($this->batch[$processorName]) ? $this->batch[$processorName] : array();
         $this->batch[$processorName][] = $preprocessedLink;
 
         $links = array(new Link());

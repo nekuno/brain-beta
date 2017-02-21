@@ -10,7 +10,8 @@ use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 use Model\Creator;
 use Model\Link;
-use Model\User\TokensModel;
+use Model\User\Token\Token;
+use Model\User\Token\TokensModel;
 
 class TwitterProfileProcessor extends AbstractProcessor implements BatchProcessorInterface
 {
@@ -27,22 +28,18 @@ class TwitterProfileProcessor extends AbstractProcessor implements BatchProcesso
     protected function requestItem(PreprocessedLink $preprocessedLink)
     {
         $userId = $this->getUserId($preprocessedLink);
-        $token = $preprocessedLink->getSource() == TokensModel::TWITTER ? $preprocessedLink->getToken() : array();
+        $token = $preprocessedLink->getSource() == TokensModel::TWITTER ? $preprocessedLink->getToken() : null;
         $key = array_keys($userId)[0];
 
         $response = $this->resourceOwner->lookupUsersBy($key, array($userId[$key]), $token);
 
-        //Response validation
-        if (empty($response)) {
-            throw new CannotProcessException($preprocessedLink->getUrl());
-        }
-
-        return reset($response);
+        return $response;
     }
 
     public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
     {
-        $profileArray = $this->resourceOwner->buildProfileFromLookup($data);
+        $profiles = $this->resourceOwner->buildProfilesFromLookup($data);
+        $profileArray = reset($profiles);
         $preprocessedLink->setFirstLink(Creator::buildFromArray($profileArray));
 
         $id = isset($data['id_str']) ? (int)$data['id_str'] : $data['id'];
@@ -71,7 +68,7 @@ class TwitterProfileProcessor extends AbstractProcessor implements BatchProcesso
 
     /**
      * @param array $batch
-     * @return Link[]
+     * @return Creator[]
      */
     public function requestBatchLinks(array $batch)
     {
@@ -79,9 +76,13 @@ class TwitterProfileProcessor extends AbstractProcessor implements BatchProcesso
 
         $token = $this->getTokenFromBatch($batch);
 
-        $responses = $this->requestLookup($userIds, $token);
+        $userArrays = $this->requestLookup($userIds, $token);
 
-        $links = $this->buildLinks($responses);
+        if (empty($userArrays)) {
+            return array();
+        }
+
+        $links = $this->buildLinks($userArrays);
 
         return $links;
     }
@@ -113,47 +114,37 @@ class TwitterProfileProcessor extends AbstractProcessor implements BatchProcesso
 
     /**
      * @param $batch PreprocessedLink[]
-     * @return array
+     * @return Token
      */
     protected function getTokenFromBatch(array $batch)
     {
         foreach ($batch as $preprocessedLink) {
-            if (!empty($token = $preprocessedLink->getToken())) {
+            if ($token = $preprocessedLink->getToken()) {
                 return $token;
             }
         }
 
-        return array();
+        return null;
     }
 
-    protected function requestLookup(array $userIds, $token)
+    protected function requestLookup(array $userIds, Token $token = null)
     {
-        $lookupResponses = array();
+        $userArrays = array();
         foreach ($userIds as $key => $ids) {
-            $lookupResponses = array_merge($lookupResponses, $this->resourceOwner->lookupUsersBy($key, $ids, $token));
+            $userArrays = array_merge($userArrays, $this->resourceOwner->lookupUsersBy($key, $ids, $token));
         }
 
-        return $lookupResponses;
+        return $userArrays;
     }
 
-    protected function buildLinks(array $responses)
+    protected function buildLinks(array $userArrays)
     {
-        if (empty($responses)) {
-            return array();
-        }
-
-        $linkArrays = array();
-        foreach ($responses as $response)
-        {
-            $linkArrays = array_merge($linkArrays, $this->resourceOwner->buildProfilesFromLookup($response));
-        }
-
+        $linkArrays = $this->resourceOwner->buildProfilesFromLookup($userArrays);
         $links = array();
         foreach ($linkArrays as $linkArray)
         {
             $links[] = Creator::buildFromArray($linkArray);
         }
-
         return $links;
     }
 

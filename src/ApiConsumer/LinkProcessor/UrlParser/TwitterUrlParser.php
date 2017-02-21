@@ -3,6 +3,7 @@
 namespace ApiConsumer\LinkProcessor\UrlParser;
 
 use ApiConsumer\Exception\UrlNotValidException;
+use Service\LookUp\LookUp;
 
 class TwitterUrlParser extends UrlParser
 {
@@ -104,6 +105,7 @@ class TwitterUrlParser extends UrlParser
                 'intent',
                 'hashtag',
                 'search',
+                'search-home',
                 'who_to_follow',
                 'about',
                 'tos',
@@ -205,7 +207,7 @@ class TwitterUrlParser extends UrlParser
 
     public function buildUserUrl($screenName)
     {
-        return 'https://twitter.com/' . $screenName;
+        return LookUp::TWITTER_BASE_URL . $screenName;
     }
 
 }

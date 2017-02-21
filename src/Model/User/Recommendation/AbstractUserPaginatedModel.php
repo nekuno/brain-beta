@@ -80,8 +80,13 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
         $qb->setParameters($parameters);
 
         $qb->match('(anyUser:User)')
-            ->where('{userId} <> anyUser.qnoow_id', 'NOT (anyUser:' . GhostUserManager::LABEL_GHOST_USER . ')')
-            ->optionalMatch('(:User {qnoow_id: { userId }})-[m:MATCHES]-(anyUser)')
+            ->where('{userId} <> anyUser.qnoow_id', 'NOT (anyUser:' . GhostUserManager::LABEL_GHOST_USER . ')');
+
+        if (null !== $additionalCondition) {
+            $qb->add('', $additionalCondition);
+        }
+
+        $qb->optionalMatch('(:User {qnoow_id: { userId }})-[m:MATCHES]-(anyUser)')
             ->optionalMatch('(:User {qnoow_id: { userId }})-[s:SIMILARITY]-(anyUser)')
             ->with(
                 'distinct anyUser,
@@ -96,10 +101,6 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
         $qb->with('anyUser, p, l, matching_questions', 'similarity');
         $qb->where($profileFilters['conditions'])
             ->with('anyUser', 'p', 'l', 'matching_questions', 'similarity');
-
-        if (null !== $additionalCondition) {
-            $qb->add('', $additionalCondition);
-        }
 
         foreach ($profileFilters['matches'] as $match) {
             $qb->match($match);

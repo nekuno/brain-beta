@@ -13,17 +13,15 @@ $app->post('/login', 'auth.controller:loginAction');
 $app->get('/users', 'users.controller:getAction');
 $app->get('/users/{slug}', 'users.controller:getOtherAction');
 $app->get('/public/users/{slug}', 'users.controller:getPublicAction');
-$app->post('/users', 'users.controller:postAction');
+$app->post('/register', 'users.controller:registerAction');
 $app->put('/users', 'users.controller:putAction');
 $app->post('/users/validate', 'users.controller:validateAction');
 $app->get('/users/available/{username}', 'users.controller:availableAction');
 
 $app->get('/profile', 'users.profile.controller:getAction');
 $app->get('/profile/{id}', 'users.profile.controller:getOtherAction')->value('id', null);
-$app->post('/profile', 'users.profile.controller:postAction');
 $app->put('/profile', 'users.profile.controller:putAction');
 $app->post('/profile/validate', 'users.profile.controller:validateAction');
-$app->delete('/profile', 'users.profile.controller:deleteAction');
 $app->get('/profile/metadata', 'users.profile.controller:getMetadataAction');
 $app->get('/profile/categories', 'users.profile.controller:getCategoriesAction');
 $app->get('/profile/filters', 'users.profile.controller:getFiltersAction');
@@ -119,7 +117,6 @@ $app->post('lookUp/users/{id}', 'lookUp.controller:setAction');
 $app->post('/lookUp/webHook', 'lookUp.controller:setFromWebHookAction')->bind('setLookUpFromWebHook');
 
 /** Thread routes */
-$app->post('/threads/default', 'users.threads.controller:createDefaultAction');
 $app->get('/threads/{id}/recommendation', 'users.threads.controller:getRecommendationAction');
 $app->put('/threads/{id}', 'users.threads.controller:putAction');
 $app->delete('/threads/{id}', 'users.threads.controller:deleteAction');
@@ -151,11 +148,11 @@ $app->post('/invitations/{id}/send', 'users.invitations.controller:sendAction');
  */
 
 $app->post('/tokens/{resourceOwner}', 'users.tokens.controller:postAction');
+$app->put('/tokens/{resourceOwner}', 'users.tokens.controller:putAction');
 
 /**
  * Client routes
  */
-$app->get('/client/version', 'client.controller:versionAction');
 $app->get('/client/blog-feed', 'client.controller:getBlogFeedAction');
 
 /** Photo routes */

@@ -77,6 +77,8 @@ class ApiConsumerServiceProvider implements ServiceProviderInterface
                 $fetcher = new FetcherService(
                     $app['api_consumer.fetcher_factory'],
                     $app['dispatcher'],
+                    $app['users.tokens.model'],
+                    $app['users.socialprofile.manager'],
                     $app['api_consumer.config']['fetcher']
                 );
 

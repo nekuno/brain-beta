@@ -44,11 +44,12 @@ class SwiftmailerServiceProvider implements ServiceProviderInterface
         });
 
         $app['swiftmailer.transport'] = $app->share(function ($app) {
-            $transport = new \Swift_Transport_EsmtpTransport(
-                $app['swiftmailer.transport.buffer'],
-                array($app['swiftmailer.transport.authhandler']),
-                $app['swiftmailer.transport.eventdispatcher']
-            );
+            $transport = $app['env'] === 'test' ? new \Swift_Transport_NullTransport($app['swiftmailer.transport.eventdispatcher'])
+                : new \Swift_Transport_EsmtpTransport(
+                    $app['swiftmailer.transport.buffer'],
+                    array($app['swiftmailer.transport.authhandler']),
+                    $app['swiftmailer.transport.eventdispatcher']
+                );
 
             $options = $app['swiftmailer.options'] = array_replace(array(
                 'host' => 'localhost',
@@ -59,12 +60,14 @@ class SwiftmailerServiceProvider implements ServiceProviderInterface
                 'auth_mode' => null,
             ), $app['swiftmailer.options']);
 
-            $transport->setHost($options['host']);
-            $transport->setPort($options['port']);
-            $transport->setEncryption($options['encryption']);
-            $transport->setUsername($options['username']);
-            $transport->setPassword($options['password']);
-            $transport->setAuthMode($options['auth_mode']);
+            if ($app['env'] !== 'test') {
+                $transport->setHost($options['host']);
+                $transport->setPort($options['port']);
+                $transport->setEncryption($options['encryption']);
+                $transport->setUsername($options['username']);
+                $transport->setPassword($options['password']);
+                $transport->setAuthMode($options['auth_mode']);
+            }
 
             return $transport;
         });

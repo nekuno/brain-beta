@@ -21,6 +21,11 @@ abstract class AbstractProcessor implements ProcessorInterface
         $this->parser = $urlParser;
     }
 
+    public function getResourceOwner()
+    {
+        return $this->resourceOwner;
+    }
+
     public function getResponse(PreprocessedLink $preprocessedLink)
     {
         $response = $this->requestItem($preprocessedLink);

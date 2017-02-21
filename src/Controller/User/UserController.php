@@ -2,24 +2,19 @@
 
 namespace Controller\User;
 
+use Model\Exception\ValidationException;
 use Model\User\ContentPaginatedModel;
-use Model\User\Group\GroupModel;
 use Model\User\ProfileFilterModel;
 use Model\User\RateModel;
 use Model\User\UserStatsManager;
 use Manager\UserManager;
 use Model\User;
+use Service\AuthService;
 use Service\Recommendator;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Model\User\TokensModel;
-use Model\User\SocialNetwork\SocialProfile;
-use ApiConsumer\Factory\ResourceOwnerFactory;
-use ApiConsumer\ResourceOwner\FacebookResourceOwner;
-use Model\User\GhostUser\GhostUserManager;
-use Model\User\SocialNetwork\SocialProfileManager;
 
 
 class UserController
@@ -143,67 +138,30 @@ class UserController
      * @param Application $app
      * @param Request $request
      * @return JsonResponse
+     * @throws ValidationException
      */
-    public function postAction(Application $app, Request $request)
+    public function registerAction(Application $app, Request $request)
     {
-        $data = $request->request->all();
-        if (isset($data['oauth'])) {
-            $oauthData = $data['oauth'];
-            unset($data['oauth']);
-        }
-        /* @var $userManager UserManager */
-        $userManager = $app['users.manager'];
-        $user = $userManager->create($data);
-
-        if (isset($data['enabled']) && $data['enabled'] === false) {
-            $app['users.ghostuser.manager']->saveAsGhost($user->getId());
-        }
-
-        if (isset($oauthData)) {
-            /* @var $tokensModel TokensModel */
-            $tokensModel = $app['users.tokens.model'];
-            $resourceOwner = $oauthData['resourceOwner'];
-
-            $token = $tokensModel->create($user->getId(), $resourceOwner, $oauthData);
-
-            /* @var $resourceOwnerFactory ResourceOwnerFactory */
-            $resourceOwnerFactory = $app['api_consumer.resource_owner_factory'];
-
-            if ($resourceOwner === TokensModel::FACEBOOK) {
-
-                /* @var $facebookResourceOwner FacebookResourceOwner */
-                $facebookResourceOwner = $resourceOwnerFactory->build(TokensModel::FACEBOOK);
-
-                $token = $facebookResourceOwner->extend($token);
-
-                if (array_key_exists('refreshToken', $token) && is_null($token['refreshToken'])) {
-                    $token = $facebookResourceOwner->forceRefreshAccessToken($token);
-                }
+        try {
+            $data = $request->request->all();
+            if (!isset($data['user']) || !isset($data['profile']) || !isset($data['token']) || !isset($data['oauth'])) {
+                throw new ValidationException(array('registration' => 'Bad format'));
             }
+            $user = $app['register.service']->register($data['user'], $data['profile'], $data['token'], $data['oauth']);
+        } catch (\Exception $e) {
+            $message = \Swift_Message::newInstance()
+                ->setSubject('Nekuno registration error')
+                ->setFrom('enredos@nekuno.com', 'Nekuno')
+                ->setTo($app['support_emails'])
+                ->setContentType('text/html')
+                ->setBody($app['twig']->render('email-notifications/registration-error-notification.html.twig', array(
+                    'e' => $e,
+                    'data' => json_encode($request->request->all()),
+                )));
 
-            // TODO: This will not be executed since we only use Facebook for registration
-            if ($resourceOwner == TokensModel::TWITTER) {
-                $resourceOwnerObject = $resourceOwnerFactory->build($resourceOwner);
-                $profileUrl = $resourceOwnerObject->getProfileUrl($token);
-                if (!$profileUrl) {
-                    //TODO: Add information about this if it happens
-                    return $app->json($token, 201);
-                }
-                $profile = new SocialProfile($user->getId(), $profileUrl, $resourceOwner);
+            $app['mailer']->send($message);
 
-                /* @var $ghostUserManager GhostUserManager */
-                $ghostUserManager = $app['users.ghostuser.manager'];
-                if ($ghostUser = $ghostUserManager->getBySocialProfile($profile)) {
-                    /* @var $userManager UserManager */
-                    $userManager = $app['users.manager'];
-                    $userManager->fuseUsers($user->getId(), $ghostUser->getId());
-                    $ghostUserManager->saveAsUser($user->getId());
-                } else {
-                    /** @var $socialProfilesManager SocialProfileManager */
-                    $socialProfilesManager = $app['users.socialprofile.manager'];
-                    $socialProfilesManager->addSocialProfile($profile);
-                }
-            }
+            throw new ValidationException(array('registration' => "Error registering user"));
         }
 
         return $app->json($user, 201);

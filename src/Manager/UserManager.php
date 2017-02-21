@@ -16,7 +16,7 @@ use Model\User\GhostUser\GhostUserManager;
 use Model\User\Group\Group;
 use Model\User\LookUpModel;
 use Model\User\SocialNetwork\SocialProfile;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 use Model\User\UserComparedStatsModel;
 use Model\User\UserStatusModel;
 use Paginator\PaginatedInterface;

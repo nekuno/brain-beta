@@ -9,6 +9,19 @@ params:
     dev_custom_ip_3:
     dev_custom_ip_4:
 
+    ## Emails to report errors
+    support_email_1: 'juanlu@comakai.com'
+    support_email_2: 'manolez@gmail.com'
+    support_email_3: 'yawmoght@gmail.com'
+
+    ## Testing users
+    userA.resource: ''
+    userA.access_token: ''
+    userA.resource_id: ''
+    userB.resource: ''
+    userB.access_token: ''
+    userB.resource_id: ''
+
     ## Locale
     locale.default: en
 
@@ -20,12 +33,6 @@ params:
     guzzle.verify: null
 
     ## Doctrine
-    dbs.mysql_social.driver: pdo_mysql
-    dbs.mysql_social.host: localhost
-    dbs.mysql_social.dbname: nekuno
-    dbs.mysql_social.user: root
-    dbs.mysql_social.pass: root
-
     dbs.mysql_brain.driver: pdo_mysql
     dbs.mysql_brain.host: localhost
     dbs.mysql_brain.dbname: nekuno_brain

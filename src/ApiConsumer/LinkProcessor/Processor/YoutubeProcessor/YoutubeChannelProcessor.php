@@ -3,6 +3,7 @@
 namespace ApiConsumer\LinkProcessor\Processor\YoutubeProcessor;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use Model\User\Token\Token;
 
 class YoutubeChannelProcessor extends AbstractYoutubeProcessor
 {
@@ -28,8 +29,8 @@ class YoutubeChannelProcessor extends AbstractYoutubeProcessor
         }
     }
 
-    protected function requestSpecificItem($id)
+    protected function requestSpecificItem($id, Token $token = null)
     {
-        return $this->resourceOwner->requestChannel($id);
+        return $this->resourceOwner->requestChannel($id, $token);
     }
 }

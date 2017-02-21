@@ -21,19 +21,9 @@ abstract class ProfileAPITest extends APITest
         return $this->getResponseByRoute('/profile/validate', 'POST', $userData, $loggedInUserId);
     }
 
-    protected function createProfile($userData, $loggedInUserId = 1)
-    {
-        return $this->getResponseByRoute('/profile', 'POST', $userData, $loggedInUserId);
-    }
-
     protected function editProfile($userData, $loggedInUserId = 1)
     {
         return $this->getResponseByRoute('/profile', 'PUT', $userData, $loggedInUserId);
-    }
-
-    protected function deleteProfile($loggedInUserId = 1)
-    {
-        return $this->getResponseByRoute('/profile', 'DELETE', array(), $loggedInUserId);
     }
 
     protected function getProfileMetadata($loggedInUserId = 1)
