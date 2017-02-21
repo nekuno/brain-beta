@@ -81,6 +81,7 @@ class OAuthTokenSubscriber implements EventSubscriberInterface
                 'oauthToken' => $token->getOauthToken(),
                 'expireTime' => $token->getExpireTime(),
                 'refreshToken' => $token->getRefreshToken(),
+                'resourceId' => $token->getResourceId(),
             )
         );
     }
