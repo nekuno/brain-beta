@@ -5,6 +5,7 @@ namespace Console\Command;
 use Console\ApplicationAwareCommand;
 use Manager\UserManager;
 use Model\User;
+use Model\User\Token\TokensModel;
 use Service\AMQPManager;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -15,7 +16,6 @@ class RabbitMQEnqueueFetchingCommand extends ApplicationAwareCommand
 
     protected function configure()
     {
-
         $this->setName('rabbitmq:enqueue:fetching')
             ->setDescription('Enqueues a fetching task for all users')
             ->addOption(
@@ -38,38 +38,22 @@ class RabbitMQEnqueueFetchingCommand extends ApplicationAwareCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-
         $userId = $input->getOption('user');
-        $resourceOwner = $input->getOption('resource');
-        $public = $input->getOption('public', false);
+        $resourceOwnerOption = $input->getOption('resource');
+        $public = $input->getOption('public');
 
-        $availableResourceOwners = $this->app['api_consumer.config']['resource_owner'];
-        if ($resourceOwner && !array_key_exists($resourceOwner, $availableResourceOwners)) {
-            $output->writeln(sprintf('%s is not an valid resource owner', $resourceOwner));
+        if (!$this->isValidResourceOwner($resourceOwnerOption)) {
+            $output->writeln(sprintf('%s is not an valid resource owner', $resourceOwnerOption));
             exit;
         }
 
-        /* @var $usersModel UserManager */
-        $usersModel = $this->app['users.manager'];
+        $resourceOwners = $this->getResourceOwners($resourceOwnerOption);
 
-        if ($userId == null) {
-            $users = $usersModel->getAll();
-        } else {
-            $users = array($usersModel->getById($userId, true));
-        }
-
-        if (empty($users)) {
-            $output->writeln(sprintf('Not user found with %d and resource %s connected', $userId, $resourceOwner));
+        try{
+            $users = $this->getUsers($userId);
+        } catch (\Exception $e){
+            $output->writeln($e->getMessage());
             exit;
-        }
-
-        if ($resourceOwner == null) {
-            $resourceOwners = array();
-            foreach ($availableResourceOwners as $name => $config) {
-                $resourceOwners[] = $name;
-            }
-        } else {
-            $resourceOwners[] = $resourceOwner;
         }
 
         /* @var $amqpManager AMQPManager */
@@ -83,9 +67,36 @@ class RabbitMQEnqueueFetchingCommand extends ApplicationAwareCommand
                     'resourceOwner' => $name,
                     'public' => $public,
                 );
-                $amqpManager->enqueueMessage($data, 'brain.fetching.links');
+                $amqpManager->enqueueFetching($data);
             }
         }
+    }
+
+    private function isValidResourceOwner($resourceOwnerOption)
+    {
+        $availableResourceOwners = TokensModel::getResourceOwners();
+
+        return $resourceOwnerOption != null && !in_array($resourceOwnerOption, $availableResourceOwners);
+    }
+
+    private function getResourceOwners($resourceOwner)
+    {
+        $availableResourceOwners = TokensModel::getResourceOwners();
+
+        return $resourceOwner ? array($resourceOwner) : $availableResourceOwners;
+    }
+
+    private function getUsers($userId)
+    {
+        $usersModel = $this->app['users.manager'];
+
+        if ($userId == null) {
+            return $usersModel->getAll();
+        }
+
+        $users = array($usersModel->getById($userId));
+
+        return $users;
     }
 
 }

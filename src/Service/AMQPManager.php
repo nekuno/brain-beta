@@ -27,24 +27,20 @@ class AMQPManager
         $this->connection = $AMQPStreamConnection;
     }
 
+    public function enqueueFetching($messageData)
+    {
+        $this->enqueueMessage($messageData, 'brain.fetching.links');
+    }
 
     public function enqueueMessage($messageData, $routingKey)
     {
         $message = new AMQPMessage(json_encode($messageData, JSON_UNESCAPED_UNICODE));
 
-        $publishData = $this->buildData($routingKey);
-
         $exchangeName = 'brain.topic';
         $exchangeType = 'topic';
-        $topic = $publishData['topic'];
-        $queueName = $publishData['queueName'];
+        list ($topic, $queueName) = $this->buildData($routingKey);
 
-        if (isset($this->publishingChannels[$queueName])){
-            $channel = $this->publishingChannels[$queueName];
-        } else {
-            $channel = $this->connection->channel();
-            $this->publishingChannels[$queueName] = $channel;
-        }
+        $channel = $this->getChannel($queueName);
 
         $channel->exchange_declare($exchangeName, $exchangeType, false, true, false);
         $channel->queue_declare($queueName, false, true, false, false);
@@ -52,37 +48,48 @@ class AMQPManager
         $channel->basic_publish($message, $exchangeName, $routingKey);
     }
 
+    private function getChannel($queueName)
+    {
+        if (isset($this->publishingChannels[$queueName])){
+            $channel = $this->publishingChannels[$queueName];
+        } else {
+            $channel = $this->connection->channel();
+            $this->publishingChannels[$queueName] = $channel;
+        }
+
+        return $channel;
+    }
+
     private function buildData($routingKey)
     {
         $parts = explode('.', $routingKey);
-        $data = array();
 
         switch ($parts[1]){
             case $this::FETCHING:
-                $data['topic'] = 'brain.fetching.*';
-                $data['queueName'] = 'brain.fetching';
+                $topic = 'brain.fetching.*';
+                $queueName = 'brain.fetching';
                 break;
             case $this::MATCHING:
-                $data['topic'] = 'brain.matching.*';
-                $data['queueName'] = 'brain.matching';
+                $topic = 'brain.matching.*';
+                $queueName = 'brain.matching';
                 break;
             case $this::PREDICTION:
-                $data['topic'] = 'brain.prediction.*';
-                $data['queueName'] = 'brain.prediction';
+                $topic = 'brain.prediction.*';
+                $queueName = 'brain.prediction';
                 break;
             case $this::SOCIAL_NETWORK:
-                $data['topic'] = 'brain.social_network.*';
-                $data['queueName'] = 'brain.social_network';
+                $topic = 'brain.social_network.*';
+                $queueName = 'brain.social_network';
                 break;
             case $this::CHANNEL:
-                $data['topic'] = 'brain.channel.*';
-                $data['queueName'] = 'brain.channel';
+                $topic = 'brain.channel.*';
+                $queueName = 'brain.channel';
                 break;
             default:
                 throw new \Exception('RabbitMQ queue not supported');
         }
 
-        return $data;
+        return array($topic, $queueName);
     }
 
 

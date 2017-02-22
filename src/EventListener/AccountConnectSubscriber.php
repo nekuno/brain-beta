@@ -68,7 +68,7 @@ class AccountConnectSubscriber implements EventSubscriberInterface
             'resourceOwner' => $resourceOwner,
         );
 
-        $this->amqpManager->enqueueMessage($message, 'brain.fetching.links');
+        $this->amqpManager->enqueueFetching($message);
 
         if ($resourceOwner === TokensModel::FACEBOOK) {
             /* @var $facebookResourceOwner FacebookResourceOwner */
