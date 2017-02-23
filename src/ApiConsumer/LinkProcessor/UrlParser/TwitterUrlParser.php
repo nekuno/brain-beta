@@ -178,12 +178,26 @@ class TwitterUrlParser extends UrlParser
     {
         $url = parent::cleanURL($url);
 
-        $url = strtolower($url);
+        $this->fixHost($url);
+        $this->fixPath($url);
 
+        return $url;
+    }
+
+    protected function fixHost($url)
+    {
         $parts = parse_url($url);
+
         if (isset($parts['host']) && $parts['host'] === 'www.twitter.com') {
             $parts['host'] = 'twitter.com';
         }
+
+        return http_build_url($parts);
+    }
+
+    protected function fixPath($url)
+    {
+        $parts = parse_url($url);
 
         $path = explode('/', trim($parts['path'], '/'));
         if (isset($path[3]) && in_array($path[3], array('photo', 'video'))) {
@@ -191,9 +205,7 @@ class TwitterUrlParser extends UrlParser
             $parts['path'] = implode('/', $path);
         }
 
-        $url = http_build_url($parts);
-
-        return $url;
+        return http_build_url($parts);
     }
 
     public function checkUrlValid($url)
