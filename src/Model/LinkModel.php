@@ -38,11 +38,12 @@ class LinkModel
         $qb = $this->gm->createQueryBuilder();
 
         $qb->match('(l:Link)')
-            ->where('l.url = { url } ')
+            ->where('l.url IN [{url}, {lowerUrl}]')
             ->returns('l AS link')
             ->limit('1');
 
         $qb->setParameter('url', $url);
+        $qb->setParameter('lowerUrl', strtolower($url));
 
         $query = $qb->getQuery();
 
@@ -872,10 +873,7 @@ class LinkModel
      */
     public function findDuplicates(array $links)
     {
-        $urls = array();
-        foreach ($links as $link) {
-            $urls[] = $link['url'];
-        }
+        $urls = $this->getUrlsForDuplicates($links);
 
         $qb = $this->gm->createQueryBuilder();
 
@@ -909,6 +907,17 @@ class LinkModel
         }
 
         return $result;
+    }
+
+    private function getUrlsForDuplicates(array $links)
+    {
+        $urls = array();
+        foreach ($links as $link) {
+            $urls[] = $link['url'];
+            $urls[] = strtolower($link['url']);
+        }
+
+        return $urls;
     }
 
     /**
