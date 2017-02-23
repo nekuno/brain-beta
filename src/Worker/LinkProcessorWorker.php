@@ -4,7 +4,6 @@ namespace Worker;
 
 use ApiConsumer\Fetcher\FetcherService;
 use ApiConsumer\Fetcher\ProcessorService;
-use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use Doctrine\DBAL\Connection;
 use ApiConsumer\Factory\ResourceOwnerFactory;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
@@ -36,11 +35,6 @@ class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerI
     protected $connectionBrain;
 
     /**
-     * @var SocialProfileManager
-     */
-    protected $socialProfileManager;
-
-    /**
      * @var ResourceOwnerFactory
      */
     protected $resourceOwnerFactory;
@@ -51,7 +45,6 @@ class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerI
         FetcherService $fetcherService,
         ProcessorService $processorService,
         ResourceOwnerFactory $resourceOwnerFactory,
-        SocialProfileManager $socialProfileManager,
         Connection $connectionBrain
     ) {
         $this->channel = $channel;
@@ -59,7 +52,6 @@ class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerI
         $this->fetcherService = $fetcherService;
         $this->processorService = $processorService;
         $this->resourceOwnerFactory = $resourceOwnerFactory;
-        $this->socialProfileManager = $socialProfileManager;
         $this->connectionBrain = $connectionBrain;
     }
 
@@ -126,27 +118,23 @@ class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerI
     protected function enqueueChannels($userId, $resourceOwner)
     {
         if ($resourceOwner === TokensModel::TWITTER) {
-            $profiles = $this->socialProfileManager->getSocialProfiles($userId, $resourceOwner, true);
-            foreach ($profiles as $profile) {
 
-                $username = LinkAnalyzer::getUsername($profile->getUrl());
-                /** @var TwitterResourceOwner $twitterResourceOwner */
-                $twitterResourceOwner = $this->resourceOwnerFactory->build($resourceOwner);
-                try {
-                    $twitterResourceOwner->dispatchChannel(
-                        array(
-                            'url' => $profile->getUrl(),
-                            'username' => $username,
-                        )
-                    );
-                } catch (\Exception $e) {
-                    $this->dispatchError($e, 'Error adding twitter channel');
-                    $this->logger->error('Error adding twitter channel: ' . $e->getMessage());
-                }
+            /** @var TwitterResourceOwner $twitterResourceOwner */
+            $twitterResourceOwner = $this->resourceOwnerFactory->build($resourceOwner);
+            try {
+                $twitterResourceOwner->dispatchChannel(
+                    array(
+                        'userId' => $userId,
+                    )
+                );
+            } catch (\Exception $e) {
+                $this->dispatchError($e, 'Error adding twitter channel');
+                $this->logger->error('Error adding twitter channel: ' . $e->getMessage());
+            }
 
-                $this->logger->info(sprintf('Enqueued fetching old tweets for username %s', $username));
-            };
-        }
+            $this->logger->info(sprintf('Enqueued fetching old tweets for userId %d', $userId));
+        };
+
     }
 
 }
