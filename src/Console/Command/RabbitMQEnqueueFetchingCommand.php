@@ -3,7 +3,6 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
-use Manager\UserManager;
 use Model\User;
 use Model\User\Token\TokensModel;
 use Service\AMQPManager;
@@ -67,6 +66,7 @@ class RabbitMQEnqueueFetchingCommand extends ApplicationAwareCommand
                     'resourceOwner' => $name,
                     'public' => $public,
                 );
+                $output->writeln(sprintf('Enqueuing resource %s for user %d', $name, $user->getId()));
                 $amqpManager->enqueueFetching($data);
             }
         }
@@ -76,7 +76,7 @@ class RabbitMQEnqueueFetchingCommand extends ApplicationAwareCommand
     {
         $availableResourceOwners = TokensModel::getResourceOwners();
 
-        return $resourceOwnerOption != null && !in_array($resourceOwnerOption, $availableResourceOwners);
+        return $resourceOwnerOption == null || in_array($resourceOwnerOption, $availableResourceOwners);
     }
 
     private function getResourceOwners($resourceOwner)
@@ -90,13 +90,7 @@ class RabbitMQEnqueueFetchingCommand extends ApplicationAwareCommand
     {
         $usersModel = $this->app['users.manager'];
 
-        if ($userId == null) {
-            return $usersModel->getAll();
-        }
-
-        $users = array($usersModel->getById($userId));
-
-        return $users;
+        return null == $userId ? $usersModel->getAll() : $usersModel->getById($userId);
     }
 
 }

@@ -102,9 +102,10 @@ class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerI
         $resourceOwner = $data['resourceOwner'];
         $userId = $data['userId'];
         $exclude = array_key_exists('exclude', $data) ? $data['exclude'] : array();
+        $public = isset($data['public']) ? $data['public'] : false;
 
         try {
-            $links = $this->fetcherService->fetchUser($userId, $resourceOwner, $exclude);
+            $links = $public ? $this->fetcherService->fetchAsClient($userId, $resourceOwner, $exclude) : $this->fetcherService->fetchUser($userId, $resourceOwner, $exclude);
             $this->processorService->process($links, $userId);
 
 //              $this->enqueueChannels($userId, $resourceOwner);
