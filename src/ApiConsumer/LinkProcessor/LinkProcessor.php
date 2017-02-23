@@ -163,7 +163,7 @@ class LinkProcessor
         $this->batch[$processorName] = isset($this->batch[$processorName]) ? $this->batch[$processorName] : array();
         $this->batch[$processorName][] = $preprocessedLink;
 
-        $links = array(new Link());
+        $links = array();
         if ($processor->needToRequest($this->batch[$processorName])) {
             $links = $processor->requestBatchLinks($this->batch[$processorName]);
             $this->batch[$processorName] = array();
