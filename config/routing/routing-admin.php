@@ -45,6 +45,11 @@ $admin->get('/enterpriseUsers/{enterpriseUserId}/invitations/{id}', 'admin.enter
 $admin->put('/enterpriseUsers/{enterpriseUserId}/invitations/{id}', 'admin.enterpriseUsers.invitations.controller:putAction');
 $admin->post('/enterpriseUsers/{enterpriseUserId}/invitations/{id}', 'admin.enterpriseUsers.invitations.controller:validateAction');
 
+/** User tracking events */
+$admin->get('/users/tracking', 'admin.userTracking.controller:getAllAction');
+$admin->get('/users/{id}/tracking', 'admin.userTracking.controller:getAction');
+
+
 $app->mount('/admin', $admin);
 
 $admin

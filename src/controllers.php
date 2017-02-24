@@ -218,6 +218,14 @@ $app['admin.enterpriseUsers.invitations.controller'] = $app->share(
     }
 );
 
+$app['admin.userTracking.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Admin\UserTrackingController;
+    }
+);
+
+
 
 $app['instant.users.controller'] = $app->share(
     function () {

@@ -5,8 +5,10 @@ namespace EventListener;
 use Event\GroupEvent;
 use Event\ProfileEvent;
 use Event\UserEvent;
+use Event\UserTrackingEvent;
 use GuzzleHttp\Exception\RequestException;
 use Model\User\Thread\ThreadManager;
+use Model\User\UserTrackingModel;
 use Service\ChatMessageNotifications;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -19,10 +21,13 @@ class UserSubscriber implements EventSubscriberInterface
 
     protected $chat;
 
-    public function __construct(ThreadManager $threadManager, ChatMessageNotifications $chat)
+    protected $userTrackingModel;
+
+    public function __construct(ThreadManager $threadManager, ChatMessageNotifications $chat, UserTrackingModel $userTrackingModel)
     {
         $this->threadManager = $threadManager;
         $this->chat = $chat;
+        $this->userTrackingModel = $userTrackingModel;
     }
 
     public static function getSubscribedEvents()
@@ -76,10 +81,13 @@ class UserSubscriber implements EventSubscriberInterface
         return true;
     }
 
-    public function onUserRegistered(UserEvent $event)
+    public function onUserRegistered(UserTrackingEvent $event)
     {
         $user = $event->getUser();
         $threads = $this->threadManager->getDefaultThreads($user, ThreadManager::SCENARIO_DEFAULT_LITE);
         $this->threadManager->createBatchForUser($user->getId(), $threads);
+
+        $data = json_encode($event->getData());
+        $this->userTrackingModel->set($user->getId(), 'Registration success', 'Registration', null, $data);
     }
 }
