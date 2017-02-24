@@ -442,12 +442,7 @@ class ProcessorService implements LoggerAwareInterface
         $updatedLinks = array();
 
         foreach ($links as $link) {
-            $this->linkModel->setProcessed($link->getUrl(), false);
-
-            $linkArray = $link->toArray();
-            $linkArray['tempId'] = $linkArray['url'];
-
-            $updatedLinks[] = $this->linkModel->updateLink($linkArray);
+            $updatedLinks[] = $this->linkModel->updateLink($link->toArray());
         }
 
         return $updatedLinks;
