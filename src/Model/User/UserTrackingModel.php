@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManager;
 use Model\Entity\UserTrackingEvent;
 use Model\Neo4j\GraphManager;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Everyman\Neo4j\Query\Row;
 
 class UserTrackingModel
 {
@@ -59,6 +60,27 @@ class UserTrackingModel
         $this->em->flush();
 
         return $userTrackingEvent->toArray();
+    }
+
+    public function getUsersDataForCsv()
+    {
+        $qb = $this->gm->createQueryBuilder()
+            ->match('(u:User)')
+            ->where('NOT (u:GhostUser)')
+            ->returns('u.qnoow_id AS id, u.username AS username');
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+        $return = array();
+        if ($result->count() > 0) {
+            /* @var $row Row */
+            foreach ($result as $row) {
+                $id = $row->offsetGet('id');
+                $username = $row->offsetGet('username');
+                $return[] = array('id' => $id, 'username' => $username);
+            }
+        }
+
+        return $return;
     }
 
     protected function formatUserTrackingEventsArray(array $userTrackingEvents)

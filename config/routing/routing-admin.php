@@ -48,6 +48,7 @@ $admin->post('/enterpriseUsers/{enterpriseUserId}/invitations/{id}', 'admin.ente
 /** User tracking events */
 $admin->get('/users/tracking', 'admin.userTracking.controller:getAllAction');
 $admin->get('/users/{id}/tracking', 'admin.userTracking.controller:getAction');
+$admin->get('/users/csv', 'admin.userTracking.controller:getCsvAction');
 
 
 $app->mount('/admin', $admin);
