@@ -4,7 +4,7 @@ namespace Service;
 
 
 use ApiConsumer\Factory\ResourceOwnerFactory;
-use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
+use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 use Model\User\GhostUser\GhostUserManager;
 use Model\User\LookUpModel;
 use Model\User\SocialNetwork\SocialProfile;
@@ -58,11 +58,12 @@ class UserAggregator
             return null;
         }
 	    if (in_array($resource, TokensModel::getResourceOwners())) {
+            /** @var TwitterResourceOwner $resourceOwner */
             $resourceOwner = $this->resourceOwnerFactory->build($resource);
 
 		    //if not implemented for resource or request error when asking API
 		    try {
-			    $url = $url ?: (new TwitterUrlParser())->buildUserUrl($username);
+			    $url = $resourceOwner->getUserUrl($username);
 		    } catch (\Exception $e){
 			    //$output->writeln('ERROR: Could not get profile url for user '.$username. ' and resource '.$resource);
 			    //$output->writeln('Reason: '.$e->getMessage());
