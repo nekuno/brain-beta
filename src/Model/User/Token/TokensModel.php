@@ -5,7 +5,6 @@ namespace Model\User\Token;
 use Doctrine\ORM\EntityManager;
 use Event\AccountConnectEvent;
 use Everyman\Neo4j\Node;
-use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
 use HWI\Bundle\OAuthBundle\DependencyInjection\Configuration;
 use Model\Entity\DataStatus;
@@ -152,7 +151,7 @@ class TokensModel
         $this->saveTokenData($userNode, $tokenNode, $resourceOwner, $data);
         $token = $this->getById($id, $resourceOwner);
 
-        $this->dispatcher->dispatch(\AppEvents::ACCOUNT_CONNECTED, new AccountConnectEvent($id, $resourceOwner, $token));
+        $this->dispatcher->dispatch(\AppEvents::ACCOUNT_CONNECTED, new AccountConnectEvent($id, $token));
 
         return $token;
     }
@@ -166,7 +165,6 @@ class TokensModel
      */
     public function update($id, $resourceOwner, array $data)
     {
-
         list($userNode, $tokenNode) = $this->getUserAndTokenNodesById($id, $resourceOwner);
 
         if (!($userNode instanceof Node)) {

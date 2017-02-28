@@ -50,6 +50,7 @@ use Model\User\Token\TokensModel;
 use Model\User\UserFilterModel;
 use Model\User\UserStatsManager;
 use Manager\UserManager;
+use Model\User\UserTrackingModel;
 use Security\UserProvider;
 use Silex\Application;
 use Silex\ServiceProviderInterface;
@@ -413,6 +414,13 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
 
                 return new PhotoManager($app['neo4j.graph_manager'], $app['images_web_dir'], $app['params']['social.host']);
+            }
+        );
+
+        $app['users.tracking.model'] = $app->share(
+            function ($app) {
+
+                return new UserTrackingModel($app['neo4j.graph_manager'], $app['orm.ems']['mysql_brain'], $app['dispatcher']);
             }
         );
     }
