@@ -91,7 +91,7 @@ class UsersSocialMediaAddCommand extends ApplicationAwareCommand
                         'public' => true,
                         'exclude' => array('twitter_links', 'twitter_favorites'),
                     );
-                    $amqpManager->enqueueMessage($data, 'brain.fetching.links');
+                    $amqpManager->enqueueFetching($data);
                 }
 	            $id = $socialProfile->getUserId();
             }

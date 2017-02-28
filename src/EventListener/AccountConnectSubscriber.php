@@ -81,7 +81,7 @@ class AccountConnectSubscriber implements EventSubscriberInterface
             'resourceOwner' => $resourceOwner,
         );
 
-        $this->amqpManager->enqueueMessage($message, 'brain.fetching.links');
+        $this->amqpManager->enqueueFetching($message);
     }
 
     public function onAccountUpdated(AccountConnectEvent $event)
