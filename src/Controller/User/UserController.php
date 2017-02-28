@@ -144,7 +144,7 @@ class UserController
     {
         try {
             $data = $request->request->all();
-            if (!isset($data['user']) || !isset($data['profile']) || !isset($data['token']) || !isset($data['oauth']) || !isset($data['trackingData']) || !is_array($data['trackingData'])) {
+            if (!isset($data['user']) || !isset($data['profile']) || !isset($data['token']) || !isset($data['oauth']) || !isset($data['trackingData'])) {
                 throw new ValidationException(array('registration' => 'Bad format'));
             }
             $user = $app['register.service']->register($data['user'], $data['profile'], $data['token'], $data['oauth'], $data['trackingData']);
