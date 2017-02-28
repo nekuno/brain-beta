@@ -99,7 +99,7 @@ class TwitterProfileProcessor extends AbstractProcessor implements BatchProcesso
             $link = $preprocessedLink->getFirstLink();
 
             if ($preprocessedLink->getSource() == TokensModel::TWITTER
-                && $link->isComplete() && !($link->getProcessed() !== false)
+                && $link && $link->isComplete() && !($link->getProcessed() !== false)
             ) {
                 unset($batch[$key]);
             }
