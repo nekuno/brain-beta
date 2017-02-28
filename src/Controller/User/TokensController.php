@@ -35,7 +35,7 @@ class TokensController
 
         $token = $model->update($user->getId(), $resourceOwner, $request->request->all());
 
-        $app['dispatcher.service']->dispatch(new AccountConnectEvent($user->getId(), $token));
+        $app['dispatcher.service']->dispatch(\AppEvents::ACCOUNT_UPDATED, new AccountConnectEvent($user->getId(), $token));
 
         return $app->json($token);
     }

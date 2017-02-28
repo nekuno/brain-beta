@@ -4,8 +4,6 @@ namespace ApiConsumer\EventListener;
 use ApiConsumer\Event\OAuthTokenEvent;
 use Model\User\Token\TokensModel;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
-use PhpAmqpLib\Message\AMQPMessage;
-use PhpAmqpLib\Exception\AMQPRuntimeException;
 use Psr\Log\LoggerInterface;
 use Swift_Mailer;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;

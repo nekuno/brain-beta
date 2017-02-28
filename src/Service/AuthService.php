@@ -2,15 +2,16 @@
 
 namespace Service;
 
+use Event\AccountConnectEvent;
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Provider\OAuthProvider;
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
 use Manager\UserManager;
 use Model\User;
+use Model\User\Token\TokensModel;
 use Silex\Component\Security\Core\Encoder\JWTEncoder;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface;
 use HWI\Bundle\OAuthBundle\DependencyInjection\Configuration;
-
 
 class AuthService
 {
@@ -35,12 +36,24 @@ class AuthService
      */
     protected $oAuthProvider;
 
-    public function __construct(UserManager $um, PasswordEncoderInterface $encoder, JWTEncoder $jwtEncoder, OAuthProvider $oAuthProvider)
+    /**
+     * @var EventDispatcher
+     */
+    protected $dispatcher;
+
+    /**
+     * @var TokensModel
+     */
+    protected $tokensModel;
+
+    public function __construct(UserManager $um, PasswordEncoderInterface $encoder, JWTEncoder $jwtEncoder, OAuthProvider $oAuthProvider, EventDispatcher $dispatcher, TokensModel $tokensModel)
     {
         $this->um = $um;
         $this->encoder = $encoder;
         $this->jwtEncoder = $jwtEncoder;
         $this->oAuthProvider = $oAuthProvider;
+        $this->dispatcher = $dispatcher;
+        $this->tokensModel = $tokensModel;
     }
 
     /**
@@ -79,18 +92,11 @@ class AuthService
      */
     public function loginByResourceOwner($resourceOwner, $accessToken)
     {
-        $type = Configuration::getResourceOwnerType($resourceOwner);
-        if ($type == 'oauth1') {
-            $oauthToken = substr($accessToken, 0, strpos($accessToken, ':'));
-            $oauthTokenSecret = substr($accessToken, strpos($accessToken, ':') + 1, strpos($accessToken, '@') - strpos($accessToken, ':') - 1);
+        $accessToken = $this->fixOauth1Token($resourceOwner, $accessToken);
 
-            $accessToken = array(
-                'oauth_token' => $oauthToken,
-                'oauth_token_secret' => $oauthTokenSecret,
-            );
-        }
         $token = new OAuthToken($accessToken);
         $token->setResourceOwnerName($resourceOwner);
+
         try {
             $newToken = $this->oAuthProvider->authenticate($token);
         } catch (\Exception $e) {
@@ -102,6 +108,8 @@ class AuthService
         }
 
         $user = $this->updateLastLogin($newToken->getUser());
+        $savedToken = $this->tokensModel->getById($user->getId(), $resourceOwner);
+        $this->dispatcher->dispatch(\AppEvents::ACCOUNT_UPDATED, new AccountConnectEvent($user->getId(), $savedToken));
 
         return $this->buildToken($user);
     }
@@ -115,6 +123,22 @@ class AuthService
         $user = $this->um->getById($id);
 
         return $this->buildToken($user);
+    }
+
+    protected function fixOauth1Token($resourceOwner, $accessToken)
+    {
+        $type = Configuration::getResourceOwnerType($resourceOwner);
+        if ($type == 'oauth1') {
+            $oauthToken = substr($accessToken, 0, strpos($accessToken, ':'));
+            $oauthTokenSecret = substr($accessToken, strpos($accessToken, ':') + 1, strpos($accessToken, '@') - strpos($accessToken, ':') - 1);
+
+            $accessToken = array(
+                'oauth_token' => $oauthToken,
+                'oauth_token_secret' => $oauthTokenSecret,
+            );
+        }
+
+        return $accessToken;
     }
 
     /**
