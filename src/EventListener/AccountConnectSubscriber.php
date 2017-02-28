@@ -7,6 +7,7 @@ use Event\AccountConnectEvent;
 use Manager\UserManager;
 use Model\User\GhostUser\GhostUserManager;
 use Model\User\SocialNetwork\SocialProfileManager;
+use Model\User\Token\Token;
 use Model\User\Token\TokensModel;
 use Service\AMQPManager;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -54,14 +55,26 @@ class AccountConnectSubscriber implements EventSubscriberInterface
     {
         return array(
             \AppEvents::ACCOUNT_CONNECTED => array('onAccountConnected'),
+            \AppEvents::ACCOUNT_UPDATED => array('onAccountUpdated'),
         );
     }
 
     public function onAccountConnected(AccountConnectEvent $event)
     {
         $userId = $event->getUserId();
-        $resourceOwner = $event->getResourceOwner();
         $token = $event->getToken();
+        $resourceOwner = $token->getResourceOwner();
+
+        switch ($resourceOwner) {
+            case TokensModel::FACEBOOK:
+                $this->extendFacebook($token);
+                break;
+            case TokensModel::TWITTER:
+                $this->createTwitterSocialProfile($token, $userId);
+                break;
+            default:
+                break;
+        }
 
         $message = array(
             'userId' => $userId,
@@ -69,29 +82,46 @@ class AccountConnectSubscriber implements EventSubscriberInterface
         );
 
         $this->amqpManager->enqueueMessage($message, 'brain.fetching.links');
+    }
 
-        if ($resourceOwner === TokensModel::FACEBOOK) {
-            /* @var $facebookResourceOwner FacebookResourceOwner */
-            $facebookResourceOwner = $this->resourceOwnerFactory->build(TokensModel::FACEBOOK);
-            $token = $facebookResourceOwner->extend($token);
-            if ($token->getRefreshToken()) {
-                $token = $facebookResourceOwner->forceRefreshAccessToken($token);
-            }
+    public function onAccountUpdated(AccountConnectEvent $event)
+    {
+        $token = $event->getToken();
+        $resourceOwner = $token->getResourceOwner();
+
+        switch ($resourceOwner) {
+            case TokensModel::FACEBOOK:
+                $this->extendFacebook($token);
+                break;
+            default:
+                break;
         }
+    }
 
-        if ($resourceOwner == TokensModel::TWITTER) {
-            /** @var TwitterResourceOwner $resourceOwnerObject */
-            $resourceOwnerObject = $this->resourceOwnerFactory->build($resourceOwner);
-            $profileUrl = $resourceOwnerObject->requestProfileUrl($token);
-            if ($profileUrl) {
-                $profile = new SocialProfile($userId, $profileUrl, $resourceOwner);
+    private function extendFacebook($token)
+    {
+        /* @var $facebookResourceOwner FacebookResourceOwner */
+        $facebookResourceOwner = $this->resourceOwnerFactory->build(TokensModel::FACEBOOK);
+        $token = $facebookResourceOwner->extend($token);
+        if ($token->getRefreshToken()) {
+            $facebookResourceOwner->forceRefreshAccessToken($token);
+        }
+    }
 
-                if ($ghostUser = $this->gum->getBySocialProfile($profile)) {
-                    $this->um->fuseUsers($userId, $ghostUser->getId());
-                    $this->gum->saveAsUser($userId);
-                } else {
-                    $this->spm->addSocialProfile($profile);
-                }
+    private function createTwitterSocialProfile(Token $token, $userId)
+    {
+        $resourceOwner = TokensModel::TWITTER;
+        /** @var TwitterResourceOwner $resourceOwnerObject */
+        $resourceOwnerObject = $this->resourceOwnerFactory->build($resourceOwner);
+        $profileUrl = $resourceOwnerObject->requestProfileUrl($token);
+        if ($profileUrl) {
+            $profile = new SocialProfile($userId, $profileUrl, $resourceOwner);
+
+            if ($ghostUser = $this->gum->getBySocialProfile($profile)) {
+                $this->um->fuseUsers($userId, $ghostUser->getId());
+                $this->gum->saveAsUser($userId);
+            } else {
+                $this->spm->addSocialProfile($profile);
             }
         }
     }

@@ -6,6 +6,7 @@ namespace Controller\User;
 use ApiConsumer\Factory\ResourceOwnerFactory;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
+use Event\AccountConnectEvent;
 use Manager\UserManager;
 use Model\User;
 use Model\User\GhostUser\GhostUserManager;
@@ -19,52 +20,10 @@ class TokensController
 {
     public function postAction(Request $request, Application $app, User $user, $resourceOwner)
     {
-
         /* @var $model TokensModel */
         $model = $app['users.tokens.model'];
 
         $token = $model->create($user->getId(), $resourceOwner, $request->request->all());
-
-        /* @var $resourceOwnerFactory ResourceOwnerFactory */
-        $resourceOwnerFactory = $app['api_consumer.resource_owner_factory'];
-
-        if ($resourceOwner === TokensModel::FACEBOOK) {
-
-            /* @var $facebookResourceOwner FacebookResourceOwner */
-            $facebookResourceOwner = $resourceOwnerFactory->build(TokensModel::FACEBOOK);
-
-            if ($request->query->has('extend')) {
-                $token = $facebookResourceOwner->extend($token);
-            }
-
-            if ($token->getRefreshToken()) {
-                $token = $facebookResourceOwner->forceRefreshAccessToken($token);
-            }
-        }
-
-        if ($resourceOwner == TokensModel::TWITTER) {
-            /** @var TwitterResourceOwner $twitterResourceOwner */
-            $twitterResourceOwner = $resourceOwnerFactory->build($resourceOwner);
-            $profileUrl = $twitterResourceOwner->requestProfileUrl($token);
-            if (!$profileUrl) {
-                //TODO: Add information about this if it happens
-                return $app->json($token, 201);
-            }
-            $profile = new SocialProfile($user->getId(), $profileUrl, $resourceOwner);
-
-            /* @var $ghostUserManager GhostUserManager */
-            $ghostUserManager = $app['users.ghostuser.manager'];
-            if ($ghostUser = $ghostUserManager->getBySocialProfile($profile)) {
-                /* @var $userManager UserManager */
-                $userManager = $app['users.manager'];
-                $userManager->fuseUsers($user->getId(), $ghostUser->getId());
-                $ghostUserManager->saveAsUser($user->getId());
-            } else {
-                /** @var $socialProfilesManager SocialProfileManager */
-                $socialProfilesManager = $app['users.socialprofile.manager'];
-                $socialProfilesManager->addSocialProfile($profile);
-            }
-        }
 
         return $app->json($token, 201);
     }
@@ -76,21 +35,7 @@ class TokensController
 
         $token = $model->update($user->getId(), $resourceOwner, $request->request->all());
 
-        /* @var $resourceOwnerFactory ResourceOwnerFactory */
-        $resourceOwnerFactory = $app['api_consumer.resource_owner_factory'];
-        if ($resourceOwner === TokensModel::FACEBOOK) {
-
-            /* @var $facebookResourceOwner FacebookResourceOwner */
-            $facebookResourceOwner = $resourceOwnerFactory->build(TokensModel::FACEBOOK);
-
-            if ($request->query->has('extend')) {
-                $token = $facebookResourceOwner->extend($token);
-            }
-
-            if ($token->getRefreshToken()) {
-                $token = $facebookResourceOwner->forceRefreshAccessToken($token);
-            }
-        }
+        $app['dispatcher.service']->dispatch(new AccountConnectEvent($user->getId(), $token));
 
         return $app->json($token);
     }
