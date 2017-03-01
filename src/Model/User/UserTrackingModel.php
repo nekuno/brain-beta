@@ -54,7 +54,9 @@ class UserTrackingModel
         $userTrackingEvent->setAction($action);
         $userTrackingEvent->setCategory($category);
         $userTrackingEvent->setTag($tag);
-        $userTrackingEvent->setData($data);
+        $data = json_decode($data, true);
+        $data['IP'] = $this->getInsecureIp();
+        $userTrackingEvent->setData(json_encode($data));
 
         $this->em->persist($userTrackingEvent);
         $this->em->flush();
@@ -112,5 +114,18 @@ class UserTrackingModel
         }
 
         return 'No username';
+    }
+
+    protected function getInsecureIp()
+    {
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            $ip = $_SERVER['HTTP_CLIENT_IP'];
+        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+        } else {
+            $ip = $_SERVER['REMOTE_ADDR'];
+        }
+
+        return !filter_var($ip, FILTER_VALIDATE_IP) === false ? $ip : "";
     }
 }
