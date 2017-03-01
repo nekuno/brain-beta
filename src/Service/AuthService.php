@@ -92,7 +92,7 @@ class AuthService
      */
     public function loginByResourceOwner($resourceOwner, $accessToken)
     {
-        $accessToken = $this->fixOauth1Token($resourceOwner, $accessToken);
+        $accessToken = $this->tokensModel->getOauth1Token($resourceOwner, $accessToken) ?: $accessToken;
 
         $token = new OAuthToken($accessToken);
         $token->setResourceOwnerName($resourceOwner);
@@ -123,22 +123,6 @@ class AuthService
         $user = $this->um->getById($id);
 
         return $this->buildToken($user);
-    }
-
-    protected function fixOauth1Token($resourceOwner, $accessToken)
-    {
-        $type = Configuration::getResourceOwnerType($resourceOwner);
-        if ($type == 'oauth1') {
-            $oauthToken = substr($accessToken, 0, strpos($accessToken, ':'));
-            $oauthTokenSecret = substr($accessToken, strpos($accessToken, ':') + 1, strpos($accessToken, '@') - strpos($accessToken, ':') - 1);
-
-            $accessToken = array(
-                'oauth_token' => $oauthToken,
-                'oauth_token_secret' => $oauthTokenSecret,
-            );
-        }
-
-        return $accessToken;
     }
 
     /**
