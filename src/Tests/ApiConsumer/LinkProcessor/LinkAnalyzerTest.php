@@ -10,7 +10,7 @@ use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
-use Model\Link;
+use Model\Link\Link;
 
 class LinkAnalyzerTest extends \PHPUnit_Framework_TestCase
 {

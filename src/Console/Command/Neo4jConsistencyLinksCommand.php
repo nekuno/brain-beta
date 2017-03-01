@@ -3,7 +3,7 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
-use Model\Link;
+use Model\Link\Link;
 use Model\User;
 use Model\User\RateModel;
 use Manager\UserManager;

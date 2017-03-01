@@ -6,7 +6,7 @@ use ApiConsumer\Exception\CannotProcessException;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\SynonymousParameters;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
-use Model\Audio;
+use Model\Link\Audio;
 
 class SpotifyTrackProcessor extends AbstractSpotifyProcessor
 {

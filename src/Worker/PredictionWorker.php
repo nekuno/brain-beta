@@ -3,7 +3,7 @@
 
 namespace Worker;
 
-use Model\LinkModel;
+use Model\Link\LinkModel;
 use Model\Neo4j\Neo4jException;
 use Model\User\Affinity\AffinityModel;
 use Model\User\Similarity\SimilarityModel;

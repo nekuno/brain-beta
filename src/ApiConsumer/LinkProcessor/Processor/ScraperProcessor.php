@@ -12,8 +12,8 @@ use ApiConsumer\LinkProcessor\SynonymousParameters;
 use ApiConsumer\ResourceOwner\AbstractResourceOwnerTrait;
 use Goutte\Client;
 use GuzzleHttp\Exception\RequestException;
-use Model\Image;
-use Model\Link;
+use Model\Link\Image;
+use Model\Link\Link;
 use Symfony\Component\DomCrawler\Crawler;
 
 class ScraperProcessor implements ProcessorInterface

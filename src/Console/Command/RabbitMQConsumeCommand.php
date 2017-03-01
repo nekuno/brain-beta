@@ -91,9 +91,7 @@ class RabbitMQConsumeCommand extends ApplicationAwareCommand
                     $channel,
                     $dispatcher,
                     $fetcher,
-                    $processorService,
-                    $this->app['api_consumer.resource_owner_factory'],
-                    $this->app['dbs']['mysql_brain']);
+                    $processorService);
                 $worker->setLogger($logger);
                 $logger->notice('Processing fetching queue');
                 break;

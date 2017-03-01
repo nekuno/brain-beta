@@ -1,8 +1,8 @@
 <?php
 
-namespace Model;
+namespace Model\Link;
 
-class Audio extends Link
+class Video extends Link
 {
     protected $embed_type;
     protected $embed_id;
@@ -10,7 +10,7 @@ class Audio extends Link
     public static function buildFromLink(Link $link) {
         $array = $link->toArray();
 
-        /** @var Audio $me */
+        /** @var Video $me */
         $me = parent::buildFromArray($array);
 
         if (isset($array['embed_type'])){
@@ -26,7 +26,7 @@ class Audio extends Link
     public function toArray()
     {
         $array = parent::toArray();
-        $array['additionalLabels'] = array('Audio');
+        $array['additionalLabels'] = array('Video');
         return $array;
     }
 
@@ -61,4 +61,10 @@ class Audio extends Link
     {
         $this->embed_id = $embed_id;
     }
+
+    public function isComplete()
+    {
+        return parent::isComplete() && $this->getEmbedId() && $this->getEmbedType();
+    }
+
 }

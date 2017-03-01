@@ -5,7 +5,7 @@ namespace ApiConsumer\LinkProcessor\Processor\FacebookProcessor;
 use ApiConsumer\Exception\UrlNotValidException;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use Model\User\Token\TokensModel;
-use Model\Video;
+use Model\Link\Video;
 
 class FacebookVideoProcessor extends AbstractFacebookProcessor
 {

@@ -8,8 +8,8 @@ use ApiConsumer\LinkProcessor\Processor\AbstractProcessor;
 use ApiConsumer\LinkProcessor\Processor\BatchProcessorInterface;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
-use Model\Creator;
-use Model\Link;
+use Model\Link\Creator\CreatorTwitter;
+use Model\Link\Link;
 use Model\User\Token\Token;
 use Model\User\Token\TokensModel;
 
@@ -40,7 +40,7 @@ class TwitterProfileProcessor extends AbstractProcessor implements BatchProcesso
     {
         $profiles = $this->resourceOwner->buildProfilesFromLookup($data);
         $profileArray = reset($profiles);
-        $preprocessedLink->setFirstLink(Creator::buildFromArray($profileArray));
+        $preprocessedLink->setFirstLink(CreatorTwitter::buildFromArray($profileArray));
 
         $id = isset($data['id_str']) ? (int)$data['id_str'] : $data['id'];
         $preprocessedLink->setResourceItemId($id);
@@ -68,7 +68,7 @@ class TwitterProfileProcessor extends AbstractProcessor implements BatchProcesso
 
     /**
      * @param array $batch
-     * @return Creator[]
+     * @return CreatorTwitter[]
      */
     public function requestBatchLinks(array $batch)
     {
@@ -143,7 +143,7 @@ class TwitterProfileProcessor extends AbstractProcessor implements BatchProcesso
         $links = array();
         foreach ($linkArrays as $linkArray)
         {
-            $links[] = Creator::buildFromArray($linkArray);
+            $links[] = CreatorTwitter::buildFromArray($linkArray);
         }
         return $links;
     }

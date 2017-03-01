@@ -3,7 +3,7 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
-use Model\LinkModel;
+use Model\Link\LinkModel;
 use Model\User;
 use Model\User\Affinity\AffinityModel;
 use Manager\UserManager;

@@ -4,7 +4,7 @@ namespace Provider;
 
 use Manager\PhotoManager;
 use Model\EnterpriseUser\EnterpriseUserModel;
-use Model\LinkModel;
+use Model\Link\LinkModel;
 use Model\Popularity\PopularityManager;
 use Model\Popularity\PopularityPaginatedModel;
 use Model\Questionnaire\QuestionModel;

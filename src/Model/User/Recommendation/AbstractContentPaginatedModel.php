@@ -5,7 +5,7 @@ namespace Model\User\Recommendation;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
-use Model\LinkModel;
+use Model\Link\LinkModel;
 use Model\Neo4j\GraphManager;
 use Paginator\PaginatedInterface;
 use Service\ImageTransformations;
@@ -233,7 +233,7 @@ abstract class AbstractContentPaginatedModel implements PaginatedInterface
 
     protected function getChoices()
     {
-        return array('type' => $this->lm->getValidTypes());
+        return array('type' => LinkModel::getValidTypes());
     }
 
     /**
