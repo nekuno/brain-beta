@@ -4,7 +4,7 @@ namespace Event;
 
 use Model\User;
 
-class UserTrackingEvent extends UserEvent
+class UserRegisteredEvent extends UserEvent
 {
 
     protected $data = array();

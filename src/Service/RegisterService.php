@@ -2,7 +2,7 @@
 
 namespace Service;
 
-use Event\UserTrackingEvent;
+use Event\UserRegisteredEvent;
 use Manager\UserManager;
 use Model\User\ProfileModel;
 use Model\User\InvitationModel;
@@ -86,7 +86,7 @@ class RegisterService
         if (isset($invitation['invitation']['group']['id'])) {
             $this->gm->addUser($invitation['invitation']['group']['id'], $user->getId());
         }
-        $this->dispatcher->dispatch(\AppEvents::USER_REGISTERED, new UserTrackingEvent($user, $trackingData));
+        $this->dispatcher->dispatch(\AppEvents::USER_REGISTERED, new UserRegisteredEvent($user, $trackingData));
 
         return $user->jsonSerialize();
     }
