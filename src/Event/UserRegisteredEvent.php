@@ -6,21 +6,37 @@ use Model\User;
 
 class UserRegisteredEvent extends UserEvent
 {
+    protected $profile;
+    protected $invitation;
+    protected $token;
+    protected $trackingData;
 
-    protected $data = array();
-
-    public function __construct(User $user, $data = array())
+    public function __construct(User $user, array $profile, $invitation, User\Token\Token $token, $trackingData)
     {
         parent::__construct($user);
-        $this->data = $data;
+        $this->profile = $profile;
+        $this->invitation = $invitation;
+        $this->token = $token;
+        $this->trackingData = $trackingData;
     }
 
-    /**
-     * @return array
-     */
-    public function getData()
+    public function getProfile()
     {
+        return $this->profile;
+    }
 
-        return $this->data;
+    public function getInvitation()
+    {
+        return $this->invitation;
+    }
+
+    public function getToken()
+    {
+        return $this->token;
+    }
+
+    public function getTrackingData()
+    {
+        return $this->trackingData;
     }
 }

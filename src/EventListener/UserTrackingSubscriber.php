@@ -27,7 +27,7 @@ class UserTrackingSubscriber implements EventSubscriberInterface
     public function onUserRegistered(UserRegisteredEvent $event)
     {
         $user = $event->getUser();
-        $data = $event->getData();
-        $this->userTrackingModel->set($user->getId(), 'Registration success', 'Registration', null, $data);
+        $trackingData = $event->getTrackingData();
+        $this->userTrackingModel->set($user->getId(), 'Registration success', 'Registration', null, $trackingData);
     }
 }

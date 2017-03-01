@@ -46,7 +46,7 @@ class UserTrackingModel
         return $this->formatUserTrackingEventsArray($userTrackingEvents);
     }
 
-    public function set($userId, $action = null, $category = null, $tag = null, $data = null)
+    public function set($userId, $action = null, $category = null, $tag = null, $trackingData = null)
     {
         /** @var UserTrackingEvent $userTrackingEvent */
         $userTrackingEvent = new UserTrackingEvent();
@@ -54,9 +54,9 @@ class UserTrackingModel
         $userTrackingEvent->setAction($action);
         $userTrackingEvent->setCategory($category);
         $userTrackingEvent->setTag($tag);
-        $data = json_decode($data, true);
-        $data['IP'] = $this->getInsecureIp();
-        $userTrackingEvent->setData(json_encode($data));
+        $trackingData = json_decode($trackingData, true);
+        $trackingData['IP'] = $this->getInsecureIp();
+        $userTrackingEvent->setData(json_encode($trackingData));
 
         $this->em->persist($userTrackingEvent);
         $this->em->flush();
