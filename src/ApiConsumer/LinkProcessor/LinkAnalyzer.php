@@ -128,25 +128,24 @@ class LinkAnalyzer
         return $parser->getUsername($url);
     }
     
-    //TODO: Improve detection on host, not whole url
     private static function isFacebook($url)
     {
-        return strpos($url, 'facebook.com') !== false;
+        return preg_match('/^https?:\/\/(www\.)?facebook\.com\//i', $url);
     }
 
     private static function isTwitter($url)
     {
-        return strpos($url, 'twitter.com') !== false;
+        return preg_match('/^https?:\/\/(www\.)?twitter\.com\//i', $url);
     }
 
     private static function isSpotify($url)
     {
-        return strpos($url, 'spotify.com') !== false;
+        return preg_match('/^https?:\/\/(www\.)?spotify\.com\//i', $url);
     }
 
     private static function isYouTube($url)
     {
-        return strpos($url, 'youtube.com') !== false || strpos($url, 'youtu.be') !== false;
+        return preg_match('/^https?:\/\/(www\.)?youtube\.com\//i', $url) || preg_match('/^https?:\/\/(www\.)?youtu\.be\//i', $url);
     }
 
 }
