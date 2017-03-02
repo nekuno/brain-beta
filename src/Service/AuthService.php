@@ -85,13 +85,14 @@ class AuthService
     }
 
     /**
-     * @param $resourceOwner
-     * @param $accessToken
+     * @param $oauth
      * @return string
-     * @throws UnauthorizedHttpException
      */
-    public function loginByResourceOwner($resourceOwner, $accessToken)
+    public function loginByResourceOwner($oauth)
     {
+        $resourceOwner = $oauth['resourceOwner'];
+        $accessToken = $oauth['oauthToken'];
+
         $accessToken = $this->tokensModel->getOauth1Token($resourceOwner, $accessToken) ?: $accessToken;
 
         $token = new OAuthToken($accessToken);
@@ -108,7 +109,7 @@ class AuthService
         }
 
         $user = $this->updateLastLogin($newToken->getUser());
-        $this->updateToken($user, $resourceOwner, $accessToken);
+        $this->updateToken($user, $oauth);
 
         return $this->buildToken($user);
     }
@@ -154,15 +155,13 @@ class AuthService
         return $this->um->update($data);
     }
 
-    protected function updateToken(User $user, $resourceOwner, $accessToken)
+    protected function updateToken(User $user, $oauth)
     {
-        $savedToken = $this->tokensModel->getById($user->getId(), $resourceOwner);
-
         $loginToken = new Token();
-        $loginToken->setOauthToken($accessToken);
+        $loginToken->setOauthToken($oauth['oauthToken']);
         $loginToken->setUserId($user->getId());
-        $loginToken->setResourceOwner($resourceOwner);
-        $loginToken->setResourceId($savedToken->getResourceId());
+        $loginToken->setResourceOwner($oauth['resourceOwner']);
+        $loginToken->setResourceId($oauth['resourceId']);
 
         $this->dispatcher->dispatch(\AppEvents::ACCOUNT_UPDATED, new AccountConnectEvent($user->getId(), $loginToken));
     }
