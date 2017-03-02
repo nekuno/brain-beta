@@ -140,12 +140,12 @@ class LinkAnalyzer
 
     private static function isSpotify($url)
     {
-        return preg_match('/^https?:\/\/(www\.)?spotify\.com\//i', $url);
+        return preg_match('/^https?:\/\/(open\.|play\.)?spotify\.com\//i', $url);
     }
 
     private static function isYouTube($url)
     {
-        return preg_match('/^https?:\/\/(www\.)?youtube\.com\//i', $url) || preg_match('/^https?:\/\/(www\.)?youtu\.be\//i', $url);
+        return preg_match('/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i', $url);
     }
 
 }
