@@ -9,7 +9,7 @@ class CreatorTwitter extends Creator
     public function toArray()
     {
         $array = parent::toArray();
-        $array['additionalLabels'] += array('CreatorTwitter');
+        $array['additionalLabels'][] = 'CreatorTwitter';
         return $array;
     }
 

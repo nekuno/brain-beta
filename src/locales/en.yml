@@ -42,8 +42,8 @@ types:
   video: 'Videos'
   image: 'Images & Gifs'
   creator: 'Channels of Twitter'
-  facebookCreator: 'Channels of Facebook'
-  twitterCreator: 'Channels of Twitter'
+  creatorFacebook: 'Channels of Facebook'
+  creatorTwitter: 'Channels of Twitter'
   link: 'Web & links'
 threads:
   default:

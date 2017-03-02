@@ -78,39 +78,6 @@ class LinkModel
         return $links;
     }
 
-    //TODO: Check if findLinkById not used and delete
-    /**
-     * @param integer $linkId
-     * @return array|boolean the link or false
-     * @throws \Exception on failure
-     */
-    public function findLinkById($linkId)
-    {
-        $qb = $this->gm->createQueryBuilder();
-
-        $qb->match('(l:Link)')
-            ->where('id(l) = { linkId } ')
-            ->returns('l AS link')
-            ->limit('1');
-
-        $qb->setParameter('linkId', (integer)$linkId);
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        if (count($result) <= 0) {
-            return false;
-        }
-
-        /* @var $row Row */
-        $row = $result->current();
-        /* @var $node Node */
-        $link = $this->buildLink($row->offsetGet('link'));
-
-        return $link;
-    }
-
     /**
      * @param string $userId
      * @param string $type The type of relationship between the user and the links

@@ -144,7 +144,7 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
             'description' => isset($user['description']) ? $user['description'] : $user['name'],
             'url' => $this->getUserUrl($user),
             'thumbnail' => isset($user['profile_image_url']) ? str_replace('_normal', '', $user['profile_image_url']) : null,
-            'additionalLabels' => array('Creator'),
+            'additionalLabels' => array('Creator', 'CreatorTwitter'),
             'resource' => TokensModel::TWITTER,
             'timestamp' => 1000 * time(),
             'processed' => 1

@@ -9,7 +9,7 @@ class CreatorFacebook extends Creator
     public function toArray()
     {
         $array = parent::toArray();
-        $array['additionalLabels'] += array('CreatorFacebook');
+        $array['additionalLabels'][] = 'CreatorFacebook';
         return $array;
     }
 
