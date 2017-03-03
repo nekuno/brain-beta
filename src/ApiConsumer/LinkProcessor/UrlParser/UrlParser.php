@@ -8,21 +8,21 @@ class UrlParser implements UrlParserInterface
 {
     const SCRAPPER = 'scrapper';
 
-    public function checkUrlValid($url)
+    public function checkUrlValid($url, $urlDecoded = null)
     {
         //TODO: Check https://mathiasbynens.be/demo/url-regex for improvements
         if (!filter_var($url, FILTER_VALIDATE_URL)) {
-            throw new UrlNotValidException($url);
+            throw new UrlNotValidException($urlDecoded ?: $url);
         }
     }
 
     public function cleanURL($url)
     {
         $url = $this->removeSpecialEndingChars($url);
-        $url = $this->fixCodification($url);
-        $this->checkUrlValid($url);
+        $urlDecoded = $this->fixCodification($url);
+        $this->checkUrlValid($url, $urlDecoded);
 
-        return $this->removeEndingChars($url);
+        return $this->removeEndingChars($urlDecoded);
     }
 
     // Regex from https://gist.github.com/gruber/8891611
