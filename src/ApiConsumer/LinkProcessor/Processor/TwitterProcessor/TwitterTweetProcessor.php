@@ -6,22 +6,9 @@ use ApiConsumer\Exception\CannotProcessException;
 use ApiConsumer\Exception\UrlChangedException;
 use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use ApiConsumer\LinkProcessor\Processor\AbstractProcessor;
-use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
-use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 
-class TwitterTweetProcessor extends AbstractProcessor
+class TwitterTweetProcessor extends AbstractTwitterProcessor
 {
-    /**
-     * @var TwitterUrlParser
-     */
-    protected $parser;
-
-    /**
-     * @var TwitterResourceOwner
-     */
-    protected $resourceOwner;
-
     public function requestItem(PreprocessedLink $preprocessedLink)
     {
         $statusId = $this->getItemId($preprocessedLink->getUrl());
@@ -95,7 +82,7 @@ class TwitterTweetProcessor extends AbstractProcessor
     {
         $profileAvatar = null;
         if (isset($data['user'])){
-            $profileAvatar = isset($data['user']['profile_image_url_https']) ? $data['user']['profile_image_url_https'] : ( isset($data['user']['profile_image_url']) ? $data['user']['profile_image_url'] : null);
+            $profileAvatar = isset($data['user']['profile_image_url_https']) ? $data['user']['profile_image_url_https'] : ( isset($data['user']['profile_image_url']) ? $data['user']['profile_image_url'] : $this->brainBaseUrl . self::DEFAULT_IMAGE_PATH);
         }
 
         return array($profileAvatar);

@@ -2,29 +2,15 @@
 
 namespace ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
 
-use ApiConsumer\Exception\CannotProcessException;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use ApiConsumer\LinkProcessor\Processor\AbstractProcessor;
 use ApiConsumer\LinkProcessor\Processor\BatchProcessorInterface;
-use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 use Model\Link\Creator\CreatorTwitter;
-use Model\Link\Link;
 use Model\User\Token\Token;
 use Model\User\Token\TokensModel;
 
-class TwitterProfileProcessor extends AbstractProcessor implements BatchProcessorInterface
+class TwitterProfileProcessor extends AbstractTwitterProcessor implements BatchProcessorInterface
 {
-    /**
-     * @var TwitterResourceOwner
-     */
-    protected $resourceOwner;
-
-    /**
-     * @var TwitterUrlParser
-     */
-    protected $parser;
-
     protected function requestItem(PreprocessedLink $preprocessedLink)
     {
         $userId = $this->getUserId($preprocessedLink);
@@ -48,7 +34,7 @@ class TwitterProfileProcessor extends AbstractProcessor implements BatchProcesso
 
     public function getImages(PreprocessedLink $preprocessedLink, array $data)
     {
-        return isset($data['profile_image_url']) ? array(str_replace('_normal', '', $data['profile_image_url'])) : array();
+        return isset($data['profile_image_url']) ? array(str_replace('_normal', '', $data['profile_image_url'])) : array($this->brainBaseUrl . self::DEFAULT_IMAGE_PATH);
     }
 
     protected function getUserId(PreprocessedLink $preprocessedLink)

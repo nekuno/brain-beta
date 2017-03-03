@@ -14,11 +14,13 @@ abstract class AbstractProcessor implements ProcessorInterface
     /** @var  ResourceOwnerInterface | AbstractResourceOwnerTrait */
     protected $resourceOwner;
     protected $parser;
+    protected $brainBaseUrl;
 
-    public function __construct(ResourceOwnerInterface $resourceOwner, UrlParserInterface $urlParser)
+    public function __construct(ResourceOwnerInterface $resourceOwner, UrlParserInterface $urlParser, $brainBaseUrl)
     {
         $this->resourceOwner = $resourceOwner;
         $this->parser = $urlParser;
+        $this->brainBaseUrl = $brainBaseUrl;
     }
 
     public function getResourceOwner()

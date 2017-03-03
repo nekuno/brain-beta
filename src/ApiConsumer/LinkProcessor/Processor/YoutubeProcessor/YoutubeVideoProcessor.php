@@ -31,6 +31,10 @@ class YoutubeVideoProcessor extends AbstractYoutubeProcessor
             $imageUrls[] = 'https://img.youtube.com/vi/' . $itemId . '/' . $resolution;
         }
 
+        if (empty($imageUrls)) {
+            $imageUrls = array($this->brainBaseUrl . self::DEFAULT_IMAGE_PATH);
+        }
+
         return $imageUrls;
     }
 

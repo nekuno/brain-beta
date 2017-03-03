@@ -3,12 +3,14 @@
 namespace Tests\ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\AbstractFacebookProcessor;
 use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookProfileProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;
 use Model\User\Token\TokensModel;
+use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
-class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
+class FacebookProfileProcessorTest extends AbstractProcessorTest
 {
     /**
      * @var FacebookResourceOwner|\PHPUnit_Framework_MockObject_MockObject
@@ -34,7 +36,7 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser')
             ->getMock();
 
-        $this->processor = new FacebookProfileProcessor($this->resourceOwner, $this->parser);
+        $this->processor = new FacebookProfileProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . AbstractFacebookProcessor::DEFAULT_IMAGE_PATH);
     }
 
     /**

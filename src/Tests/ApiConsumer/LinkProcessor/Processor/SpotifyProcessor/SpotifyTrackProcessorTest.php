@@ -4,13 +4,15 @@ namespace Tests\ApiConsumer\LinkProcessor\Processor\SpotifyProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\AbstractSpotifyProcessor;
 use ApiConsumer\LinkProcessor\SynonymousParameters;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
 use ApiConsumer\ResourceOwner\SpotifyResourceOwner;
 use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\SpotifyTrackProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
+use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
-class SpotifyTrackProcessorTest extends \PHPUnit_Framework_TestCase
+class SpotifyTrackProcessorTest extends AbstractProcessorTest
 {
     /**
      * @var SpotifyResourceOwner|\PHPUnit_Framework_MockObject_MockObject
@@ -36,7 +38,7 @@ class SpotifyTrackProcessorTest extends \PHPUnit_Framework_TestCase
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser')
             ->getMock();
 
-        $this->processor = new SpotifyTrackProcessor($this->resourceOwner, $this->parser);
+        $this->processor = new SpotifyTrackProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . AbstractSpotifyProcessor::DEFAULT_IMAGE_PATH);
     }
 
     /**
