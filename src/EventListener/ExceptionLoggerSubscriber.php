@@ -131,7 +131,7 @@ class ExceptionLoggerSubscriber implements EventSubscriberInterface, LoggerAware
 
         $lines = array(
             $message,
-            sprintf('On $s while $s', $now, $process),
+            sprintf('On %s while %s', $now, $process),
         );
 
         $this->writeToFile($this->urlUnprocessed_file, $lines);

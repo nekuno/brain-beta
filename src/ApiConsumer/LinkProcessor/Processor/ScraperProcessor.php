@@ -107,13 +107,11 @@ class ScraperProcessor implements ProcessorInterface
 
     private function fixRelativeUrls(array &$images, $url)
     {
-        if ($this->isRelativeUrl($url)) {
+        $parsedUrl = parse_url($url);
+        if (!isset($parsedUrl['scheme']) || !isset($parsedUrl['host'])) {
             return;
         }
-
-        $slashPosition = strpos($url, '/');
-
-        $prefix = $slashPosition ? substr($url, 0, $slashPosition) : $url;
+        $prefix = $parsedUrl['scheme'] . '://' . trim($parsedUrl['host'], '/') . '/';
 
         foreach ($images as &$imageUrl) {
             if ($this->isRelativeUrl($imageUrl)) {
@@ -124,11 +122,11 @@ class ScraperProcessor implements ProcessorInterface
 
     private function isRelativeUrl($url)
     {
-        $startsWithSlash = strpos($url, '/') === 0;
+        $starsWithHttp = strpos($url, 'http://') === 0;
+        $starsWithHttps = strpos($url, 'https://') === 0;
+        $startsWithDoubleSlash = strpos($url, '//') === 0;
 
-        $startsWithDoubleSlash = substr($url, 0, 2) === '//';
-
-        return $startsWithSlash && !$startsWithDoubleSlash;
+        return !$starsWithHttp && !$starsWithHttps && !$startsWithDoubleSlash;
     }
 
     private function overrideFieldsData(Link $link, array $scrapedData)
