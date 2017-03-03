@@ -601,7 +601,7 @@ tokens:
         required: true
         type: string
     oauthTokenSecret:
-        required: true
+        required: false
         type: string
     refreshToken:
         required: false
@@ -612,11 +612,11 @@ tokens:
     createdTime:
         required: false
         type: integer
-    oauthToken:
+    updatedTime:
         editable: false
         type: integer
-    oauthToken:
-        editable: false
+    expireTime:
+        required: false
         type: integer
 
 filters:
