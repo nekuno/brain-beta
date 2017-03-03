@@ -162,6 +162,8 @@ class AuthService
         $loginToken->setUserId($user->getId());
         $loginToken->setResourceOwner($oauth['resourceOwner']);
         $loginToken->setResourceId($oauth['resourceId']);
+        $loginToken->setExpireTime($oauth['expireTime']);
+        $loginToken->setRefreshToken($oauth['refreshToken']);
 
         $this->dispatcher->dispatch(\AppEvents::ACCOUNT_UPDATED, new AccountConnectEvent($user->getId(), $loginToken));
     }
