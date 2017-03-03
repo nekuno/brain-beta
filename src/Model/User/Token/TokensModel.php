@@ -10,6 +10,7 @@ use HWI\Bundle\OAuthBundle\DependencyInjection\Configuration;
 use Model\Entity\DataStatus;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
+use Service\Validator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -38,11 +39,12 @@ class TokensModel
      */
     protected $entityManagerBrain;
 
-    public function __construct(EventDispatcher $dispatcher, GraphManager $graphManager, EntityManager $entityManagerBrain)
+    public function __construct(EventDispatcher $dispatcher, GraphManager $graphManager, EntityManager $entityManagerBrain, Validator $validator)
     {
         $this->dispatcher = $dispatcher;
         $this->gm = $graphManager;
         $this->entityManagerBrain = $entityManagerBrain;
+        $this->validator = $validator;
     }
 
     public static function getResourceOwners()
@@ -237,90 +239,14 @@ class TokensModel
      */
     public function validate(array $data, $id = null)
     {
-        $errors = array();
+        $this->validator->validateToken($data, $id, $this->getChoices());
+    }
 
-        $metadata = $this->getMetadata();
-
-        foreach ($metadata as $fieldName => $fieldData) {
-
-            $fieldErrors = array();
-
-            if (isset($fieldData['editable']) && $fieldData['editable'] === false) {
-                continue;
-            }
-
-            if (!isset($data[$fieldName]) || !$data[$fieldName]) {
-                if (isset($fieldData['required']) && $fieldData['required'] === true) {
-                    $fieldErrors[] = sprintf('"%s" is required', $fieldName);
-                }
-            } else {
-
-                $fieldValue = $data[$fieldName];
-
-                switch ($fieldData['type']) {
-                    case 'integer':
-                        if (!is_integer($fieldValue)) {
-                            $fieldErrors[] = sprintf('"%s" must be an integer', $fieldName);
-                        }
-                        break;
-                    case 'string':
-                        if (!is_string($fieldValue)) {
-                            $fieldErrors[] = sprintf('"%s" must be an string', $fieldName);
-                        }
-                        break;
-                    case 'choice':
-                        $choices = $fieldData['choices'];
-                        if (!in_array($fieldValue, $choices)) {
-                            $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $fieldValue, implode("', '", $choices));
-                        }
-                        break;
-                }
-
-                if ($fieldName === 'resourceId') {
-                    $conditions = array('token.resourceOwner = { resourceOwner }', 'token.resourceId = { resourceId }');
-                    if (null !== $id) {
-                        $conditions[] = 'user.qnoow_id <> { id }';
-                    }
-                    $qb = $this->gm->createQueryBuilder();
-                    $qb->match('(user:User)<-[:TOKEN_OF]-(token:Token)')
-                        ->where($conditions)
-                        ->setParameter('id', (integer)$id)
-                        ->setParameter('resourceId', $fieldValue)
-                        ->setParameter('resourceOwner', $data['resourceOwner'])
-                        ->returns('user');
-
-                    $query = $qb->getQuery();
-
-                    $result = $query->getResultSet();
-
-                    if ($result->count() > 0) {
-                        $fieldErrors[] = 'There is other user with the same resourceId already registered';
-                    }
-                }
-            }
-
-            if (count($fieldErrors) > 0) {
-                $errors[$fieldName] = $fieldErrors;
-            }
-        }
-
-        $public = array();
-        foreach ($metadata as $name => $item) {
-            if (!(isset($item['editable']) && $item['editable'] === false)) {
-                $public[$name] = $item;
-            }
-        }
-
-        $diff = array_diff_key($data, $public);
-        if (count($diff) > 0) {
-            foreach ($diff as $invalidKey => $invalidValue) {
-                $errors[$invalidKey] = array(sprintf('Invalid key "%s"', $invalidKey));
-            }
-        }
-
-        if (count($errors) > 0) {
-            throw new ValidationException($errors);
-        }
+    private function getChoices()
+    {
+        return array(
+            'resourceOwner' => self::getResourceOwners(),
+        );
     }
 
     public function getByLikedUrl($url, $resource)
@@ -425,20 +351,6 @@ class TokensModel
         $token->setRefreshToken($tokenNode->getProperty('refreshToken'));
 
         return $token;
-    }
-
-    protected function getMetadata()
-    {
-        return array(
-            'resourceOwner' => array('type' => 'choice', 'choices' => self::getResourceOwners(), 'required' => true),
-            'oauthToken' => array('type' => 'string', 'required' => true),
-            'oauthTokenSecret' => array('type' => 'string', 'required' => false),
-            'createdTime' => array('type' => 'integer', 'required' => false),
-            'updatedTime' => array('type' => 'integer', 'editable' => false),
-            'expireTime' => array('type' => 'integer', 'required' => false),
-            'refreshToken' => array('type' => 'string', 'required' => false),
-            'resourceId' => array('type' => 'string', 'required' => true),
-        );
     }
 
     protected function getUserAndTokenNodesById($id, $resourceOwner)
