@@ -913,7 +913,7 @@ class LinkModel
     //TODO: Refactor this to use locale keys or move them to fields.yml
     public static function getValidTypes()
     {
-        return array('Audio', 'Video', 'Image', 'Link', 'Creator', 'FacebookCreator', 'TwitterCreator');
+        return array('Audio', 'Video', 'Image', 'Link', 'Creator', 'CreatorFacebook', 'CreatorTwitter');
     }
 
     //TODO: Only called from ContentFilterModel. Probably move logic and translator dependency there.
