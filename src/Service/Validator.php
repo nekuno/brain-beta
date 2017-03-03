@@ -164,6 +164,60 @@ class Validator
         $this->validate($data, $metadata);
     }
 
+    public function validateToken(array $data, $userId = null, array $choices = array())
+    {
+        $this->validate($data, $this->metadata['token'], $choices);
+
+        $this->validateTokenResourceId($data['resourceId'], $userId, $data['resourceOwner']);
+
+        $this->validateExtraFields($data, $this->metadata['token']);
+    }
+
+    protected function validateExtraFields($data, $metadata)
+    {
+        $errors = array();
+
+        $diff = array_diff_key($data, $metadata);
+        if (count($diff) > 0) {
+            foreach ($diff as $invalidKey => $invalidValue) {
+                $errors[$invalidKey] = array(sprintf('Invalid key "%s"', $invalidKey));
+            }
+        }
+
+        if (count($errors) > 0) {
+            throw new ValidationException($errors);
+        }
+    }
+
+    protected function validateTokenResourceId($resourceId, $userId, $resourceOwner)
+    {
+        $errors = array();
+
+        $conditions = array('token.resourceOwner = { resourceOwner }', 'token.resourceId = { resourceId }');
+        if (null !== $userId) {
+            $conditions[] = 'user.qnoow_id <> { id }';
+        }
+        $qb = $this->graphManager->createQueryBuilder();
+        $qb->match('(user:User)<-[:TOKEN_OF]-(token:Token)')
+            ->where($conditions)
+            ->setParameter('id', (integer)$userId)
+            ->setParameter('resourceId', $resourceId)
+            ->setParameter('resourceOwner', $resourceOwner)
+            ->returns('user');
+
+        $query = $qb->getQuery();
+
+        $result = $query->getResultSet();
+
+        if ($result->count() > 0) {
+            $errors['groupId'][] = 'There is other user with the same resourceId already registered';
+        }
+
+        if (count($errors) > 0) {
+            throw new ValidationException($errors);
+        }
+    }
+
     public function validateEditFilterContent(array $data, array $choices = array())
     {
         return $this->validate($data, $this->contentFilterModel->getFilters(), $choices);
