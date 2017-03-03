@@ -4,11 +4,13 @@ namespace Tests\ApiConsumer\LinkProcessor\Processor\YoutubeProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\AbstractYoutubeProcessor;
 use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\YoutubeChannelProcessor;
 use ApiConsumer\ResourceOwner\GoogleResourceOwner;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
+use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
-class YoutubeChannelProcessorTest extends \PHPUnit_Framework_TestCase
+class YoutubeChannelProcessorTest extends AbstractProcessorTest
 {
 
     /**
@@ -36,7 +38,7 @@ class YoutubeChannelProcessorTest extends \PHPUnit_Framework_TestCase
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser')
             ->getMock();
 
-        $this->processor = new YoutubeChannelProcessor($this->resourceOwner, $this->parser);
+        $this->processor = new YoutubeChannelProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . AbstractYoutubeProcessor::DEFAULT_IMAGE_PATH);
     }
 
     /**

@@ -6,17 +6,9 @@ use ApiConsumer\Exception\CannotProcessException;
 use ApiConsumer\Exception\UrlChangedException;
 use ApiConsumer\Exception\UrlNotValidException;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use ApiConsumer\LinkProcessor\Processor\AbstractProcessor;
-use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
-use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 
-class TwitterIntentProcessor extends AbstractProcessor
+class TwitterIntentProcessor extends AbstractTwitterProcessor
 {
-    /** @var  TwitterUrlParser */
-    protected $parser;
-
-    /** @var  TwitterResourceOwner */
-    protected $resourceOwner;
 
     protected function requestItem(PreprocessedLink $preprocessedLink)
     {

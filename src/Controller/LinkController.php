@@ -4,7 +4,7 @@ namespace Controller;
 
 use ApiConsumer\Images\ImageAnalyzer;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use Model\Link;
+use Model\Link\Link;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 

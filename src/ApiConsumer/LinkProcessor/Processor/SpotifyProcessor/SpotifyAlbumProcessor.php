@@ -3,7 +3,7 @@
 namespace ApiConsumer\LinkProcessor\Processor\SpotifyProcessor;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use Model\Audio;
+use Model\Link\Audio;
 
 class SpotifyAlbumProcessor extends AbstractSpotifyProcessor
 {

@@ -4,9 +4,8 @@ namespace ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
 
 use ApiConsumer\Exception\CannotProcessException;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use ApiConsumer\LinkProcessor\Processor\AbstractProcessor;
 
-class TwitterPicProcessor extends AbstractProcessor
+class TwitterPicProcessor extends AbstractTwitterProcessor
 {
     public function requestItem(PreprocessedLink $link)
     {

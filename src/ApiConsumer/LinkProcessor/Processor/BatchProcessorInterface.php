@@ -3,7 +3,7 @@
 namespace ApiConsumer\LinkProcessor\Processor;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use Model\Link;
+use Model\Link\Link;
 
 interface BatchProcessorInterface
 {

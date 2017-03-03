@@ -4,7 +4,7 @@ namespace Model\User\Recommendation;
 
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
-use Model\LinkModel;
+use Model\Link\LinkModel;
 use Model\User\Affinity\AffinityModel;
 use Model\Neo4j\GraphManager;
 use Service\ImageTransformations;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Model;
+namespace Model\Link;
 
 class Image extends Link
 {

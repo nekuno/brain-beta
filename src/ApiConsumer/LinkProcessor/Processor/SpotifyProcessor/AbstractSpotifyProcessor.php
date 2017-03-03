@@ -9,6 +9,8 @@ use ApiConsumer\ResourceOwner\SpotifyResourceOwner;
 
 abstract class AbstractSpotifyProcessor extends AbstractProcessor
 {
+    const DEFAULT_IMAGE_PATH = 'default_images/spotify.png';
+
     /**
      * @var SpotifyUrlParser
      */
@@ -78,7 +80,7 @@ abstract class AbstractSpotifyProcessor extends AbstractProcessor
     public function getImages(PreprocessedLink $preprocessedLink, array $data)
     {
         if (!isset($data['images'])) {
-            return array();
+            return array($this->brainBaseUrl . self::DEFAULT_IMAGE_PATH);
         }
 
         $images = array();

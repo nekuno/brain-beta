@@ -1,9 +1,10 @@
 <?php
 
-namespace Model;
+namespace Model\Link;
 
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
+use Model\Neo4j;
 use Model\Neo4j\GraphManager;
 use Model\User\Recommendation\ContentRecommendation;
 use Symfony\Component\Translation\Translator;
@@ -75,39 +76,6 @@ class LinkModel
         }
 
         return $links;
-    }
-
-    //TODO: Check if findLinkById not used and delete
-    /**
-     * @param integer $linkId
-     * @return array|boolean the link or false
-     * @throws \Exception on failure
-     */
-    public function findLinkById($linkId)
-    {
-        $qb = $this->gm->createQueryBuilder();
-
-        $qb->match('(l:Link)')
-            ->where('id(l) = { linkId } ')
-            ->returns('l AS link')
-            ->limit('1');
-
-        $qb->setParameter('linkId', (integer)$linkId);
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        if (count($result) <= 0) {
-            return false;
-        }
-
-        /* @var $row Row */
-        $row = $result->current();
-        /* @var $node Node */
-        $link = $this->buildLink($row->offsetGet('link'));
-
-        return $link;
     }
 
     /**
@@ -435,7 +403,7 @@ class LinkModel
 
         if (isset($data['additionalLabels'])) {
             foreach ($data['additionalLabels'] as $label) {
-                if (!in_array($label, $this->getValidTypes())) {
+                if (!in_array($label, self::getValidTypes())) {
                     throw new \Exception(sprintf('Trying to set invalid link label %s', $label));
                 }
             }
@@ -943,9 +911,9 @@ class LinkModel
     }
 
     //TODO: Refactor this to use locale keys or move them to fields.yml
-    public function getValidTypes()
+    public static function getValidTypes()
     {
-        return array('Audio', 'Video', 'Image', 'Link', 'Creator');
+        return array('Audio', 'Video', 'Image', 'Link', 'Creator', 'CreatorFacebook', 'CreatorTwitter');
     }
 
     //TODO: Only called from ContentFilterModel. Probably move logic and translator dependency there.
@@ -954,7 +922,7 @@ class LinkModel
         $this->translator->setLocale($locale);
 
         $types = array();
-        $keyTypes = $this->getValidTypes();
+        $keyTypes = self::getValidTypes();
 
         foreach ($keyTypes as $type) {
             $types[$type] = $this->translator->trans('types.' . lcfirst($type));

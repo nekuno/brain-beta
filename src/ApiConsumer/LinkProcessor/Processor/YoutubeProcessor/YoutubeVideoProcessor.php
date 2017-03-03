@@ -4,7 +4,7 @@ namespace ApiConsumer\LinkProcessor\Processor\YoutubeProcessor;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use Model\User\Token\Token;
-use Model\Video;
+use Model\Link\Video;
 
 class YoutubeVideoProcessor extends AbstractYoutubeProcessor
 {
@@ -29,6 +29,10 @@ class YoutubeVideoProcessor extends AbstractYoutubeProcessor
         $imageUrls = array();
         foreach ($this->imageResolutions() as $resolution) {
             $imageUrls[] = 'https://img.youtube.com/vi/' . $itemId . '/' . $resolution;
+        }
+
+        if (empty($imageUrls)) {
+            $imageUrls = array($this->brainBaseUrl . self::DEFAULT_IMAGE_PATH);
         }
 
         return $imageUrls;

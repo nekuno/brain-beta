@@ -4,7 +4,7 @@ namespace Tests\ApiConsumer\Images;
 
 use ApiConsumer\Images\ImageAnalyzer;
 use GuzzleHttp\Message\Response;
-use Model\Link;
+use Model\Link\Link;
 
 class ImageAnalyzerTest extends \PHPUnit_Framework_TestCase
 {

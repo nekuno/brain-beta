@@ -6,7 +6,7 @@ use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\SynonymousParameters;
 use ApiConsumer\ResourceOwner\GoogleResourceOwner;
-use Model\Link;
+use Model\Link\Link;
 use Model\User\Token\Token;
 
 class YoutubeFetcher extends BasicPaginationFetcher
