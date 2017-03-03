@@ -42,13 +42,19 @@ class AccountConnectSubscriber implements EventSubscriberInterface
      */
     protected $resourceOwnerFactory;
 
-    public function __construct(AMQPManager $amqpManager, UserManager $um, GhostUserManager $gum, SocialProfileManager $spm, ResourceOwnerFactory $resourceOwnerFactory)
+    /**
+     * @var TokensModel
+     */
+    protected $tokensModel;
+
+    public function __construct(AMQPManager $amqpManager, UserManager $um, GhostUserManager $gum, SocialProfileManager $spm, ResourceOwnerFactory $resourceOwnerFactory, TokensModel $tokensModel)
     {
         $this->amqpManager = $amqpManager;
         $this->um = $um;
         $this->gum = $gum;
         $this->spm = $spm;
         $this->resourceOwnerFactory = $resourceOwnerFactory;
+        $this->tokensModel = $tokensModel;
     }
 
     public static function getSubscribedEvents()
@@ -94,6 +100,16 @@ class AccountConnectSubscriber implements EventSubscriberInterface
                 $this->extendFacebook($token);
                 break;
             default:
+                $this->tokensModel->update(
+                    $token->getUserId(),
+                    $token->getResourceOwner(),
+                    array(
+                        'oauthToken' => $token->getOauthToken(),
+                        'expireTime' => $token->getExpireTime(),
+                        'refreshToken' => $token->getRefreshToken(),
+                        'resourceId' => $token->getResourceId(),
+                    )
+                );
                 break;
         }
     }
