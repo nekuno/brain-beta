@@ -55,7 +55,7 @@ class UserTrackingModel
         $userTrackingEvent->setCategory($category);
         $userTrackingEvent->setTag($tag);
         $trackingData = json_decode($trackingData, true);
-        $trackingData['IP'] = $this->getInsecureIp();
+        $trackingData['request'] = array('IP' => $this->getInsecureIp());
         $userTrackingEvent->setData(json_encode($trackingData));
 
         $this->em->persist($userTrackingEvent);
