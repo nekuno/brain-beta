@@ -166,11 +166,11 @@ class Validator
 
     public function validateToken(array $data, $userId = null, array $choices = array())
     {
-        $this->validate($data, $this->metadata['token'], $choices);
+        $this->validate($data, $this->metadata['tokens'], $choices);
 
         $this->validateTokenResourceId($data['resourceId'], $userId, $data['resourceOwner']);
 
-        $this->validateExtraFields($data, $this->metadata['token']);
+        $this->validateExtraFields($data, $this->metadata['tokens']);
     }
 
     protected function validateExtraFields($data, $metadata)
