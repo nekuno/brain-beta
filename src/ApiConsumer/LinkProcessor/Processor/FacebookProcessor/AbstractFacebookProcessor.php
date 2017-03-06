@@ -9,6 +9,8 @@ use ApiConsumer\ResourceOwner\FacebookResourceOwner;
 
 abstract class AbstractFacebookProcessor extends AbstractProcessor
 {
+    const DEFAULT_IMAGE_PATH = 'default_images/facebook.png';
+
     /**
      * @var FacebookResourceOwner
      */
@@ -21,7 +23,8 @@ abstract class AbstractFacebookProcessor extends AbstractProcessor
 
     public function getImages(PreprocessedLink $preprocessedLink, array $data)
     {
-        return isset($data['picture']) && isset($data['picture']['data']['url']) ? array($data['picture']['data']['url']) : array();
+        return isset($data['picture']) && isset($data['picture']['data']['url']) ? array($data['picture']['data']['url'])
+            : array($this->brainBaseUrl . self::DEFAULT_IMAGE_PATH);
     }
 
     public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)

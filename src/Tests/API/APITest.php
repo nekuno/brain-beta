@@ -137,7 +137,7 @@ abstract class APITest extends WebTestCase
     {
         return array(
             'resourceOwner' => 'facebook',
-            'accessToken' => '12345',
+            'accessToken' => $this->app['userA.access_token'],
         );
     }
 
@@ -145,7 +145,7 @@ abstract class APITest extends WebTestCase
     {
         return array(
             'resourceOwner' => 'facebook',
-            'accessToken' => '12346',
+            'accessToken' => $this->app['userB.access_token'],
         );
     }
 

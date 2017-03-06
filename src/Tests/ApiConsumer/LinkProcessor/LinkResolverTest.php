@@ -5,13 +5,34 @@ namespace Tests\ApiConsumer\LinkProcessor;
 use ApiConsumer\LinkProcessor\LinkResolver;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Resolution;
+use ApiConsumer\Factory\GoutteClientFactory;
+use Goutte\Client;
 
 class LinkResolverTest extends \PHPUnit_Framework_TestCase
 {
+    /** @var GoutteClientFactory|\PHPUnit_Framework_MockObject_MockObject*/
+    protected $goutteClientFactory;
+    /** @var  Client|\PHPUnit_Framework_MockObject_MockObject */
+    protected $client;
+    /** @var  LinkResolver */
+    protected $resolver;
+
+    public function setUp()
+    {
+        $this->goutteClientFactory = $this->getMockBuilder('ApiConsumer\Factory\GoutteClientFactory')->getMock();
+
+        $this->client = $this->getMockBuilder('Goutte\Client')->getMock();
+
+        $this->goutteClientFactory
+            ->expects($this->any())
+            ->method('build')
+            ->will($this->returnValue($this->client));
+
+        $this->resolver = new LinkResolver($this->goutteClientFactory);
+    }
 
     public function testResolveValidUrlWithRedirections()
     {
-
         $target = 'http://bit.ly/VN34RV';
         $resolved = 'http://instagram.com/p/JXcPW9r2LD/';
 
@@ -20,9 +41,7 @@ class LinkResolverTest extends \PHPUnit_Framework_TestCase
         $return->setFinalUrl($resolved);
         $return->setStatusCode(200);
 
-        $client = $this->getMockBuilder('Goutte\Client')->getMock();
-
-        $client
+        $this->client
             ->expects($this->once())
             ->method('request')
             ->will(
@@ -43,7 +62,7 @@ class LinkResolverTest extends \PHPUnit_Framework_TestCase
                 )
             );
 
-        $client
+        $this->client
             ->expects($this->once())
             ->method('getResponse')
             ->will(
@@ -61,7 +80,7 @@ class LinkResolverTest extends \PHPUnit_Framework_TestCase
                 )
             );
 
-        $client
+        $this->client
             ->expects($this->once())
             ->method('getRequest')
             ->will(
@@ -81,16 +100,12 @@ class LinkResolverTest extends \PHPUnit_Framework_TestCase
                 )
             );
 
-        $linkResolver = new LinkResolver($client);
-
         $link = new PreprocessedLink($target);
-        $this->assertEquals($return, $linkResolver->resolve($link));
-
+        $this->assertEquals($return, $this->resolver->resolve($link));
     }
 
     public function testResolveValidUrlWithCanonical()
     {
-
         $target = 'http://bit.ly/VN34RV';
         $resolved = 'http://instagr.am/p/JXcPW9r2LD/';
         $canonical = 'http://instagram.com/p/JXcPW9r2LD/';
@@ -123,32 +138,27 @@ class LinkResolverTest extends \PHPUnit_Framework_TestCase
             ->method('getUri')
             ->will($this->returnValue($resolved));
 
-        $client = $this->getMockBuilder('Goutte\Client')->getMock();
-
-        $client
+        $this->client
             ->expects($this->any())
             ->method('request')
             ->will($this->returnValue($crawler));
 
-        $client
+        $this->client
             ->expects($this->any())
             ->method('getResponse')
             ->will($this->returnValue($response));
 
-        $client
+        $this->client
             ->expects($this->any())
             ->method('getRequest')
             ->will($this->returnValue($request));
 
-        $linkResolver = new LinkResolver($client);
-
         $link = new PreprocessedLink($target);
-        $this->assertEquals($return, $linkResolver->resolve($link));
+        $this->assertEquals($return, $this->resolver->resolve($link));
     }
 
     public function testResolveValidUrlWithRelativeCanonical()
     {
-
         $target = 'http://bit.ly/1LPQl45';
         $resolved = 'https://vimeo.com/channels/staffpicks/120559169';
         $relativeCanonical = '/120559169';
@@ -182,32 +192,27 @@ class LinkResolverTest extends \PHPUnit_Framework_TestCase
             ->method('getUri')
             ->will($this->returnValue($resolved));
 
-        $client = $this->getMockBuilder('Goutte\Client')->getMock();
-
-        $client
+        $this->client
             ->expects($this->any())
             ->method('request')
             ->will($this->returnValue($crawler));
 
-        $client
+        $this->client
             ->expects($this->any())
             ->method('getResponse')
             ->will($this->returnValue($response));
 
-        $client
+        $this->client
             ->expects($this->any())
             ->method('getRequest')
             ->will($this->returnValue($request));
 
-        $linkResolver = new LinkResolver($client);
-
         $link = new PreprocessedLink($target);
-        $this->assertEquals($return, $linkResolver->resolve($link));
+        $this->assertEquals($return, $this->resolver->resolve($link));
     }
 
     public function testResolve404Url()
     {
-
         $target = 'http://bit.ly/VN34RV8';
 
         $return = new Resolution();
@@ -215,9 +220,7 @@ class LinkResolverTest extends \PHPUnit_Framework_TestCase
         $return->setFinalUrl(null);
         $return->setStatusCode(404);
 
-        $client = $this->getMockBuilder('Goutte\Client')->getMock();
-
-        $client
+        $this->client
             ->expects($this->once())
             ->method('getResponse')
             ->will(
@@ -236,20 +239,15 @@ class LinkResolverTest extends \PHPUnit_Framework_TestCase
                 )
             );
 
-        $linkResolver = new LinkResolver($client);
-
         $link = new PreprocessedLink($target);
-        $this->assertEquals($return, $linkResolver->resolve($link));
+        $this->assertEquals($return, $this->resolver->resolve($link));
     }
 
     public function testResolveTimeoutUrl()
     {
-
         $target = 'http://bit.ly/VN34RV';
 
-        $client = $this->getMockBuilder('Goutte\Client')->getMock();
-
-        $client
+        $this->client
             ->expects($this->once())
             ->method('request')
             ->will(
@@ -264,9 +262,7 @@ class LinkResolverTest extends \PHPUnit_Framework_TestCase
             );
         $this->setExpectedException('ApiConsumer\Exception\CouldNotResolveException', 'Could not resolve url '.$target);
 
-        $linkResolver = new LinkResolver($client);
-
         $link = new PreprocessedLink($target);
-        $linkResolver->resolve($link);
+        $this->resolver->resolve($link);
     }
 }

@@ -4,7 +4,7 @@ namespace ApiConsumer\Fetcher;
 
 use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use Model\Link;
+use Model\Link\Link;
 use Model\User\Token\Token;
 
 class GoogleFetcher extends BasicPaginationFetcher
@@ -20,7 +20,7 @@ class GoogleFetcher extends BasicPaginationFetcher
      */
     public function getUrl()
     {
-        $googleId = $this->token->getResourceId();
+        $googleId = $this->username ?: ($this->token instanceof Token ? $this->token->getResourceId() : null);
         return 'plus/v1/people/' . $googleId . '/activities/public';
     }
 

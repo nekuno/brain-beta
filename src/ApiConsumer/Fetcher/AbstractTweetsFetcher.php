@@ -3,7 +3,7 @@
 namespace ApiConsumer\Fetcher;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use Model\Link;
+use Model\Link\Link;
 
 abstract class AbstractTweetsFetcher extends AbstractTwitterFetcher
 {

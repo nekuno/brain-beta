@@ -3,7 +3,7 @@
 namespace Model\User;
 
 use Everyman\Neo4j\Node;
-use Model\LinkModel;
+use Model\Link\LinkModel;
 use Model\User\Token\TokensModel;
 use Paginator\PaginatedInterface;
 use Model\Neo4j\GraphManager;
@@ -229,7 +229,7 @@ class ContentComparePaginatedModel implements PaginatedInterface
 
     public function countAll($userId, $ownUserId, $showOnlyCommon = false)
     {
-        $types = $this->linkModel->getValidTypes();
+        $types = LinkModel::getValidTypes();
         $qb = $this->gm->createQueryBuilder();
         $qb->match("(u:User {qnoow_id: { userId }})")
             ->setParameter('userId', $userId);
@@ -278,6 +278,6 @@ class ContentComparePaginatedModel implements PaginatedInterface
 
     protected function getChoices()
     {
-        return array('type' => $this->linkModel->getValidTypes());
+        return array('type' => LinkModel::getValidTypes());
     }
 }

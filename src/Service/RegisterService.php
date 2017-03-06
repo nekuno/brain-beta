@@ -2,7 +2,7 @@
 
 namespace Service;
 
-use Event\UserEvent;
+use Event\UserRegisteredEvent;
 use Manager\UserManager;
 use Model\User\ProfileModel;
 use Model\User\InvitationModel;
@@ -65,9 +65,10 @@ class RegisterService
      * @param $profileData
      * @param $token
      * @param $oauth
+     * @param $trackingData
      * @return string
      */
-    public function register($userData, $profileData, $token, $oauth)
+    public function register($userData, $profileData, $token, $oauth, $trackingData)
     {
         $this->im->validateToken($token);
         $this->um->validate($userData);
@@ -79,13 +80,13 @@ class RegisterService
             $this->gum->saveAsGhost($user->getId());
         }
 
-        $this->tm->create($user->getId(), $oauth['resourceOwner'], $oauth);
-        $this->pm->create($user->getId(), $profileData);
+        $tokenNode = $this->tm->create($user->getId(), $oauth['resourceOwner'], $oauth);
+        $profile = $this->pm->create($user->getId(), $profileData);
         $invitation = $this->im->consume($token, $user->getId());
         if (isset($invitation['invitation']['group']['id'])) {
             $this->gm->addUser($invitation['invitation']['group']['id'], $user->getId());
         }
-        $this->dispatcher->dispatch(\AppEvents::USER_REGISTERED, new UserEvent($user));
+        $this->dispatcher->dispatch(\AppEvents::USER_REGISTERED, new UserRegisteredEvent($user, $profile, $invitation, $tokenNode, $trackingData));
 
         return $user->jsonSerialize();
     }

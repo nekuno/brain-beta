@@ -9,6 +9,8 @@ locale.options:
 
 images_relative_dir: %images_relative_dir%
 
+brain_base_url: %brain_base_url%
+
 instant.host: %instant.host%
 guzzle.verify: %guzzle.verify%
 

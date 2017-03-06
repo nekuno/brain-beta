@@ -2,19 +2,19 @@
 
 namespace Event;
 
+use Model\User\Token\Token;
 use Symfony\Component\EventDispatcher\Event;
 
 class AccountConnectEvent extends Event
 {
 
     protected $userId;
-    protected $resourceOwner;
+    /** @var  Token */
     protected $token;
 
-    public function __construct($userId, $resourceOwner, $token)
+    public function __construct($userId, $token)
     {
         $this->userId = $userId;
-        $this->resourceOwner = $resourceOwner;
         $this->token = $token;
     }
 
@@ -23,14 +23,8 @@ class AccountConnectEvent extends Event
         return $this->userId;
     }
 
-    public function getResourceOwner()
-    {
-        return $this->resourceOwner;
-    }
-
     public function getToken()
     {
         return $this->token;
     }
-
 }

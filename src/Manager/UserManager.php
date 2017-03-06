@@ -1113,10 +1113,6 @@ class UserManager implements PaginatedInterface
             'expiresAt' => array('type' => 'datetime'),
             'confirmationToken' => array('type' => 'string'),
             'passwordRequestedAt' => array('type' => 'datetime'),
-            'facebookID' => array('type' => 'string'),
-            'googleID' => array('type' => 'string'),
-            'twitterID' => array('type' => 'string'),
-            'spotifyID' => array('type' => 'string'),
             'createdAt' => array('type' => 'datetime', 'editable' => false),
             'updatedAt' => array('type' => 'datetime', 'editable' => false),
             'confirmed' => array('type' => 'boolean', 'default' => false),
@@ -1353,10 +1349,6 @@ class UserManager implements PaginatedInterface
         unset($userArray['enabled']);
         unset($userArray['expired']);
         unset($userArray['expiresAt']);
-        unset($userArray['facebookID']);
-        unset($userArray['twitterID']);
-        unset($userArray['googleID']);
-        unset($userArray['spotifyID']);
         unset($userArray['locked']);
         unset($userArray['passwordRequestedAt']);
         unset($userArray['roles']);

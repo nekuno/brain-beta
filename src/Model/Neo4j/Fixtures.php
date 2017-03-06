@@ -2,7 +2,7 @@
 
 namespace Model\Neo4j;
 
-use Model\LinkModel;
+use Model\Link\LinkModel;
 use Model\Questionnaire\QuestionModel;
 use Model\User;
 use Model\User\AnswerModel;

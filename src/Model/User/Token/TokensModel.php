@@ -5,12 +5,12 @@ namespace Model\User\Token;
 use Doctrine\ORM\EntityManager;
 use Event\AccountConnectEvent;
 use Everyman\Neo4j\Node;
-use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
 use HWI\Bundle\OAuthBundle\DependencyInjection\Configuration;
 use Model\Entity\DataStatus;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
+use Service\Validator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -39,11 +39,12 @@ class TokensModel
      */
     protected $entityManagerBrain;
 
-    public function __construct(EventDispatcher $dispatcher, GraphManager $graphManager, EntityManager $entityManagerBrain)
+    public function __construct(EventDispatcher $dispatcher, GraphManager $graphManager, EntityManager $entityManagerBrain, Validator $validator)
     {
         $this->dispatcher = $dispatcher;
         $this->gm = $graphManager;
         $this->entityManagerBrain = $entityManagerBrain;
+        $this->validator = $validator;
     }
 
     public static function getResourceOwners()
@@ -149,10 +150,10 @@ class TokensModel
         $row = $result->current();
         $tokenNode = $row->offsetGet('token');
 
-        $this->saveTokenData($userNode, $tokenNode, $resourceOwner, $data);
+        $this->saveTokenData($tokenNode, $data);
         $token = $this->getById($id, $resourceOwner);
 
-        $this->dispatcher->dispatch(\AppEvents::ACCOUNT_CONNECTED, new AccountConnectEvent($id, $resourceOwner, $token));
+        $this->dispatcher->dispatch(\AppEvents::ACCOUNT_CONNECTED, new AccountConnectEvent($id, $token));
 
         return $token;
     }
@@ -166,7 +167,6 @@ class TokensModel
      */
     public function update($id, $resourceOwner, array $data)
     {
-
         list($userNode, $tokenNode) = $this->getUserAndTokenNodesById($id, $resourceOwner);
 
         if (!($userNode instanceof Node)) {
@@ -180,7 +180,7 @@ class TokensModel
         $data['resourceOwner'] = $resourceOwner;
         $this->validate($data, $id);
 
-        $this->saveTokenData($userNode, $tokenNode, $resourceOwner, $data);
+        $this->saveTokenData($tokenNode, $data);
 
         return $this->getById($id, $resourceOwner);
     }
@@ -239,91 +239,14 @@ class TokensModel
      */
     public function validate(array $data, $id = null)
     {
+        $this->validator->validateToken($data, $id, $this->getChoices());
+    }
 
-        $errors = array();
-
-        $metadata = $this->getMetadata();
-
-        foreach ($metadata as $fieldName => $fieldData) {
-
-            $fieldErrors = array();
-
-            if (isset($fieldData['editable']) && $fieldData['editable'] === false) {
-                continue;
-            }
-
-            if (!isset($data[$fieldName]) || !$data[$fieldName]) {
-                if (isset($fieldData['required']) && $fieldData['required'] === true) {
-                    $fieldErrors[] = sprintf('"%s" is required', $fieldName);
-                }
-            } else {
-
-                $fieldValue = $data[$fieldName];
-
-                switch ($fieldData['type']) {
-                    case 'integer':
-                        if (!is_integer($fieldValue)) {
-                            $fieldErrors[] = sprintf('"%s" must be an integer', $fieldName);
-                        }
-                        break;
-                    case 'string':
-                        if (!is_string($fieldValue)) {
-                            $fieldErrors[] = sprintf('"%s" must be an string', $fieldName);
-                        }
-                        break;
-                    case 'choice':
-                        $choices = $fieldData['choices'];
-                        if (!in_array($fieldValue, $choices)) {
-                            $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $fieldValue, implode("', '", $choices));
-                        }
-                        break;
-                }
-
-                if ($fieldName === 'resourceId') {
-                    $condition = $id ? 'user.qnoow_id <> { id } AND user.' . $data['resourceOwner'] . 'ID = { resourceId }'
-                        : 'user.' . $data['resourceOwner'] . 'ID = { resourceId }';
-                    $qb = $this->gm->createQueryBuilder();
-                    $qb->match('(user:User)')
-                        ->where($condition)
-                        ->setParameter('id', (integer)$id)
-                        ->setParameter('resourceId', $fieldValue)
-                        ->returns('user');
-
-                    $query = $qb->getQuery();
-
-                    $result = $query->getResultSet();
-
-                    if ($result->count() > 0) {
-                        $fieldErrors[] = 'There is other user with the same resourceId already registered';
-                    }
-                }
-
-            }
-
-            if (count($fieldErrors) > 0) {
-                $errors[$fieldName] = $fieldErrors;
-            }
-
-        }
-
-        $public = array();
-        foreach ($metadata as $name => $item) {
-            if (!(isset($item['editable']) && $item['editable'] === false)) {
-                $public[$name] = $item;
-            }
-        }
-
-        $diff = array_diff_key($data, $public);
-        if (count($diff) > 0) {
-            foreach ($diff as $invalidKey => $invalidValue) {
-                $errors[$invalidKey] = array(sprintf('Invalid key "%s"', $invalidKey));
-            }
-        }
-
-        if (count($errors) > 0) {
-            throw new ValidationException($errors);
-        }
-
+    private function getChoices()
+    {
+        return array(
+            'resourceOwner' => self::getResourceOwners(),
+        );
     }
 
     public function getByLikedUrl($url, $resource)
@@ -430,21 +353,6 @@ class TokensModel
         return $token;
     }
 
-    protected function getMetadata()
-    {
-
-        return array(
-            'resourceOwner' => array('type' => 'choice', 'choices' => self::getResourceOwners(), 'required' => true),
-            'oauthToken' => array('type' => 'string', 'required' => true),
-            'oauthTokenSecret' => array('type' => 'string', 'required' => false),
-            'createdTime' => array('type' => 'integer', 'required' => false),
-            'updatedTime' => array('type' => 'integer', 'editable' => false),
-            'expireTime' => array('type' => 'integer', 'required' => false),
-            'refreshToken' => array('type' => 'string', 'required' => false),
-            'resourceId' => array('type' => 'string', 'required' => true),
-        );
-    }
-
     protected function getUserAndTokenNodesById($id, $resourceOwner)
     {
 
@@ -474,21 +382,13 @@ class TokensModel
         return array($userNode, $tokenNode);
     }
 
-    protected function saveTokenData(Node $userNode, Node $tokenNode, $resourceOwner, array $data)
+    protected function saveTokenData(Node $tokenNode, array $data)
     {
+        $resourceOwner = $data['resourceOwner'];
 
-        if (isset($data['resourceId'])) {
-            $userNode->setProperty($resourceOwner . 'ID', $data['resourceId']);
-            $userNode->save();
-        }
-
-        $type = Configuration::getResourceOwnerType($resourceOwner);
-        if ($type == 'oauth1' && $data['oauthToken']) {
-            $oauthToken = substr($data['oauthToken'], 0, strpos($data['oauthToken'], ':'));
-            $oauthTokenSecret = substr($data['oauthToken'], strpos($data['oauthToken'], ':') + 1, strpos($data['oauthToken'], '@') - strpos($data['oauthToken'], ':') - 1);
-
-            $data['oauthToken'] = $oauthToken;
-            $data['oauthTokenSecret'] = $oauthTokenSecret;
+        if ($oauth1Token = $this->getOauth1Token($resourceOwner, $data['oauthToken'])){
+            $data['oauthToken'] = $oauth1Token['oauth_token'];
+            $data['oauthTokenSecret'] = $oauth1Token['oauth_token_secret'];
         }
 
         $tokenNode->setProperty('resourceOwner', $resourceOwner);
@@ -498,6 +398,22 @@ class TokensModel
         }
 
         return $tokenNode->save();
+    }
+
+    public function getOauth1Token($resourceOwner, $accessToken)
+    {
+        $type = Configuration::getResourceOwnerType($resourceOwner);
+        if ($type == 'oauth1' && $accessToken) {
+            $oauthToken = substr($accessToken, 0, strpos($accessToken, ':'));
+            $oauthTokenSecret = substr($accessToken, strpos($accessToken, ':') + 1, strpos($accessToken, '@') - strpos($accessToken, ':') - 1);
+
+            return array(
+                'oauth_token' => $oauthToken,
+                'oauth_token_secret' => $oauthTokenSecret,
+            );
+        }
+
+        return null;
     }
 
 }

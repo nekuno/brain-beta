@@ -153,7 +153,7 @@ class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterfa
 
         $exclude = array('twitter_following', 'twitter_favorites');
 
-        return $this->fetcherService->fetchUser($userId, $resourceOwner, $exclude);
+        return $this->fetcherService->fetchAsClient($userId, $resourceOwner, $exclude);
     }
 
     private function fetchFromGOT(array $data)

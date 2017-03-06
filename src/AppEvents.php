@@ -67,6 +67,11 @@ final class AppEvents
     const ACCOUNT_CONNECTED = 'account.connected';
 
     /**
+     * Fired when an account token is updated
+     */
+    const ACCOUNT_UPDATED = 'account.updated';
+
+    /**
      * Fired when matching is outdated
      */
     const MATCHING_EXPIRED = 'matching.expired';

@@ -149,10 +149,10 @@ class BasicMetadataParserTest extends \PHPUnit_Framework_TestCase
 
     public function testExtractMetadata()
     {
-
         $title = 'My title';
         $description = 'My description';
         $language = 'en';
+        $images = array('http://m.nekuno.com/img/login-image-1-compressed-750x1334.jpg');
 
         $crawler = $this->getMockBuilder('Symfony\Component\DomCrawler\Crawler')->getMock();
         $crawler
@@ -169,20 +169,32 @@ class BasicMetadataParserTest extends \PHPUnit_Framework_TestCase
             ->method('attr')
             ->will($this->onConsecutiveCalls($description, $language));
 
+        $imageCrawler = $this->getMockBuilder('Symfony\Component\DomCrawler\Crawler')->getMock();
+
+        $imageCrawler->expects(($this->once()))
+            ->method('each')
+            ->will($this->returnValue($images));
+
+        $crawler
+            ->expects($this->once())
+            ->method('filter')
+            ->will($this->returnValue($imageCrawler));
+
         $actual = $this->parser->extractMetadata($crawler);
 
         $this->assertNotEmpty($actual);
         $this->assertArrayHasKey('title', $actual);
         $this->assertArrayHasKey('description', $actual);
+        $this->assertArrayHasKey('language', $actual);
+        $this->assertArrayHasKey('images', $actual);
         $this->assertEquals($title, $actual['title']);
         $this->assertEquals($description, $actual['description']);
         $this->assertEquals($language, $actual['language']);
-
+        $this->assertEquals($images, $actual['images']);
     }
 
     public function testExtractMetadataWhenIsNotExists()
     {
-
         $crawler = $this->getMockBuilder('Symfony\Component\DomCrawler\Crawler')->getMock();
         $crawler
             ->expects($this->any())
@@ -198,14 +210,27 @@ class BasicMetadataParserTest extends \PHPUnit_Framework_TestCase
             ->method('attr')
             ->will($this->throwException(new \InvalidArgumentException));
 
+        $images = array();
+        $imageCrawler = $this->getMockBuilder('Symfony\Component\DomCrawler\Crawler')->getMock();
+
+        $imageCrawler->expects(($this->once()))
+            ->method('each')
+            ->will($this->returnValue($images));
+
+        $crawler
+            ->expects($this->once())
+            ->method('filter')
+            ->will($this->returnValue($imageCrawler));
+
         $actual = $this->parser->extractMetadata($crawler);
 
         $this->assertNotEmpty($actual);
         $this->assertArrayHasKey('title', $actual);
         $this->assertArrayHasKey('description', $actual);
+        $this->assertArrayHasKey('images', $actual);
         $this->assertEquals(null, $actual['title']);
         $this->assertEquals(null, $actual['description']);
-
+        $this->assertEquals(array(), $actual['images']);
     }
 
     /**
@@ -213,7 +238,6 @@ class BasicMetadataParserTest extends \PHPUnit_Framework_TestCase
      */
     public function testExtractTags($expected, $testData)
     {
-
         $crawler = $this->getMockBuilder('\Symfony\Component\DomCrawler\Crawler')->getMock();
         $crawler
             ->expects($this->exactly(1))
@@ -240,7 +264,6 @@ class BasicMetadataParserTest extends \PHPUnit_Framework_TestCase
      */
     public function testExtractTagsData()
     {
-
         return array(
             array(
                 array(
@@ -269,7 +292,6 @@ class BasicMetadataParserTest extends \PHPUnit_Framework_TestCase
 
     public function testExtractTagsWhenIsNotExists()
     {
-
         $expected = array();
 
         $crawler = $this->getMockBuilder('\Symfony\Component\DomCrawler\Crawler')->getMock();
@@ -291,5 +313,4 @@ class BasicMetadataParserTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals($expected, $actual);
     }
-
 }

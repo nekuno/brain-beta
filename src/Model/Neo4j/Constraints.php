@@ -39,7 +39,7 @@ class Constraints
             'CREATE CONSTRAINT ON (inv:Invitation) ASSERT inv.token IS UNIQUE',
         );
 
-        $fields = array('qnoow_id', 'usernameCanonical', 'slug', 'facebookID', 'googleID', 'twitterID', 'spotifyID');
+        $fields = array('qnoow_id', 'usernameCanonical', 'slug');
         foreach ($fields as $field) {
             $constraints[] = "CREATE CONSTRAINT ON (u:User) ASSERT u.$field IS UNIQUE";
         }

@@ -5,7 +5,7 @@ namespace ApiConsumer\LinkProcessor\Processor\FacebookProcessor;
 use ApiConsumer\Exception\UrlChangedException;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
-use Model\Creator;
+use Model\Link\Creator\CreatorFacebook;
 
 class FacebookPageProcessor extends AbstractFacebookProcessor
 {
@@ -27,7 +27,7 @@ class FacebookPageProcessor extends AbstractFacebookProcessor
     public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
     {
         $link = $preprocessedLink->getFirstLink();
-        $creator = Creator::buildFromArray($link->toArray());
+        $creator = CreatorFacebook::buildFromArray($link->toArray());
         $preprocessedLink->setFirstLink($creator);
 
         parent::hydrateLink($preprocessedLink, $data);

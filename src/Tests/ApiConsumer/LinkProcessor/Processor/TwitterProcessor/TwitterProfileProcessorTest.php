@@ -4,12 +4,14 @@ namespace Tests\ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\AbstractTwitterProcessor;
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterProfileProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 use Model\User\Token\TokensModel;
+use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
-class TwitterProfileProcessorTest extends \PHPUnit_Framework_TestCase
+class TwitterProfileProcessorTest extends AbstractProcessorTest
 {
     /**
      * @var TwitterResourceOwner|\PHPUnit_Framework_MockObject_MockObject
@@ -35,7 +37,7 @@ class TwitterProfileProcessorTest extends \PHPUnit_Framework_TestCase
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser')
             ->getMock();
 
-        $this->processor = new TwitterProfileProcessor($this->resourceOwner, $this->parser);
+        $this->processor = new TwitterProfileProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . AbstractTwitterProcessor::DEFAULT_IMAGE_PATH);
     }
 
     /**
@@ -140,7 +142,7 @@ class TwitterProfileProcessorTest extends \PHPUnit_Framework_TestCase
                     'language' => null,
                     'synonymous' => array(),
                     'imageProcessed' => null,
-                    'additionalLabels' => array('Creator'),
+                    'additionalLabels' => array('Creator', 'CreatorTwitter'),
                 ),
                 34529134,
             )

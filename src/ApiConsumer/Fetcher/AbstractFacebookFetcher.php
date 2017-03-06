@@ -4,7 +4,7 @@ namespace ApiConsumer\Fetcher;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
-use Model\Link;
+use Model\Link\Link;
 
 abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
 {

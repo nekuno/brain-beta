@@ -7,7 +7,7 @@ use ApiConsumer\Images\ImageAnalyzer;
 use ApiConsumer\LinkProcessor\Processor\BatchProcessorInterface;
 use ApiConsumer\LinkProcessor\Processor\ProcessorInterface;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
-use Model\Link;
+use Model\Link\Link;
 use Model\User\Token\Token;
 use Model\User\Token\TokensModel;
 

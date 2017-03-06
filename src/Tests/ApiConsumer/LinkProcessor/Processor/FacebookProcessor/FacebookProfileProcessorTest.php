@@ -3,12 +3,14 @@
 namespace Tests\ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\AbstractFacebookProcessor;
 use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookProfileProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;
 use Model\User\Token\TokensModel;
+use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
-class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
+class FacebookProfileProcessorTest extends AbstractProcessorTest
 {
     /**
      * @var FacebookResourceOwner|\PHPUnit_Framework_MockObject_MockObject
@@ -34,7 +36,7 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser')
             ->getMock();
 
-        $this->processor = new FacebookProfileProcessor($this->resourceOwner, $this->parser);
+        $this->processor = new FacebookProfileProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . AbstractFacebookProcessor::DEFAULT_IMAGE_PATH);
     }
 
     /**
@@ -111,8 +113,8 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
                 $this->getProfileUrl(),
                 $this->getProfileItemResponse(),
                 array(
-                    'title' => 'VIPS',
-                    'description' => $this->getDescription(),
+                    'title' => $this->getTitle(),
+                    'description' => $this->getTitle(),
                     'thumbnail' => null,
                     'url' => null,
                     'id' => null,
@@ -146,27 +148,15 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
     public function getProfileItemResponse()
     {
         return array(
-            "name" => "VIPS",
-            "description" => $this->getDescription(),
+            "name" => $this->getTitle(),
             "picture" => array(
                 "data" => array(
                     "is_silhouette" => false,
                     "url" => $this->getThumbnailUrl(),
                 )
             ),
-            "id" => "166849216704500"
+            "id" => "10153571968389307"
         );
-    }
-
-    public function getDescription()
-    {
-        return "En VIPS tenemos comida para todos los gustos.
-
-                                Más de 60 platos que puedes disfrutar durante tus desayunos, comidas, meriendas y cenas. Variados entrantes como nuestras Patatas VIPS ideales para compartir, sabrosas ensaladas como la Louisiana o la César, sandwiches como nuestro popular VIPS Club, sabrosas hamburguesas como la Manhattan, tiernas carnes como el Lomo Alto de novillo argentino y deliciosos postres y batidos. Además, para las comidas de diario podrás disfrutar de un completo Menú del día.
-
-                                Todo ello con una insuperable relación calidad - precio y servicio WI-FI
-
-                                ¡Te esperamos!";
     }
 
     public function getProfileUrl()
@@ -186,7 +176,11 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
 
     public function getThumbnailUrl()
     {
-        return "https://scontent.xx.fbcdn.net/v/t1.0-1/p200x200/14462778_1189395474449864_8356688914233163542_n.png?oh=7896407a8bda6664154139d74b76892c&oe=5862D54B";
+        return "https://scontent.xx.fbcdn.net/v/t1.0-1/p200x200/1936476_10154428007884307_1240327335205953613_n.jpg?oh=2f4b121a7b7baf85328495f15ebd368e&oe=594A6F24";
     }
 
+    public function getTitle()
+    {
+        return "Roberto Martinez Pallarola";
+    }
 }

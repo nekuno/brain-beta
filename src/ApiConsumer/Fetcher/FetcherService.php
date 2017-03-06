@@ -93,13 +93,21 @@ class FetcherService implements LoggerAwareInterface
 
         $fetchers = $this->chooseFetchers($resourceOwner, $exclude);
 
-        try{
+        try {
             $links = $this->fetchFromToken($userId, $resourceOwner, $fetchers);
-        } catch (NotFoundHttpException $e){
+        } catch (NotFoundHttpException $e) {
             $links = $this->fetchFromSocialProfile($userId, $resourceOwner, $fetchers);
         }
 
         $this->dispatcher->dispatch(\AppEvents::FETCH_FINISH, new FetchEvent($userId, $resourceOwner));
+
+        return $links;
+    }
+
+    public function fetchAsClient($userId, $resourceOwner, $exclude = array())
+    {
+        $fetchers = $this->chooseFetchers($resourceOwner, $exclude);
+        $links = $this->fetchFromSocialProfile($userId, $resourceOwner, $fetchers);
 
         return $links;
     }
@@ -122,13 +130,12 @@ class FetcherService implements LoggerAwareInterface
         $socialProfiles = $this->socialProfileManager->getSocialProfiles($userId, $resourceOwner);
 
         //TODO: If count(socialProfiles) > 1, log, not always error
-        foreach ($socialProfiles as $socialProfile){
+        foreach ($socialProfiles as $socialProfile) {
             $url = $socialProfile->getUrl();
 
             $username = LinkAnalyzer::getUsername($url);
 
-            foreach ($fetchers as $fetcher)
-            {
+            foreach ($fetchers as $fetcher) {
                 $links = array_merge($links, $this->fetchPublic($fetcher, $userId, $username, $resourceOwner));
             }
         }

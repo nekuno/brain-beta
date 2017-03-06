@@ -4,12 +4,14 @@ namespace Tests\ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\AbstractTwitterProcessor;
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterIntentProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 use Model\User\Token\TokensModel;
+use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
-class TwitterIntentProcessorTest extends \PHPUnit_Framework_TestCase
+class TwitterIntentProcessorTest extends AbstractProcessorTest
 {
     /**
      * @var TwitterResourceOwner|\PHPUnit_Framework_MockObject_MockObject
@@ -35,7 +37,7 @@ class TwitterIntentProcessorTest extends \PHPUnit_Framework_TestCase
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser')
             ->getMock();
 
-        $this->processor = new TwitterIntentProcessor($this->resourceOwner, $this->parser);
+        $this->processor = new TwitterIntentProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . AbstractTwitterProcessor::DEFAULT_IMAGE_PATH);
     }
 
     /**
@@ -233,7 +235,7 @@ class TwitterIntentProcessorTest extends \PHPUnit_Framework_TestCase
             'description' => 'Tool developer & data junkie',
             'url' => 'https://twitter.com/yawmoght',
             'thumbnail' => "http://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png",
-            'additionalLabels' => array('Creator'),
+            'additionalLabels' => array('Creator', 'CreatorTwitter'),
             'resource' => TokensModel::TWITTER,
             'timestamp' => 1000 * time(),
             'processed' => 1,

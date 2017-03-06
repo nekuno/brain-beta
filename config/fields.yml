@@ -593,6 +593,32 @@ invitations:
         required: false
         type: boolean
 
+tokens:
+    resourceOwner:
+        required: true
+        type: choice
+    oauthToken:
+        required: true
+        type: string
+    oauthTokenSecret:
+        required: false
+        type: string
+    refreshToken:
+        required: false
+        type: string
+    resourceId:
+        required: true
+        type: string
+    createdTime:
+        required: false
+        type: integer
+    updatedTime:
+        editable: false
+        type: integer
+    expireTime:
+        required: false
+        type: integer
+
 filters:
     content:
         type:

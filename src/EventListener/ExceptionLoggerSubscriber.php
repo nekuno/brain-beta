@@ -28,7 +28,7 @@ class ExceptionLoggerSubscriber implements EventSubscriberInterface, LoggerAware
     {
         $this->logger = $logger;
         $this->consistency_file = __DIR__ . '/../../var/logs/consistency_errors.log';
-        $this->urlUnprocessed_file = __DIR__ . '../../var/logs/url_unprocessed.log';
+        $this->urlUnprocessed_file = __DIR__ . '/../../var/logs/url_unprocessed.log';
     }
 
     public static function getSubscribedEvents()
@@ -131,7 +131,7 @@ class ExceptionLoggerSubscriber implements EventSubscriberInterface, LoggerAware
 
         $lines = array(
             $message,
-            sprintf('On $s while $s', $now, $process),
+            sprintf('On %s while %s', $now, $process),
         );
 
         $this->writeToFile($this->urlUnprocessed_file, $lines);

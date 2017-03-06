@@ -33,7 +33,7 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['auth.service'] = $app->share(
             function (Application $app) {
-                return new AuthService($app['users.manager'], $app['security.password_encoder'], $app['security.jwt.encoder'], $app['oauth.service']);
+                return new AuthService($app['users.manager'], $app['security.password_encoder'], $app['security.jwt.encoder'], $app['oauth.service'], $app['dispatcher.service'], $app['users.tokens.model']);
             }
         );
 

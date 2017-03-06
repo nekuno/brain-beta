@@ -42,6 +42,9 @@ types:
   video: 'Vídeos'
   image: 'Imagenes & Gifs'
   creator: 'Canales de Twitter'
+  creatorFacebook: 'Canales de Facebook'
+  creatorTwitter: 'Canales de Twitter'
+  creator: 'Canales de Twitter'
   link: 'Webs & enlaces'
 threads:
   default:

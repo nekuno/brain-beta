@@ -144,10 +144,10 @@ class UserController
     {
         try {
             $data = $request->request->all();
-            if (!isset($data['user']) || !isset($data['profile']) || !isset($data['token']) || !isset($data['oauth'])) {
+            if (!isset($data['user']) || !isset($data['profile']) || !isset($data['token']) || !isset($data['oauth']) || !isset($data['trackingData'])) {
                 throw new ValidationException(array('registration' => 'Bad format'));
             }
-            $user = $app['register.service']->register($data['user'], $data['profile'], $data['token'], $data['oauth']);
+            $user = $app['register.service']->register($data['user'], $data['profile'], $data['token'], $data['oauth'], $data['trackingData']);
         } catch (\Exception $e) {
             $message = \Swift_Message::newInstance()
                 ->setSubject('Nekuno registration error')

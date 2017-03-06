@@ -1,13 +1,13 @@
 <?php
 
-namespace Model;
+namespace Model\Link;
 
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
+use Model\Neo4j;
 use Model\Neo4j\GraphManager;
 use Model\User\Recommendation\ContentRecommendation;
 use Symfony\Component\Translation\Translator;
-
 
 class LinkModel
 {
@@ -38,11 +38,12 @@ class LinkModel
         $qb = $this->gm->createQueryBuilder();
 
         $qb->match('(l:Link)')
-            ->where('l.url = { url } ')
+            ->where('l.url IN [{url}, {lowerUrl}]')
             ->returns('l AS link')
             ->limit('1');
 
         $qb->setParameter('url', $url);
+        $qb->setParameter('lowerUrl', strtolower($url));
 
         $query = $qb->getQuery();
 
@@ -75,39 +76,6 @@ class LinkModel
         }
 
         return $links;
-    }
-
-    //TODO: Check if findLinkById not used and delete
-    /**
-     * @param integer $linkId
-     * @return array|boolean the link or false
-     * @throws \Exception on failure
-     */
-    public function findLinkById($linkId)
-    {
-        $qb = $this->gm->createQueryBuilder();
-
-        $qb->match('(l:Link)')
-            ->where('id(l) = { linkId } ')
-            ->returns('l AS link')
-            ->limit('1');
-
-        $qb->setParameter('linkId', (integer)$linkId);
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        if (count($result) <= 0) {
-            return false;
-        }
-
-        /* @var $row Row */
-        $row = $result->current();
-        /* @var $node Node */
-        $link = $this->buildLink($row->offsetGet('link'));
-
-        return $link;
     }
 
     /**
@@ -222,34 +190,31 @@ class LinkModel
     }
 
     /**
-     * @param array $data
+     * @param array $link
      * @return array
      * @throws \Exception
      */
-    public function addOrUpdateLink(array $data)
+    public function addOrUpdateLink(array $link)
     {
-        $this->validateLinkData($data);
+        $this->validateLinkData($link);
 
-        $data = $this->limitTextLengths($data);
+        $link = $this->limitTextLengths($link);
 
-        $savedLink = $this->findLinkByUrl($data['url']);
-
+        $savedLink = $this->findLinkByUrl($link['url']);
         if (!$savedLink) {
-            return $this->addLink($data);
+            return $this->addLink($link);
         }
 
-        if (isset($savedLink['processed']) && !$savedLink['processed'] == 1) {
-            $data['tempId'] = isset($data['tempId']) ? $data['tempId'] : $data['url'];
-            $newProcessed = isset($data['processed']) ? $data['processed'] : true;
-
-            return $this->updateLink($data, $newProcessed);
-        } else if (isset($data['processed']) && $data['processed'] == 1) {
-            $changedCount = $this->partialUpdate($savedLink, $data);
-
-            return $changedCount > 0 ? $this->findLinkByUrl($data['url']) : $savedLink;
-        } else {
-            return $savedLink;
+        if ($this->canOverwrite($savedLink, $link)){
+            return $this->updateLink($link);
         }
+
+        return $savedLink;
+    }
+
+    public function canOverwrite($oldLink, $newLink)
+    {
+        return $oldLink['processed'] == 0 || $newLink['processed'] == 1;
     }
 
     /**
@@ -345,10 +310,9 @@ class LinkModel
 
     /**
      * @param array $data
-     * @param bool $processed Flag indicating if this can overwrite well processed links.
      * @return array
      */
-    public function updateLink(array $data, $processed = false)
+    public function updateLink(array $data)
     {
         $this->validateLinkData($data);
 
@@ -356,13 +320,10 @@ class LinkModel
 
         $qb->match('(l:Link)');
 
-        $conditions = array('l.url = { tempId }');
-        if (!$processed) {
-            $conditions[] = 'l.processed = 0';
-        }
+        $conditions = array('l.url = { url }');
+
         $qb->where($conditions)
             ->set(
-                'l.url = { url }',
                 'l.title = { title }',
                 'l.description = { description }',
                 'l.language = { language }',
@@ -392,12 +353,11 @@ class LinkModel
 
         $qb->setParameters(
             array(
-                'tempId' => $data['tempId'],
                 'url' => $data['url'],
                 'title' => $data['title'],
                 'description' => $data['description'],
                 'language' => isset($data['language']) ? $data['language'] : null,
-                'processed' => (integer)$processed,
+                'processed' => (integer)$data['processed'],
                 'thumbnail' => isset($data['thumbnail']) ? $data['thumbnail'] : null,
             )
         );
@@ -434,15 +394,16 @@ class LinkModel
         return $linkArray;
     }
 
+    //TODO: Improve and use Validator service
     private function validateLinkData($data)
     {
         if (!isset($data['url'])) {
             throw new \Exception(sprintf('Url not present while saving link %s', json_encode($data)));
         }
 
-        if (isset( $data['additionalLabels'])){
-            foreach ($data['additionalLabels'] as $label){
-                if (!in_array($label, $this->getValidTypes())){
+        if (isset($data['additionalLabels'])) {
+            foreach ($data['additionalLabels'] as $label) {
+                if (!in_array($label, self::getValidTypes())) {
                     throw new \Exception(sprintf('Trying to set invalid link label %s', $label));
                 }
             }
@@ -872,10 +833,7 @@ class LinkModel
      */
     public function findDuplicates(array $links)
     {
-        $urls = array();
-        foreach ($links as $link) {
-            $urls[] = $link['url'];
-        }
+        $urls = $this->getUrlsForDuplicates($links);
 
         $qb = $this->gm->createQueryBuilder();
 
@@ -911,6 +869,17 @@ class LinkModel
         return $result;
     }
 
+    private function getUrlsForDuplicates(array $links)
+    {
+        $urls = array();
+        foreach ($links as $link) {
+            $urls[] = $link['url'];
+            $urls[] = strtolower($link['url']);
+        }
+
+        return $urls;
+    }
+
     /**
      * @param $node Node
      * @return array
@@ -942,9 +911,9 @@ class LinkModel
     }
 
     //TODO: Refactor this to use locale keys or move them to fields.yml
-    public function getValidTypes()
+    public static function getValidTypes()
     {
-        return array('Audio', 'Video', 'Image', 'Link', 'Creator');
+        return array('Audio', 'Video', 'Image', 'Link', 'Creator', 'CreatorFacebook', 'CreatorTwitter');
     }
 
     //TODO: Only called from ContentFilterModel. Probably move logic and translator dependency there.
@@ -953,7 +922,7 @@ class LinkModel
         $this->translator->setLocale($locale);
 
         $types = array();
-        $keyTypes = $this->getValidTypes();
+        $keyTypes = self::getValidTypes();
 
         foreach ($keyTypes as $type) {
             $types[$type] = $this->translator->trans('types.' . lcfirst($type));

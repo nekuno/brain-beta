@@ -5,6 +5,7 @@ namespace EventListener;
 use Event\GroupEvent;
 use Event\ProfileEvent;
 use Event\UserEvent;
+use Event\UserRegisteredEvent;
 use GuzzleHttp\Exception\RequestException;
 use Model\User\Thread\ThreadManager;
 use Service\ChatMessageNotifications;
@@ -76,7 +77,7 @@ class UserSubscriber implements EventSubscriberInterface
         return true;
     }
 
-    public function onUserRegistered(UserEvent $event)
+    public function onUserRegistered(UserRegisteredEvent $event)
     {
         $user = $event->getUser();
         $threads = $this->threadManager->getDefaultThreads($user, ThreadManager::SCENARIO_DEFAULT_LITE);

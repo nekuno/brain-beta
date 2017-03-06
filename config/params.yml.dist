@@ -28,6 +28,9 @@ params:
     ## Images directory
     images_relative_dir: '/../../landing/web/'
 
+    ## Base url
+    brain_base_url: 'http://brain.local.nekuno.com/'
+
     ## Instant
     instant.host: https://local.nekuno.com:8008/
     guzzle.verify: null

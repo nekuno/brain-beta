@@ -6,11 +6,13 @@ use ApiConsumer\Exception\CannotProcessException;
 use ApiConsumer\Exception\UrlChangedException;
 use ApiConsumer\Exception\UrlNotValidException;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\AbstractTwitterProcessor;
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterTweetProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
+use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
-class TwitterTweetProcessorTest extends \PHPUnit_Framework_TestCase
+class TwitterTweetProcessorTest extends AbstractProcessorTest
 {
     /**
      * @var TwitterResourceOwner|\PHPUnit_Framework_MockObject_MockObject
@@ -36,7 +38,7 @@ class TwitterTweetProcessorTest extends \PHPUnit_Framework_TestCase
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser')
             ->getMock();
 
-        $this->processor = new TwitterTweetProcessor($this->resourceOwner, $this->parser);
+        $this->processor = new TwitterTweetProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . AbstractTwitterProcessor::DEFAULT_IMAGE_PATH);
     }
 
     /**

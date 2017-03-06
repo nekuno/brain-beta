@@ -14,6 +14,7 @@ use EventListener\SimilarityMatchingSubscriber;
 use EventListener\UserAnswerSubscriber;
 use EventListener\UserDataStatusSubscriber;
 use EventListener\UserSubscriber;
+use EventListener\UserTrackingSubscriber;
 use Silex\Application;
 use Silex\ServiceProviderInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -39,7 +40,8 @@ class SubscribersServiceProvider implements ServiceProviderInterface
         $dispatcher = $app['dispatcher'];
 
         $dispatcher->addSubscriber(new OAuthTokenSubscriber($app['users.tokens.model'], $app['mailer'], $app['monolog'], $app['amqp']));
-        $dispatcher->addSubscriber(new AccountConnectSubscriber($app['amqpManager.service'], $app['users.manager'], $app['users.ghostuser.manager'], $app['users.socialprofile.manager'], $app['api_consumer.resource_owner_factory'], $app['dispatcher']));
+        $dispatcher->addSubscriber(new AccountConnectSubscriber($app['amqpManager.service'], $app['users.manager'], $app['users.ghostuser.manager'], $app['users.socialprofile.manager'], $app['api_consumer.resource_owner_factory'], $app['users.tokens.model']));
+        $dispatcher->addSubscriber(new UserTrackingSubscriber($app['users.tracking.model']));
         $dispatcher->addSubscriber(new UserSubscriber($app['users.threads.manager'], $app['chatMessageNotifications.service']));
         $dispatcher->addSubscriber(new ChannelSubscriber($app['userAggregator.service']));
         $dispatcher->addSubscriber(new UserDataStatusSubscriber($app['orm.ems']['mysql_brain'], $app['amqpManager.service']));

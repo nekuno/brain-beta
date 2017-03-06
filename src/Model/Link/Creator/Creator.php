@@ -1,6 +1,8 @@
 <?php
 
-namespace Model;
+namespace Model\Link\Creator;
+
+use Model\Link\Link;
 
 class Creator extends Link
 {
