@@ -135,7 +135,7 @@ class LinkAnalyzer
 
     private static function isTwitter($url)
     {
-        return preg_match('/^https?:\/\/(www\.)?twitter\.com\//i', $url);
+        return preg_match('/^https?:\/\/(www\.|pic\.)?twitter\.com\//i', $url);
     }
 
     private static function isSpotify($url)

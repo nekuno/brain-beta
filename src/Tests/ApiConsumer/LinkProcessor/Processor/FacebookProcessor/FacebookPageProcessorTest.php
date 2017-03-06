@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
+namespace Tests\ApiConsumer\LinkProcessor\Processor\FacebookProcessor;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\AbstractFacebookProcessor;
