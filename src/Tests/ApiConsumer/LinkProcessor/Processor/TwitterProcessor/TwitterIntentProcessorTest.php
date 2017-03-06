@@ -235,7 +235,7 @@ class TwitterIntentProcessorTest extends AbstractProcessorTest
             'description' => 'Tool developer & data junkie',
             'url' => 'https://twitter.com/yawmoght',
             'thumbnail' => "http://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png",
-            'additionalLabels' => array('Creator'),
+            'additionalLabels' => array('Creator', 'CreatorTwitter'),
             'resource' => TokensModel::TWITTER,
             'timestamp' => 1000 * time(),
             'processed' => 1,

@@ -142,7 +142,7 @@ class TwitterProfileProcessorTest extends AbstractProcessorTest
                     'language' => null,
                     'synonymous' => array(),
                     'imageProcessed' => null,
-                    'additionalLabels' => array('Creator'),
+                    'additionalLabels' => array('Creator', 'CreatorTwitter'),
                 ),
                 34529134,
             )
