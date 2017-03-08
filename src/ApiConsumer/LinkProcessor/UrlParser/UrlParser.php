@@ -86,7 +86,7 @@ class UrlParser implements UrlParserInterface
     protected function isImageUrl($url)
     {
         $extensionsString = implode('|', $this->imageExtensions);
-        $regexp = '/\/[^\/]+\.(' . $extensionsString . ')[^\/]*$/';
+        $regexp = '/\/[^\/]+\.(' . $extensionsString . ')[^\/]*$/i';
         $match = preg_match($regexp, $url);
 
         return !!$match;
