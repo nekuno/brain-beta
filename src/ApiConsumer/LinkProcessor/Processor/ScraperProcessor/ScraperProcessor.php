@@ -82,6 +82,7 @@ class ScraperProcessor extends AbstractScraperProcessor
 
         $url = $preprocessedLink->getUrl();
         $this->fixRelativeUrls($images, $url);
+        $this->fixSchemeUrls($images, $url);
 
         return $images;
     }
