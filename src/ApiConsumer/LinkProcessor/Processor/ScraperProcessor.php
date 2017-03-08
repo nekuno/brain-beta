@@ -120,13 +120,32 @@ class ScraperProcessor implements ProcessorInterface
         }
     }
 
+    private function fixSchemeUrls(array &$images, $url)
+    {
+        $parsedUrl = parse_url($url);
+        if (!isset($parsedUrl['scheme'])) {
+            return;
+        }
+        $prefix = $parsedUrl['scheme'] . ':';
+        foreach ($images as &$imageUrl) {
+            if ($this->startsWithDoubleSlash($imageUrl)) {
+                $imageUrl = $prefix . $imageUrl;
+            }
+        }
+    }
+
     private function isRelativeUrl($url)
     {
         $starsWithHttp = strpos($url, 'http://') === 0;
         $starsWithHttps = strpos($url, 'https://') === 0;
-        $startsWithDoubleSlash = strpos($url, '//') === 0;
+        $startsWithDoubleSlash = $this->startsWithDoubleSlash($url);
 
         return !$starsWithHttp && !$starsWithHttps && !$startsWithDoubleSlash;
+    }
+
+    private function startsWithDoubleSlash($url)
+    {
+        return strpos($url, '//') === 0;
     }
 
     private function overrideFieldsData(Link $link, array $scrapedData)
