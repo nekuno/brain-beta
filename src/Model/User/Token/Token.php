@@ -22,6 +22,29 @@ class Token implements \JsonSerializable
 
     protected $refreshToken;
 
+    public function __construct($data = array())
+    {
+        $this->setOauthToken($data['oauthToken']);
+        $this->setResourceOwner($data['resourceOwner']);
+        $this->setResourceId($data['resourceId']);
+
+        if (isset($data['oauthTokenSecret'])) {
+            $this->setOauthTokenSecret($data['oauthTokenSecret']);
+        }
+        if (isset($data['expireTime'])) {
+            $this->setExpireTime($data['expireTime']);
+        }
+        if (isset($data['refreshToken'])) {
+            $this->setRefreshToken($data['refreshToken']);
+        }
+        if (isset($data['createdTime'])) {
+            $this->setCreatedTime($data['createdTime']);
+        }
+        if (isset($data['updatedTime'])) {
+            $this->setUpdatedTime($data['updatedTime']);
+        }
+    }
+
     public function toArray()
     {
         $array = array();
@@ -182,6 +205,4 @@ class Token implements \JsonSerializable
     {
         $this->refreshToken = $refreshToken;
     }
-
-
 }

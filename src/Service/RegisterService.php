@@ -63,14 +63,14 @@ class RegisterService
     /**
      * @param $userData
      * @param $profileData
-     * @param $token
+     * @param $invitationToken
      * @param $oauth
      * @param $trackingData
      * @return string
      */
-    public function register($userData, $profileData, $token, $oauth, $trackingData)
+    public function register($userData, $profileData, $invitationToken, $oauth, $trackingData)
     {
-        $this->im->validateToken($token);
+        $this->im->validateToken($invitationToken);
         $this->um->validate($userData);
         $this->pm->validate($profileData);
         $this->tm->validate($oauth);
@@ -80,13 +80,13 @@ class RegisterService
             $this->gum->saveAsGhost($user->getId());
         }
 
-        $tokenNode = $this->tm->create($user->getId(), $oauth['resourceOwner'], $oauth);
+        $token = $this->tm->create($user->getId(), $oauth['resourceOwner'], $oauth);
         $profile = $this->pm->create($user->getId(), $profileData);
-        $invitation = $this->im->consume($token, $user->getId());
+        $invitation = $this->im->consume($invitationToken, $user->getId());
         if (isset($invitation['invitation']['group']['id'])) {
             $this->gm->addUser($invitation['invitation']['group']['id'], $user->getId());
         }
-        $this->dispatcher->dispatch(\AppEvents::USER_REGISTERED, new UserRegisteredEvent($user, $profile, $invitation, $tokenNode, $trackingData));
+        $this->dispatcher->dispatch(\AppEvents::USER_REGISTERED, new UserRegisteredEvent($user, $profile, $invitation, $token, $trackingData));
 
         return $user->jsonSerialize();
     }
