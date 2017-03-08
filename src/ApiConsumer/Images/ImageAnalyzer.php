@@ -17,53 +17,16 @@ class ImageAnalyzer
 
     public function selectImage(array $imageUrls)
     {
-        $images = array();
+        $selectedImage = null;
         foreach ($imageUrls as $imageUrl) {
-            $images[] = $this->buildResponse($imageUrl);
-        }
-
-        $images = $this->sortImages($images);
-
-        $image = $this->getRecommendedImage($images);
-
-        if (null == $image) {
-            $image = $this->getSomeImage($images);
-        }
-
-        return null == $image ? null : $image->getUrl();
-    }
-
-    /**
-     * @param ImageResponse[] $imageResponses
-     * @return ImageResponse|null
-     */
-    private function getRecommendedImage(array $imageResponses)
-    {
-        $recommended = null;
-
-        foreach ($imageResponses as $imageResponse) {
-            if ($imageResponse->isRecommended() && (null == $recommended || ($imageResponse->getLength() < $recommended->getLength()))) {
-                $recommended = $imageResponse;
+            $image = $this->buildResponse($imageUrl);
+            if ($image->isValid()) {
+                $selectedImage = $image;
+                break;
             }
         }
 
-        return $recommended ?: null;
-    }
-
-    /**
-     * @param ImageResponse[] $imageResponses
-     * @return ImageResponse|false
-     */
-    private function getSomeImage(array $imageResponses)
-    {
-        foreach ($imageResponses as $imageResponse) {
-            if ($imageResponse->isValid()) {
-                return $imageResponse;
-            }
-        }
-
-        return null;
-
+        return null == $selectedImage ? null : $selectedImage->getUrl();
     }
 
     private function isValidImage($url)
@@ -75,26 +38,6 @@ class ImageAnalyzer
         $image = $this->buildResponse($url);
 
         return $image->isValid() ? $image : null;
-    }
-
-    /**
-     * @param ImageResponse[] $imageResponses
-     * @return ImageResponse[]
-     */
-    private function sortImages(array $imageResponses)
-    {
-        $lengths = array();
-        foreach ($imageResponses as $key => $image) {
-            if (!$image->isValid()) {
-                unset($imageResponses[$key]);
-            } else {
-                $lengths[$key] = $image->getLength();
-            }
-        }
-
-        array_multisort($lengths, SORT_ASC, $imageResponses);
-
-        return $imageResponses;
     }
 
     public function filterToReprocess(array $links)
