@@ -2,12 +2,10 @@
 
 namespace Service;
 
-use Event\AccountConnectEvent;
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Provider\OAuthProvider;
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
 use Manager\UserManager;
 use Model\User;
-use Model\User\Token\Token;
 use Model\User\Token\TokensModel;
 use Silex\Component\Security\Core\Encoder\JWTEncoder;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
@@ -64,7 +62,6 @@ class AuthService
      */
     public function login($username, $password)
     {
-
         try {
             $user = $this->um->findUserBy(array('usernameCanonical' => $this->um->canonicalize($username)));
         } catch (\Exception $e) {
@@ -85,13 +82,13 @@ class AuthService
     }
 
     /**
-     * @param $oauth
+     * @param $oauthData
      * @return string
      */
-    public function loginByResourceOwner($oauth)
+    public function loginByResourceOwner($oauthData)
     {
-        $resourceOwner = $oauth['resourceOwner'];
-        $accessToken = $oauth['oauthToken'];
+        $resourceOwner = $oauthData['resourceOwner'];
+        $accessToken = $oauthData['oauthToken'];
 
         $accessToken = $this->tokensModel->getOauth1Token($resourceOwner, $accessToken) ?: $accessToken;
 
@@ -109,7 +106,7 @@ class AuthService
         }
 
         $user = $this->updateLastLogin($newToken->getUser());
-        $this->updateToken($user, $oauth);
+        $this->tokensModel->update($user->getId(), $resourceOwner, $oauthData);
 
         return $this->buildToken($user);
     }
@@ -153,19 +150,6 @@ class AuthService
         );
 
         return $this->um->update($data);
-    }
-
-    protected function updateToken(User $user, $oauth)
-    {
-        $loginToken = new Token();
-        $loginToken->setOauthToken($oauth['oauthToken']);
-        $loginToken->setUserId($user->getId());
-        $loginToken->setResourceOwner($oauth['resourceOwner']);
-        $loginToken->setResourceId($oauth['resourceId']);
-        $loginToken->setExpireTime($oauth['expireTime']);
-        $loginToken->setRefreshToken($oauth['refreshToken']);
-
-        $this->dispatcher->dispatch(\AppEvents::ACCOUNT_UPDATED, new AccountConnectEvent($user->getId(), $loginToken));
     }
 
 }
