@@ -12,6 +12,7 @@ use Model\User;
 use Model\User\GhostUser\GhostUserManager;
 use Model\User\SocialNetwork\SocialProfile;
 use Model\User\SocialNetwork\SocialProfileManager;
+use Model\User\Token\Token;
 use Model\User\Token\TokensModel;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
@@ -34,8 +35,6 @@ class TokensController
         $model = $app['users.tokens.model'];
 
         $token = $model->update($user->getId(), $resourceOwner, $request->request->all());
-
-        $app['dispatcher.service']->dispatch(\AppEvents::ACCOUNT_UPDATED, new AccountConnectEvent($user->getId(), $token));
 
         return $app->json($token);
     }

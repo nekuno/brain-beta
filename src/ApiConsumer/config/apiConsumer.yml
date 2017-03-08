@@ -102,3 +102,7 @@ api_consumer.config:
             parser: ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser
             resourceOwner: google
 
+        scrapper:
+            class: ApiConsumer\LinkProcessor\Processor\ScraperProcessor\ScraperProcessor
+        scrapperImage:
+            class: ApiConsumer\LinkProcessor\Processor\ScraperProcessor\ImageScraperProcessor

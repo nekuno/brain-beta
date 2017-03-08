@@ -2,6 +2,7 @@
 
 namespace Model\User\Token;
 
+use ApiConsumer\Event\OAuthTokenEvent;
 use Doctrine\ORM\EntityManager;
 use Event\AccountConnectEvent;
 use Everyman\Neo4j\Node;
@@ -17,7 +18,6 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class TokensModel
 {
-
     CONST FACEBOOK = 'facebook';
     CONST TWITTER = 'twitter';
     CONST GOOGLE = 'google';
@@ -74,7 +74,7 @@ class TokensModel
         $return = array();
         /* @var $row Row */
         foreach ($result as $row) {
-            $return[] = $this->build($row);
+            $return[] = $this->buildFromRow($row);
         }
 
         return $return;
@@ -107,21 +107,21 @@ class TokensModel
         /* @var $row Row */
         $row = $result->current();
 
-        $token = $this->build($row);
+        $token = $this->buildFromRow($row);
 
         return $token;
     }
 
     /**
-     * @param int $id
+     * @param int $userId
      * @param string $resourceOwner
      * @param array $data
      * @return Token
      * @throws ValidationException|NotFoundHttpException|MethodNotAllowedHttpException
      */
-    public function create($id, $resourceOwner, array $data)
+    public function create($userId, $resourceOwner, array $data)
     {
-        list($userNode, $tokenNode) = $this->getUserAndTokenNodesById($id, $resourceOwner);
+        list($userNode, $tokenNode) = $this->getUserAndTokenNodesById($userId, $resourceOwner);
 
         if (!($userNode instanceof Node)) {
             throw new NotFoundHttpException('User not found');
@@ -132,12 +132,12 @@ class TokensModel
         }
 
         $data['resourceOwner'] = $resourceOwner;
-        $this->validate($data, $id);
+        $this->validate($data, $userId);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(user:User)')
             ->where('user.qnoow_id = { id }')
-            ->setParameter('id', (integer)$id)
+            ->setParameter('id', (integer)$userId)
             ->merge('(user)<-[:TOKEN_OF]-(token:Token {createdTime: { createdTime }})')
             ->setParameter('createdTime', time())
             ->returns('user', 'token');
@@ -151,9 +151,9 @@ class TokensModel
         $tokenNode = $row->offsetGet('token');
 
         $this->saveTokenData($tokenNode, $data);
-        $token = $this->getById($id, $resourceOwner);
+        $token = $this->getById($userId, $resourceOwner);
 
-        $this->dispatcher->dispatch(\AppEvents::ACCOUNT_CONNECTED, new AccountConnectEvent($id, $token));
+        $this->dispatcher->dispatch(\AppEvents::ACCOUNT_CONNECTED, new AccountConnectEvent($userId, $token));
 
         return $token;
     }
@@ -272,7 +272,7 @@ class TokensModel
             return null;
         }
 
-        return $this->build($result->current());
+        return $this->buildFromRow($result->current());
     }
 
     public function getOneByResource($resource)
@@ -295,7 +295,7 @@ class TokensModel
             return null;
         }
 
-        return $this->build($result->current());
+        return $this->buildFromRow($result->current());
     }
 
     public function getUnconnectedNetworks($userId)
@@ -332,30 +332,21 @@ class TokensModel
         return $resourceOwners;
     }
 
-    protected function build(Row $row)
+    protected function buildFromRow(Row $row)
     {
         /* @var $userNode Node */
         $userNode = $row->offsetGet('user');
         /* @var $tokenNode Node */
         $tokenNode = $row->offsetGet('token');
 
-        $token = new Token();
+        $token = new Token($tokenNode->getProperties());
         $token->setUserId($userNode->getProperty('qnoow_id'));
-        $token->setCreatedTime($tokenNode->getProperty('createdTime'));
-        $token->setExpireTime($tokenNode->getProperty('expireTime'));
-        $token->setResourceOwner($tokenNode->getProperty('resourceOwner'));
-        $token->setUpdatedTime($tokenNode->getProperty('updatedTime'));
-        $token->setResourceId($tokenNode->getProperty('resourceId'));
-        $token->setOauthToken($tokenNode->getProperty('oauthToken'));
-        $token->setOauthTokenSecret($tokenNode->getProperty('oauthTokenSecret'));
-        $token->setRefreshToken($tokenNode->getProperty('refreshToken'));
 
         return $token;
     }
 
     protected function getUserAndTokenNodesById($id, $resourceOwner)
     {
-
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(user:User)')
             ->where('user.qnoow_id = { id }')
@@ -384,20 +375,34 @@ class TokensModel
 
     protected function saveTokenData(Node $tokenNode, array $data)
     {
-        $resourceOwner = $data['resourceOwner'];
+        $token = new Token($data);
 
-        if ($oauth1Token = $this->getOauth1Token($resourceOwner, $data['oauthToken'])){
-            $data['oauthToken'] = $oauth1Token['oauth_token'];
-            $data['oauthTokenSecret'] = $oauth1Token['oauth_token_secret'];
+        $this->refreshTokenData($token);
+
+        $resourceOwner = $token->getResourceOwner();
+
+        if ($oauth1Token = $this->getOauth1Token($resourceOwner, $token->getOauthToken())) {
+            $token->setOauthToken($oauth1Token['oauth_token']);
+            $token->setOauthTokenSecret($oauth1Token['oauth_token_secret']);
         }
 
         $tokenNode->setProperty('resourceOwner', $resourceOwner);
         $tokenNode->setProperty('updatedTime', time());
-        foreach ($data as $property => $value) {
+
+        foreach ($token->toArray() as $property => $value) {
+            if ($property == 'userId') {
+                continue;
+            }
             $tokenNode->setProperty($property, $value);
         }
 
         return $tokenNode->save();
+    }
+
+    protected function refreshTokenData($token)
+    {
+        $event = new OAuthTokenEvent($token);
+        $this->dispatcher->dispatch(\AppEvents::TOKEN_PRE_SAVE, $event);
     }
 
     public function getOauth1Token($resourceOwner, $accessToken)
@@ -415,5 +420,4 @@ class TokensModel
 
         return null;
     }
-
 }

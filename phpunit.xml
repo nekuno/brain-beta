@@ -9,7 +9,7 @@
         colors="true">
     <testsuites>
         <testsuite name="Test">
-            <directory>src/Tests/API</directory>
+            <directory>src/Tests</directory>
         </testsuite>
     </testsuites>
 

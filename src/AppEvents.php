@@ -67,9 +67,9 @@ final class AppEvents
     const ACCOUNT_CONNECTED = 'account.connected';
 
     /**
-     * Fired when an account token is updated
+     * Fired when oauth access information is being saved
      */
-    const ACCOUNT_UPDATED = 'account.updated';
+    const TOKEN_PRE_SAVE = 'token.save';
 
     /**
      * Fired when matching is outdated

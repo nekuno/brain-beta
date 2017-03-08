@@ -142,10 +142,6 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 		}
 
 		$this->addOauthData($data, $token);
-		$event = new OAuthTokenEvent($token);
-		$this->dispatcher->dispatch(\AppEvents::TOKEN_REFRESHED, $event);
-
-		return $token;
 	}
 
 	public function requestPicture($id, Token $token = null, $size = 'large')
