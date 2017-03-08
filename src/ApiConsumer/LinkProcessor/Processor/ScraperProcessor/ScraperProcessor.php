@@ -1,6 +1,6 @@
 <?php
 
-namespace ApiConsumer\LinkProcessor\Processor;
+namespace ApiConsumer\LinkProcessor\Processor\ScraperProcessor;
 
 use ApiConsumer\Exception\CannotProcessException;
 use ApiConsumer\Factory\GoutteClientFactory;
@@ -8,26 +8,13 @@ use ApiConsumer\Images\ImageResponse;
 use ApiConsumer\LinkProcessor\MetadataParser\BasicMetadataParser;
 use ApiConsumer\LinkProcessor\MetadataParser\FacebookMetadataParser;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use ApiConsumer\LinkProcessor\SynonymousParameters;
-use ApiConsumer\ResourceOwner\AbstractResourceOwnerTrait;
-use Goutte\Client;
 use GuzzleHttp\Exception\RequestException;
 use Model\Link\Image;
 use Model\Link\Link;
 use Symfony\Component\DomCrawler\Crawler;
 
-class ScraperProcessor implements ProcessorInterface
+class ScraperProcessor extends AbstractScraperProcessor
 {
-    /**
-     * @var GoutteClientFactory
-     */
-    protected $clientFactory;
-
-    /**
-     * @var Client
-     */
-    protected $client;
-
     /**
      * @var FacebookMetadataParser
      */
@@ -39,19 +26,13 @@ class ScraperProcessor implements ProcessorInterface
     private $basicMetadataParser;
 
     /**
-     * @param GoutteClientFactory $goutteClientFactory
-     * @param \ApiConsumer\LinkProcessor\MetadataParser\BasicMetadataParser $basicMetadataParser
-     * @param \ApiConsumer\LinkProcessor\MetadataParser\FacebookMetadataParser $facebookMetadataParser
+     * @param GoutteClientFactory $goutteGoutteClientFactory
      */
-    public function __construct(
-        GoutteClientFactory $goutteClientFactory,
-        BasicMetadataParser $basicMetadataParser,
-        FacebookMetadataParser $facebookMetadataParser
-    ) {
-        $this->clientFactory = $goutteClientFactory;
-        $this->client = $this->clientFactory->build();
-        $this->basicMetadataParser = $basicMetadataParser;
-        $this->facebookMetadataParser = $facebookMetadataParser;
+    public function __construct(GoutteClientFactory $goutteGoutteClientFactory)
+    {
+        parent::__construct($goutteGoutteClientFactory);
+        $this->basicMetadataParser = new BasicMetadataParser();
+        $this->facebookMetadataParser = new FacebookMetadataParser();
     }
 
     public function getResponse(PreprocessedLink $preprocessedLink)
@@ -181,15 +162,5 @@ class ScraperProcessor implements ProcessorInterface
                 $link->addTag($tag);
             }
         }
-    }
-
-    public function getSynonymousParameters(PreprocessedLink $preprocessedLink, array $data)
-    {
-        return new SynonymousParameters();
-    }
-
-    public function getResourceOwner()
-    {
-        return null;
     }
 }

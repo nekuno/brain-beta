@@ -2,6 +2,7 @@
 
 namespace EventListener;
 
+use ApiConsumer\Event\OAuthTokenEvent;
 use ApiConsumer\Factory\ResourceOwnerFactory;
 use Event\AccountConnectEvent;
 use Manager\UserManager;
@@ -61,7 +62,7 @@ class AccountConnectSubscriber implements EventSubscriberInterface
     {
         return array(
             \AppEvents::ACCOUNT_CONNECTED => array('onAccountConnected'),
-            \AppEvents::ACCOUNT_UPDATED => array('onAccountUpdated'),
+            \AppEvents::TOKEN_PRE_SAVE => array('onTokenSave'),
         );
     }
 
@@ -72,9 +73,6 @@ class AccountConnectSubscriber implements EventSubscriberInterface
         $resourceOwner = $token->getResourceOwner();
 
         switch ($resourceOwner) {
-            case TokensModel::FACEBOOK:
-                $this->extendFacebook($token);
-                break;
             case TokensModel::TWITTER:
                 $this->createTwitterSocialProfile($token, $userId);
                 break;
@@ -90,7 +88,7 @@ class AccountConnectSubscriber implements EventSubscriberInterface
         $this->amqpManager->enqueueFetching($message);
     }
 
-    public function onAccountUpdated(AccountConnectEvent $event)
+    public function onTokenSave(OAuthTokenEvent $event)
     {
         $token = $event->getToken();
         $resourceOwner = $token->getResourceOwner();
@@ -100,25 +98,15 @@ class AccountConnectSubscriber implements EventSubscriberInterface
                 $this->extendFacebook($token);
                 break;
             default:
-                $this->tokensModel->update(
-                    $token->getUserId(),
-                    $token->getResourceOwner(),
-                    array(
-                        'oauthToken' => $token->getOauthToken(),
-                        'expireTime' => $token->getExpireTime(),
-                        'refreshToken' => $token->getRefreshToken(),
-                        'resourceId' => $token->getResourceId(),
-                    )
-                );
                 break;
         }
     }
 
-    private function extendFacebook($token)
+    private function extendFacebook(Token $token)
     {
         /* @var $facebookResourceOwner FacebookResourceOwner */
         $facebookResourceOwner = $this->resourceOwnerFactory->build(TokensModel::FACEBOOK);
-        $token = $facebookResourceOwner->extend($token);
+        $facebookResourceOwner->extend($token);
         if ($token->getRefreshToken()) {
             $facebookResourceOwner->forceRefreshAccessToken($token);
         }

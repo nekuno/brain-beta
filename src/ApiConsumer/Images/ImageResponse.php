@@ -126,4 +126,14 @@ class ImageResponse
         return self::MIN_RECOMMENDED_SIZE < $length && self::MAX_RECOMMENDED_SIZE > $length;
     }
 
+    public function toArray()
+    {
+        return array(
+            'statusCode' => $this->statusCode,
+            'url' => $this->url,
+            'type' => $this->type,
+            'length' => $this->length,
+        );
+    }
+
 }

@@ -65,7 +65,7 @@ class ApiConsumerServiceProvider implements ServiceProviderInterface
 
         $app['api_consumer.processor_factory'] = $app->share(
             function ($app) {
-                $processorFactory = new ProcessorFactory($app['api_consumer.resource_owner_factory'], $app['api_consumer.link_processor.processor.scrapper'], $app['api_consumer.config']['processor'], $app['brain_base_url']);
+                $processorFactory = new ProcessorFactory($app['api_consumer.resource_owner_factory'], $app['api_consumer.link_processor.goutte_factory'], $app['api_consumer.config']['processor'], $app['brain_base_url']);
 
                 return $processorFactory;
             }

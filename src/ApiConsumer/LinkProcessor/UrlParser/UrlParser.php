@@ -7,6 +7,9 @@ use ApiConsumer\Exception\UrlNotValidException;
 class UrlParser implements UrlParserInterface
 {
     const SCRAPPER = 'scrapper';
+    const IMAGESCRAPPER = 'scrapperImage';
+
+    protected $imageExtensions = array('jpg', 'jpeg', 'tif', 'tiff', 'gif', 'png', 'bmp', 'pbm', 'pgm', 'ppm', 'webp', 'hdr', 'heif', 'heic', 'bpg', 'ico', 'cgm', 'svg', 'gbm');
 
     public function checkUrlValid($url, $urlDecoded = null)
     {
@@ -73,7 +76,20 @@ class UrlParser implements UrlParserInterface
     {
         $this->checkUrlValid($url);
 
+        if ($this->isImageUrl($url)) {
+            return UrlParser::IMAGESCRAPPER;
+        }
+
         return UrlParser::SCRAPPER;
+    }
+
+    protected function isImageUrl($url)
+    {
+        $extensionsString = implode('|', $this->imageExtensions);
+        $regexp = '/\/[^\/]+\.(' . $extensionsString . ')[^\/]*$/';
+        $match = preg_match($regexp, $url);
+
+        return !!$match;
     }
 
     /**

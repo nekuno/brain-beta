@@ -23,13 +23,22 @@ class LinkAnalyzer
             return $preprocessedLink->getType();
         }
 
-        if ($type = self::getTypeFromId($preprocessedLink)){
+        if ($type = self::getTypeFromId($preprocessedLink)) {
             return $type;
         }
 
+        return self::getProcessorNameFromUrl($preprocessedLink);
+    }
+
+    /**
+     * @param PreprocessedLink $preprocessedLink
+     * @return string
+     */
+    protected static function getProcessorNameFromUrl(PreprocessedLink $preprocessedLink)
+    {
         $url = $preprocessedLink->getUrl();
 
-        try{
+        try {
             $parser = self::getUrlParser($url);
             $type = $parser->getUrlType($url);
         } catch (UrlNotValidException $e){
@@ -41,9 +50,9 @@ class LinkAnalyzer
 
     protected static function getTypeFromId(PreprocessedLink $preprocessedLink)
     {
-        if (self::isFacebook($preprocessedLink->getUrl())){
+        if (self::isFacebook($preprocessedLink->getUrl())) {
             $parser = new FacebookUrlParser();
-            if ($parser->isStatusId($preprocessedLink->getResourceItemId())){
+            if ($parser->isStatusId($preprocessedLink->getResourceItemId())) {
                 return FacebookUrlParser::FACEBOOK_STATUS;
             }
         }
@@ -51,7 +60,8 @@ class LinkAnalyzer
         return null;
     }
 
-    public static function getResource($url) {
+    public static function getResource($url)
+    {
 
         if (self::isYouTube($url)) {
             return TokensModel::GOOGLE;
@@ -127,7 +137,7 @@ class LinkAnalyzer
 
         return $parser->getUsername($url);
     }
-    
+
     private static function isFacebook($url)
     {
         return preg_match('/^https?:\/\/(www\.)?facebook\.com\//i', $url);

@@ -8,10 +8,8 @@ use ApiConsumer\Images\ImageAnalyzer;
 use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\LinkProcessor;
 use ApiConsumer\LinkProcessor\LinkResolver;
-use ApiConsumer\LinkProcessor\MetadataParser\BasicMetadataParser;
-use ApiConsumer\LinkProcessor\MetadataParser\FacebookMetadataParser;
 use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
-use ApiConsumer\LinkProcessor\Processor\ScraperProcessor;
+use ApiConsumer\LinkProcessor\Processor\ScraperProcessor\ScraperProcessor;
 use Silex\Application;
 use Silex\ServiceProviderInterface;
 
@@ -26,10 +24,7 @@ class LinkProcessorServiceProvider implements ServiceProviderInterface
 
         $app['api_consumer.link_processor.processor.scrapper'] = $app->share(
             function ($app) {
-                $basicMetadataParser = new BasicMetadataParser();
-                $fbMetadataParser = new FacebookMetadataParser();
-
-                return new ScraperProcessor($app['api_consumer.link_processor.goutte_factory'], $basicMetadataParser, $fbMetadataParser);
+                return new ScraperProcessor($app['api_consumer.link_processor.goutte_factory']);
             }
         );
 

@@ -142,7 +142,7 @@ class ImageAnalyzer
             : isset($link['thumbnail']) ? $link['thumbnail'] : null;
     }
 
-    private function buildResponse($imageUrl)
+    public function buildResponse($imageUrl)
     {
         try {
             $head = $this->client->head($imageUrl);
