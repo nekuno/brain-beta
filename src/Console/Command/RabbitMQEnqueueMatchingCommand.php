@@ -48,10 +48,6 @@ class RabbitMQEnqueueMatchingCommand extends ApplicationAwareCommand
         /* @var $amqpManager AMQPManager */
         $amqpManager = $this->app['amqpManager.service'];
 
-        $routingKey = 'brain' .
-            '.' . AMQPManager::MATCHING .
-            '.' . MatchingCalculatorWorker::TRIGGER_PERIODIC;
-
         foreach ($combinations as $combination) {
             if ($combination[0] == $combination[1]){
                 continue;
@@ -61,7 +57,7 @@ class RabbitMQEnqueueMatchingCommand extends ApplicationAwareCommand
                 'user_1_id' => $combination[0],
                 'user_2_id' => $combination[1]
             );
-            $amqpManager->enqueueMessage($data, $routingKey);
+            $amqpManager->enqueueMatching($data, MatchingCalculatorWorker::TRIGGER_PERIODIC);
         }
 
     }

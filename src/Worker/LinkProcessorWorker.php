@@ -7,7 +7,7 @@ use ApiConsumer\Fetcher\ProcessorService;
 use Model\Neo4j\Neo4jException;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Message\AMQPMessage;
-use Symfony\Component\EventDispatcher\EventDispatcher;
+use Service\EventDispatcher;
 
 class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerInterface
 {
@@ -26,8 +26,8 @@ class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerI
 
     public function __construct(AMQPChannel $channel, EventDispatcher $dispatcher, FetcherService $fetcherService, ProcessorService $processorService)
     {
+        parent::__construct($dispatcher);
         $this->channel = $channel;
-        $this->dispatcher = $dispatcher;
         $this->fetcherService = $fetcherService;
         $this->processorService = $processorService;
     }

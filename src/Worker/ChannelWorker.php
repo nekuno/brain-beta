@@ -10,7 +10,7 @@ use Model\Neo4j\Neo4jException;
 use Model\User\Token\TokensModel;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Message\AMQPMessage;
-use Symfony\Component\EventDispatcher\EventDispatcher;
+use Service\EventDispatcher;
 
 class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterface
 {
@@ -48,9 +48,8 @@ class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterfa
         GetOldTweets $getOldTweets,
         Connection $connectionBrain
     ) {
-
+        parent::__construct($dispatcher);
         $this->channel = $channel;
-        $this->dispatcher = $dispatcher;
         $this->fetcherService = $fetcherService;
         $this->processorService = $processorService;
         $this->getOldTweets = $getOldTweets;

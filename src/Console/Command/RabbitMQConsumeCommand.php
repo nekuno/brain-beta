@@ -68,8 +68,8 @@ class RabbitMQConsumeCommand extends ApplicationAwareCommand
         $connection = $this->app['amqp'];
         /* @var $channel AMQPChannel */
         $channel = $connection->channel();
-        /* @var $dispatcher EventDispatcher */
-        $dispatcher = $this->app['dispatcher'];
+
+        $dispatcher = $this->app['dispatcher.service'];
 
         $dispatcher->addSubscriber(new ExceptionLoggerSubscriber($this->app['monolog']));
 

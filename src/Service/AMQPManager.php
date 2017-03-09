@@ -29,10 +29,35 @@ class AMQPManager
 
     public function enqueueFetching($messageData)
     {
-        $this->enqueueMessage($messageData, 'brain.fetching.links');
+        $routingKey = $this->buildRoutingKey('fetching', 'links');
+        $this->enqueueMessage($messageData, $routingKey);
     }
 
-    public function enqueueMessage($messageData, $routingKey)
+    public function enqueueMatching($messageData, $trigger)
+    {
+        $routingKey = $this->buildRoutingKey('matching', $trigger);
+        $this->enqueueMessage($messageData, $routingKey);
+    }
+
+    public function enqueueChannel($messageData)
+    {
+        $routingKey = $this->buildRoutingKey('channel', 'user_aggregator');
+        $this->enqueueMessage($messageData, $routingKey);
+    }
+
+    public function enqueueSocialNetwork($messageData)
+    {
+        $routingKey = $this->buildRoutingKey('social_network', 'added');
+        $this->enqueueMessage($messageData, $routingKey);
+    }
+
+    public function enqueuePrediction($messageData, $trigger)
+    {
+        $routingKey = $this->buildRoutingKey('prediction', $trigger);
+        $this->enqueueMessage($messageData, $routingKey);
+    }
+
+    private function enqueueMessage($messageData, $routingKey)
     {
         $message = new AMQPMessage(json_encode($messageData, JSON_UNESCAPED_UNICODE));
 
@@ -90,6 +115,11 @@ class AMQPManager
         }
 
         return array($topic, $queueName);
+    }
+
+    private function buildRoutingKey($queue, $trigger)
+    {
+        return sprintf('brain.%s.$s', $queue, $trigger);
     }
 
 

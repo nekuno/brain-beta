@@ -5,8 +5,8 @@ namespace Worker;
 use Model\Neo4j\Neo4jException;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Message\AMQPMessage;
+use Service\EventDispatcher;
 use Service\SocialNetwork;
-use Symfony\Component\EventDispatcher\EventDispatcher;
 
 
 class SocialNetworkDataProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerInterface
@@ -25,8 +25,8 @@ class SocialNetworkDataProcessorWorker extends LoggerAwareWorker implements Rabb
 
     public function __construct(AMQPChannel $channel, EventDispatcher $dispatcher, SocialNetwork $sn)
     {
+        parent::__construct($dispatcher);
         $this->channel = $channel;
-        $this->dispatcher = $dispatcher;
         $this->sn = $sn;
     }
 

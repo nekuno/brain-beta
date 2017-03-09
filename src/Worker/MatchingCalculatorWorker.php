@@ -17,13 +17,16 @@ use Manager\UserManager;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Message\AMQPMessage;
 use Service\AffinityRecalculations;
-use Symfony\Component\EventDispatcher\EventDispatcher;
-
+use Service\EventDispatcher;
 
 class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQConsumerInterface
 {
 
     const TRIGGER_PERIODIC = 'periodic';
+    const TRIGGER_QUESTION = 'questions.answered';
+    const TRIGGER_CONTENT_RATED = 'content.rated';
+    const TRIGGER_PROCESS_FINISHED = 'process.finished';
+    const TRIGGER_MATCHING_EXPIRED = 'matching_expired';
     /**
      * @var AMQPChannel
      */
@@ -59,7 +62,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
 
     public function __construct(AMQPChannel $channel, UserManager $userManager, MatchingModel $matchingModel, SimilarityModel $similarityModel, QuestionModel $questionModel, AffinityRecalculations $affinityRecalculations, Connection $connectionBrain, EventDispatcher $dispatcher)
     {
-
+        parent::__construct($dispatcher);
         $this->channel = $channel;
         $this->userManager = $userManager;
         $this->matchingModel = $matchingModel;
@@ -67,7 +70,6 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
         $this->questionModel = $questionModel;
         $this->affinityRecalculations = $affinityRecalculations;
         $this->connectionBrain = $connectionBrain;
-        $this->dispatcher = $dispatcher;
     }
 
     /**
@@ -75,7 +77,6 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
      */
     public function consume()
     {
-
         $exchangeName = 'brain.topic';
         $exchangeType = 'topic';
         $topic = 'brain.matching.*';
@@ -109,8 +110,8 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
         $trigger = $this->getTrigger($message);
 
         switch ($trigger) {
-            case 'content_rated':
-            case 'process_finished':
+            case self::TRIGGER_CONTENT_RATED:
+            case self::TRIGGER_PROCESS_FINISHED:
 
                 $userA = $data['userId'];
                 $this->logger->notice(sprintf('[%s] Calculating matching by trigger "%s" for user "%s"', date('Y-m-d H:i:s'), $trigger, $userA));
@@ -156,7 +157,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                     $this->dispatchError($e, 'Matching because process finished or content rated');
                 }
                 break;
-            case 'question_answered':
+            case self::TRIGGER_QUESTION:
 
                 $userA = $data['userId'];
                 $questionId = $data['question_id'];
@@ -186,7 +187,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                     $this->dispatchError($e, 'Matching because question answered');
                 }
                 break;
-            case 'matching_expired':
+            case self::TRIGGER_MATCHING_EXPIRED:
 
                 $matchingType = $data['matching_type'];
                 $user1 = $data['user_1_id'];
@@ -212,7 +213,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                     $this->dispatchError($e, 'Matching because matching expired');
                 }
                 break;
-            case $this:: TRIGGER_PERIODIC:
+            case self:: TRIGGER_PERIODIC:
                 $user1 = $data['user_1_id'];
                 $user2 = $data['user_2_id'];
                 $this->logger->notice(sprintf('[%s] Calculating matching by trigger "%s" for users %d - %d', date('Y-m-d H:i:s'), $trigger, $user1, $user2));

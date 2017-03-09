@@ -53,13 +53,8 @@ class RabbitMQEnqueuePredictionCommand extends ApplicationAwareCommand
 
         $mode = $input->getOption('mode');
 
-        switch ($mode) {
-            case PredictionWorker::TRIGGER_RECALCULATE:
-            case PredictionWorker::TRIGGER_LIVE:
-                $routingKey = 'brain.prediction.' . $mode;
-                break;
-            default:
-                throw new \Exception('Mode not supported');
+        if (!in_array($mode, array(PredictionWorker::TRIGGER_LIVE, PredictionWorker::TRIGGER_RECALCULATE))) {
+            throw new \Exception('Mode not supported');
         }
 
         /* @var $amqpManager AMQPManager */
@@ -67,9 +62,9 @@ class RabbitMQEnqueuePredictionCommand extends ApplicationAwareCommand
 
         foreach ($users as $user) {
             /* @var $user User */
-            $output->writeln('Enqueuing prediction for user '.$user->getId());
+            $output->writeln('Enqueuing prediction for user ' . $user->getId());
             $data = array('userId' => $user->getId());
-            $amqpManager->enqueueMessage($data, $routingKey);
+            $amqpManager->enqueuePrediction($data, $mode);
         }
     }
 }

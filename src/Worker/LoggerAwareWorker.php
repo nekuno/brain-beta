@@ -7,8 +7,7 @@ use Event\ExceptionEvent;
 use PhpAmqpLib\Message\AMQPMessage;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\EventDispatcher\EventDispatcher;
-
+use Service\EventDispatcher;
 
 abstract class LoggerAwareWorker implements LoggerAwareInterface
 {
@@ -21,6 +20,11 @@ abstract class LoggerAwareWorker implements LoggerAwareInterface
      * @var EventDispatcher
      */
     protected $dispatcher;
+
+    public function __construct(EventDispatcher $dispatcher)
+    {
+        $this->dispatcher = $dispatcher;
+    }
 
     /**
      * Sets a logger instance on the object
