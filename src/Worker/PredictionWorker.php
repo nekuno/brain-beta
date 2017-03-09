@@ -10,15 +10,15 @@ use Model\User\Similarity\SimilarityModel;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Message\AMQPMessage;
 use Service\AffinityRecalculations;
+use Service\AMQPManager;
 use Service\EventDispatcher;
 
 class PredictionWorker extends LoggerAwareWorker implements RabbitMQConsumerInterface
 {
+    const TRIGGER_RECALCULATE = 'recalculate';
+    const TRIGGER_LIVE = 'live';
 
-    /**
-     * @var AMQPChannel
-     */
-    protected $channel;
+    protected $queue = AMQPManager::PREDICTION;
 
     /**
      * @var AffinityRecalculations
@@ -40,42 +40,16 @@ class PredictionWorker extends LoggerAwareWorker implements RabbitMQConsumerInte
      */
     protected $similarityModel;
 
-    const TRIGGER_RECALCULATE = 'recalculate';
-    const TRIGGER_LIVE = 'live';
-
     public function __construct(AMQPChannel $channel,
                                 EventDispatcher $dispatcher,
                                 AffinityRecalculations $affinityRecalculations,
                                 AffinityModel $affinityModel,
                                 LinkModel $linkModel)
     {
-        parent::__construct($dispatcher);
-        $this->channel = $channel;
+        parent::__construct($dispatcher, $channel);
         $this->linkModel = $linkModel;
         $this->affinityModel = $affinityModel;
         $this->affinityRecalculations = $affinityRecalculations;
-    }
-
-    /**
-     * { @inheritdoc }
-     */
-    public function consume()
-    {
-
-        $exchangeName = 'brain.topic';
-        $exchangeType = 'topic';
-        $topic = 'brain.prediction.*';
-        $queueName = 'brain.prediction';
-
-        $this->channel->exchange_declare($exchangeName, $exchangeType, false, true, false);
-        $this->channel->queue_declare($queueName, false, true, false, false);
-        $this->channel->queue_bind($queueName, $exchangeName, $topic);
-        $this->channel->basic_qos(null, 1, null);
-        $this->channel->basic_consume($queueName, '', false, false, false, false, array($this, 'callback'));
-
-        while (count($this->channel->callbacks)) {
-            $this->channel->wait();
-        }
     }
 
     /**
@@ -88,7 +62,7 @@ class PredictionWorker extends LoggerAwareWorker implements RabbitMQConsumerInte
 
         $userId = $data['userId'];
 
-        $trigger = $this->getTrigger($message);
+        $trigger = $this->queueManager->getTrigger($message);
 
         switch ($trigger) {
             case $this::TRIGGER_RECALCULATE:

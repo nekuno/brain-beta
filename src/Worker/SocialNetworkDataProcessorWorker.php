@@ -5,18 +5,14 @@ namespace Worker;
 use Model\Neo4j\Neo4jException;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Message\AMQPMessage;
+use Service\AMQPManager;
 use Service\EventDispatcher;
 use Service\SocialNetwork;
 
 
 class SocialNetworkDataProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerInterface
 {
-
-    /**
-     * @var AMQPChannel
-     */
-    protected $channel;
-
+    protected $queue = AMQPManager::SOCIAL_NETWORK;
     /**
      * @var SocialNetwork
      */
@@ -25,32 +21,8 @@ class SocialNetworkDataProcessorWorker extends LoggerAwareWorker implements Rabb
 
     public function __construct(AMQPChannel $channel, EventDispatcher $dispatcher, SocialNetwork $sn)
     {
-        parent::__construct($dispatcher);
-        $this->channel = $channel;
+        parent::__construct($dispatcher, $channel);
         $this->sn = $sn;
-    }
-
-    /**
-     * { @inheritdoc }
-     */
-    public function consume()
-    {
-
-        $exchangeName = 'brain.topic';
-        $exchangeType = 'topic';
-        $topic = 'brain.social_network.*';
-        $queueName = 'brain.social_network';
-
-        $this->channel->exchange_declare($exchangeName, $exchangeType, false, true, false);
-        $this->channel->queue_declare($queueName, false, true, false, false);
-        $this->channel->queue_bind($queueName, $exchangeName, $topic);
-        $this->channel->basic_qos(null, 1, null);
-        $this->channel->basic_consume($queueName, '', false, false, false, false, array($this, 'callback'));
-
-        while (count($this->channel->callbacks)) {
-            $this->channel->wait();
-        }
-
     }
 
     /**
@@ -61,7 +33,7 @@ class SocialNetworkDataProcessorWorker extends LoggerAwareWorker implements Rabb
 
         $data = json_decode($message->body, true);
 
-        $trigger = $this->getTrigger($message);
+        $trigger = $this->queueManager->getTrigger($message);
 
         $userId = $data['id'];
         $socialNetworks = $data['socialNetworks'];

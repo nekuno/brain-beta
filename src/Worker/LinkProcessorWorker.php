@@ -7,15 +7,12 @@ use ApiConsumer\Fetcher\ProcessorService;
 use Model\Neo4j\Neo4jException;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Message\AMQPMessage;
+use Service\AMQPManager;
 use Service\EventDispatcher;
 
 class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerInterface
 {
-
-    /**
-     * @var AMQPChannel
-     */
-    protected $channel;
+    protected $queue = AMQPManager::FETCHING;
 
     /**
      * @var FetcherService
@@ -26,31 +23,9 @@ class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerI
 
     public function __construct(AMQPChannel $channel, EventDispatcher $dispatcher, FetcherService $fetcherService, ProcessorService $processorService)
     {
-        parent::__construct($dispatcher);
-        $this->channel = $channel;
+        parent::__construct($dispatcher, $channel);
         $this->fetcherService = $fetcherService;
         $this->processorService = $processorService;
-    }
-
-    /**
-     * { @inheritdoc }
-     */
-    public function consume()
-    {
-        $exchangeName = 'brain.topic';
-        $exchangeType = 'topic';
-        $topic = 'brain.fetching.*';
-        $queueName = 'brain.fetching';
-
-        $this->channel->exchange_declare($exchangeName, $exchangeType, false, true, false);
-        $this->channel->queue_declare($queueName, false, true, false, false);
-        $this->channel->queue_bind($queueName, $exchangeName, $topic);
-        $this->channel->basic_qos(null, 1, null);
-        $this->channel->basic_consume($queueName, '', false, false, false, false, array($this, 'callback'));
-
-        while (count($this->channel->callbacks)) {
-            $this->channel->wait();
-        }
     }
 
     /**

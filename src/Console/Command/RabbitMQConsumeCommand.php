@@ -10,8 +10,6 @@ use Console\ApplicationAwareCommand;
 use EventListener\ExceptionLoggerSubscriber;
 use EventListener\SimilarityMatchingProcessSubscriber;
 use EventListener\UserStatusSubscriber;
-use PhpAmqpLib\Channel\AMQPChannel;
-use PhpAmqpLib\Connection\AMQPStreamConnection;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Service\AMQPManager;
@@ -19,7 +17,6 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\EventDispatcher\EventDispatcher;
 use Worker\ChannelWorker;
 use Worker\LinkProcessorWorker;
 use Worker\MatchingCalculatorWorker;
@@ -64,10 +61,7 @@ class RabbitMQConsumeCommand extends ApplicationAwareCommand
 
         $output->writeln(sprintf('Starting %s consumer', $consumer));
 
-        /* @var $connection AMQPStreamConnection */
-        $connection = $this->app['amqp'];
-        /* @var $channel AMQPChannel */
-        $channel = $connection->channel();
+        $channel = $this->app['amqpManager.service']->getChannel($consumer);
 
         $dispatcher = $this->app['dispatcher.service'];
 
@@ -157,7 +151,5 @@ class RabbitMQConsumeCommand extends ApplicationAwareCommand
 
         $worker->consume();
         $channel->close();
-
-        $connection->close();
     }
 }

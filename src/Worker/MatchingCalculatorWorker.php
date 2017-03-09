@@ -17,6 +17,7 @@ use Manager\UserManager;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Message\AMQPMessage;
 use Service\AffinityRecalculations;
+use Service\AMQPManager;
 use Service\EventDispatcher;
 
 class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQConsumerInterface
@@ -27,10 +28,9 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
     const TRIGGER_CONTENT_RATED = 'content.rated';
     const TRIGGER_PROCESS_FINISHED = 'process.finished';
     const TRIGGER_MATCHING_EXPIRED = 'matching_expired';
-    /**
-     * @var AMQPChannel
-     */
-    protected $channel;
+
+    protected $queue = AMQPManager::MATCHING;
+
     /**
      * @var UserManager
      */
@@ -55,42 +55,16 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
      * @var Connection
      */
     protected $connectionBrain;
-    /**
-     * @var EventDispatcher
-     */
-    protected $dispatcher;
 
     public function __construct(AMQPChannel $channel, UserManager $userManager, MatchingModel $matchingModel, SimilarityModel $similarityModel, QuestionModel $questionModel, AffinityRecalculations $affinityRecalculations, Connection $connectionBrain, EventDispatcher $dispatcher)
     {
-        parent::__construct($dispatcher);
-        $this->channel = $channel;
+        parent::__construct($dispatcher, $channel);
         $this->userManager = $userManager;
         $this->matchingModel = $matchingModel;
         $this->similarityModel = $similarityModel;
         $this->questionModel = $questionModel;
         $this->affinityRecalculations = $affinityRecalculations;
         $this->connectionBrain = $connectionBrain;
-    }
-
-    /**
-     * { @inheritdoc }
-     */
-    public function consume()
-    {
-        $exchangeName = 'brain.topic';
-        $exchangeType = 'topic';
-        $topic = 'brain.matching.*';
-        $queueName = 'brain.matching';
-
-        $this->channel->exchange_declare($exchangeName, $exchangeType, false, true, false);
-        $this->channel->queue_declare($queueName, false, true, false, false);
-        $this->channel->queue_bind($queueName, $exchangeName, $topic);
-        $this->channel->basic_qos(null, 1, null);
-        $this->channel->basic_consume($queueName, '', false, false, false, false, array($this, 'callback'));
-
-        while (count($this->channel->callbacks)) {
-            $this->channel->wait();
-        }
     }
 
     /**
@@ -107,7 +81,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
 
         $data = json_decode($message->body, true);
 
-        $trigger = $this->getTrigger($message);
+        $trigger = $this->queueManager->getTrigger($message);
 
         switch ($trigger) {
             case self::TRIGGER_CONTENT_RATED:

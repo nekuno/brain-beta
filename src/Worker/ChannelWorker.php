@@ -10,16 +10,12 @@ use Model\Neo4j\Neo4jException;
 use Model\User\Token\TokensModel;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Message\AMQPMessage;
+use Service\AMQPManager;
 use Service\EventDispatcher;
 
 class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterface
 {
-
-    /**
-     * @var AMQPChannel
-     */
-    protected $channel;
-
+    protected $queue = AMQPManager::CHANNEL;
     /**
      * @var FetcherService
      */
@@ -48,35 +44,11 @@ class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterfa
         GetOldTweets $getOldTweets,
         Connection $connectionBrain
     ) {
-        parent::__construct($dispatcher);
-        $this->channel = $channel;
+        parent::__construct($dispatcher, $channel);
         $this->fetcherService = $fetcherService;
         $this->processorService = $processorService;
         $this->getOldTweets = $getOldTweets;
         $this->connectionBrain = $connectionBrain;
-    }
-
-    /**
-     * { @inheritdoc }
-     */
-    public function consume()
-    {
-
-        $exchangeName = 'brain.topic';
-        $exchangeType = 'topic';
-        $topic = 'brain.channel.*';
-        $queueName = 'brain.channel';
-
-        $this->channel->exchange_declare($exchangeName, $exchangeType, false, true, false);
-        $this->channel->queue_declare($queueName, false, true, false, false);
-        $this->channel->queue_bind($queueName, $exchangeName, $topic);
-        $this->channel->basic_qos(null, 1, null);
-        $this->channel->basic_consume($queueName, '', false, false, false, false, array($this, 'callback'));
-
-        while (count($this->channel->callbacks)) {
-            $this->channel->wait();
-        }
-
     }
 
     /**

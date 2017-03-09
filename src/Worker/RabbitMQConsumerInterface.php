@@ -5,10 +5,7 @@ namespace Worker;
 
 use PhpAmqpLib\Message\AMQPMessage;
 
-/**
- * Interface RabbitMQConsumerInterface
- * @package Worker
- */
+
 interface RabbitMQConsumerInterface {
 
     /**
