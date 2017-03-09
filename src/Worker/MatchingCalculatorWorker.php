@@ -15,7 +15,6 @@ use Model\User\Matching\MatchingModel;
 use Model\User\Similarity\SimilarityModel;
 use Manager\UserManager;
 use PhpAmqpLib\Channel\AMQPChannel;
-use PhpAmqpLib\Message\AMQPMessage;
 use Service\AffinityRecalculations;
 use Service\AMQPManager;
 use Service\EventDispatcher;
@@ -70,18 +69,13 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
     /**
      * { @inheritdoc }
      */
-    public function callback(AMQPMessage $message)
+    public function callback(array $data, $trigger)
     {
-
         // Verify mysql connections are alive
         if ($this->connectionBrain->ping() === false) {
             $this->connectionBrain->close();
             $this->connectionBrain->connect();
         }
-
-        $data = json_decode($message->body, true);
-
-        $trigger = $this->queueManager->getTrigger($message);
 
         switch ($trigger) {
             case self::TRIGGER_CONTENT_RATED:
@@ -208,10 +202,6 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
             default;
                 throw new \Exception('Invalid matching calculation trigger');
         }
-
-        $message->delivery_info['channel']->basic_ack($message->delivery_info['delivery_tag']);
-
-        $this->memory();
     }
 
     private function processUsersAnsweredQuestion($userA, $usersAnsweredQuestion)

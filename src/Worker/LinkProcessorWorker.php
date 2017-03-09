@@ -6,7 +6,6 @@ use ApiConsumer\Fetcher\FetcherService;
 use ApiConsumer\Fetcher\ProcessorService;
 use Model\Neo4j\Neo4jException;
 use PhpAmqpLib\Channel\AMQPChannel;
-use PhpAmqpLib\Message\AMQPMessage;
 use Service\AMQPManager;
 use Service\EventDispatcher;
 
@@ -31,9 +30,8 @@ class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerI
     /**
      * { @inheritdoc }
      */
-    public function callback(AMQPMessage $message)
+    public function callback(array $data, $trigger)
     {
-        $data = json_decode($message->body, true);
         $resourceOwner = $data['resourceOwner'];
         $userId = $data['userId'];
         $exclude = array_key_exists('exclude', $data) ? $data['exclude'] : array();
@@ -50,9 +48,5 @@ class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerI
             }
             $this->dispatchError($e, 'Fetching');
         }
-
-        $message->delivery_info['channel']->basic_ack($message->delivery_info['delivery_tag']);
-
-        $this->memory();
     }
 }

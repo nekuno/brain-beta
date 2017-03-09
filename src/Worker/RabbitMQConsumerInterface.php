@@ -19,5 +19,5 @@ interface RabbitMQConsumerInterface {
      * @param AMQPMessage $message
      * @return mixed
      */
-    public function callback(AMQPMessage $message);
+    public function callbackWrapper(AMQPMessage $message);
 }

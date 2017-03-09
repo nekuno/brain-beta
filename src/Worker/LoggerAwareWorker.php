@@ -5,12 +5,13 @@ namespace Worker;
 use Console\ApplicationAwareCommand;
 use Event\ExceptionEvent;
 use PhpAmqpLib\Channel\AMQPChannel;
+use PhpAmqpLib\Message\AMQPMessage;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Service\AMQPQueueManager;
 use Service\EventDispatcher;
 
-abstract class LoggerAwareWorker implements LoggerAwareInterface
+abstract class LoggerAwareWorker implements LoggerAwareInterface, RabbitMQConsumerInterface
 {
     /**
      * @var LoggerInterface
@@ -53,23 +54,44 @@ abstract class LoggerAwareWorker implements LoggerAwareInterface
     {
         $exchangeName = 'brain.topic';
         $exchangeType = 'topic';
-        $topic = $this->queueManager->buildPattern($this->queue);
-        $queueName = $this->queueManager->buildQueueName($this->queue);
+        $topic = $this->getTopic();
+        $queueName = $this->getQueueName();
 
         $this->channel->exchange_declare($exchangeName, $exchangeType, false, true, false);
         $this->channel->queue_declare($queueName, false, true, false, false);
         $this->channel->queue_bind($queueName, $exchangeName, $topic);
         $this->channel->basic_qos(null, 1, null);
-        $this->channel->basic_consume($queueName, '', false, false, false, false, array($this, 'callback'));
+        $this->channel->basic_consume($queueName, '', false, false, false, false, array($this, 'callbackWrapper'));
 
         while (count($this->channel->callbacks)) {
             $this->channel->wait();
         }
     }
 
+    public function callbackWrapper(AMQPMessage $message)
+    {
+        $data = json_decode($message->body, true);
+        $trigger = $this->queueManager->getTrigger($message);
+
+        $this->callback($data, $trigger);
+
+        /** @var AMQPChannel $channel */
+        $channel = $message->delivery_info['channel'];
+        $channel->basic_ack($message->delivery_info['delivery_tag']);
+
+        $this->memory();
+    }
+
+    abstract function callback(array $data, $trigger);
+
     protected function getTopic()
     {
         return $this->queueManager->buildPattern($this->queue);
+    }
+
+    protected function getQueueName()
+    {
+        return $this->queueManager->buildQueueName($this->queue);
     }
 
     protected function memory()

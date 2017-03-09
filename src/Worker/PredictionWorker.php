@@ -8,7 +8,6 @@ use Model\Neo4j\Neo4jException;
 use Model\User\Affinity\AffinityModel;
 use Model\User\Similarity\SimilarityModel;
 use PhpAmqpLib\Channel\AMQPChannel;
-use PhpAmqpLib\Message\AMQPMessage;
 use Service\AffinityRecalculations;
 use Service\AMQPManager;
 use Service\EventDispatcher;
@@ -55,14 +54,9 @@ class PredictionWorker extends LoggerAwareWorker implements RabbitMQConsumerInte
     /**
      * { @inheritdoc }
      */
-    public function callback(AMQPMessage $message)
+    public function callback(array $data, $trigger)
     {
-
-        $data = json_decode($message->body, true);
-
         $userId = $data['userId'];
-
-        $trigger = $this->queueManager->getTrigger($message);
 
         switch ($trigger) {
             case $this::TRIGGER_RECALCULATE:
@@ -95,10 +89,6 @@ class PredictionWorker extends LoggerAwareWorker implements RabbitMQConsumerInte
             default;
                 throw new \Exception('Invalid affinity calculation trigger: ' . $trigger);
         }
-
-        $message->delivery_info['channel']->basic_ack($message->delivery_info['delivery_tag']);
-
-        $this->memory();
     }
 
 }

@@ -9,7 +9,6 @@ use Doctrine\DBAL\Connection;
 use Model\Neo4j\Neo4jException;
 use Model\User\Token\TokensModel;
 use PhpAmqpLib\Channel\AMQPChannel;
-use PhpAmqpLib\Message\AMQPMessage;
 use Service\AMQPManager;
 use Service\EventDispatcher;
 
@@ -54,16 +53,14 @@ class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterfa
     /**
      * { @inheritdoc }
      */
-    public function callback(AMQPMessage $message)
+    public function callback(array $data, $trigger)
     {
-
         if ($this->connectionBrain->ping() === false) {
             $this->connectionBrain->close();
             $this->connectionBrain->connect();
         }
 
         try {
-            $data = json_decode($message->body, true);
 
             if (!isset($data['resourceOwner'])) {
                 throw new \Exception('Enqueued message does not include resourceOwner parameter');
@@ -89,12 +86,6 @@ class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterfa
             }
             $this->dispatchError($e, 'Channel fetching');
         }
-
-        /** @var AMQPChannel $channel */
-        $channel = $message->delivery_info['channel'];
-        $channel->basic_ack($message->delivery_info['delivery_tag']);
-
-        $this->memory();
     }
 
     private function getUserId($data)

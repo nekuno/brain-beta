@@ -4,7 +4,6 @@ namespace Worker;
 
 use Model\Neo4j\Neo4jException;
 use PhpAmqpLib\Channel\AMQPChannel;
-use PhpAmqpLib\Message\AMQPMessage;
 use Service\AMQPManager;
 use Service\EventDispatcher;
 use Service\SocialNetwork;
@@ -28,13 +27,8 @@ class SocialNetworkDataProcessorWorker extends LoggerAwareWorker implements Rabb
     /**
      * { @inheritdoc }
      */
-    public function callback(AMQPMessage $message)
+    public function callback(array $data, $trigger)
     {
-
-        $data = json_decode($message->body, true);
-
-        $trigger = $this->queueManager->getTrigger($message);
-
         $userId = $data['id'];
         $socialNetworks = $data['socialNetworks'];
         try {
@@ -52,8 +46,5 @@ class SocialNetworkDataProcessorWorker extends LoggerAwareWorker implements Rabb
             }
             $this->dispatchError($e, 'Social network trigger');
         }
-        $message->delivery_info['channel']->basic_ack($message->delivery_info['delivery_tag']);
-
-        $this->memory();
     }
 }
