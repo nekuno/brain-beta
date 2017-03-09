@@ -14,6 +14,7 @@ class AMQPManager
     const PREDICTION = 'prediction';
     const SOCIAL_NETWORK = 'social_network';
     const CHANNEL = 'channel';
+    const REFETCHING = 'refetching';
 
     protected $connection;
 
@@ -31,6 +32,11 @@ class AMQPManager
     public function enqueueFetching($messageData)
     {
         $this->enqueueMessage($messageData, self::FETCHING, 'links');
+    }
+
+    public function enqueueRefetching($messageData)
+    {
+        $this->enqueueMessage($messageData, self::REFETCHING, 'command');
     }
 
     public function enqueueMatching($messageData, $trigger)

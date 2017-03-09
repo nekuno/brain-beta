@@ -67,7 +67,7 @@ class RabbitMQEnqueueFetchingCommand extends ApplicationAwareCommand
                     'public' => $public,
                 );
                 $output->writeln(sprintf('Enqueuing resource %s for user %d', $name, $user->getId()));
-                $amqpManager->enqueueFetching($data);
+                $amqpManager->enqueueRefetching($data);
             }
         }
     }
