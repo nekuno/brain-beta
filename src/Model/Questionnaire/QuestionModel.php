@@ -269,6 +269,10 @@ class QuestionModel
             ->setParameter('id', (integer)$id)
             ->createUnique('(u)-[r:SKIPS]->(q)')
             ->set('r.timestamp = timestamp()')
+            ->with('u, q, r')
+            ->optionalMatch('(u)-[userAnswer:ANSWERS]->(:Answer)-[:IS_ANSWER_OF]->(q)')
+            ->optionalMatch('(u)-[userAccepts:ACCEPTS]->(:Answer)-[:IS_ANSWER_OF]->(q)')
+            ->delete('userAnswer, userAccepts')
             ->returns('r');
 
         $query = $qb->getQuery();
