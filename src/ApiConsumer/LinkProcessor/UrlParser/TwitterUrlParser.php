@@ -66,8 +66,6 @@ class TwitterUrlParser extends UrlParser
 
     protected function getProfileIdFromIntentUrl($url)
     {
-        $this->checkUrlValid($url);
-
         $parts = parse_url($url);
 
         if (isset($parts['path']) && isset($parts['query'])) {
@@ -92,8 +90,6 @@ class TwitterUrlParser extends UrlParser
 
     protected function getProfileNameFromProfileUrl($url)
     {
-        $this->checkUrlValid($url);
-
         $parts = parse_url($url);
 
         if (isset($parts['path'])) {
@@ -125,8 +121,6 @@ class TwitterUrlParser extends UrlParser
 
     public function getStatusId($url)
     {
-        $this->checkUrlValid($url);
-
         $parts = parse_url($url);
 
         if (isset($parts['path'])) {
@@ -180,6 +174,10 @@ class TwitterUrlParser extends UrlParser
 
         $this->fixHost($url);
         $this->fixPath($url);
+
+        if (!$this->isTwitterUrl($url)) {
+            throw new UrlNotValidException($url);
+        }
 
         return $url;
     }

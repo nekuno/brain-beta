@@ -32,8 +32,6 @@ class FacebookUrlParser extends UrlParser
 
     public function getVideoId($url)
     {
-        $url = $this->cleanURL($url);
-
         $prefix = 'videos/';
         $startPos = strpos($url, $prefix);
         if ($startPos === false) {

@@ -74,8 +74,6 @@ class UrlParser implements UrlParserInterface
 
     public function getUrlType($url)
     {
-        $this->checkUrlValid($url);
-
         if ($this->isImageUrl($url)) {
             return UrlParser::IMAGESCRAPPER;
         }
