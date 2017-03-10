@@ -208,7 +208,7 @@ class TwitterUrlParser extends UrlParser
 
     public function checkUrlValid($url, $urlDecoded = null)
     {
-        parent::checkUrlValid($url);
+        parent::checkUrlValid($url, $urlDecoded);
 
         if (!$this->isTwitterUrl($url)) {
             throw new UrlNotValidException($urlDecoded ?: $url);
