@@ -50,6 +50,11 @@ abstract class LoggerAwareWorker implements LoggerAwareInterface, RabbitMQConsum
         $this->logger = $logger;
     }
 
+    public function getQueue()
+    {
+        return $this->queue;
+    }
+
     public function consume()
     {
         $exchangeName = 'brain.topic';

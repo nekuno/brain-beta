@@ -9,6 +9,7 @@ use Doctrine\DBAL\Connection;
 use Model\Neo4j\Neo4jException;
 use Model\User\Token\TokensModel;
 use PhpAmqpLib\Channel\AMQPChannel;
+use Psr\Log\LoggerInterface;
 use Service\AMQPManager;
 use Service\EventDispatcher;
 
@@ -48,6 +49,13 @@ class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterfa
         $this->processorService = $processorService;
         $this->getOldTweets = $getOldTweets;
         $this->connectionBrain = $connectionBrain;
+    }
+
+    public function setLogger(LoggerInterface $logger)
+    {
+        parent::setLogger($logger);
+        $this->fetcherService->setLogger($logger);
+        $this->processorService->setLogger($logger);
     }
 
     /**

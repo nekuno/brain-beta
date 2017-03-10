@@ -6,6 +6,7 @@ use ApiConsumer\Fetcher\FetcherService;
 use ApiConsumer\Fetcher\ProcessorService;
 use Model\Neo4j\Neo4jException;
 use PhpAmqpLib\Channel\AMQPChannel;
+use Psr\Log\LoggerInterface;
 use Service\AMQPManager;
 use Service\EventDispatcher;
 
@@ -25,6 +26,13 @@ class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerI
         parent::__construct($dispatcher, $channel);
         $this->fetcherService = $fetcherService;
         $this->processorService = $processorService;
+    }
+
+    public function setLogger(LoggerInterface $logger)
+    {
+        parent::setLogger($logger);
+        $this->fetcherService->setLogger($logger);
+        $this->processorService->setLogger($logger);
     }
 
     /**
