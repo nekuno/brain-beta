@@ -46,7 +46,7 @@ class AMQPManager
 
     public function enqueueChannel($messageData)
     {
-        $this->enqueueMessage($messageData, self::PREDICTION, 'user_aggregator');
+        $this->enqueueMessage($messageData, self::CHANNEL, 'user_aggregator');
     }
 
     public function enqueueSocialNetwork($messageData)
@@ -56,7 +56,7 @@ class AMQPManager
 
     public function enqueuePrediction($messageData, $trigger)
     {
-        $this->enqueueMessage($messageData, self::CHANNEL, $trigger);
+        $this->enqueueMessage($messageData, self::PREDICTION, $trigger);
     }
 
     private function enqueueMessage($messageData, $queue, $trigger)
