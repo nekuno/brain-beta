@@ -23,9 +23,9 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
 {
 
     const TRIGGER_PERIODIC = 'periodic';
-    const TRIGGER_QUESTION = 'questions.answered';
-    const TRIGGER_CONTENT_RATED = 'content.rated';
-    const TRIGGER_PROCESS_FINISHED = 'process.finished';
+    const TRIGGER_QUESTION = 'question_answered';
+    const TRIGGER_CONTENT_RATED = 'content_rated';
+    const TRIGGER_PROCESS_FINISHED = 'process_finished';
     const TRIGGER_MATCHING_EXPIRED = 'matching_expired';
 
     protected $queue = AMQPManager::MATCHING;
