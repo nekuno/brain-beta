@@ -8,7 +8,7 @@ class AMQPQueueManager
 {
     public function buildRoutingKey($queue, $trigger)
     {
-        return sprintf('brain.%s.$s', $queue, $trigger);
+        return sprintf('brain.%s.%s', $queue, $trigger);
     }
 
     public function buildPattern($queue)
