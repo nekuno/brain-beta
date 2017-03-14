@@ -164,7 +164,8 @@ abstract class APITest extends WebTestCase
                 'resourceId' => $this->app['userA.resource_id'],
                 'expireTime' => strtotime("+1 week"),
                 'refreshToken' => null
-            )
+            ),
+            'trackingData' => '',
         );
     }
 
@@ -183,7 +184,8 @@ abstract class APITest extends WebTestCase
                 'resourceId' => $this->app['userB.resource_id'],
                 'expireTime' => strtotime("+1 week"),
                 'refreshToken' => null
-            )
+            ),
+            'trackingData' => '',
         );
     }
 
