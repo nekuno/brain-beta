@@ -12,7 +12,7 @@ class AMQPManager
     const MATCHING = 'matching';
     const FETCHING = 'fetching';
     const PREDICTION = 'prediction';
-    const SOCIAL_NETWORK = 'social_network';
+    const SOCIAL_NETWORK = 'socialNetwork';
     const CHANNEL = 'channel';
     const REFETCHING = 'refetching';
 
