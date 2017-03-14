@@ -12,8 +12,9 @@ class AMQPManager
     const MATCHING = 'matching';
     const FETCHING = 'fetching';
     const PREDICTION = 'prediction';
-    const SOCIAL_NETWORK = 'social_network';
+    const SOCIAL_NETWORK = 'socialNetwork';
     const CHANNEL = 'channel';
+    const REFETCHING = 'refetching';
 
     protected $connection;
 
@@ -25,20 +26,48 @@ class AMQPManager
     function __construct(AMQPStreamConnection $AMQPStreamConnection)
     {
         $this->connection = $AMQPStreamConnection;
+        $this->queueManager = new AMQPQueueManager();
     }
 
     public function enqueueFetching($messageData)
     {
-        $this->enqueueMessage($messageData, 'brain.fetching.links');
+        $this->enqueueMessage($messageData, self::FETCHING, 'links');
     }
 
-    public function enqueueMessage($messageData, $routingKey)
+    public function enqueueRefetching($messageData)
+    {
+        $this->enqueueMessage($messageData, self::REFETCHING, 'command');
+    }
+
+    public function enqueueMatching($messageData, $trigger)
+    {
+        $this->enqueueMessage($messageData, self::MATCHING, $trigger);
+    }
+
+    public function enqueueChannel($messageData)
+    {
+        $this->enqueueMessage($messageData, self::CHANNEL, 'user_aggregator');
+    }
+
+    public function enqueueSocialNetwork($messageData)
+    {
+        $this->enqueueMessage($messageData, self::SOCIAL_NETWORK, 'added');
+    }
+
+    public function enqueuePrediction($messageData, $trigger)
+    {
+        $this->enqueueMessage($messageData, self::PREDICTION, $trigger);
+    }
+
+    private function enqueueMessage($messageData, $queue, $trigger)
     {
         $message = new AMQPMessage(json_encode($messageData, JSON_UNESCAPED_UNICODE));
 
         $exchangeName = 'brain.topic';
         $exchangeType = 'topic';
-        list ($topic, $queueName) = $this->buildData($routingKey);
+        $topic = $this->queueManager->buildPattern($queue);
+        $queueName = $this->queueManager->buildQueueName($queue);
+        $routingKey = $this->queueManager->buildRoutingKey($queue, $trigger);
 
         $channel = $this->getChannel($queueName);
 
@@ -48,7 +77,7 @@ class AMQPManager
         $channel->basic_publish($message, $exchangeName, $routingKey);
     }
 
-    private function getChannel($queueName)
+    public function getChannel($queueName)
     {
         if (isset($this->publishingChannels[$queueName])){
             $channel = $this->publishingChannels[$queueName];
@@ -59,38 +88,4 @@ class AMQPManager
 
         return $channel;
     }
-
-    private function buildData($routingKey)
-    {
-        $parts = explode('.', $routingKey);
-
-        switch ($parts[1]){
-            case $this::FETCHING:
-                $topic = 'brain.fetching.*';
-                $queueName = 'brain.fetching';
-                break;
-            case $this::MATCHING:
-                $topic = 'brain.matching.*';
-                $queueName = 'brain.matching';
-                break;
-            case $this::PREDICTION:
-                $topic = 'brain.prediction.*';
-                $queueName = 'brain.prediction';
-                break;
-            case $this::SOCIAL_NETWORK:
-                $topic = 'brain.social_network.*';
-                $queueName = 'brain.social_network';
-                break;
-            case $this::CHANNEL:
-                $topic = 'brain.channel.*';
-                $queueName = 'brain.channel';
-                break;
-            default:
-                throw new \Exception('RabbitMQ queue not supported');
-        }
-
-        return array($topic, $queueName);
-    }
-
-
 }

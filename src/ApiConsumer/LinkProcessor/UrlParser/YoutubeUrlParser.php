@@ -39,8 +39,6 @@ class YoutubeUrlParser extends UrlParser
      */
     public function getVideoId($url)
     {
-        $this->checkUrlValid($url);
-
         $parts = parse_url($url);
 
         if (isset($parts['path'])) {
@@ -84,8 +82,6 @@ class YoutubeUrlParser extends UrlParser
      */
     public function getChannelId($url)
     {
-        $this->checkUrlValid($url);
-
         $parts = parse_url($url);
 
         if (isset($parts['path'])) {
@@ -115,8 +111,6 @@ class YoutubeUrlParser extends UrlParser
      */
     public function getPlaylistId($url)
     {
-        $this->checkUrlValid($url);
-
         $parts = parse_url($url);
 
         if (isset($parts['path'])) {

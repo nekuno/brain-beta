@@ -13,8 +13,6 @@ class SpotifyUrlParser extends UrlParser
 
     public function getUrlType($url)
     {
-        $this->checkUrlValid($url);
-
         $parsedUrl = parse_url($url);
 
         if (isset($parsedUrl['path'])) {
@@ -49,8 +47,6 @@ class SpotifyUrlParser extends UrlParser
      */
     public function getSpotifyId($url)
     {
-        $this->checkUrlValid($url);
-
         $parsedUrl = parse_url($url);
 
         if (isset($parsedUrl['path'])) {
