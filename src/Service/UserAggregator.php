@@ -124,12 +124,13 @@ class UserAggregator
 
 	            $this->userManager->setAsChannel($userId, $resource);
 
-	            $this->amqpManager->enqueueMessage(array(
-	                'userId' => $socialProfile->getUserId(),
-	                'resourceOwner' => $socialProfile->getResource(),
-	                'username' => $username,
-	            ), 'brain.channel.user_aggregator');
-	        }
+                $messageData = array(
+                    'userId' => $socialProfile->getUserId(),
+                    'resourceOwner' => $socialProfile->getResource(),
+                    'username' => $username,
+                );
+                $this->amqpManager->enqueueChannel($messageData);
+            }
         }
     }
 

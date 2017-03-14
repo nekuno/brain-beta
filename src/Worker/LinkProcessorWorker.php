@@ -6,16 +6,13 @@ use ApiConsumer\Fetcher\FetcherService;
 use ApiConsumer\Fetcher\ProcessorService;
 use Model\Neo4j\Neo4jException;
 use PhpAmqpLib\Channel\AMQPChannel;
-use PhpAmqpLib\Message\AMQPMessage;
-use Symfony\Component\EventDispatcher\EventDispatcher;
+use Psr\Log\LoggerInterface;
+use Service\AMQPManager;
+use Service\EventDispatcher;
 
 class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerInterface
 {
-
-    /**
-     * @var AMQPChannel
-     */
-    protected $channel;
+    protected $queue = AMQPManager::FETCHING;
 
     /**
      * @var FetcherService
@@ -26,39 +23,23 @@ class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerI
 
     public function __construct(AMQPChannel $channel, EventDispatcher $dispatcher, FetcherService $fetcherService, ProcessorService $processorService)
     {
-        $this->channel = $channel;
-        $this->dispatcher = $dispatcher;
+        parent::__construct($dispatcher, $channel);
         $this->fetcherService = $fetcherService;
         $this->processorService = $processorService;
     }
 
-    /**
-     * { @inheritdoc }
-     */
-    public function consume()
+    public function setLogger(LoggerInterface $logger)
     {
-        $exchangeName = 'brain.topic';
-        $exchangeType = 'topic';
-        $topic = 'brain.fetching.*';
-        $queueName = 'brain.fetching';
-
-        $this->channel->exchange_declare($exchangeName, $exchangeType, false, true, false);
-        $this->channel->queue_declare($queueName, false, true, false, false);
-        $this->channel->queue_bind($queueName, $exchangeName, $topic);
-        $this->channel->basic_qos(null, 1, null);
-        $this->channel->basic_consume($queueName, '', false, false, false, false, array($this, 'callback'));
-
-        while (count($this->channel->callbacks)) {
-            $this->channel->wait();
-        }
+        parent::setLogger($logger);
+        $this->fetcherService->setLogger($logger);
+        $this->processorService->setLogger($logger);
     }
 
     /**
      * { @inheritdoc }
      */
-    public function callback(AMQPMessage $message)
+    public function callback(array $data, $trigger)
     {
-        $data = json_decode($message->body, true);
         $resourceOwner = $data['resourceOwner'];
         $userId = $data['userId'];
         $exclude = array_key_exists('exclude', $data) ? $data['exclude'] : array();
@@ -75,9 +56,10 @@ class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerI
             }
             $this->dispatchError($e, 'Fetching');
         }
+    }
 
-        $message->delivery_info['channel']->basic_ack($message->delivery_info['delivery_tag']);
-
-        $this->memory();
+    protected function process($links, $userId)
+    {
+        return $this->processorService->process($links, $userId);
     }
 }

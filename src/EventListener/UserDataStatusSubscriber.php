@@ -11,6 +11,7 @@ use Event\ContentRatedEvent;
 use Model\Entity\DataStatus;
 use Service\AMQPManager;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Worker\MatchingCalculatorWorker;
 
 /**
  * Class UserDataStatusSubscriber
@@ -137,7 +138,7 @@ class UserDataStatusSubscriber implements EventSubscriberInterface
             'resourceOwner' => $resourceOwner,
         );
 
-        $this->amqpManager->enqueueMessage($data, 'brain.matching.process_finished');
+        $this->amqpManager->enqueueMatching($data, MatchingCalculatorWorker::TRIGGER_PROCESS_FINISHED);
     }
 
     public function onMatchingExpired(MatchingExpiredEvent $event)
@@ -149,7 +150,7 @@ class UserDataStatusSubscriber implements EventSubscriberInterface
             'matching_type' => $event->getType(),
         );
 
-        $this->amqpManager->enqueueMessage($data, 'brain.matching.matching_expired');
+        $this->amqpManager->enqueueMatching($data, MatchingCalculatorWorker::TRIGGER_MATCHING_EXPIRED);
 
     }
 
@@ -160,7 +161,7 @@ class UserDataStatusSubscriber implements EventSubscriberInterface
             'userId' => $event->getUser(),
         );
 
-        $this->amqpManager->enqueueMessage($data, 'brain.matching.content_rated');
+        $this->amqpManager->enqueueMatching($data, MatchingCalculatorWorker::TRIGGER_CONTENT_RATED);
     }
 
 }

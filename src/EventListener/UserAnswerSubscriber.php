@@ -5,6 +5,7 @@ namespace EventListener;
 use Event\AnswerEvent;
 use Service\AMQPManager;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Worker\MatchingCalculatorWorker;
 
 /**
  * Class UserAnswerSubscriber
@@ -47,9 +48,8 @@ class UserAnswerSubscriber implements EventSubscriberInterface
         $data = array(
             'userId' => $event->getUser(),
             'question_id' => $event->getQuestion(),
-            'trigger' => 'question_answered'
         );
 
-        $this->amqpManager->enqueueMessage($data, 'brain.matching.question_answered');
+        $this->amqpManager->enqueueMatching($data, MatchingCalculatorWorker::TRIGGER_QUESTION);
     }
 }

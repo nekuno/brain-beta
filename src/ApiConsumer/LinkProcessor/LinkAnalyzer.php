@@ -94,7 +94,7 @@ class LinkAnalyzer
     //TODO: This is functionally a UrlParserFactory. Probably better to create.
     protected static function getUrlParser($url)
     {
-        (new UrlParser())->checkUrlValid($url);
+        (new UrlParser())->cleanURL($url);
 
         if (self::isYouTube($url)) {
             return new YoutubeUrlParser();

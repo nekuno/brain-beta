@@ -5,6 +5,7 @@ namespace Service;
 use Symfony\Component\EventDispatcher\Event;
 use Symfony\Component\EventDispatcher\EventDispatcher as BaseDispatcher;
 use Event\ExceptionEvent;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class EventDispatcher
 {
@@ -22,6 +23,11 @@ class EventDispatcher
     public function dispatch($eventName, Event $event = null)
     {
         return $this->dispatcher->dispatch($eventName, $event);
+    }
+
+    public function addSubscriber(EventSubscriberInterface $subscriber)
+    {
+        $this->dispatcher->addSubscriber($subscriber);
     }
 
     public function dispatchError(\Exception $e, $process)
