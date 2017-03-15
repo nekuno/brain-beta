@@ -27,7 +27,8 @@ class YoutubeUrlParserTest extends \PHPUnit_Framework_TestCase
      */
     public function testBadUrls($url)
     {
-        $this->setExpectedException(UrlNotValidException::class, 'Url ' . $url . ' not valid');
+        $this->setExpectedException(UrlNotValidException::class);
+        $url = $this->parser->cleanURL($url);
         $this->parser->getUrlType($url);
     }
 

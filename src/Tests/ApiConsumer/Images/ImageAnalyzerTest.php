@@ -4,7 +4,6 @@ namespace Tests\ApiConsumer\Images;
 
 use ApiConsumer\Images\ImageAnalyzer;
 use GuzzleHttp\Message\Response;
-use Model\Link\Link;
 
 class ImageAnalyzerTest extends \PHPUnit_Framework_TestCase
 {
@@ -20,7 +19,7 @@ class ImageAnalyzerTest extends \PHPUnit_Framework_TestCase
 
         $client = $this->getMockBuilder('GuzzleHttp\Client')->getMock();
         $client
-            ->expects($this->exactly(count($imageData)))
+            ->expects($this->atLeastOnce())
             ->method('head')
             ->will(
                 $this->returnCallback(
@@ -46,7 +45,7 @@ class ImageAnalyzerTest extends \PHPUnit_Framework_TestCase
             ),
             array(
                 $this->getSmallValidImage() + $this->getSmallRecommendedImage(),
-                array_keys($this->getSmallRecommendedImage())[0],
+                array_keys($this->getSmallValidImage())[0],
                 'Choosing recommended image over a valid one',
             ),
             array(

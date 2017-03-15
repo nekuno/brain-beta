@@ -22,7 +22,8 @@ class FacebookUrlParserTest extends \PHPUnit_Framework_TestCase
      * @dataProvider getBadUrls
      */
     public function testBadUrls($url){
-        $this->setExpectedException(UrlNotValidException::class, 'Url '.$url.' not valid');
+        $this->setExpectedException(UrlNotValidException::class);
+        $url = $this->parser->cleanURL($url);
         $this->parser->getUrlType($url);
     }
 
@@ -31,6 +32,7 @@ class FacebookUrlParserTest extends \PHPUnit_Framework_TestCase
      */
     public function testType($url, $expectedType)
     {
+        $url = $this->parser->cleanURL($url);
         $type = $this->parser->getUrlType($url);
         $this->assertEquals($expectedType, $type, 'Asserting that ' . $url . ' is a ' .$expectedType);
     }
@@ -40,7 +42,8 @@ class FacebookUrlParserTest extends \PHPUnit_Framework_TestCase
      */
     public function testBadUrlVideoIds($url)
     {
-        $this->setExpectedException(UrlNotValidException::class, 'Url '.$url.' not valid');
+        $this->setExpectedException(UrlNotValidException::class);
+        $url = $this->parser->cleanURL($url);
         $this->parser->getUrlType($url);
     }
 
@@ -49,6 +52,7 @@ class FacebookUrlParserTest extends \PHPUnit_Framework_TestCase
      */
     public function testVideosIds($url, $expectedId)
     {
+        $url = $this->parser->cleanURL($url);
         $id = $this->parser->getVideoId($url);
         $this->assertEquals($expectedId, $id, 'Asserting that ' . $url . ' has video id ' . json_encode($expectedId));
     }

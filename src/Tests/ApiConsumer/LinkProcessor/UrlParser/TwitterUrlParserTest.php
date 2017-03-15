@@ -23,7 +23,8 @@ class TwitterUrlParserTest extends \PHPUnit_Framework_TestCase
      * @dataProvider getBadUrls
      */
     public function testBadUrls($url){
-        $this->setExpectedException(UrlNotValidException::class, 'Url '.$url.' not valid');
+        $this->setExpectedException(UrlNotValidException::class);
+        $url = $this->parser->cleanURL($url);
         $this->parser->getUrlType($url);
     }
 
@@ -34,18 +35,9 @@ class TwitterUrlParserTest extends \PHPUnit_Framework_TestCase
      */
     public function testType($url, $expectedType)
     {
+        $url = $this->parser->cleanURL($url);
         $type = $this->parser->getUrlType($url);
         $this->assertEquals($expectedType, $type, 'Asserting that ' . $url . ' is a ' .$expectedType);
-    }
-
-    /**
-     * @param $url
-     * @dataProvider getBadUrls
-     */
-    public function testBadUrlIds($url)
-    {
-        $this->setExpectedException(UrlNotValidException::class, 'Url '.$url.' not valid');
-        $this->parser->getUrlType($url);
     }
 
     /**
@@ -55,6 +47,7 @@ class TwitterUrlParserTest extends \PHPUnit_Framework_TestCase
      */
     public function testProfileIds($url, $expectedId)
     {
+        $url = $this->parser->cleanURL($url);
         $id = $this->parser->getProfileId($url);
         $this->assertEquals($expectedId, $id, 'Asserting that ' . $url . ' has profile id ' . json_encode($id));
     }
