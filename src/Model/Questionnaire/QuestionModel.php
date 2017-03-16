@@ -89,7 +89,9 @@ class QuestionModel
             ->with('user', 'collect(answered) + collect(skip) + collect(report) AS excluded')
             ->match('(q3:Question)<-[:IS_ANSWER_OF]-(a2:Answer)')
             ->where('NOT q3 IN excluded', "EXISTS(q3.text_$locale)")
-            ->with('q3 AS question', 'collect(DISTINCT a2) AS answers')
+            ->with('q3 AS question', 'a2')
+            ->orderBy('id(a2)')
+            ->with('question', 'collect(DISTINCT a2) AS answers')
             ->returns('question', 'answers')
             ->orderBy($sortByRanking && $this->sortByRanking() ? 'question.ranking DESC' : 'question.timestamp ASC')
             ->limit(1);
@@ -696,7 +698,9 @@ class QuestionModel
             ->with('user', 'collect(answered) AS excluded')
             ->match('(q3:RegisterQuestion)<-[:IS_ANSWER_OF]-(a2:Answer)')
             ->where('NOT q3 IN excluded', "EXISTS(q3.text_$locale)")
-            ->with('q3 AS question', 'collect(DISTINCT a2) AS answers')
+            ->with('q3 AS question', 'a2')
+            ->orderBy('id(a2)')
+            ->with('question', 'collect(DISTINCT a2) AS answers')
             ->returns('question', 'answers')
             ->limit(1);
 
