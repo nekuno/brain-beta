@@ -57,9 +57,4 @@ class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerI
             $this->dispatchError($e, 'Fetching');
         }
     }
-
-    protected function process($links, $userId)
-    {
-        return $this->processorService->process($links, $userId);
-    }
 }
