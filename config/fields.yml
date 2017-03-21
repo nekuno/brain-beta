@@ -558,6 +558,7 @@ invitations:
         required: false
     token:
         required: false
+        type: string
     available:
         required: true
         type: integer
