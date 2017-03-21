@@ -135,6 +135,7 @@ class Fixtures
         $this->loadPrivacyOptions();
         $this->loadUsers();
         $this->loadEnterpriseUsers();
+        $this->loadInvitations();
         $this->loadGroups();
         $createdLinks = $this->loadLinks();
         $this->loadTags();
@@ -210,6 +211,20 @@ class Fixtures
                 )
             );
         }
+    }
+
+    protected function loadInvitations()
+    {
+        $this->logger->notice('Loading generic invitation');
+
+        $invitationData = array(
+            'orientationRequired' => false,
+            'available' => 10000,
+            'token' => 'join',
+        );
+
+        $this->im->create($invitationData);
+
     }
 
     protected function loadGroups()
