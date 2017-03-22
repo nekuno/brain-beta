@@ -753,3 +753,16 @@ filters:
         location:
             type: location_distance
             label: *locationLabel
+
+questions:
+    locale:
+        required: true
+        type: choice
+    text:
+        required: true
+        type: string
+    answers:
+        required: true
+        type: array
+        min: 2
+        max: 6

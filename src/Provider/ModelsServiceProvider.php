@@ -313,7 +313,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['questionnaire.questions.model'] = $app->share(
             function ($app) {
 
-                return new QuestionModel($app['neo4j.graph_manager'], $app['users.manager']);
+                return new QuestionModel($app['neo4j.graph_manager'], $app['users.manager'], $app['validator.service']);
             }
         );
 
