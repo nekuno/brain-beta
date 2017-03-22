@@ -3,7 +3,7 @@
 namespace Controller\User;
 
 use Event\AnswerEvent;
-use Model\Questionnaire\QuestionModel;
+use Model\User\Question\QuestionModel;
 use Model\User\Question\QuestionPaginatedModel;
 use Model\User;
 use Silex\Application;

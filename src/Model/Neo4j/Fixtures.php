@@ -3,7 +3,7 @@
 namespace Model\Neo4j;
 
 use Model\Link\LinkModel;
-use Model\Questionnaire\QuestionModel;
+use Model\User\Question\QuestionModel;
 use Model\User;
 use Model\User\Question\AnswerModel;
 use Model\User\ProfileModel;

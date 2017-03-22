@@ -1,6 +1,6 @@
 <?php
 
-namespace Model\Questionnaire;
+namespace Model\User\Question;
 
 use Everyman\Neo4j\Label;
 use Everyman\Neo4j\Node;

@@ -8,7 +8,7 @@ use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
-use Model\Questionnaire\QuestionModel;
+use Model\User\Question\QuestionModel;
 use Manager\UserManager;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;

@@ -2,7 +2,7 @@
 
 namespace Controller\Questionnaire;
 
-use Model\Questionnaire\QuestionModel;
+use Model\User\Question\QuestionModel;
 use Model\User;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;

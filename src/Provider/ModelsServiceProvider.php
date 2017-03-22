@@ -7,7 +7,7 @@ use Model\EnterpriseUser\EnterpriseUserModel;
 use Model\Link\LinkModel;
 use Model\Popularity\PopularityManager;
 use Model\Popularity\PopularityPaginatedModel;
-use Model\Questionnaire\QuestionModel;
+use Model\User\Question\QuestionModel;
 use Model\User\Affinity\AffinityModel;
 use Model\User\Question\AnswerModel;
 use Model\EnterpriseUser\CommunityModel;
