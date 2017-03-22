@@ -1,12 +1,9 @@
 <?php
 
-namespace Model\User;
+namespace Model\User\Question;
 
-use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
-use Everyman\Neo4j\Relationship;
 use Model\Neo4j\GraphManager;
-use Model\Questionnaire\QuestionModel;
 use Paginator\PaginatedInterface;
 
 class QuestionPaginatedModel implements PaginatedInterface
@@ -24,6 +21,7 @@ class QuestionPaginatedModel implements PaginatedInterface
 
     /**
      * @param GraphManager $gm
+     * @param \Model\User\Question\AnswerModel $am
      */
     public function __construct(GraphManager $gm, AnswerModel $am)
     {

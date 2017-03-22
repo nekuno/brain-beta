@@ -57,7 +57,7 @@ class AnswerController
 
         $filters = array('id' => $id2, 'id2' => $id, 'locale' => $locale, 'showOnlyCommon' => $showOnlyCommon);
 
-        /* @var $model \Model\User\OldQuestionComparePaginatedModel */
+        /* @var $model \Model\User\Question\OldQuestionComparePaginatedModel */
         $model = $app['old.users.questions.compare.model'];
 
         try {

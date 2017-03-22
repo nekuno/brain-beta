@@ -5,7 +5,7 @@ namespace Model\User\Matching;
 use Event\MatchingEvent;
 use Event\MatchingExpiredEvent;
 use Model\Neo4j\GraphManager;
-use Model\User\AnswerModel;
+use Model\User\Question\AnswerModel;
 use Model\User\ContentPaginatedModel;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
@@ -31,7 +31,7 @@ class MatchingModel
     protected $contentPaginatedModel;
 
     /**
-     * @var \Model\User\AnswerModel
+     * @var \Model\User\Question\AnswerModel
      */
     protected $answerModel;
 
@@ -39,7 +39,7 @@ class MatchingModel
      * @param EventDispatcher $dispatcher
      * @param GraphManager $graphManager
      * @param \Model\User\ContentPaginatedModel $contentPaginatedModel
-     * @param \Model\User\AnswerModel $answerModel
+     * @param \Model\User\Question\AnswerModel $answerModel
      */
     public function __construct(
         EventDispatcher $dispatcher,

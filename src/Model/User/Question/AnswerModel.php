@@ -1,6 +1,6 @@
 <?php
 
-namespace Model\User;
+namespace Model\User\Question;
 
 use Event\AnswerEvent;
 use Everyman\Neo4j\Node;
@@ -15,7 +15,6 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class AnswerModel
 {
-
     /**
      * @var GraphManager
      */
@@ -38,7 +37,6 @@ class AnswerModel
 
     public function __construct(GraphManager $gm, QuestionModel $qm, UserManager $um, EventDispatcher $eventDispatcher)
     {
-
         $this->gm = $gm;
         $this->qm = $qm;
         $this->um = $um;
@@ -47,7 +45,6 @@ class AnswerModel
 
     public function countTotal(array $filters)
     {
-
         $count = 0;
 
         $qb = $this->gm->createQueryBuilder();
@@ -83,7 +80,6 @@ class AnswerModel
 
     public function create(array $data)
     {
-
         $this->validate($data);
 
         $qb = $this->gm->createQueryBuilder();
@@ -110,7 +106,6 @@ class AnswerModel
 
     public function update(array $data)
     {
-
         $this->validate($data);
 
         $data['userId'] = intval($data['userId']);
@@ -148,7 +143,6 @@ class AnswerModel
 
     public function explain(array $data)
     {
-
         $data['userId'] = (integer)$data['userId'];
         $data['questionId'] = (integer)$data['questionId'];
 
@@ -173,7 +167,6 @@ class AnswerModel
      */
     public function getNumberOfUserAnswers($userId)
     {
-
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(a:Answer)<-[ua:ANSWERS]-(u:User)')
             ->where('u.qnoow_id = { userId }')
@@ -187,7 +180,6 @@ class AnswerModel
 
     public function getUserAnswer($userId, $questionId, $locale)
     {
-
         $user = $this->um->getById($userId);
         $question = $this->qm->getById($questionId, $locale);
 
@@ -265,7 +257,6 @@ class AnswerModel
      */
     public function validate(array $data, $userRequired = true)
     {
-
         $errors = array();
 
         foreach ($this->getFieldsMetadata() as $fieldName => $fieldMetadata) {
@@ -363,7 +354,6 @@ class AnswerModel
 
     public function build(Row $row, $locale)
     {
-
         return array(
             'userAnswer' => $this->buildUserAnswer($row),
             'question' => $this->qm->build($row, $locale),
@@ -372,7 +362,6 @@ class AnswerModel
 
     protected function buildUserAnswer(Row $row)
     {
-
         $keys = array('question', 'answer', 'userAnswer', 'rates', 'acceptedAnswers');
         foreach ($keys as $key) {
             if (!$row->offsetExists($key)) {
@@ -411,7 +400,6 @@ class AnswerModel
      */
     protected function getFieldsMetadata()
     {
-
         $metadata = array(
             'questionId' => array(
                 'required' => true,
