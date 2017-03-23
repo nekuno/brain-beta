@@ -180,14 +180,14 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.content.tag.model'] = $app->share(
             function ($app) {
 
-                return new ContentTagModel($app['neo4j.client'], $app['neo4j.graph_manager']);
+                return new ContentTagModel($app['neo4j.graph_manager']);
             }
         );
 
         $app['users.rate.model'] = $app->share(
             function ($app) {
 
-                return new RateModel($app['dispatcher'], $app['neo4j.client'], $app['neo4j.graph_manager']);
+                return new RateModel($app['dispatcher'], $app['neo4j.graph_manager']);
             }
         );
 

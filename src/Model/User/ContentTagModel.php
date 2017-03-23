@@ -2,28 +2,20 @@
 
 namespace Model\User;
 
-use Everyman\Neo4j\Client;
 use Model\Neo4j\GraphManager;
 
 class ContentTagModel
 {
-    /**
-     * @var \Everyman\Neo4j\Client
-     */
-    protected $client;
-
     /**
      * @var GraphManager
      */
     protected $gm;
 
     /**
-     * @param \Everyman\Neo4j\Client $client
      * @param GraphManager $gm
      */
-    public function __construct(Client $client, GraphManager $gm)
+    public function __construct(GraphManager $gm)
     {
-        $this->client = $client;
         $this->gm = $gm;
     }
 
