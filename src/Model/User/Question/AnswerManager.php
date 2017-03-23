@@ -305,8 +305,19 @@ class AnswerManager
         $answer->setExplanation($userAnswer->getProperty('explanation'));
         $answer->setPrivate($userAnswer->getProperty('private'));
         $answer->setAnsweredAt($userAnswer->getProperty('answeredAt'));
+        $this->setEditable($answer);
 
         return $answer;
+    }
+
+    protected function setEditable(Answer $answer)
+    {
+        $answeredAt = $answer->getAnsweredAt();
+        $now = time() * 1000;
+        $oneDay = 24 * 3600 * 1000;
+
+        $isEditable = $answeredAt < $now - $oneDay;
+        $answer->setEditable($isEditable);
     }
 
     /**
