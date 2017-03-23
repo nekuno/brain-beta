@@ -98,8 +98,10 @@ class FetchLinksInstantSubscriber implements EventSubscriberInterface
         $jsonProcess = array('userId' => $event->getUser(), 'resource' => $event->getResourceOwner());
         $jsonNotification = array(
             'userId' => $event->getUser(),
-            'type' => 'process_finish',
-            'resource' => $event->getResourceOwner(),
+            'data' => array(
+                'type' => 'process_finish',
+                'resource' => $event->getResourceOwner(),
+            ),
         );
         try {
             $this->client->post($this->host . 'api/process/finish', array('json' => $jsonProcess));
