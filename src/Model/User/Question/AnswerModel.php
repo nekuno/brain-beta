@@ -8,8 +8,8 @@ use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
-use Model\User\Question\QuestionModel;
 use Manager\UserManager;
+use Service\Validator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -35,11 +35,17 @@ class AnswerModel
      */
     protected $eventDispatcher;
 
-    public function __construct(GraphManager $gm, QuestionModel $qm, UserManager $um, EventDispatcher $eventDispatcher)
+    /**
+     * @var Validator
+     */
+    protected $validator;
+
+    public function __construct(GraphManager $gm, QuestionModel $qm, UserManager $um, Validator $validator, EventDispatcher $eventDispatcher)
     {
         $this->gm = $gm;
         $this->qm = $qm;
         $this->um = $um;
+        $this->validator = $validator;
         $this->eventDispatcher = $eventDispatcher;
     }
 
@@ -180,13 +186,13 @@ class AnswerModel
 
     public function getUserAnswer($userId, $questionId, $locale)
     {
-        $user = $this->um->getById($userId);
+        $this->validator->validateUserId($userId);
         $question = $this->qm->getById($questionId, $locale);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(q:Question)', '(u:User)')
             ->where('u.qnoow_id = { userId }', 'id(q) = { questionId }', "EXISTS(q.text_$locale)")
-            ->setParameter('userId', $user->getId())
+            ->setParameter('userId', $userId)
             ->setParameter('questionId', $question['questionId'])
             ->with('u', 'q')
             ->match('(u)-[ua:ANSWERS]->(a:Answer)-[:IS_ANSWER_OF]->(q)')
@@ -205,7 +211,7 @@ class AnswerModel
         $result = $query->getResultSet();
 
         if ($result->count() < 1) {
-            throw new NotFoundHttpException(sprintf('There is not answer for user "%s" to question "%s"', $user->getId(), $question['questionId']));
+            throw new NotFoundHttpException(sprintf('There is not answer for user "%s" to question "%s"', $userId, $question['questionId']));
         }
 
         /* @var $row Row */
@@ -257,98 +263,23 @@ class AnswerModel
      */
     public function validate(array $data, $userRequired = true)
     {
-        $errors = array();
+        $this->validator->validateAnswer($data, $userRequired);
 
-        foreach ($this->getFieldsMetadata() as $fieldName => $fieldMetadata) {
+        $this->validateAcceptedAnswers($data);
+    }
 
-            if ($userRequired && $fieldName === 'userId') {
-                $fieldMetadata['required'] = true;
+    /**
+     * @param array $data
+     */
+    protected function validateAcceptedAnswers(array $data)
+    {
+        foreach ($data['acceptedAnswers'] as $acceptedAnswer) {
+            if (!is_int($acceptedAnswer)) {
+                throw new ValidationException(array('acceptedAnswers' => 'acceptedAnswers items must be integers'));
+            } elseif (!$this->existsAnswer($data['questionId'], $acceptedAnswer)) {
+                throw new ValidationException(array('acceptedAnswers' => 'Invalid accepted answers ID'));
+                break;
             }
-
-            $fieldErrors = array();
-
-            if ($fieldMetadata['required'] === true && !isset($data[$fieldName])) {
-
-                $fieldErrors[] = sprintf('The field "%s" is required', $fieldName);
-
-            } else {
-
-                $fieldValue = isset($data[$fieldName]) ? $data[$fieldName] : null;
-
-                switch ($fieldName) {
-                    case 'questionId':
-                        if (!is_int($fieldValue)) {
-                            $fieldErrors[] = 'questionId must be an integer';
-                        } elseif (!$this->existsQuestion($fieldValue)) {
-                            $fieldErrors[] = 'Invalid question ID';
-                        }
-                        break;
-                    case 'answerId':
-                        if (!is_int($fieldValue)) {
-                            $fieldErrors[] = 'answerId must be an integer';
-                        } elseif (isset($data['questionId']) && is_int($data['questionId']) && !$this->existsAnswer($data['questionId'], $fieldValue)) {
-                            $fieldErrors[] = 'Invalid answer ID';
-                        }
-                        break;
-                    case 'acceptedAnswers':
-                        if (!is_array($fieldValue)) {
-                            $fieldErrors[] = 'acceptedAnswers must be an array';
-                        } else {
-                            $acceptedAnswersNum = count($fieldValue);
-                            if ($acceptedAnswersNum === 0) {
-                                $fieldErrors[] = 'At least one accepted answer needed';
-                            } else {
-                                foreach ($fieldValue as $acceptedAnswer) {
-                                    if (!is_int($acceptedAnswer)) {
-                                        $fieldErrors[] = 'acceptedAnswers items must be integers';
-                                    } elseif (isset($data['questionId']) && is_int($data['questionId']) && !$this->existsAnswer($data['questionId'], $acceptedAnswer)) {
-                                        $fieldErrors[] = 'Invalid accepted answer ID';
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        break;
-                    case 'rating':
-                        if (!is_int($fieldValue)) {
-                            $fieldErrors[] = 'rating must be an integer';
-                        } elseif (!in_array($fieldValue, range($fieldMetadata['min'], $fieldMetadata['max']))) {
-                            $fieldErrors[] = sprintf('Invalid importance value. Should be between both %d and %d included', $fieldMetadata['min'], $fieldMetadata['max']);
-                        }
-                        break;
-                    case 'isPrivate':
-                        if (!is_bool($fieldValue)) {
-                            $fieldErrors[] = 'isPrivate must be boolean';
-                        }
-                        break;
-                    case 'explanation':
-                        break;
-                    case 'userId':
-                        if ($fieldValue) {
-                            if (!is_int($fieldValue)) {
-                                $fieldErrors[] = 'userId must be an integer';
-                            } else {
-                                try {
-                                    $this->um->getById($fieldValue);
-                                } catch (NotFoundHttpException $e) {
-                                    $fieldErrors[] = $e->getMessage();
-                                }
-                            }
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            if (count($fieldErrors) > 0) {
-                $errors[$fieldName] = $fieldErrors;
-            }
-
-        }
-
-        if (count($errors) > 0) {
-            throw new ValidationException($errors);
         }
     }
 
@@ -393,41 +324,6 @@ class AnswerModel
             'isPrivate' => $userAnswer->getProperty('private'),
             'answeredAt' => $userAnswer->getProperty('answeredAt'),
         );
-    }
-
-    /**
-     * @return array
-     */
-    protected function getFieldsMetadata()
-    {
-        $metadata = array(
-            'questionId' => array(
-                'required' => true,
-            ),
-            'answerId' => array(
-                'required' => true,
-            ),
-            'acceptedAnswers' => array(
-                'required' => true,
-            ),
-            'rating' => array(
-                'required' => true,
-                'min' => 0,
-                'max' => 3,
-            ),
-            'explanation' => array(
-                'required' => true,
-            ),
-            'isPrivate' => array(
-                'required' => true,
-            ),
-            'userId' => array(
-                'required' => false,
-            ),
-
-        );
-
-        return $metadata;
     }
 
     /**

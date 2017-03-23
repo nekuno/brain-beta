@@ -766,3 +766,28 @@ questions:
         type: array
         min: 2
         max: 6
+
+answers:
+    questionId:
+        required: true
+        type: integer
+    answerId:
+        required: true
+        type: integer
+    acceptedAnswers:
+        required: true
+        type: array
+    rating:
+        required: true
+        type: integer
+        min: 0
+        max: 3
+    explanation:
+        required: true
+        type: string
+    isPrivate:
+        required: true
+        type: boolean
+    userId:
+        required: false
+        type: integer

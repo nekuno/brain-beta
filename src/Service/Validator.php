@@ -220,21 +220,32 @@ class Validator
 
     public function validateQuestion(array $data, array $choices = array(), $userIdRequired = false)
     {
-        $this->validate($data, $choices);
+        $this->validate($data, $this->metadata['questions'], $choices);
 
-        if ($userIdRequired)
-        {
-            if (!isset($data['userId'])){
-                throw new ValidationException(array('userId', 'User id is required for this question'));
-            }
-
-            $this->validateUserId($data['userId']);
-        }
+        $this->validateUserInData($userIdRequired, $data);
 
         foreach ($data['answers'] as $answer) {
             if (!isset($answer['text']) || !is_string($answer['text'])) {
                 throw new ValidationException(array('answers', 'Each answer must be an array with key "text" string'));
             }
+        }
+    }
+
+    public function validateAnswer(array $data, $userIdRequired = false)
+    {
+        $this->validate($data, $this->metadata['answers'], array());
+
+        $this->validateUserInData($userIdRequired, $data);
+    }
+
+    protected function validateUserInData($userIdRequired, array $data)
+    {
+        if ($userIdRequired && !isset($data['userId'])) {
+            throw new ValidationException(array('userId', 'User id is required for this question'));
+        }
+
+        if (isset($data['userId'])) {
+            $this->validateUserId($data['userId']);
         }
     }
 

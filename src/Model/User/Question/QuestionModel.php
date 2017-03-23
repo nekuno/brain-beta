@@ -20,24 +20,17 @@ class QuestionModel
     protected $gm;
 
     /**
-     * @var UserManager
-     */
-    protected $um;
-
-    /**
      * @var Validator
      */
     protected $validator;
 
     /**
      * @param GraphManager $gm
-     * @param UserManager $um
      * @param Validator $validator
      */
-    public function __construct(GraphManager $gm, UserManager $um, Validator $validator)
+    public function __construct(GraphManager $gm, Validator $validator)
     {
         $this->gm = $gm;
-        $this->um = $um;
         $this->validator = $validator;
     }
 
@@ -267,14 +260,13 @@ class QuestionModel
      */
     public function skip($id, $userId)
     {
-
-        $user = $this->um->getById($userId);
+        $this->validator->validateUserId($userId);
 
         $qb = $this->gm->createQueryBuilder();
         $qb
             ->match('(q:Question)', '(u:User)')
             ->where('NOT q:RegisterQuestion', 'u.qnoow_id = { userId } AND id(q) = { id }')
-            ->setParameter('userId', $user->getId())
+            ->setParameter('userId', $userId)
             ->setParameter('id', (integer)$id)
             ->createUnique('(u)-[r:SKIPS]->(q)')
             ->set('r.timestamp = timestamp()')
@@ -301,13 +293,12 @@ class QuestionModel
      */
     public function report($id, $userId, $reason)
     {
-
-        $user = $this->um->getById($userId);
+        $this->validator->validateUserId($userId);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(q:Question)', '(u:User)')
             ->where('u.qnoow_id = { userId } AND id(q) = { id }')
-            ->setParameter('userId', $user->getId())
+            ->setParameter('userId', $userId)
             ->setParameter('id', (integer)$id)
             ->createUnique('(u)-[r:REPORTS]->(q)')
             ->set('r.reason = { reason }', 'r.timestamp = timestamp()')
@@ -437,7 +428,7 @@ class QuestionModel
     protected function getChoices()
     {
         return array(
-            'locales' => array('en', 'es'),
+            'locale' => array('en', 'es'),
         );
     }
 

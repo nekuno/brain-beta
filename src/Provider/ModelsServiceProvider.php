@@ -138,7 +138,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.answers.model'] = $app->share(
             function ($app) {
 
-                return new AnswerModel($app['neo4j.graph_manager'], $app['questionnaire.questions.model'], $app['users.manager'], $app['dispatcher']);
+                return new AnswerModel($app['neo4j.graph_manager'], $app['questionnaire.questions.model'], $app['users.manager'], $app['validator.service'], $app['dispatcher']);
             }
         );
 
@@ -313,7 +313,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['questionnaire.questions.model'] = $app->share(
             function ($app) {
 
-                return new QuestionModel($app['neo4j.graph_manager'], $app['users.manager'], $app['validator.service']);
+                return new QuestionModel($app['neo4j.graph_manager'], $app['validator.service']);
             }
         );
 
