@@ -3,12 +3,14 @@
 namespace Model\User;
 
 use Doctrine\DBAL\Connection;
+use Event\UserLikedEvent;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 use Manager\UserManager;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class RelationsModel
@@ -36,12 +38,18 @@ class RelationsModel
      */
     protected $userManager;
 
-    public function __construct(GraphManager $gm, Connection $connectionBrain, UserManager $userManager)
+    /**
+     * @var EventDispatcher
+     */
+    protected $dispatcher;
+
+    public function __construct(GraphManager $gm, Connection $connectionBrain, UserManager $userManager, EventDispatcher $dispatcher)
     {
 
         $this->gm = $gm;
         $this->connectionBrain = $connectionBrain;
         $this->userManager = $userManager;
+        $this->dispatcher = $dispatcher;
     }
 
     static public function getRelations()
@@ -180,6 +188,10 @@ class RelationsModel
 
             if ($result->count() === 0) {
                 throw new NotFoundHttpException(sprintf('Unable to create relation "%s" from user "%s" to "%s"', $relation, $from, $to));
+            }
+
+            if ($relation === self::LIKES) {
+                $this->dispatcher->dispatch(\AppEvents::USER_LIKED, new UserLikedEvent($from, $to));
             }
 
             /* @var $row Row */

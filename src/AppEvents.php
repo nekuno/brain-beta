@@ -62,6 +62,11 @@ final class AppEvents
     const USER_STATUS_CHANGED = 'user.statusChanged';
 
     /**
+     * Fired when a user is liked
+     */
+    const USER_LIKED = 'user.liked';
+
+    /**
      * Fired when an account is connected
      */
     const ACCOUNT_CONNECTED = 'account.connected';
