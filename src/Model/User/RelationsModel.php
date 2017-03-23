@@ -177,8 +177,8 @@ class RelationsModel
                     ->setParameter($key, $value);
             }
             $qb->with('from', 'to', 'r');
-            foreach ($relationsToDelete as $index => $relation) {
-                $qb->optionalMatch('(from)-[rToDel' . $index . ':' . $relation . ']->(to)')
+            foreach ($relationsToDelete as $index => $relationToDelete) {
+                $qb->optionalMatch('(from)-[rToDel' . $index . ':' . $relationToDelete . ']->(to)')
                     ->delete('rToDel' . $index)
                     ->with('from', 'to', 'r');
             }

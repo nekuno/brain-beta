@@ -50,7 +50,7 @@ class UserRelationsSubscriber implements EventSubscriberInterface
                 'type' => 'user_liked',
                 'slug' => $userFrom->getSlug(),
                 'username' => $userFrom->getUsername(),
-                'icon' => $userFrom->getPhoto(),
+                'photo' => $userFrom->getPhoto(),
             ),
         );
         try {
