@@ -222,7 +222,7 @@ class Validator
     {
         $this->validate($data, $this->metadata['questions'], $choices);
 
-        $this->validateUserInData($userIdRequired, $data);
+        $this->validateUserInData($data, $userIdRequired);
 
         foreach ($data['answers'] as $answer) {
             if (!isset($answer['text']) || !is_string($answer['text'])) {
@@ -231,14 +231,14 @@ class Validator
         }
     }
 
-    public function validateAnswer(array $data, $userIdRequired = false)
+    public function validateAnswer(array $data)
     {
         $this->validate($data, $this->metadata['answers'], array());
 
-        $this->validateUserInData($userIdRequired, $data);
+        $this->validateUserInData($data);
     }
 
-    protected function validateUserInData($userIdRequired, array $data)
+    protected function validateUserInData(array $data, $userIdRequired = true)
     {
         if ($userIdRequired && !isset($data['userId'])) {
             throw new ValidationException(array('userId', 'User id is required for this question'));

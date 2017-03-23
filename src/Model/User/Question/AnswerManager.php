@@ -111,6 +111,7 @@ class AnswerManager
     public function update(array $data)
     {
         $this->validate($data);
+        $this->validateExpired($data);
 
         $data['userId'] = intval($data['userId']);
         $data['questionId'] = intval($data['questionId']);
@@ -143,6 +144,18 @@ class AnswerManager
         $this->handleAnswerAddedEvent($data);
 
         return $this->getUserAnswer($data['userId'], $data['questionId'], $data['locale']);
+    }
+
+    protected function validateExpired(array $data)
+    {
+        $answerResult = $this->getUserAnswer($data['userId'], $data['questionId'], $data['locale']);
+        /** @var Answer $answer */
+        $answer = $answerResult['userAnswer'];
+        $this->setEditable($answer);
+
+        if (!$answer->isEditable()){
+            throw new ValidationException(array('answer' => sprintf('This answer cannot be edited now. Please wait %s seconds', $answer->getNextEdit())));
+        }
     }
 
     public function explain(array $data)
@@ -256,12 +269,11 @@ class AnswerManager
 
     /**
      * @param array $data
-     * @param bool $userRequired
      * @throws ValidationException
      */
-    public function validate(array $data, $userRequired = true)
+    public function validate(array $data)
     {
-        $this->validator->validateAnswer($data, $userRequired);
+        $this->validator->validateAnswer($data);
 
         $this->validateAcceptedAnswers($data);
     }
@@ -316,8 +328,9 @@ class AnswerManager
         $now = time() * 1000;
         $oneDay = 24 * 3600 * 1000;
 
-        $isEditable = $answeredAt < $now - $oneDay;
-        $answer->setEditable($isEditable);
+        $nextEdit = $now - ($answeredAt + $oneDay);
+        $answer->setNextEdit($nextEdit);
+        $answer->setEditable($nextEdit < 0);
     }
 
     /**
