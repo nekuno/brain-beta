@@ -13,7 +13,7 @@ use Service\Validator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-class AnswerModel
+class AnswerManager
 {
     /**
      * @var GraphManager
@@ -75,8 +75,6 @@ class AnswerModel
 
     public function answer(array $data)
     {
-        $this->validate($data);
-
         if ($this->existsUserAnswer($data['userId'], $data['questionId'])) {
             return $this->update($data);
         } else {
@@ -293,37 +291,22 @@ class AnswerModel
 
     protected function buildUserAnswer(Row $row)
     {
-        $keys = array('question', 'answer', 'userAnswer', 'rates', 'acceptedAnswers');
-        foreach ($keys as $key) {
-            if (!$row->offsetExists($key)) {
-                throw new \RuntimeException(sprintf('"%s" key needed in row', $key));
-            }
-        }
+        $this->checkMandatoryKeys($row);
 
-        /* @var $question Node */
-        $question = $row->offsetGet('question');
-        /* @var $answer Node */
-        $answer = $row->offsetGet('answer');
-        /* @var $userAnswer Node */
-        $userAnswer = $row->offsetGet('userAnswer');
-        /* @var $rates Relationship */
-        $rates = $row->offsetGet('rates');
+        list($question, $answerNode, $userAnswer, $rates) = $this->getRowData($row);
 
-        $acceptedAnswers = array();
-        foreach ($row->offsetGet('acceptedAnswers') as $acceptedAnswer) {
-            /* @var $acceptedAnswer Node */
-            $acceptedAnswers[] = $acceptedAnswer->getId();
-        }
+        $acceptedAnswers = $this->buildAcceptedAnswers($row);
 
-        return array(
-            'questionId' => $question->getId(),
-            'answerId' => $answer->getId(),
-            'acceptedAnswers' => $acceptedAnswers,
-            'rating' => $rates->getProperty('rating'),
-            'explanation' => $userAnswer->getProperty('explanation'),
-            'isPrivate' => $userAnswer->getProperty('private'),
-            'answeredAt' => $userAnswer->getProperty('answeredAt'),
-        );
+        $answer = new Answer();
+        $answer->setQuestionId($question->getId());
+        $answer->setAnswerId($answerNode->getId());
+        $answer->setAcceptedAnswers($acceptedAnswers);
+        $answer->setRating($rates->getProperty('rating'));
+        $answer->setExplanation($userAnswer->getProperty('explanation'));
+        $answer->setPrivate($userAnswer->getProperty('private'));
+        $answer->setAnsweredAt($userAnswer->getProperty('answeredAt'));
+
+        return $answer;
     }
 
     /**
@@ -396,5 +379,51 @@ class AnswerModel
     {
         $event = new AnswerEvent($data['userId'], $data['questionId']);
         $this->eventDispatcher->dispatch(\AppEvents::ANSWER_ADDED, $event);
+    }
+
+    /**
+     * @param Row $row
+     */
+    protected function checkMandatoryKeys(Row $row)
+    {
+        $keys = array('question', 'answer', 'userAnswer', 'rates', 'acceptedAnswers');
+        foreach ($keys as $key) {
+            if (!$row->offsetExists($key)) {
+                throw new \RuntimeException(sprintf('"%s" key needed in row', $key));
+            }
+        }
+    }
+
+    /**
+     * @param Row $row
+     * @return array
+     */
+    protected function buildAcceptedAnswers(Row $row)
+    {
+        $acceptedAnswers = array();
+        foreach ($row->offsetGet('acceptedAnswers') as $acceptedAnswer) {
+            /* @var $acceptedAnswer Node */
+            $acceptedAnswers[] = $acceptedAnswer->getId();
+        }
+
+        return $acceptedAnswers;
+    }
+
+    /**
+     * @param Row $row
+     * @return array
+     */
+    protected function getRowData(Row $row)
+    {
+        /* @var $question Node */
+        $question = $row->offsetGet('question');
+        /* @var $answerNode Node */
+        $answerNode = $row->offsetGet('answer');
+        /* @var $userAnswer Node */
+        $userAnswer = $row->offsetGet('userAnswer');
+        /* @var $rates Relationship */
+        $rates = $row->offsetGet('rates');
+
+        return array($question, $answerNode, $userAnswer, $rates);
     }
 }

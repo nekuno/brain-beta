@@ -9,7 +9,7 @@ use Model\Popularity\PopularityManager;
 use Model\Popularity\PopularityPaginatedModel;
 use Model\User\Question\QuestionModel;
 use Model\User\Affinity\AffinityModel;
-use Model\User\Question\AnswerModel;
+use Model\User\Question\AnswerManager;
 use Model\EnterpriseUser\CommunityModel;
 use Model\User\ContentComparePaginatedModel;
 use Model\User\ContentFilterModel;
@@ -138,7 +138,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.answers.model'] = $app->share(
             function ($app) {
 
-                return new AnswerModel($app['neo4j.graph_manager'], $app['questionnaire.questions.model'], $app['users.manager'], $app['validator.service'], $app['dispatcher']);
+                return new AnswerManager($app['neo4j.graph_manager'], $app['questionnaire.questions.model'], $app['users.manager'], $app['validator.service'], $app['dispatcher']);
             }
         );
 

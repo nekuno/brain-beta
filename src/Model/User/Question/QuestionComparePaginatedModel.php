@@ -16,15 +16,15 @@ class QuestionComparePaginatedModel implements PaginatedInterface
     protected $client;
 
     /**
-     * @var AnswerModel
+     * @var AnswerManager
      */
     protected $am;
 
     /**
      * @param \Everyman\Neo4j\Client $client
-     * @param AnswerModel $am
+     * @param AnswerManager $am
      */
-    public function __construct(Client $client, AnswerModel $am)
+    public function __construct(Client $client, AnswerManager $am)
     {
         $this->client = $client;
         $this->am = $am;

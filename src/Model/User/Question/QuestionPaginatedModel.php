@@ -15,15 +15,15 @@ class QuestionPaginatedModel implements PaginatedInterface
     protected $gm;
 
     /**
-     * @var AnswerModel
+     * @var AnswerManager
      */
     protected $am;
 
     /**
      * @param GraphManager $gm
-     * @param \Model\User\Question\AnswerModel $am
+     * @param \Model\User\Question\AnswerManager $am
      */
-    public function __construct(GraphManager $gm, AnswerModel $am)
+    public function __construct(GraphManager $gm, AnswerManager $am)
     {
         $this->gm = $gm;
         $this->am = $am;
