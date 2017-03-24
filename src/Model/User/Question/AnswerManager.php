@@ -324,13 +324,13 @@ class AnswerManager
 
     protected function setEditable(Answer $answer)
     {
-        $answeredAt = $answer->getAnsweredAt();
-        $now = time() * 1000;
-        $oneDay = 24 * 3600 * 1000;
+        $answeredAt = floor($answer->getAnsweredAt() / 1000);
+        $now = time();
+        $oneDay = 24 * 3600;
 
-        $nextEdit = $now - ($answeredAt + $oneDay);
-        $answer->setNextEdit($nextEdit);
-        $answer->setEditable($nextEdit < 0);
+        $untilNextEdit = ($answeredAt + $oneDay) - $now;
+        $answer->setNextEdit($untilNextEdit);
+        $answer->setEditable($untilNextEdit < 0);
     }
 
     /**
