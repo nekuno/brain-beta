@@ -110,6 +110,49 @@ class QuestionModel
         return $this->build($row, $locale);
     }
 
+    public function getNextByOtherUser($userId, $otherUserId, $locale, $sortByRanking = true)
+    {
+        $divisiveQuestion = $this->getNextDivisiveQuestionByUserId($userId, $locale);
+
+        if ($divisiveQuestion) {
+            return $divisiveQuestion;
+        }
+
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(user:User {qnoow_id: { userId }}), (otherUser:User {qnoow_id: { otherUserId }})')
+            ->match('(otherUser)-[:ANSWERS]->(a:Answer)-[:IS_ANSWER_OF]->(answeredOther:Question)')
+            ->setParameters(array(
+                'userId' => (int)$userId,
+                'otherUserId' => (int)$otherUserId,
+            ))
+            ->optionalMatch('(user)-[:ANSWERS]->(a)-[:IS_ANSWER_OF]->(answered:Question)')
+            ->optionalMatch('(:User)-[:REPORTS]->(report:Question)')
+            ->where('NOT answered AND NOT report')
+            ->with('user', 'a')
+            ->match('(q:Question)<-[:IS_ANSWER_OF]-(a)')
+            ->where("EXISTS(q.text_$locale)")
+            ->with('q AS question', 'a')
+            ->orderBy('id(a)')
+            ->with('question', 'collect(DISTINCT a) AS answers')
+            ->returns('question', 'answers')
+            ->orderBy($sortByRanking && $this->sortByRanking() ? 'question.ranking DESC' : 'question.timestamp ASC')
+            ->limit(1);
+
+        $query = $qb->getQuery();
+
+        $result = $query->getResultSet();
+
+        if (count($result) < 1) {
+            throw new NotFoundHttpException('Question not found');
+        }
+
+        /* @var $row Row */
+        $row = $result->current();
+
+        return $this->build($row, $locale);
+    }
+
 	public function userHasCompletedRegisterQuestions($userId)
 	{
 		$qb = $this->gm->createQueryBuilder();
