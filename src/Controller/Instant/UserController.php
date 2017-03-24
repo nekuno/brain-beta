@@ -2,11 +2,9 @@
 
 namespace Controller\Instant;
 
-use Model\User\Group\GroupModel;
 use Manager\UserManager;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Class UserController
@@ -22,10 +20,15 @@ class UserController
     public function getAction(Application $app, $id)
     {
         /* @var $model UserManager */
-        $model = $app['users.manager'];
-        $user = $model->getById($id)->jsonSerialize();
+        $userManager = $app['users.manager'];
+        $userArray = $userManager->getById($id)->jsonSerialize();
+        $userArray = $userManager->deleteOtherUserFields($userArray);
 
-        return $app->json($user);
+        if (empty($userArray)) {
+            return $app->json([], 404);
+        }
+
+        return $app->json($userArray);
     }
 
 }
