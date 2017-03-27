@@ -95,6 +95,9 @@ class AnswerManager
             ->match('(pa:Answer)-[:IS_ANSWER_OF]->(question)')
             ->where('id(pa) IN { acceptedAnswers }')
             ->createUnique('(user)-[:ACCEPTS]->(pa)')
+            ->with('user', 'question', 'answer')
+            ->optionalMatch('(user)-[skips:SKIPS]->(question)')
+            ->delete('skips')
             ->returns('answer')
             ->setParameters($data);
 

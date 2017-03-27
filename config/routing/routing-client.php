@@ -99,6 +99,7 @@ $app->get('/data/status', 'users.data.controller:getStatusAction')->value('resou
 
 /** Questionnaire routes */
 $app->get('/questions/next', 'questionnaire.questions.controller:getNextQuestionAction');
+$app->get('/other-questions/{id}/next', 'questionnaire.questions.controller:getNextOtherQuestionAction');
 $app->get('/questions/register', 'questionnaire.questions.controller:getDivisiveQuestionsAction');
 $app->post('/questions', 'questionnaire.questions.controller:postQuestionAction');
 $app->post('/questions/validate', 'questionnaire.questions.controller:validateAction');

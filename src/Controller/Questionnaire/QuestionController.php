@@ -47,6 +47,25 @@ class QuestionController
     }
 
     /**
+     * Returns an unanswered question for given user
+     * @param Request $request
+     * @param Application $app
+     * @param User $user
+     * @return JsonResponse
+     */
+    public function getNextOtherQuestionAction(Request $request, Application $app, User $user)
+    {
+        $otherUserId = $request->get('id');
+        $locale = $this->getLocale($request, $app['locale.options']['default']);
+        /* @var QuestionModel $model */
+        $model = $app['questionnaire.questions.model'];
+
+        $question = $model->getNextByOtherUser($user->getId(), $otherUserId, $locale);
+
+        return $app->json($question);
+    }
+
+    /**
      * @param Request $request
      * @param Application $app
      * @return JsonResponse

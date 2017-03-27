@@ -62,6 +62,11 @@ final class AppEvents
     const USER_STATUS_CHANGED = 'user.statusChanged';
 
     /**
+     * Fired when two users like each other
+     */
+    const USER_BOTH_LIKED = 'user.bothLiked';
+
+    /**
      * Fired when an account is connected
      */
     const ACCOUNT_CONNECTED = 'account.connected';
