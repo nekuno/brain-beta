@@ -213,7 +213,7 @@ class RelationsModel
 
         $qb = $this->gm->createQueryBuilder();
 
-        $qb->match('(from:User {qnoow_id: { from }})-[r:' . $relationsString . ']-(to:User {qnoow_id: { to }})')
+        $qb->match('(from:User {qnoow_id: { from }})-[r:' . $relationsString . ']->(to:User {qnoow_id: { to }})')
             ->setParameter('from', (integer)$from)
             ->setParameter('to', (integer)$to)
             ->delete('r')
