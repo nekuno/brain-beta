@@ -3,7 +3,7 @@
 namespace Model\User;
 
 use Doctrine\DBAL\Connection;
-use Event\UserLikedEvent;
+use Event\UserBothLikedEvent;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
@@ -190,8 +190,8 @@ class RelationsModel
                 throw new NotFoundHttpException(sprintf('Unable to create relation "%s" from user "%s" to "%s"', $relation, $from, $to));
             }
 
-            if ($relation === self::LIKES) {
-                $this->dispatcher->dispatch(\AppEvents::USER_LIKED, new UserLikedEvent($from, $to));
+            if ($relation === self::LIKES && !empty($this->get($to, $from, self::LIKES))) {
+                $this->dispatcher->dispatch(\AppEvents::USER_BOTH_LIKED, new UserBothLikedEvent($from, $to));
             }
 
             /* @var $row Row */

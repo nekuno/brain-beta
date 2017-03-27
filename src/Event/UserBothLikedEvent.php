@@ -4,7 +4,7 @@ namespace Event;
 
 use Symfony\Component\EventDispatcher\Event;
 
-class UserLikedEvent extends Event
+class UserBothLikedEvent extends Event
 {
     private $userFromId;
     private $userToId;
