@@ -141,9 +141,11 @@ class YoutubePlaylistProcessorTest extends AbstractProcessorTest
                     'language' => null,
                     'synonymous' => array(),
                     'imageProcessed' => null,
-                    'embed_type' => 'youtube',
-                    'embed_id' => 'PLcB-8ayo3tzddinO3ob7cEHhUtyyo66mN',
                     'additionalLabels' => array('Video'),
+                    'additionalFields' => array(
+                        'embed_type' => 'youtube',
+                        'embed_id' => 'PLcB-8ayo3tzddinO3ob7cEHhUtyyo66mN',
+                    )
                 )
             )
         );

@@ -140,9 +140,11 @@ class YoutubeVideoProcessorTest extends AbstractProcessorTest
                     'language' => null,
                     'synonymous' => array(),
                     'imageProcessed' => null,
-                    'embed_type' => 'youtube',
-                    'embed_id' => 'zLgY05beCnY',
-                    'additionalLabels' => array('Video')
+                    'additionalLabels' => array('Video'),
+                    'additionalFields' => array(
+                        'embed_type' => 'youtube',
+                        'embed_id' => 'zLgY05beCnY',
+                    )
                 )
             )
         );

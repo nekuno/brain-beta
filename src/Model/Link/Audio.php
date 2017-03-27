@@ -33,6 +33,9 @@ class Audio extends Link
             'embed_type' => $this->getEmbedType()
         );
 
+        unset($array['embed_id']);
+        unset($array['embed_type']);
+
         return $array;
     }
 
