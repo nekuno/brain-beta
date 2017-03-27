@@ -9,7 +9,7 @@ use Model\Popularity\PopularityManager;
 use Model\User\ContentPaginatedModel;
 use Model\User\Group\GroupModel;
 use Model\User\ProfileModel;
-use Model\User\QuestionPaginatedModel;
+use Model\User\Question\QuestionPaginatedModel;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 

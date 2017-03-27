@@ -1,6 +1,6 @@
 <?php
 
-namespace Model\User;
+namespace Model\User\Question;
 
 use Event\AnswerEvent;
 use Everyman\Neo4j\Node;
@@ -8,14 +8,13 @@ use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
-use Model\Questionnaire\QuestionModel;
 use Manager\UserManager;
+use Service\Validator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-class AnswerModel
+class AnswerManager
 {
-
     /**
      * @var GraphManager
      */
@@ -36,18 +35,22 @@ class AnswerModel
      */
     protected $eventDispatcher;
 
-    public function __construct(GraphManager $gm, QuestionModel $qm, UserManager $um, EventDispatcher $eventDispatcher)
-    {
+    /**
+     * @var Validator
+     */
+    protected $validator;
 
+    public function __construct(GraphManager $gm, QuestionModel $qm, UserManager $um, Validator $validator, EventDispatcher $eventDispatcher)
+    {
         $this->gm = $gm;
         $this->qm = $qm;
         $this->um = $um;
+        $this->validator = $validator;
         $this->eventDispatcher = $eventDispatcher;
     }
 
     public function countTotal(array $filters)
     {
-
         $count = 0;
 
         $qb = $this->gm->createQueryBuilder();
@@ -72,8 +75,6 @@ class AnswerModel
 
     public function answer(array $data)
     {
-        $this->validate($data);
-
         if ($this->existsUserAnswer($data['userId'], $data['questionId'])) {
             return $this->update($data);
         } else {
@@ -83,7 +84,6 @@ class AnswerModel
 
     public function create(array $data)
     {
-
         $this->validate($data);
 
         $qb = $this->gm->createQueryBuilder();
@@ -113,8 +113,8 @@ class AnswerModel
 
     public function update(array $data)
     {
-
         $this->validate($data);
+        $this->validateExpired($data);
 
         $data['userId'] = intval($data['userId']);
         $data['questionId'] = intval($data['questionId']);
@@ -149,9 +149,20 @@ class AnswerModel
         return $this->getUserAnswer($data['userId'], $data['questionId'], $data['locale']);
     }
 
+    protected function validateExpired(array $data)
+    {
+        $answerResult = $this->getUserAnswer($data['userId'], $data['questionId'], $data['locale']);
+        /** @var Answer $answer */
+        $answer = $answerResult['userAnswer'];
+        $this->setEditable($answer);
+
+        if (!$answer->isEditable()){
+            throw new ValidationException(array('answer' => sprintf('This answer cannot be edited now. Please wait %s seconds', $answer->getNextEdit())));
+        }
+    }
+
     public function explain(array $data)
     {
-
         $data['userId'] = (integer)$data['userId'];
         $data['questionId'] = (integer)$data['questionId'];
 
@@ -176,7 +187,6 @@ class AnswerModel
      */
     public function getNumberOfUserAnswers($userId)
     {
-
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(a:Answer)<-[ua:ANSWERS]-(u:User)')
             ->where('u.qnoow_id = { userId }')
@@ -190,14 +200,13 @@ class AnswerModel
 
     public function getUserAnswer($userId, $questionId, $locale)
     {
-
-        $user = $this->um->getById($userId);
+        $this->validator->validateUserId($userId);
         $question = $this->qm->getById($questionId, $locale);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(q:Question)', '(u:User)')
             ->where('u.qnoow_id = { userId }', 'id(q) = { questionId }', "EXISTS(q.text_$locale)")
-            ->setParameter('userId', $user->getId())
+            ->setParameter('userId', $userId)
             ->setParameter('questionId', $question['questionId'])
             ->with('u', 'q')
             ->match('(u)-[ua:ANSWERS]->(a:Answer)-[:IS_ANSWER_OF]->(q)')
@@ -216,7 +225,7 @@ class AnswerModel
         $result = $query->getResultSet();
 
         if ($result->count() < 1) {
-            throw new NotFoundHttpException(sprintf('There is not answer for user "%s" to question "%s"', $user->getId(), $question['questionId']));
+            throw new NotFoundHttpException(sprintf('There is not answer for user "%s" to question "%s"', $userId, $question['questionId']));
         }
 
         /* @var $row Row */
@@ -263,110 +272,32 @@ class AnswerModel
 
     /**
      * @param array $data
-     * @param bool $userRequired
      * @throws ValidationException
      */
-    public function validate(array $data, $userRequired = true)
+    public function validate(array $data)
     {
+        $this->validator->validateAnswer($data);
 
-        $errors = array();
+        $this->validateAcceptedAnswers($data);
+    }
 
-        foreach ($this->getFieldsMetadata() as $fieldName => $fieldMetadata) {
-
-            if ($userRequired && $fieldName === 'userId') {
-                $fieldMetadata['required'] = true;
+    /**
+     * @param array $data
+     */
+    protected function validateAcceptedAnswers(array $data)
+    {
+        foreach ($data['acceptedAnswers'] as $acceptedAnswer) {
+            if (!is_int($acceptedAnswer)) {
+                throw new ValidationException(array('acceptedAnswers' => 'acceptedAnswers items must be integers'));
+            } elseif (!$this->existsAnswer($data['questionId'], $acceptedAnswer)) {
+                throw new ValidationException(array('acceptedAnswers' => 'Invalid accepted answers ID'));
+                break;
             }
-
-            $fieldErrors = array();
-
-            if ($fieldMetadata['required'] === true && !isset($data[$fieldName])) {
-
-                $fieldErrors[] = sprintf('The field "%s" is required', $fieldName);
-
-            } else {
-
-                $fieldValue = isset($data[$fieldName]) ? $data[$fieldName] : null;
-
-                switch ($fieldName) {
-                    case 'questionId':
-                        if (!is_int($fieldValue)) {
-                            $fieldErrors[] = 'questionId must be an integer';
-                        } elseif (!$this->existsQuestion($fieldValue)) {
-                            $fieldErrors[] = 'Invalid question ID';
-                        }
-                        break;
-                    case 'answerId':
-                        if (!is_int($fieldValue)) {
-                            $fieldErrors[] = 'answerId must be an integer';
-                        } elseif (isset($data['questionId']) && is_int($data['questionId']) && !$this->existsAnswer($data['questionId'], $fieldValue)) {
-                            $fieldErrors[] = 'Invalid answer ID';
-                        }
-                        break;
-                    case 'acceptedAnswers':
-                        if (!is_array($fieldValue)) {
-                            $fieldErrors[] = 'acceptedAnswers must be an array';
-                        } else {
-                            $acceptedAnswersNum = count($fieldValue);
-                            if ($acceptedAnswersNum === 0) {
-                                $fieldErrors[] = 'At least one accepted answer needed';
-                            } else {
-                                foreach ($fieldValue as $acceptedAnswer) {
-                                    if (!is_int($acceptedAnswer)) {
-                                        $fieldErrors[] = 'acceptedAnswers items must be integers';
-                                    } elseif (isset($data['questionId']) && is_int($data['questionId']) && !$this->existsAnswer($data['questionId'], $acceptedAnswer)) {
-                                        $fieldErrors[] = 'Invalid accepted answer ID';
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        break;
-                    case 'rating':
-                        if (!is_int($fieldValue)) {
-                            $fieldErrors[] = 'rating must be an integer';
-                        } elseif (!in_array($fieldValue, range($fieldMetadata['min'], $fieldMetadata['max']))) {
-                            $fieldErrors[] = sprintf('Invalid importance value. Should be between both %d and %d included', $fieldMetadata['min'], $fieldMetadata['max']);
-                        }
-                        break;
-                    case 'isPrivate':
-                        if (!is_bool($fieldValue)) {
-                            $fieldErrors[] = 'isPrivate must be boolean';
-                        }
-                        break;
-                    case 'explanation':
-                        break;
-                    case 'userId':
-                        if ($fieldValue) {
-                            if (!is_int($fieldValue)) {
-                                $fieldErrors[] = 'userId must be an integer';
-                            } else {
-                                try {
-                                    $this->um->getById($fieldValue);
-                                } catch (NotFoundHttpException $e) {
-                                    $fieldErrors[] = $e->getMessage();
-                                }
-                            }
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            if (count($fieldErrors) > 0) {
-                $errors[$fieldName] = $fieldErrors;
-            }
-
-        }
-
-        if (count($errors) > 0) {
-            throw new ValidationException($errors);
         }
     }
 
     public function build(Row $row, $locale)
     {
-
         return array(
             'userAnswer' => $this->buildUserAnswer($row),
             'question' => $this->qm->build($row, $locale),
@@ -375,74 +306,34 @@ class AnswerModel
 
     protected function buildUserAnswer(Row $row)
     {
+        $this->checkMandatoryKeys($row);
 
-        $keys = array('question', 'answer', 'userAnswer', 'rates', 'acceptedAnswers');
-        foreach ($keys as $key) {
-            if (!$row->offsetExists($key)) {
-                throw new \RuntimeException(sprintf('"%s" key needed in row', $key));
-            }
-        }
+        list($question, $answerNode, $userAnswer, $rates) = $this->getRowData($row);
 
-        /* @var $question Node */
-        $question = $row->offsetGet('question');
-        /* @var $answer Node */
-        $answer = $row->offsetGet('answer');
-        /* @var $userAnswer Node */
-        $userAnswer = $row->offsetGet('userAnswer');
-        /* @var $rates Relationship */
-        $rates = $row->offsetGet('rates');
+        $acceptedAnswers = $this->buildAcceptedAnswers($row);
 
-        $acceptedAnswers = array();
-        foreach ($row->offsetGet('acceptedAnswers') as $acceptedAnswer) {
-            /* @var $acceptedAnswer Node */
-            $acceptedAnswers[] = $acceptedAnswer->getId();
-        }
+        $answer = new Answer();
+        $answer->setQuestionId($question->getId());
+        $answer->setAnswerId($answerNode->getId());
+        $answer->setAcceptedAnswers($acceptedAnswers);
+        $answer->setRating($rates->getProperty('rating'));
+        $answer->setExplanation($userAnswer->getProperty('explanation'));
+        $answer->setPrivate($userAnswer->getProperty('private'));
+        $answer->setAnsweredAt($userAnswer->getProperty('answeredAt'));
+        $this->setEditable($answer);
 
-        return array(
-            'questionId' => $question->getId(),
-            'answerId' => $answer->getId(),
-            'acceptedAnswers' => $acceptedAnswers,
-            'rating' => $rates->getProperty('rating'),
-            'explanation' => $userAnswer->getProperty('explanation'),
-            'isPrivate' => $userAnswer->getProperty('private'),
-            'answeredAt' => $userAnswer->getProperty('answeredAt'),
-        );
+        return $answer;
     }
 
-    /**
-     * @return array
-     */
-    protected function getFieldsMetadata()
+    protected function setEditable(Answer $answer)
     {
+        $answeredAt = floor($answer->getAnsweredAt() / 1000);
+        $now = time();
+        $oneDay = 24 * 3600;
 
-        $metadata = array(
-            'questionId' => array(
-                'required' => true,
-            ),
-            'answerId' => array(
-                'required' => true,
-            ),
-            'acceptedAnswers' => array(
-                'required' => true,
-            ),
-            'rating' => array(
-                'required' => true,
-                'min' => 0,
-                'max' => 3,
-            ),
-            'explanation' => array(
-                'required' => true,
-            ),
-            'isPrivate' => array(
-                'required' => true,
-            ),
-            'userId' => array(
-                'required' => false,
-            ),
-
-        );
-
-        return $metadata;
+        $untilNextEdit = ($answeredAt + $oneDay) - $now;
+        $answer->setNextEdit($untilNextEdit);
+        $answer->setEditable($untilNextEdit < 0);
     }
 
     /**
@@ -515,5 +406,51 @@ class AnswerModel
     {
         $event = new AnswerEvent($data['userId'], $data['questionId']);
         $this->eventDispatcher->dispatch(\AppEvents::ANSWER_ADDED, $event);
+    }
+
+    /**
+     * @param Row $row
+     */
+    protected function checkMandatoryKeys(Row $row)
+    {
+        $keys = array('question', 'answer', 'userAnswer', 'rates', 'acceptedAnswers');
+        foreach ($keys as $key) {
+            if (!$row->offsetExists($key)) {
+                throw new \RuntimeException(sprintf('"%s" key needed in row', $key));
+            }
+        }
+    }
+
+    /**
+     * @param Row $row
+     * @return array
+     */
+    protected function buildAcceptedAnswers(Row $row)
+    {
+        $acceptedAnswers = array();
+        foreach ($row->offsetGet('acceptedAnswers') as $acceptedAnswer) {
+            /* @var $acceptedAnswer Node */
+            $acceptedAnswers[] = $acceptedAnswer->getId();
+        }
+
+        return $acceptedAnswers;
+    }
+
+    /**
+     * @param Row $row
+     * @return array
+     */
+    protected function getRowData(Row $row)
+    {
+        /* @var $question Node */
+        $question = $row->offsetGet('question');
+        /* @var $answerNode Node */
+        $answerNode = $row->offsetGet('answer');
+        /* @var $userAnswer Node */
+        $userAnswer = $row->offsetGet('userAnswer');
+        /* @var $rates Relationship */
+        $rates = $row->offsetGet('rates');
+
+        return array($question, $answerNode, $userAnswer, $rates);
     }
 }

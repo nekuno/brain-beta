@@ -7,9 +7,9 @@ use Model\EnterpriseUser\EnterpriseUserModel;
 use Model\Link\LinkModel;
 use Model\Popularity\PopularityManager;
 use Model\Popularity\PopularityPaginatedModel;
-use Model\Questionnaire\QuestionModel;
+use Model\User\Question\QuestionModel;
 use Model\User\Affinity\AffinityModel;
-use Model\User\AnswerModel;
+use Model\User\Question\AnswerManager;
 use Model\EnterpriseUser\CommunityModel;
 use Model\User\ContentComparePaginatedModel;
 use Model\User\ContentFilterModel;
@@ -24,13 +24,13 @@ use Model\User\Group\GroupModel;
 use Model\User\InvitationModel;
 use Model\User\LookUpModel;
 use Model\User\Matching\MatchingModel;
-use Model\User\OldQuestionComparePaginatedModel;
+use Model\User\Question\OldQuestionComparePaginatedModel;
 use Model\User\PrivacyModel;
 use Model\User\ProfileFilterModel;
 use Model\User\ProfileModel;
 use Model\User\ProfileTagModel;
-use Model\User\QuestionComparePaginatedModel;
-use Model\User\QuestionPaginatedModel;
+use Model\User\Question\QuestionComparePaginatedModel;
+use Model\User\Question\QuestionPaginatedModel;
 use Model\User\RateModel;
 use Model\User\Recommendation\ContentPopularRecommendationPaginatedModel;
 use Model\User\Recommendation\ContentRecommendationPaginatedModel;
@@ -138,7 +138,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.answers.model'] = $app->share(
             function ($app) {
 
-                return new AnswerModel($app['neo4j.graph_manager'], $app['questionnaire.questions.model'], $app['users.manager'], $app['dispatcher']);
+                return new AnswerManager($app['neo4j.graph_manager'], $app['questionnaire.questions.model'], $app['users.manager'], $app['validator.service'], $app['dispatcher']);
             }
         );
 
@@ -180,14 +180,14 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.content.tag.model'] = $app->share(
             function ($app) {
 
-                return new ContentTagModel($app['neo4j.client'], $app['neo4j.graph_manager']);
+                return new ContentTagModel($app['neo4j.graph_manager']);
             }
         );
 
         $app['users.rate.model'] = $app->share(
             function ($app) {
 
-                return new RateModel($app['dispatcher'], $app['neo4j.client'], $app['neo4j.graph_manager']);
+                return new RateModel($app['dispatcher'], $app['neo4j.graph_manager']);
             }
         );
 
@@ -313,7 +313,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['questionnaire.questions.model'] = $app->share(
             function ($app) {
 
-                return new QuestionModel($app['neo4j.graph_manager'], $app['users.manager']);
+                return new QuestionModel($app['neo4j.graph_manager'], $app['validator.service']);
             }
         );
 
