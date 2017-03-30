@@ -3,7 +3,6 @@
 namespace Worker;
 
 use ApiConsumer\Fetcher\FetcherService;
-use ApiConsumer\Fetcher\GetOldTweets\GetOldTweets;
 use ApiConsumer\Fetcher\ProcessorService;
 use Doctrine\DBAL\Connection;
 use Model\Neo4j\Neo4jException;
@@ -31,23 +30,16 @@ class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterfa
      */
     protected $connectionBrain;
 
-    /**
-     * @var GetOldTweets
-     */
-    protected $getOldTweets;
-
     public function __construct(
         AMQPChannel $channel,
         EventDispatcher $dispatcher,
         FetcherService $fetcherService,
         ProcessorService $processorService,
-        GetOldTweets $getOldTweets,
         Connection $connectionBrain
     ) {
         parent::__construct($dispatcher, $channel);
         $this->fetcherService = $fetcherService;
         $this->processorService = $processorService;
-        $this->getOldTweets = $getOldTweets;
         $this->connectionBrain = $connectionBrain;
     }
 
@@ -112,8 +104,6 @@ class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterfa
 
         $links = $this->fetchTwitterAPI($userId);
 
-//        $links = $this->fetchFromGOT($data);
-
         return $links;
     }
 
@@ -125,19 +115,4 @@ class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterfa
 
         return $this->fetcherService->fetchAsClient($userId, $resourceOwner, $exclude);
     }
-
-    private function fetchFromGOT(array $data)
-    {
-        if (!isset($data['username'])) {
-            throw new \Exception('Enqueued message does not include  username parameter');
-        }
-        $username = $data['username'];
-        $this->logger->info(sprintf('Using GetOldTweets to fetch from %s', $username));
-
-        $links = $this->getOldTweets->fetchFromUser($username);
-        $this->logger->info(sprintf('Total %d links fetched from tweets from %s', count($links), $username));
-
-        return $links;
-    }
-
 }

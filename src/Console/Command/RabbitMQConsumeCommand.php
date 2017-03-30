@@ -4,8 +4,6 @@ namespace Console\Command;
 
 use ApiConsumer\EventListener\FetchLinksInstantSubscriber;
 use ApiConsumer\EventListener\FetchLinksSubscriber;
-use ApiConsumer\Fetcher\FetcherService;
-use ApiConsumer\Fetcher\ProcessorService;
 use Console\ApplicationAwareCommand;
 use EventListener\ExceptionLoggerSubscriber;
 use EventListener\SimilarityMatchingProcessSubscriber;
@@ -250,7 +248,7 @@ class RabbitMQConsumeCommand extends ApplicationAwareCommand
         );
         $dispatcher = $this->getDispatcher($subscribers);
 
-        $worker = new ChannelWorker($channel, $dispatcher, $this->app['api_consumer.fetcher'], $this->app['api_consumer.processor'], $this->app['get_old_tweets'], $this->app['dbs']['mysql_brain']);
+        $worker = new ChannelWorker($channel, $dispatcher, $this->app['api_consumer.fetcher'], $this->app['api_consumer.processor'], $this->app['dbs']['mysql_brain']);
         $worker->setLogger($this->logger);
         $this->noticeStart($worker);
 
