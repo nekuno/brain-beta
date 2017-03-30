@@ -157,7 +157,7 @@ class AnswerManager
         $this->setEditable($answer);
 
         if (!$answer->isEditable()){
-            throw new ValidationException(array('answer' => sprintf('This answer cannot be edited now. Please wait %s seconds', $answer->getNextEdit())));
+            throw new ValidationException(array('answer' => sprintf('This answer cannot be edited now. Please wait %s seconds', $answer->getEditableIn())));
         }
     }
 
@@ -332,7 +332,7 @@ class AnswerManager
         $oneDay = 24 * 3600;
 
         $untilNextEdit = ($answeredAt + $oneDay) - $now;
-        $answer->setNextEdit($untilNextEdit);
+        $answer->setEditableIn($untilNextEdit);
         $answer->setEditable($untilNextEdit < 0);
     }
 

@@ -20,7 +20,7 @@ class Answer implements \JsonSerializable
 
     protected $editable = true;
 
-    protected $nextEdit = 0;
+    protected $editableIn = 0;
 
     /**
      * @return mixed
@@ -153,17 +153,17 @@ class Answer implements \JsonSerializable
     /**
      * @return int
      */
-    public function getNextEdit()
+    public function getEditableIn()
     {
-        return $this->nextEdit;
+        return $this->editableIn;
     }
 
     /**
-     * @param int $nextEdit
+     * @param int $editableIn
      */
-    public function setNextEdit($nextEdit)
+    public function setEditableIn($editableIn)
     {
-        $this->nextEdit = $nextEdit;
+        $this->editableIn = $editableIn;
     }
 
     function jsonSerialize()
@@ -176,8 +176,8 @@ class Answer implements \JsonSerializable
             'explanation' => $this->getExplanation(),
             'isPrivate' => $this->isPrivate(),
             'answeredAt' => $this->getAnsweredAt(),
-            'editable' => $this->isEditable(),
-            'nextEdit' => $this->getNextEdit(),
+            'isEditable' => $this->isEditable(),
+            'editableIn' => $this->getEditableIn(),
         );
     }
 }
