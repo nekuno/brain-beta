@@ -8,6 +8,7 @@ use ApiConsumer\EventListener\OAuthTokenSubscriber;
 use ApiConsumer\Fetcher\FetcherService;
 use ApiConsumer\Fetcher\ProcessorService;
 use Console\ApplicationAwareCommand;
+use Event\ProcessLinksEvent;
 use Psr\Log\LogLevel;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -72,11 +73,13 @@ class LinksFetchCommand extends ApplicationAwareCommand
         $fetcherService->setLogger($logger);
         $processorService->setLogger($logger);
 
-        $this->setUpSubscribers($output);
+        $dispatcher = $this->setUpSubscribers($output);
 
             try {
                 $links = $fetcherService->fetchUser($userId, $resource);
+                $dispatcher->dispatch(\AppEvents::PROCESS_START, new ProcessLinksEvent($userId, $resource, $links));
                 $processorService->process($links, $userId);
+                $dispatcher->dispatch(\AppEvents::PROCESS_FINISH, new ProcessLinksEvent($userId, $resource, $links));
 
             } catch (\Exception $e) {
                 $output->writeln(
@@ -96,10 +99,12 @@ class LinksFetchCommand extends ApplicationAwareCommand
         $fetchLinksSubscriber = new FetchLinksSubscriber($output);
         $fetchLinksInstantSubscriber = new FetchLinksInstantSubscriber($this->app['guzzle.client'], $this->app['instant.host']);
         $oauthTokenSubscriber = new OAuthTokenSubscriber($this->app['users.tokens.model'], $this->app['mailer'], $this->app['logger'], $this->app['amqp']);
-        $dispatcher = $this->app['dispatcher'];
+        $dispatcher = $this->app['dispatcher.service'];
         /* @var $dispatcher EventDispatcher */
         $dispatcher->addSubscriber($fetchLinksSubscriber);
         $dispatcher->addSubscriber($fetchLinksInstantSubscriber);
         $dispatcher->addSubscriber($oauthTokenSubscriber);
+
+        return $dispatcher;
     }
 }
