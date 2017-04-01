@@ -5,7 +5,7 @@ namespace Model\User\Matching;
 use Event\MatchingEvent;
 use Event\MatchingExpiredEvent;
 use Model\Neo4j\GraphManager;
-use Model\User\ContentPaginatedModel;
+use Model\User\Content\ContentPaginatedModel;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class MatchingModel

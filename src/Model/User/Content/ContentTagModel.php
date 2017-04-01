@@ -1,6 +1,6 @@
 <?php
 
-namespace Model\User;
+namespace Model\User\Content;
 
 use Model\Neo4j\GraphManager;
 

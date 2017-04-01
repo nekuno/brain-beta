@@ -11,10 +11,10 @@ use Model\User\Question\QuestionModel;
 use Model\User\Affinity\AffinityModel;
 use Model\User\Question\AnswerManager;
 use Model\EnterpriseUser\CommunityModel;
-use Model\User\ContentComparePaginatedModel;
+use Model\User\Content\ContentComparePaginatedModel;
 use Model\User\ContentFilterModel;
-use Model\User\ContentPaginatedModel;
-use Model\User\ContentTagModel;
+use Model\User\Content\ContentPaginatedModel;
+use Model\User\Content\ContentTagModel;
 use Model\User\Filters\FilterContentManager;
 use Model\User\Filters\FilterUsersManager;
 use Model\User\GhostUser\GhostUserManager;
@@ -166,14 +166,14 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.content.model'] = $app->share(
             function ($app) {
 
-                return new ContentPaginatedModel($app['neo4j.graph_manager'], $app['users.tokens.model'], $app['links.model'], $app['validator.service']);
+                return new ContentPaginatedModel($app['neo4j.graph_manager'], $app['links.model'], $app['validator.service']);
             }
         );
 
         $app['users.content.compare.model'] = $app->share(
             function ($app) {
 
-                return new ContentComparePaginatedModel($app['neo4j.graph_manager'], $app['users.tokens.model'], $app['links.model'], $app['validator.service']);
+                return new ContentComparePaginatedModel($app['neo4j.graph_manager'], $app['links.model'], $app['validator.service']);
             }
         );
 

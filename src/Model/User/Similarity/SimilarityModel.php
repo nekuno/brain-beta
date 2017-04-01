@@ -6,7 +6,7 @@ use Event\SimilarityEvent;
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
 use Model\Popularity\PopularityManager;
-use Model\User\ContentPaginatedModel;
+use Model\User\Content\ContentPaginatedModel;
 use Model\User\Group\GroupModel;
 use Model\User\ProfileModel;
 use Model\User\Question\QuestionPaginatedModel;
