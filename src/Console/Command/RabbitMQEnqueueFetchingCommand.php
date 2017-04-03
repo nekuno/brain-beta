@@ -3,7 +3,6 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
-use Model\User;
 use Model\User\Token\TokensModel;
 use Service\AMQPManager;
 use Symfony\Component\Console\Input\InputInterface;
@@ -46,29 +45,13 @@ class RabbitMQEnqueueFetchingCommand extends ApplicationAwareCommand
             exit;
         }
 
-        $resourceOwners = $this->getResourceOwners($resourceOwnerOption);
-
-        try{
-            $users = $this->getUsers($userId);
-        } catch (\Exception $e){
-            $output->writeln($e->getMessage());
-            exit;
-        }
+        $messages = $this->getMessages($userId, $resourceOwnerOption, $public, $output);
 
         /* @var $amqpManager AMQPManager */
         $amqpManager = $this->app['amqpManager.service'];
-
-        foreach ($users as $user) {
-            /* @var $user User */
-            foreach ($resourceOwners as $name) {
-                $data = array(
-                    'userId' => $user->getId(),
-                    'resourceOwner' => $name,
-                    'public' => $public,
-                );
-                $output->writeln(sprintf('Enqueuing resource %s for user %d', $name, $user->getId()));
-                $amqpManager->enqueueRefetching($data);
-            }
+        foreach ($messages as $message) {
+            $output->writeln(sprintf('Enqueuing resource %s for user %d', $message['resourceOwner'], $message['userId']));
+            $amqpManager->enqueueRefetching($message);
         }
     }
 
@@ -79,11 +62,12 @@ class RabbitMQEnqueueFetchingCommand extends ApplicationAwareCommand
         return $resourceOwnerOption == null || in_array($resourceOwnerOption, $availableResourceOwners);
     }
 
-    private function getResourceOwners($resourceOwner)
+    private function getResourceOwners($resourceOwner, $userId)
     {
-        $availableResourceOwners = TokensModel::getResourceOwners();
+        /** @var TokensModel $tokensModel */
+        $tokensModel = $this->app['users.tokens.model'];
 
-        return $resourceOwner ? array($resourceOwner) : $availableResourceOwners;
+        return null != $resourceOwner ? array($resourceOwner) : $tokensModel->getConnectedNetworks($userId);
     }
 
     private function getUsers($userId)
@@ -91,6 +75,31 @@ class RabbitMQEnqueueFetchingCommand extends ApplicationAwareCommand
         $usersModel = $this->app['users.manager'];
 
         return null == $userId ? $usersModel->getAll() : array($usersModel->getById($userId));
+    }
+
+    private function getMessages($userId, $resourceOwnerOption, $public, OutputInterface $output)
+    {
+        try {
+            $users = $this->getUsers($userId);
+        } catch (\Exception $e) {
+            $output->writeln($e->getMessage());
+            exit;
+        }
+
+        $messages = array();
+        foreach ($users as $user) {
+            $resourceOwners = $this->getResourceOwners($resourceOwnerOption, $user->getId());
+
+            foreach ($resourceOwners as $resourceOwner) {
+                $messages[] = array(
+                    'userId' => $user->getId(),
+                    'resourceOwner' => $resourceOwner,
+                    'public' => $public,
+                );
+            }
+        }
+
+        return $messages;
     }
 
 }
