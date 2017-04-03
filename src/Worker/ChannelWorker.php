@@ -5,6 +5,7 @@ namespace Worker;
 use ApiConsumer\Fetcher\FetcherService;
 use ApiConsumer\Fetcher\ProcessorService;
 use Doctrine\DBAL\Connection;
+use Event\ProcessLinksEvent;
 use Model\Neo4j\Neo4jException;
 use Model\User\Token\TokensModel;
 use PhpAmqpLib\Channel\AMQPChannel;
@@ -72,7 +73,9 @@ class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterfa
 
                     $userId = $this->getUserId($data);
                     $links = $this->fetchChannelTwitter($data);
+                    $this->dispatcher->dispatch(\AppEvents::PROCESS_START, new ProcessLinksEvent($userId, $resourceOwner, $links));
                     $this->processorService->process($links, $userId);
+                    $this->dispatcher->dispatch(\AppEvents::PROCESS_FINISH, new ProcessLinksEvent($userId, $resourceOwner, $links));
 
                     break;
                 default:

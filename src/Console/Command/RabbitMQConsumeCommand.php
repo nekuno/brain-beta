@@ -243,7 +243,6 @@ class RabbitMQConsumeCommand extends ApplicationAwareCommand
     {
         $subscribers = array(
             new ExceptionLoggerSubscriber($this->app['monolog']),
-            new FetchLinksInstantSubscriber($this->app['guzzle.client'], $this->app['instant.host']),
             new FetchLinksSubscriber($output)
         );
         $dispatcher = $this->getDispatcher($subscribers);
