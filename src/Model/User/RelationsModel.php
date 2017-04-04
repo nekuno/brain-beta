@@ -3,12 +3,14 @@
 namespace Model\User;
 
 use Doctrine\DBAL\Connection;
+use Event\UserBothLikedEvent;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 use Manager\UserManager;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class RelationsModel
@@ -36,12 +38,18 @@ class RelationsModel
      */
     protected $userManager;
 
-    public function __construct(GraphManager $gm, Connection $connectionBrain, UserManager $userManager)
+    /**
+     * @var EventDispatcher
+     */
+    protected $dispatcher;
+
+    public function __construct(GraphManager $gm, Connection $connectionBrain, UserManager $userManager, EventDispatcher $dispatcher)
     {
 
         $this->gm = $gm;
         $this->connectionBrain = $connectionBrain;
         $this->userManager = $userManager;
+        $this->dispatcher = $dispatcher;
     }
 
     static public function getRelations()
@@ -169,8 +177,8 @@ class RelationsModel
                     ->setParameter($key, $value);
             }
             $qb->with('from', 'to', 'r');
-            foreach ($relationsToDelete as $index => $relation) {
-                $qb->optionalMatch('(from)-[rToDel' . $index . ':' . $relation . ']->(to)')
+            foreach ($relationsToDelete as $index => $relationToDelete) {
+                $qb->optionalMatch('(from)-[rToDel' . $index . ':' . $relationToDelete . ']->(to)')
                     ->delete('rToDel' . $index)
                     ->with('from', 'to', 'r');
             }
@@ -180,6 +188,10 @@ class RelationsModel
 
             if ($result->count() === 0) {
                 throw new NotFoundHttpException(sprintf('Unable to create relation "%s" from user "%s" to "%s"', $relation, $from, $to));
+            }
+
+            if ($relation === self::LIKES && !empty($this->get($to, $from, self::LIKES))) {
+                $this->dispatcher->dispatch(\AppEvents::USER_BOTH_LIKED, new UserBothLikedEvent($from, $to));
             }
 
             /* @var $row Row */
@@ -201,7 +213,7 @@ class RelationsModel
 
         $qb = $this->gm->createQueryBuilder();
 
-        $qb->match('(from:User {qnoow_id: { from }})-[r:' . $relationsString . ']-(to:User {qnoow_id: { to }})')
+        $qb->match('(from:User {qnoow_id: { from }})-[r:' . $relationsString . ']->(to:User {qnoow_id: { to }})')
             ->setParameter('from', (integer)$from)
             ->setParameter('to', (integer)$to)
             ->delete('r')

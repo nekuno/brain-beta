@@ -6,7 +6,6 @@ use Console\Command\Neo4jProfileOptionsCommand;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\Tools\SchemaTool;
 use Everyman\Neo4j\Cypher\Query;
-use Model\User;
 use Silex\Application;
 use Silex\WebTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -189,6 +188,62 @@ abstract class APITest extends WebTestCase
         );
     }
 
+    protected function getBadTokenUserRegisterFixtures()
+    {
+        $user = $this->getUserARegisterFixtures();
+        $user['token'] = 'nonExistantToken';
+
+        return $user;
+    }
+
+    protected function getNotProfileUserRegisterFixtures()
+    {
+        $user = $this->getUserARegisterFixtures();
+        unset($user['profile']);
+
+        return $user;
+    }
+
+    protected function getIncompleteOAuthUserRegisterFixtures()
+    {
+        $fixtures = array();
+        foreach (array('resourceOwner', 'oauthToken', 'resourceId') as $field) {
+            $user = $this->getUserARegisterFixtures();
+            unset($user['oauth'][$field]);
+
+            $fixtures[] = $user;
+        }
+
+        return $fixtures;
+    }
+
+    protected function getBadProfileUserRegisterFixtures()
+    {
+        $fixtures = array();
+        $wrongData = array(
+            array('birthday' => '20-01-2015'),
+            array('birthday' => '01-01-2017'),
+            array('birthday' => '01-01-2099'),
+            array('height' => '100'),
+            array('height' => 20),
+            array('height' => 500),
+            array('gender' => 'nonExistantGender'),
+            array('descriptiveGender' => 'nonExistantGender'),
+            array('religion' => array('choice' => 'agnosticism')),
+            array('religion' => array('detail' => 'important')),
+            array('religion' => array('choice' => 'agnosticism', 'detail' => 'wrongDetail')),
+            array('religion' => array('choice' => 'wrongReligion', 'detail' => 'important'))
+        );
+
+        foreach ($wrongData as $wrongField) {
+            $user = $this->getUserARegisterFixtures();
+            $user['profile'] += $wrongField;
+            $fixtures[] = $user;
+        }
+
+        return $fixtures;
+    }
+
     protected function getUserAEditionFixtures()
     {
         return array(
@@ -203,6 +258,7 @@ abstract class APITest extends WebTestCase
             /** @var AuthService $authService */
             $authService = $this->app['auth.service'];
             $jwt = $authService->getToken($userId);
+
             return array('HTTP_PHP_AUTH_DIGEST' => 'Bearer ' . $jwt);
         } catch (\Exception $e) {
             return array();

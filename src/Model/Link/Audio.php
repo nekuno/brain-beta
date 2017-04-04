@@ -7,16 +7,17 @@ class Audio extends Link
     protected $embed_type;
     protected $embed_id;
 
-    public static function buildFromLink(Link $link) {
+    public static function buildFromLink(Link $link)
+    {
         $array = $link->toArray();
 
         /** @var Audio $me */
         $me = parent::buildFromArray($array);
 
-        if (isset($array['embed_type'])){
+        if (isset($array['embed_type'])) {
             $me->setEmbedType($array['embed_type']);
         }
-        if (isset($array['embed_id'])){
+        if (isset($array['embed_id'])) {
             $me->setEmbedId($array['embed_id']);
         }
 
@@ -27,6 +28,14 @@ class Audio extends Link
     {
         $array = parent::toArray();
         $array['additionalLabels'] = array('Audio');
+        $array['additionalFields'] = array(
+            'embed_id' => $this->getEmbedId(),
+            'embed_type' => $this->getEmbedType()
+        );
+
+        unset($array['embed_id']);
+        unset($array['embed_type']);
+
         return $array;
     }
 
@@ -60,5 +69,10 @@ class Audio extends Link
     public function setEmbedId($embed_id)
     {
         $this->embed_id = $embed_id;
+    }
+
+    public function isComplete()
+    {
+        return parent::isComplete() && $this->getEmbedId() && $this->getEmbedType();
     }
 }

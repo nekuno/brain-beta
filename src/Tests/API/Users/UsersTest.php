@@ -17,6 +17,12 @@ class UsersTest extends UsersAPITest
         $this->assertValidationErrorsResponse();
     }
 
+    public function testErrors()
+    {
+        $this->runProfileOptionsCommand();
+        $this->assertRegistrationErrorResponse();
+    }
+
     protected function assertGetUserWithoutCredentialsResponse()
     {
         $response = $this->getOtherUser('janedoe');
@@ -40,6 +46,38 @@ class UsersTest extends UsersAPITest
         $response = $this->createUser($userData);
         $formattedResponse = $this->assertJsonResponse($response, 201, "Create UserB");
         $this->assertUserBFormat($formattedResponse, "Bad User response on create user B");
+
+        $userData = $this->getUserARegisterFixtures();
+        $response = $this->createUser($userData);
+        $formattedResponse = $this->assertJsonResponse($response, 422, "Create already existing user");
+        $this->assertUserValidationErrorFormat($formattedResponse);
+    }
+
+    protected function assertRegistrationErrorResponse()
+    {
+        $userData = $this->getBadTokenUserRegisterFixtures();
+        $response = $this->createUser($userData);
+        $formattedResponse = $this->assertJsonResponse($response, 422, "Create user with non existant invitation");
+        $this->assertUserValidationErrorFormat($formattedResponse);
+
+        $multipleData = $this->getIncompleteOAuthUserRegisterFixtures();
+        foreach ($multipleData as $userData){
+            $response = $this->createUser($userData);
+            $formattedResponse = $this->assertJsonResponse($response, 422, "Create user without oauth field, existent fields:" . json_encode(array_keys($userData['oauth'])));
+            $this->assertUserValidationErrorFormat($formattedResponse);
+        }
+
+        $userData = $this->getNotProfileUserRegisterFixtures();
+        $response = $this->createUser($userData);
+        $formattedResponse = $this->assertJsonResponse($response, 422, "Create user without profile");
+        $this->assertUserValidationErrorFormat($formattedResponse);
+
+        $multipleData = $this->getBadProfileUserRegisterFixtures();
+        foreach ($multipleData as $userData){
+            $response = $this->createUser($userData);
+            $formattedResponse = $this->assertJsonResponse($response, 422, "Create user with wrong profile:" . json_encode(array_keys($userData['profile'])));
+            $this->assertUserValidationErrorFormat($formattedResponse);
+        }
     }
 
     protected function assertGetExistingUsernameAvailableResponse()

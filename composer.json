@@ -1,6 +1,6 @@
 {
     "name": "nekuno/brain",
-    "version": "0.55.0",
+    "version": "0.56.0",
     "description": "Nekuno brain",
     "license": "AGPL-3.0",
     "type": "project",
@@ -36,7 +36,6 @@
         "jakeasmith/http_build_url": "0.1.*",
         "cnam/security-jwt-service-provider": "1.*",
         "sorien/silex-pimple-dumper": "~1.0",
-        "yawmoght/getoldtweets-php": "dev-master",
         "hwi/oauth-bundle": "^0.4.1",
         "cocur/slugify": "^2.3"
     },
@@ -46,7 +45,6 @@
     "autoload": {
         "psr-0": {
             "": "src/"
-        },
-        "files" : ["vendor/yawmoght/getoldtweets-php/src/autoload.php"]
+        }
     }
 }

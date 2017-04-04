@@ -3,9 +3,9 @@
 namespace Worker;
 
 use ApiConsumer\Fetcher\FetcherService;
-use ApiConsumer\Fetcher\GetOldTweets\GetOldTweets;
 use ApiConsumer\Fetcher\ProcessorService;
 use Doctrine\DBAL\Connection;
+use Event\ProcessLinksEvent;
 use Model\Neo4j\Neo4jException;
 use Model\User\Token\TokensModel;
 use PhpAmqpLib\Channel\AMQPChannel;
@@ -31,23 +31,16 @@ class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterfa
      */
     protected $connectionBrain;
 
-    /**
-     * @var GetOldTweets
-     */
-    protected $getOldTweets;
-
     public function __construct(
         AMQPChannel $channel,
         EventDispatcher $dispatcher,
         FetcherService $fetcherService,
         ProcessorService $processorService,
-        GetOldTweets $getOldTweets,
         Connection $connectionBrain
     ) {
         parent::__construct($dispatcher, $channel);
         $this->fetcherService = $fetcherService;
         $this->processorService = $processorService;
-        $this->getOldTweets = $getOldTweets;
         $this->connectionBrain = $connectionBrain;
     }
 
@@ -80,7 +73,9 @@ class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterfa
 
                     $userId = $this->getUserId($data);
                     $links = $this->fetchChannelTwitter($data);
+                    $this->dispatcher->dispatch(\AppEvents::PROCESS_START, new ProcessLinksEvent($userId, $resourceOwner, $links));
                     $this->processorService->process($links, $userId);
+                    $this->dispatcher->dispatch(\AppEvents::PROCESS_FINISH, new ProcessLinksEvent($userId, $resourceOwner, $links));
 
                     break;
                 default:
@@ -112,8 +107,6 @@ class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterfa
 
         $links = $this->fetchTwitterAPI($userId);
 
-//        $links = $this->fetchFromGOT($data);
-
         return $links;
     }
 
@@ -125,19 +118,4 @@ class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterfa
 
         return $this->fetcherService->fetchAsClient($userId, $resourceOwner, $exclude);
     }
-
-    private function fetchFromGOT(array $data)
-    {
-        if (!isset($data['username'])) {
-            throw new \Exception('Enqueued message does not include  username parameter');
-        }
-        $username = $data['username'];
-        $this->logger->info(sprintf('Using GetOldTweets to fetch from %s', $username));
-
-        $links = $this->getOldTweets->fetchFromUser($username);
-        $this->logger->info(sprintf('Total %d links fetched from tweets from %s', count($links), $username));
-
-        return $links;
-    }
-
 }

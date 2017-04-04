@@ -3,7 +3,7 @@
 namespace Controller\User;
 
 use Model\Exception\ValidationException;
-use Model\User\ContentPaginatedModel;
+use Model\User\Content\ContentPaginatedModel;
 use Model\User\ProfileFilterModel;
 use Model\User\RateModel;
 use Model\User\UserStatsManager;
@@ -342,7 +342,7 @@ class UserController
             }
         }
 
-        /* @var $model \Model\User\ContentComparePaginatedModel */
+        /* @var $model \Model\User\Content\ContentComparePaginatedModel */
         $model = $app['users.content.compare.model'];
 
         try {
@@ -375,7 +375,7 @@ class UserController
             $search = urldecode($search);
         }
 
-        /* @var $model \Model\User\ContentTagModel */
+        /* @var $model \Model\User\Content\ContentTagModel */
         $model = $app['users.content.tag.model'];
 
         try {

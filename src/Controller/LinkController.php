@@ -5,6 +5,7 @@ namespace Controller;
 use ApiConsumer\Images\ImageAnalyzer;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use Model\Link\Link;
+use Model\User\Content\Interest;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -37,12 +38,11 @@ class LinkController
         }
         $reprocessedLinks = $processorService->reprocess($preprocessedLinks);
 
-        foreach ($reprocessedLinks as &$reprocessedLink) {
-            $reprocessedLink['contentId'] = $reprocessedLink['id'];
-            $reprocessedLink['types'] = $linkModel->getTypes($reprocessedLink['url']);
-            $reprocessedLink['synonymous'] = array();
+        $interests = array();
+        foreach ($reprocessedLinks as $reprocessedLink) {
+            $interests[] = Interest::buildFromLinkArray($reprocessedLink);
         }
 
-        return $app->json($reprocessedLinks);
+        return $app->json($interests);
     }
 }

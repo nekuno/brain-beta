@@ -1,6 +1,6 @@
 <?php
 
-namespace Model\User;
+namespace Model\User\Question;
 
 use Paginator\PaginatedInterface;
 
