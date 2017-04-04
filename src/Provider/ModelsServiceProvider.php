@@ -96,7 +96,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.profile.model'] = $app->share(
             function ($app) {
 
-                return new ProfileModel($app['neo4j.graph_manager'], $app['users.profileFilter.model'], $app['dispatcher']);
+                return new ProfileModel($app['neo4j.graph_manager'], $app['users.profileFilter.model'], $app['dispatcher'], $app['validator.service']);
             }
         );
 

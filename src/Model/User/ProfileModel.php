@@ -19,13 +19,14 @@ class ProfileModel
     protected $gm;
     protected $profileFilterModel;
     protected $dispatcher;
+    protected $validator;
 
-    public function __construct(GraphManager $gm, ProfileFilterModel $profileFilterModel, EventDispatcher $dispatcher)
+    public function __construct(GraphManager $gm, ProfileFilterModel $profileFilterModel, EventDispatcher $dispatcher, Validator $validator)
     {
-
         $this->gm = $gm;
         $this->profileFilterModel = $profileFilterModel;
         $this->dispatcher = $dispatcher;
+        $this->validator = $validator;
     }
 
     /**
@@ -142,169 +143,7 @@ class ProfileModel
      */
     public function validate(array $data)
     {
-        $errors = array();
-        $metadata = $this->profileFilterModel->getProfileMetadata();
-
-        foreach ($metadata as $fieldName => $fieldData) {
-
-            $fieldErrors = array();
-
-            if (isset($data[$fieldName])) {
-
-                $fieldValue = $data[$fieldName];
-
-                if (isset($fieldData['type'])) {
-                    switch ($fieldData['type']) {
-                        case 'text':
-                        case 'textarea':
-                            if (isset($fieldData['min'])) {
-                                if (strlen($fieldValue) < $fieldData['min']) {
-                                    $fieldErrors[] = 'Must have ' . $fieldData['min'] . ' characters min.';
-                                }
-                            }
-                            if (isset($fieldData['max'])) {
-                                if (strlen($fieldValue) > $fieldData['max']) {
-                                    $fieldErrors[] = 'Must have ' . $fieldData['max'] . ' characters max.';
-                                }
-                            }
-                            break;
-
-                        case 'integer':
-                            if (!is_integer($fieldValue)) {
-                                $fieldErrors[] = 'Must be an integer';
-                            }
-                            if (isset($fieldData['min'])) {
-                                if (!empty($fieldValue) && $fieldValue < $fieldData['min']) {
-                                    $fieldErrors[] = 'Must be greater than ' . $fieldData['min'];
-                                }
-                            }
-                            if (isset($fieldData['max'])) {
-                                if ($fieldValue > $fieldData['max']) {
-                                    $fieldErrors[] = 'Must be less than ' . $fieldData['max'];
-                                }
-                            }
-                            break;
-
-                        case 'date':
-                            $date = \DateTime::createFromFormat('Y-m-d', $fieldValue);
-                            if (!($date && $date->format('Y-m-d') == $fieldValue)) {
-                                $fieldErrors[] = 'Invalid date format, valid format is "Y-m-d".';
-                            }
-                            break;
-
-                        case 'birthday':
-                            $date = \DateTime::createFromFormat('Y-m-d', $fieldValue);
-                            $now = new \DateTime();
-                            if (!($date && $date->format('Y-m-d') == $fieldValue)) {
-                                $fieldErrors[] = 'Invalid date format, valid format is "YYYY-MM-DD".';
-                            } elseif ($now < $date) {
-                                $fieldErrors[] = 'Invalid birthday date, can not be in the future.';
-                            } elseif ($now->modify('-14 year') < $date) {
-                                $fieldErrors[] = 'Invalid birthday date, you must be older than 14 years.';
-                            }
-                            break;
-
-                        case 'boolean':
-                            if ($fieldValue !== true && $fieldValue !== false) {
-                                $fieldErrors[] = 'Must be a boolean.';
-                            }
-                            break;
-
-                        case 'choice':
-                            $choices = $fieldData['choices'];
-                            if (!in_array($fieldValue, array_keys($choices))) {
-                                $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $fieldValue, implode("', '", array_keys($choices)));
-                            }
-                            break;
-
-                        case 'double_choice':
-                            $choices = $fieldData['choices'] + array('' => '');
-                            if (!in_array($fieldValue['choice'], array_keys($choices))) {
-                                $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $fieldValue['choice'], implode("', '", array_keys($choices)));
-                            }
-                            $doubleChoices = $fieldData['doubleChoices'] + array('' => '');
-                            if (!isset($doubleChoices[$fieldValue['choice']]) || $fieldValue['detail'] && !isset($doubleChoices[$fieldValue['choice']][$fieldValue['detail']])) {
-                                $fieldErrors[] = sprintf('Option choice and detail must be set in "%s"', $fieldValue['choice']);
-                            } elseif ($fieldValue['detail'] && !in_array($fieldValue['detail'], array_keys($doubleChoices[$fieldValue['choice']]))) {
-                                $fieldErrors[] = sprintf('Detail with value "%s" is not valid, possible values are "%s"', $fieldValue['detail'], implode("', '", array_keys($doubleChoices)));
-                            }
-                            break;
-                        case 'tags_and_choice':
-                            $choices = $fieldData['choices'];
-                            if (count($fieldValue) > self::MAX_TAGS_AND_CHOICE_LENGTH) {
-                                $fieldErrors[] = sprintf('Tags and choice length "%s" is too long. "%s" is the maximum', count($fieldValue), self::MAX_TAGS_AND_CHOICE_LENGTH);
-                            }
-                            foreach ($fieldValue as $tagAndChoice) {
-                                if (!isset($tagAndChoice['tag']) || !array_key_exists('choice', $tagAndChoice)) {
-                                    $fieldErrors[] = sprintf('Tag and choice must be defined for tags and choice type');
-                                }
-                                if (isset($tagAndChoice['choice']) && $tagAndChoice['choice'] && !in_array($tagAndChoice['choice'], array_keys($choices))) {
-                                    $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $tagAndChoice['choice'], implode("', '", array_keys($choices)));
-                                }
-                            }
-                            break;
-                        case 'multiple_choices':
-                            if (!is_array($fieldValue)){
-                                $fieldErrors[] = sprintf('Multiple choices option must be an array');
-                                continue;
-                            }
-                            $choices = $fieldData['choices'];
-                            if (count($fieldValue) > $fieldData['max_choices']) {
-                                $fieldErrors[] = sprintf('Option length "%s" is too long. "%s" is the maximum', count($fieldValue), $fieldData['max_choices']);
-                            }
-                            foreach($fieldValue as $value) {
-                                if (!in_array($value, array_keys($choices))) {
-                                    $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $value, implode("', '", array_keys($choices)));
-                                }
-                            }
-                            break;
-                        case 'location':
-                            if (!is_array($fieldValue)) {
-                                $fieldErrors[] = sprintf('The value "%s" is not valid, it should be an array with "latitude" and "longitude" keys', $fieldValue);
-                            } else {
-                                if (!isset($fieldValue['address']) || !$fieldValue['address'] || !is_string($fieldValue['address'])) {
-                                    $fieldErrors[] = 'Address required';
-                                } else {
-                                    if (!isset($fieldValue['latitude']) || !preg_match(Validator::LATITUDE_REGEX, $fieldValue['latitude'])) {
-                                        $fieldErrors[] = 'Latitude not valid';
-                                    } elseif (!is_float($fieldValue['latitude'])) {
-                                        $fieldErrors[] = 'Latitude must be float';
-                                    }
-                                    if (!isset($fieldValue['longitude']) || !preg_match(Validator::LONGITUDE_REGEX, $fieldValue['longitude'])) {
-                                        $fieldErrors[] = 'Longitude not valid';
-                                    } elseif (!is_float($fieldValue['longitude'])) {
-                                        $fieldErrors[] = 'Longitude must be float';
-                                    }
-                                    if (!isset($fieldValue['locality']) || !$fieldValue['locality'] || !is_string($fieldValue['locality'])) {
-                                        $fieldErrors[] = 'Locality required';
-                                    }
-                                    if (!isset($fieldValue['country']) || !$fieldValue['country'] || !is_string($fieldValue['country'])) {
-                                        $fieldErrors[] = 'Country required';
-                                    }
-                                }
-                            }
-                            break;
-                    }
-                }
-            } else {
-
-                if ($fieldName === 'orientation' && isset($data['orientationRequired']) && $data['orientationRequired'] === false) {
-                    continue;
-                }
-
-                if (isset($fieldData['required']) && $fieldData['required'] === true) {
-                    $fieldErrors[] = 'It\'s required.';
-                }
-            }
-
-            if (count($fieldErrors) > 0) {
-                $errors[$fieldName] = $fieldErrors;
-            }
-        }
-
-        if (count($errors) > 0) {
-            throw new ValidationException($errors);
-        }
+        $this->validator->validateProfile($data);
     }
 
     public function build(Row $row, $locale = null)
@@ -333,7 +172,7 @@ class ProfileModel
     {
         $options = $row->offsetGet('options');
         $optionsResult = array();
-        $metadata = $this->profileFilterModel->getProfileMetadata();
+        $metadata = $this->profileFilterModel->getProfileFilterMetadata();
         /** @var Row $optionData */
         foreach ($options as $optionData) {
             $option = $optionData->offsetGet('option');
@@ -434,7 +273,7 @@ class ProfileModel
 
     protected function saveProfileData($id, array $data)
     {
-        $metadata = $this->profileFilterModel->getProfileMetadata();
+        $metadata = $this->profileFilterModel->getProfileFilterMetadata();
         $options = $this->getProfileNodeOptions($id);
         $tags = $this->getProfileNodeTags($id);
 

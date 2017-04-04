@@ -249,6 +249,17 @@ class Validator
         }
     }
 
+    public function validateProfile(array $data)
+    {
+        $metadata = $this->profileFilterModel->getProfileMetadata();
+
+        if (isset($data['orientationRequired']) && $data['orientationRequired'] === false) {
+            $metadata['orientation']['required'] = false;
+        }
+
+        return $this->validate($data, $metadata);
+    }
+
     public function validateEditFilterContent(array $data, array $choices = array())
     {
         return $this->validate($data, $this->contentFilterModel->getFilters(), $choices);
@@ -272,15 +283,14 @@ class Validator
     protected function validate($data, $metadata, $dataChoices = array())
     {
         $errors = array();
-        //TODO: Build $choices as a merge of argument and choices from each metadata
         foreach ($metadata as $fieldName => $fieldData) {
 
             $fieldErrors = array();
+            $choices = $this->buildChoices($dataChoices, $fieldData, $fieldName);
+
             if (isset($data[$fieldName])) {
 
                 $dataValue = $data[$fieldName];
-                $choices = array_merge($dataChoices, isset($fieldData['choices']) ? $fieldData['choices'] : array());
-
                 switch ($fieldData['type']) {
                     case 'text':
                     case 'textarea':
@@ -381,13 +391,13 @@ class Validator
                         break;
 
                     case 'choice':
-                        if (!in_array($dataValue, $choices[$fieldName])) {
-                            $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $dataValue, implode("', '", $choices[$fieldName]));
+                        if (!in_array($dataValue, $choices)) {
+                            $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $dataValue, implode("', '", $choices));
                         }
                         break;
 
                     case 'double_choice':
-                        $thisChoices = $choices[$fieldName] + array('' => '');
+                        $thisChoices = $choices + array('' => '');
                         if (!in_array($dataValue['choice'], $thisChoices)) {
                             $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $dataValue['choice'], implode("', '", $thisChoices));
                         }
@@ -403,7 +413,7 @@ class Validator
                             $fieldErrors[] = 'Multiple choices value must be an array';
                             continue;
                         }
-                        $thisChoices = $choices[$fieldName] + array('' => '');
+                        $thisChoices = $choices + array('' => '');
                         $doubleChoices = $fieldData['doubleChoices'] + array('' => '');
                         foreach ($dataValue as $singleDataValue) {
                             if (!in_array($singleDataValue['choice'], $thisChoices)) {
@@ -429,13 +439,13 @@ class Validator
                             if (!isset($tagAndChoice['tag']) || !array_key_exists('choice', $tagAndChoice)) {
                                 $fieldErrors[] = sprintf('Tag and choice must be defined for tags and choice type');
                             }
-                            if (isset($tagAndChoice['choice']) && isset($choices[$fieldName]) && !in_array($tagAndChoice['choice'], array_keys($choices[$fieldName]))) {
+                            if (isset($tagAndChoice['choice']) && isset($choices) && !in_array($tagAndChoice['choice'], array_keys($choices))) {
                                 $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $tagAndChoice['choice'], implode("', '", array_keys($choices)));
                             }
                         }
                         break;
                     case 'multiple_choices':
-                        $multipleChoices = $choices[$fieldName];
+                        $multipleChoices = $choices;
                         if (!is_array($dataValue)) {
                             $fieldErrors[] = 'Multiple choices value must be an array';
                             continue;
@@ -522,6 +532,19 @@ class Validator
         }
 
         return true;
+    }
+
+    /**
+     * @param $dataChoices
+     * @param $fieldData
+     * @return array
+     */
+    protected function buildChoices($dataChoices, $fieldData, $fieldName)
+    {
+        $fieldChoices = isset($fieldData['choices']) ? $fieldData['choices'] : array();
+        $thisDataChoices = isset($dataChoices[$fieldName]) ? $dataChoices[$fieldName] : array();
+
+        return array_merge($fieldChoices, $thisDataChoices);
     }
 
     private function validateLocation($dataValue)

@@ -2,7 +2,6 @@
 
 namespace Model\User;
 
-
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
 
@@ -26,32 +25,17 @@ class ProfileFilterModel extends FilterModel
 
         $choiceOptions = $this->getChoiceOptions($locale);
 
-        switch($values['type']){
+        switch ($values['type']) {
             case 'choice':
-                $publicField['choices'] = array();
-                if (isset($choiceOptions[$name])) {
-                    $publicField['choices'] = $choiceOptions[$name];
-                }
+                $publicField = $this->addChoices($publicField, $name, $choiceOptions);
                 break;
             case 'double_choice':
             case 'double_multiple_choices':
-                $publicField['choices'] = array();
-                if (isset($choiceOptions[$name])) {
-                    $publicField['choices'] = $choiceOptions[$name];
-                    if (isset($values['doubleChoices'])) {
-                        foreach ($values['doubleChoices'] as $choice => $doubleChoices) {
-                            foreach ($doubleChoices as $doubleChoice => $doubleChoiceValues) {
-                                $publicField['doubleChoices'][$choice][$doubleChoice] = $doubleChoiceValues[$locale];
-                            }
-                        }
-                    }
-                }
-            break;
+                $publicField = $this->addChoices($publicField, $name, $choiceOptions);
+                $publicField = $this->addDoubleChoices($publicField, $values, $locale);
+                break;
             case 'multiple_choices':
-                $publicField['choices'] = array();
-                if (isset($choiceOptions[$name])) {
-                    $publicField['choices'] = $choiceOptions[$name];
-                }
+                $publicField = $this->addChoices($publicField, $name, $choiceOptions);
                 $publicField['max_choices'] = isset($values['max_choices']) ? $values['max_choices'] : 999;
                 break;
             case 'tags_and_choice':
@@ -137,7 +121,7 @@ class ProfileFilterModel extends FilterModel
 
     //TODO: Most is from FilterModel, Refactor with QS-979
     //For use with ProfileModel for validation and creation
-    public function getProfileMetadata($locale = null)
+    public function getProfileFilterMetadata($locale = null)
     {
         $locale = $this->getLocale($locale);
 
@@ -148,7 +132,7 @@ class ProfileFilterModel extends FilterModel
             $publicField['labelEdit'] = isset($values['labelEdit'][$locale]) ? $values['labelEdit'][$locale] : $publicField['label'];
             $publicField['required'] = isset($values['required']) ? $values['required'] : false;
             $publicField['editable'] = isset($values['editable']) ? $values['editable'] : true;
-            
+
             $publicField = $this->modifyPublicFieldByType($publicField, $name, $values, $locale);
 
             $publicMetadata[$name] = $publicField;
@@ -164,6 +148,22 @@ class ProfileFilterModel extends FilterModel
         }
 
         return $publicMetadata;
+    }
+
+    public function getProfileMetadata($locale = null)
+    {
+        $metadata = $this->getProfileFilterMetadata($locale);
+
+        foreach ($metadata as &$field)
+        {
+            if (isset($field['choices'])){
+                foreach ($field['choices'] as $name => $value) {
+                    $field['choices'][$name] = $name;
+                }
+            }
+        }
+
+        return $metadata;
     }
 
     public function getProfileCategories($locale = null)
@@ -184,10 +184,10 @@ class ProfileFilterModel extends FilterModel
 
     public function splitFilters($filters)
     {
-        $filters['profileFilters'] = (isset($filters['profileFilters']) && is_array($filters['profileFilters']))? $filters['profileFilters'] : array();
-        $profileMetadata = $this->getProfileMetadata();
-        foreach ($profileMetadata as $fieldName => $fieldData){
-            if (isset($filters['userFilters'][$fieldName])){
+        $filters['profileFilters'] = (isset($filters['profileFilters']) && is_array($filters['profileFilters'])) ? $filters['profileFilters'] : array();
+        $profileMetadata = $this->getProfileFilterMetadata();
+        foreach ($profileMetadata as $fieldName => $fieldData) {
+            if (isset($filters['userFilters'][$fieldName])) {
                 $filters['profileFilters'][$fieldName] = $filters['userFilters'][$fieldName];
                 unset($filters['userFilters'][$fieldName]);
             }
@@ -219,20 +219,21 @@ class ProfileFilterModel extends FilterModel
     {
         $minDate = new \DateTime($birthday);
         $minInterval = $minDate->diff(new \DateTime());
+
         return $minInterval->y;
     }
 
     public function getBirthdayRangeFromAgeRange($min = null, $max = null, $nowDate = null)
     {
         $return = array('max' => null, 'min' => null);
-        if ($min){
+        if ($min) {
             $now = new \DateTime($nowDate);
-            $maxBirthday = $now->modify('-'.($min).' years')->format('Y-m-d');
+            $maxBirthday = $now->modify('-' . ($min) . ' years')->format('Y-m-d');
             $return ['max'] = $maxBirthday;
         }
-        if ($max){
+        if ($max) {
             $now = new \DateTime($nowDate);
-            $minBirthday = $now->modify('-'.($max + 1).' years')->modify('+ 1 days')->format('Y-m-d');
+            $minBirthday = $now->modify('-' . ($max + 1) . ' years')->modify('+ 1 days')->format('Y-m-d');
             $return['min'] = $minBirthday;
         }
 
@@ -351,5 +352,36 @@ class ProfileFilterModel extends FilterModel
         $this->profileTags[$tagLabelName] = $tags;
 
         return $tags;
+    }
+
+    /**
+     * @param $publicField
+     * @param $name
+     * @param $choiceOptions
+     * @return mixed
+     */
+    protected function addChoices($publicField, $name, $choiceOptions)
+    {
+        $publicField['choices'] = isset($choiceOptions[$name]) ? $choiceOptions[$name] : array();
+
+        return $publicField;
+    }
+
+    /**
+     * @param $publicField
+     * @param $values
+     * @param $locale
+     * @return mixed
+     */
+    protected function addDoubleChoices($publicField, $values, $locale)
+    {
+        $valueDoubleChoices = isset($values['doubleChoices']) ? $values['doubleChoices'] : array();
+        foreach ($valueDoubleChoices as $choice => $doubleChoices) {
+            foreach ($doubleChoices as $doubleChoice => $doubleChoiceValues) {
+                $publicField['doubleChoices'][$choice][$doubleChoice] = $doubleChoiceValues[$locale];
+            }
+        }
+
+        return $publicField;
     }
 }
