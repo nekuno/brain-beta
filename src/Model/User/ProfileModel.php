@@ -3,6 +3,7 @@
 namespace Model\User;
 
 use Event\ProfileEvent;
+use Model\Metadata\ProfileFilterMetadataManager;
 use Model\Neo4j\GraphManager;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
@@ -21,7 +22,7 @@ class ProfileModel
     protected $dispatcher;
     protected $validator;
 
-    public function __construct(GraphManager $gm, ProfileFilterModel $profileFilterModel, EventDispatcher $dispatcher, Validator $validator)
+    public function __construct(GraphManager $gm, ProfileFilterMetadataManager $profileFilterModel, EventDispatcher $dispatcher, Validator $validator)
     {
         $this->gm = $gm;
         $this->profileFilterModel = $profileFilterModel;
@@ -210,7 +211,6 @@ class ProfileModel
 
     protected function buildTags(Row $row, $locale = null)
     {
-        $locale = $this->profileFilterModel->getLocale($locale);
         $tags = $row->offsetGet('tags');
         $tagsResult = array();
         /** @var Row $tagData */

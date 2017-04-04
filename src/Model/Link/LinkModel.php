@@ -22,10 +22,9 @@ class LinkModel
      */
     protected $translator;
 
-    public function __construct(GraphManager $gm, Translator $translator)
+    public function __construct(GraphManager $gm)
     {
         $this->gm = $gm;
-        $this->translator = $translator;
     }
 
     /**
@@ -921,21 +920,6 @@ class LinkModel
     public static function getValidTypes()
     {
         return array('Audio', 'Video', 'Image', 'Link', 'Creator', 'CreatorFacebook', 'CreatorTwitter');
-    }
-
-    //TODO: Only called from ContentFilterModel. Probably move logic and translator dependency there.
-    public function getValidTypesLabels($locale = 'en')
-    {
-        $this->translator->setLocale($locale);
-
-        $types = array();
-        $keyTypes = self::getValidTypes();
-
-        foreach ($keyTypes as $type) {
-            $types[$type] = $this->translator->trans('types.' . lcfirst($type));
-        };
-
-        return $types;
     }
 
     public function buildOptionalTypesLabel($filters)

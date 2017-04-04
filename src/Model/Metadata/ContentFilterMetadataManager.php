@@ -1,24 +1,17 @@
 <?php
 
-namespace Model\User;
-
+namespace Model\Metadata;
 
 use Model\Link\LinkModel;
 use Model\Neo4j\GraphManager;
+use Symfony\Component\Translation\Translator;
 
-class ContentFilterModel extends FilterModel
+class ContentFilterMetadataManager extends FilterMetadataManager
 {
-    /**
-     * @var LinkModel
-     */
-    protected $linkModel;
-
-    public function __construct(GraphManager $gm, LinkModel $linkModel, array $metadata, array $socialMetadata, $defaultLocale)
+    public function __construct(GraphManager $gm, Translator $translator, array $metadata, array $socialMetadata, $defaultLocale)
     {
-        parent::__construct($gm, $metadata, $socialMetadata, $defaultLocale);
-        $this->linkModel = $linkModel;
+        parent::__construct($gm, $translator, $metadata, $socialMetadata, $defaultLocale);
     }
-
 
     protected function modifyPublicFieldByType($publicField, $name, $values, $locale)
     {
@@ -44,8 +37,22 @@ class ContentFilterModel extends FilterModel
     protected function getChoiceOptions($locale)
     {
         return array(
-            'type' => $this->linkModel->getValidTypesLabels($locale)
+            'type' => $this->getValidTypesLabels($locale)
         );
+    }
+
+    public function getValidTypesLabels($locale = 'en')
+    {
+        $this->translator->setLocale($locale);
+
+        $types = array();
+        $keyTypes = LinkModel::getValidTypes();
+
+        foreach ($keyTypes as $type) {
+            $types[$type] = $this->translator->trans('types.' . lcfirst($type));
+        };
+
+        return $types;
     }
 
     protected function getTopContentTags($name)

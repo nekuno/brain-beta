@@ -7,8 +7,8 @@ use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
 use Model\Neo4j\GraphManager;
-use Model\User\ProfileFilterModel;
-use Model\User\UserFilterModel;
+use Model\Metadata\ProfileFilterMetadataManager;
+use Model\Metadata\UserFilterMetadataManager;
 use Service\Validator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -20,12 +20,12 @@ class FilterUsersManager
     protected $graphManager;
 
     /**
-     * @var ProfileFilterModel
+     * @var ProfileFilterMetadataManager
      */
     protected $profileFilterModel;
 
     /**
-     * @var UserFilterModel
+     * @var UserFilterMetadataManager
      */
     protected $userFilterModel;
 
@@ -34,7 +34,7 @@ class FilterUsersManager
      */
     protected $validator;
 
-    public function __construct(GraphManager $graphManager, ProfileFilterModel $profileFilterModel, UserFilterModel $userFilterModel, Validator $validator)
+    public function __construct(GraphManager $graphManager, ProfileFilterMetadataManager $profileFilterModel, UserFilterMetadataManager $userFilterModel, Validator $validator)
     {
         $this->graphManager = $graphManager;
         $this->profileFilterModel = $profileFilterModel;

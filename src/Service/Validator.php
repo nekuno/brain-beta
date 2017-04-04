@@ -4,9 +4,9 @@ namespace Service;
 
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
-use Model\User\ContentFilterModel;
-use Model\User\ProfileFilterModel;
-use Model\User\UserFilterModel;
+use Model\Metadata\ContentFilterMetadataManager;
+use Model\Metadata\ProfileFilterMetadataManager;
+use Model\Metadata\UserFilterMetadataManager;
 
 class Validator
 {
@@ -20,7 +20,7 @@ class Validator
     protected $metadata;
 
     /**
-     * @var ProfileFilterModel
+     * @var ProfileFilterMetadataManager
      */
     protected $profileFilterModel;
 
@@ -30,20 +30,20 @@ class Validator
     protected $graphManager;
 
     /**
-     * @var UserFilterModel
+     * @var UserFilterMetadataManager
      */
     protected $userFilterModel;
 
     /**
-     * @var ContentFilterModel
+     * @var ContentFilterMetadataManager
      */
     protected $contentFilterModel;
 
     public function __construct(
         GraphManager $graphManager,
-        ProfileFilterModel $profileFilterModel,
-        UserFilterModel $userFilterModel,
-        ContentFilterModel $contentFilterModel,
+        ProfileFilterMetadataManager $profileFilterModel,
+        UserFilterMetadataManager $userFilterModel,
+        ContentFilterMetadataManager $contentFilterModel,
         array $metadata
     ) {
         $this->metadata = $metadata;

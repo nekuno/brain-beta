@@ -2,7 +2,7 @@
 
 namespace Controller\Social;
 
-use Model\User\ProfileFilterModel;
+use Model\Metadata\ProfileFilterMetadataManager;
 use Model\User\ProfileModel;
 use Model\User;
 use Silex\Application;
@@ -73,7 +73,7 @@ class ProfileController
     {
         $locale = $request->query->get('locale');
 
-        /* @var $model ProfileFilterModel */
+        /* @var $model ProfileFilterMetadataManager */
         $model = $app['users.profileFilter.model'];
         $metadata = $model->getSocialMetadata($locale);
 

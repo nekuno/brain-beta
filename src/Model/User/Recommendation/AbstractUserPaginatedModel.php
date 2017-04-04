@@ -7,9 +7,9 @@ use Everyman\Neo4j\Query\Row;
 use Manager\PhotoManager;
 use Model\Neo4j\GraphManager;
 use Model\User\GhostUser\GhostUserManager;
-use Model\User\ProfileFilterModel;
+use Model\Metadata\ProfileFilterMetadataManager;
 use Model\User\ProfileModel;
-use Model\User\UserFilterModel;
+use Model\Metadata\UserFilterMetadataManager;
 use Paginator\PaginatedInterface;
 
 abstract class AbstractUserPaginatedModel implements PaginatedInterface
@@ -20,12 +20,12 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
     protected $gm;
 
     /**
-     * @var ProfileFilterModel
+     * @var ProfileFilterMetadataManager
      */
     protected $profileFilterModel;
 
     /**
-     * @var UserFilterModel
+     * @var UserFilterMetadataManager
      */
     protected $userFilterModel;
 
@@ -39,7 +39,7 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
      */
     protected $profileModel;
 
-    public function __construct(GraphManager $gm, ProfileFilterModel $profileFilterModel, UserFilterModel $userFilterModel, PhotoManager $pm, ProfileModel $profileModel)
+    public function __construct(GraphManager $gm, ProfileFilterMetadataManager $profileFilterModel, UserFilterMetadataManager $userFilterModel, PhotoManager $pm, ProfileModel $profileModel)
     {
         $this->gm = $gm;
         $this->profileFilterModel = $profileFilterModel;

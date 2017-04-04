@@ -1,8 +1,8 @@
 <?php
 
-namespace Model\User;
+namespace Model\Metadata;
 
-class UserFilterModel extends FilterModel
+class UserFilterMetadataManager extends FilterMetadataManager
 {
     /**
      * @param $userId

@@ -6,7 +6,7 @@ namespace Model\User\Filters;
 use Everyman\Neo4j\Node;
 use Model\Link\LinkModel;
 use Model\Neo4j\GraphManager;
-use Model\User\ContentFilterModel;
+use Model\Metadata\ContentFilterMetadataManager;
 use Service\Validator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -19,7 +19,7 @@ class FilterContentManager
     protected $graphManager;
 
     /**
-     * @var ContentFilterModel
+     * @var ContentFilterMetadataManager
      */
     protected $contentFilterModel;
 
@@ -28,7 +28,7 @@ class FilterContentManager
      */
     protected $validator;
 
-    public function __construct(GraphManager $graphManager, ContentFilterModel $contentFilterModel, Validator $validator)
+    public function __construct(GraphManager $graphManager, ContentFilterMetadataManager $contentFilterModel, Validator $validator)
     {
         $this->graphManager = $graphManager;
         $this->contentFilterModel = $contentFilterModel;

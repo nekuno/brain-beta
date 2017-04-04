@@ -12,7 +12,7 @@ use Model\User\Affinity\AffinityModel;
 use Model\User\Question\AnswerManager;
 use Model\EnterpriseUser\CommunityModel;
 use Model\User\Content\ContentComparePaginatedModel;
-use Model\User\ContentFilterModel;
+use Model\Metadata\ContentFilterMetadataManager;
 use Model\User\Content\ContentPaginatedModel;
 use Model\User\Content\ContentTagModel;
 use Model\User\Filters\FilterContentManager;
@@ -26,7 +26,7 @@ use Model\User\LookUpModel;
 use Model\User\Matching\MatchingModel;
 use Model\User\Question\OldQuestionComparePaginatedModel;
 use Model\User\PrivacyModel;
-use Model\User\ProfileFilterModel;
+use Model\Metadata\ProfileFilterMetadataManager;
 use Model\User\ProfileModel;
 use Model\User\ProfileTagModel;
 use Model\User\Question\QuestionComparePaginatedModel;
@@ -47,7 +47,7 @@ use Model\User\Thread\ThreadManager;
 use Model\User\Thread\ThreadPaginatedModel;
 use Model\User\Thread\UsersThreadManager;
 use Model\User\Token\TokensModel;
-use Model\User\UserFilterModel;
+use Model\Metadata\UserFilterMetadataManager;
 use Model\User\UserStatsManager;
 use Manager\UserManager;
 use Model\User\UserTrackingModel;
@@ -103,21 +103,21 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.userFilter.model'] = $app->share(
             function ($app) {
 
-                return new UserFilterModel($app['neo4j.graph_manager'], $app['fields']['filters']['user'], $app['socialFields']['user'], $app['locale.options']['default']);
+                return new UserFilterMetadataManager($app['neo4j.graph_manager'], $app['translator'], $app['fields']['filters']['user'], $app['socialFields']['user'], $app['locale.options']['default']);
             }
         );
 
         $app['users.profileFilter.model'] = $app->share(
             function ($app) {
 
-                return new ProfileFilterModel($app['neo4j.graph_manager'], $app['fields']['filters']['profile'], $app['fields']['profile'], $app['fields']['categories'], $app['socialFields']['profile'], $app['locale.options']['default']);
+                return new ProfileFilterMetadataManager($app['neo4j.graph_manager'], $app['translator'], $app['fields']['filters']['profile'], $app['fields']['profile'], $app['fields']['categories'], $app['socialFields']['profile'], $app['locale.options']['default']);
             }
         );
 
         $app['users.contentFilter.model'] = $app->share(
             function ($app) {
 
-                return new ContentFilterModel($app['neo4j.graph_manager'], $app['links.model'], $app['fields']['filters']['content'], array(), $app['locale.options']['default']);
+                return new ContentFilterMetadataManager($app['neo4j.graph_manager'], $app['translator'], $app['fields']['filters']['content'], array(), $app['locale.options']['default']);
             }
         );
 
@@ -320,7 +320,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['links.model'] = $app->share(
             function ($app) {
 
-                return new LinkModel($app['neo4j.graph_manager'], $app['translator']);
+                return new LinkModel($app['neo4j.graph_manager']);
             }
         );
 

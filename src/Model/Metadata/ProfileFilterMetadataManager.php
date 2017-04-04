@@ -1,20 +1,21 @@
 <?php
 
-namespace Model\User;
+namespace Model\Metadata;
 
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
+use Symfony\Component\Translation\Translator;
 
-class ProfileFilterModel extends FilterModel
+class ProfileFilterMetadataManager extends FilterMetadataManager
 {
     protected $profileMetadata;
     protected $profileCategories;
     protected $profileOptions = array();
     protected $profileTags = array();
 
-    public function __construct(GraphManager $gm, array $metadata, array $profileMetadata, array $profileCategories, array $socialMetadata, $defaultLocale)
+    public function __construct(GraphManager $gm, Translator $translator, array $metadata, array $profileMetadata, array $profileCategories, array $socialMetadata, $defaultLocale)
     {
-        parent::__construct($gm, $metadata, $socialMetadata, $defaultLocale);
+        parent::__construct($gm, $translator, $metadata, $socialMetadata, $defaultLocale);
         $this->profileMetadata = $profileMetadata;
         $this->profileCategories = $profileCategories;
     }
@@ -63,7 +64,7 @@ class ProfileFilterModel extends FilterModel
      * @return array
      * @throws \Model\Neo4j\Neo4jException
      */
-    public function getChoiceOptions($locale)
+    protected function getChoiceOptions($locale)
     {
         $translationField = 'name_' . $locale;
         if (isset($this->profileOptions[$translationField])) {
@@ -298,6 +299,8 @@ class ProfileFilterModel extends FilterModel
 
     public function translateLanguageToLocale($language, $locale)
     {
+        $locale = $this->getLocale($locale);
+
         if ($locale === 'en') {
             return $language;
         }
