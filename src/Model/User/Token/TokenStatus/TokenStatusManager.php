@@ -8,6 +8,7 @@ use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
 use Model\Neo4j\QueryBuilder;
 use Service\Validator;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class TokenStatusManager
 {
@@ -57,8 +58,19 @@ class TokenStatusManager
         $this->returnStatusQuery($qb);
 
         $result = $qb->getQuery()->getResultSet();
+        $tokenStatus = $this->buildOne($result);
 
-        $tokenStatus = $this->buildOne($result->current());
+        return $tokenStatus;
+    }
+
+    public function setUpdatedAt($userId, $resource, $updatedAt)
+    {
+        $qb = $this->mergeTokenStatusQuery($userId, $resource);
+        $this->setParameterQuery($qb, 'updatedAt', (integer)$updatedAt);
+        $this->returnStatusQuery($qb);
+
+        $result = $qb->getQuery()->getResultSet();
+        $tokenStatus = $this->buildOne($result);
 
         return $tokenStatus;
     }
@@ -74,7 +86,7 @@ class TokenStatusManager
         $this->returnStatusQuery($qb);
 
         $result = $qb->getQuery()->getResultSet();
-        $tokenStatus = $this->buildOne($result->current());
+        $tokenStatus = $this->buildOne($result);
 
         return $tokenStatus;
     }
@@ -125,7 +137,7 @@ class TokenStatusManager
     {
         $qb = $this->graphManager->createQueryBuilder();
 
-        $qb->match('(u:User{qnoow_id: {userId}})<-[:TOKEN_OF]-(token:Token{resource: {resource}})')
+        $qb->match('(u:User{qnoow_id: {userId}})<-[:TOKEN_OF]-(token:Token{resourceOwner: {resource}})')
             ->with('token')
             ->limit(1);
         $qb->setParameters(
@@ -134,7 +146,7 @@ class TokenStatusManager
                 'resource' => $resource
             )
         );
-        $qb->merge('(token)<-[:STATUS_OF]-(status:TokenStatus')
+        $qb->merge('(token)<-[:STATUS_OF]-(status:TokenStatus)')
             ->onCreate('SET status.updatedAt = timestamp()')
             ->with('status', 'token')
             ->limit(1);
@@ -158,7 +170,7 @@ class TokenStatusManager
             )
         );
 
-        $qb->merge('(token)<-[:STATUS_OF]-(status:TokenStatus')
+        $qb->merge('(token)<-[:STATUS_OF]-(status:TokenStatus)')
             ->onCreate('SET status.updatedAt = timestamp()')
             ->with('status', 'token');
 
@@ -192,12 +204,19 @@ class TokenStatusManager
         $qb->returns('status');
     }
 
-    protected function buildOne(Row $row)
+    protected function buildOne(ResultSet $resultSet)
     {
-        if (!$row->offsetExists('status') || $row->offsetGet('status') == null) {
-            throw new \InvalidArgumentException('Token status not found');
-        }
+        $this->checkResultCount($resultSet);
 
+        $row = $resultSet->current();
+
+        $this->checkResultStructure($row);
+
+        return $this->buildOneFromRow($row);
+    }
+
+    protected function buildOneFromRow(Row $row)
+    {
         /** @var Node $statusNode */
         $statusNode = $row->offsetGet('status');
         /** @var Node $tokenNode */
@@ -217,9 +236,35 @@ class TokenStatusManager
     {
         $statuses = array();
         foreach ($resultSet as $row) {
-            $statuses[] = $this->buildOne($row);
+            $this->checkResultStructure($row);
+            $statuses[] = $this->buildOneFromRow($row);
         }
 
         return $statuses;
+    }
+
+    protected function throwNotFoundException($message = 'Token not found')
+    {
+        throw new NotFoundHttpException($message);
+    }
+
+    /**
+     * @param ResultSet $resultSet
+     */
+    protected function checkResultCount(ResultSet $resultSet)
+    {
+        if ($resultSet->count() != 1) {
+            $this->throwNotFoundException('Result count expected to be 1, is ' . $resultSet->count());
+        }
+    }
+
+    /**
+     * @param $row
+     */
+    protected function checkResultStructure(Row $row)
+    {
+        if (!$row->offsetExists('status') || $row->offsetGet('status') == null) {
+            $this->throwNotFoundException('Malformed result, expected status node to be returned');
+        }
     }
 }
