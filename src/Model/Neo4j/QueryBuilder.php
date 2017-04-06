@@ -226,6 +226,17 @@ class QueryBuilder
         return $this->add('delete', implode(', ', $deletes));
     }
 
+    public function detachDelete($delete = null)
+    {
+        if (empty($delete)) {
+            return $this;
+        }
+
+        $deletes = is_array($delete) ? $delete : func_get_args();
+
+        return $this->add('detach delete', implode(', ', $deletes));
+    }
+
     /**
      * @param mixed $remove
      * @return QueryBuilder

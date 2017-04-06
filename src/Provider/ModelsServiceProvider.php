@@ -47,6 +47,7 @@ use Model\User\Thread\ThreadManager;
 use Model\User\Thread\ThreadPaginatedModel;
 use Model\User\Thread\UsersThreadManager;
 use Model\User\Token\TokensModel;
+use Model\User\Token\TokenStatus\TokenStatusManager;
 use Model\User\UserFilterModel;
 use Model\User\UserStatsManager;
 use Manager\UserManager;
@@ -89,7 +90,14 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.tokens.model'] = $app->share(
             function ($app) {
 
-                return new TokensModel($app['dispatcher'], $app['neo4j.graph_manager'], $app['orm.ems']['mysql_brain'], $app['validator.service']);
+                return new TokensModel($app['dispatcher'], $app['neo4j.graph_manager'], $app['users.tokenStatus.manager'], $app['validator.service']);
+            }
+        );
+
+        $app['users.tokenStatus.manager'] = $app->share(
+            function ($app) {
+
+                return new TokenStatusManager($app['neo4j.graph_manager'], $app['validator.service']);
             }
         );
 
