@@ -9,7 +9,7 @@ use Event\SimilarityProcessEvent;
 use Event\SimilarityProcessStepEvent;
 use Event\UserStatusChangedEvent;
 use Model\Neo4j\Neo4jException;
-use Model\Questionnaire\QuestionModel;
+use Model\User\Question\QuestionModel;
 use Model\User;
 use Model\User\Matching\MatchingModel;
 use Model\User\Similarity\SimilarityModel;

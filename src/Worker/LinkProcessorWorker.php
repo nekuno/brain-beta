@@ -4,6 +4,7 @@ namespace Worker;
 
 use ApiConsumer\Fetcher\FetcherService;
 use ApiConsumer\Fetcher\ProcessorService;
+use Event\ProcessLinksEvent;
 use Model\Neo4j\Neo4jException;
 use PhpAmqpLib\Channel\AMQPChannel;
 use Psr\Log\LoggerInterface;
@@ -47,7 +48,10 @@ class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerI
 
         try {
             $links = $public ? $this->fetcherService->fetchAsClient($userId, $resourceOwner, $exclude) : $this->fetcherService->fetchUser($userId, $resourceOwner, $exclude);
+
+            $this->dispatcher->dispatch(\AppEvents::PROCESS_START, new ProcessLinksEvent($userId, $resourceOwner, $links));
             $this->processorService->process($links, $userId);
+            $this->dispatcher->dispatch(\AppEvents::PROCESS_FINISH, new ProcessLinksEvent($userId, $resourceOwner, $links));
 
         } catch (\Exception $e) {
             $this->logger->error(sprintf('Worker: Error fetching for user %d with message %s on file %s, line %d', $userId, $e->getMessage(), $e->getFile(), $e->getLine()));

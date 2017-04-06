@@ -155,8 +155,10 @@ class SpotifyAlbumProcessorTest extends AbstractProcessorTest
                     'synonymous' => array(),
                     'imageProcessed' => null,
                     'additionalLabels' => array('Audio'),
-                    'embed_type' => 'spotify',
-                    'embed_id' => 'spotify:album:4sb0eMpDn3upAFfyi4q2rw',
+                    'additionalFields' => array(
+                        'embed_type' => 'spotify',
+                        'embed_id' => 'spotify:album:4sb0eMpDn3upAFfyi4q2rw',
+                    )
                 )
             )
         );

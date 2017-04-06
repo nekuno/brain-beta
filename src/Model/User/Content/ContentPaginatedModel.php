@@ -1,57 +1,12 @@
 <?php
 
-namespace Model\User;
+namespace Model\User\Content;
 
-use Everyman\Neo4j\Node;
+use Everyman\Neo4j\Query\Row;
 use Model\Link\LinkModel;
-use Model\User\Token\TokensModel;
-use Paginator\PaginatedInterface;
-use Model\Neo4j\GraphManager;
-use Service\Validator;
 
-class ContentPaginatedModel implements PaginatedInterface
+class ContentPaginatedModel extends AbstractContentPaginatedModel
 {
-    /**
-     * @var GraphManager
-     */
-    protected $gm;
-
-    /**
-     * @var TokensModel
-     */
-    protected $tokensModel;
-
-    /**
-     * @var LinkModel
-     */
-    protected $linkModel;
-
-    /**
-     * @var Validator
-     */
-    protected $validator;
-
-    public function __construct(GraphManager $gm, TokensModel $tokensModel, LinkModel $linkModel, Validator $validator)
-    {
-        $this->gm = $gm;
-        $this->tokensModel = $tokensModel;
-        $this->linkModel = $linkModel;
-        $this->validator = $validator;
-    }
-
-    /**
-     * Hook point for validating the query.
-     * @param array $filters
-     * @return boolean
-     */
-    public function validateFilters(array $filters)
-    {
-        $userId = isset($filters['id'])? $filters['id'] : null;
-        $this->validator->validateUserId($userId);
-
-        return $this->validator->validateRecommendateContent($filters, $this->getChoices());
-    }
-
     /**
      * Slices the query according to $offset, and $limit.
      * @param array $filters
@@ -65,8 +20,6 @@ class ContentPaginatedModel implements PaginatedInterface
         $qb = $this->gm->createQueryBuilder();
         $id = $filters['id'];
         $types = isset($filters['type']) ? $filters['type'] : array();
-
-        $response = array();
 
         $qb->match("(u:User)")
             ->where("u.qnoow_id = { userId }")
@@ -99,52 +52,7 @@ class ContentPaginatedModel implements PaginatedInterface
 
         $result = $query->getResultSet();
 
-        //TODO: Build the result (ContentRecommendationPaginatedModel as example) using LinkModel.
-
-        foreach ($result as $row) {
-            $content = array();
-
-            $content['id'] = $row['id'];
-            $content['type'] = $row['type'];
-            $content['url'] = $row['content']->getProperty('url');
-            $content['title'] = $row['content']->getProperty('title');
-            $content['description'] = $row['content']->getProperty('description');
-            $content['thumbnail'] = $row['content']->getProperty('thumbnail');
-            $content['synonymous'] = array();
-
-            if (isset($row['synonymous'])) {
-                foreach ($row['synonymous'] as $synonymousLink) {
-                    /* @var $synonymousLink Node */
-                    $synonymous = array();
-                    $synonymous['id'] = $synonymousLink->getId();
-                    $synonymous['url'] = $synonymousLink->getProperty('url');
-                    $synonymous['title'] = $synonymousLink->getProperty('title');
-                    $synonymous['thumbnail'] = $synonymousLink->getProperty('thumbnail');
-
-                    $content['synonymous'][] = $synonymous;
-                }
-            }
-
-            foreach ($row['tags'] as $tag) {
-                $content['tags'][] = $tag;
-            }
-
-            foreach ($row['types'] as $type) {
-                $content['types'][] = $type;
-            }
-
-            $user = array();
-            $user['user']['id'] = $id;
-            $user['rate'] = $row['rate'];
-            $content['user_rates'][] = $user;
-
-            if ($row['content']->getProperty('embed_type')) {
-                $content['embed']['type'] = $row['content']->getProperty('embed_type');
-                $content['embed']['id'] = $row['content']->getProperty('embed_id');
-            }
-
-            $response[] = $content;
-        }
+        $response = $this->buildResponse($result, $id);
 
         return $response;
     }
@@ -223,20 +131,37 @@ class ContentPaginatedModel implements PaginatedInterface
         return $totals;
     }
 
-    // TODO: Useful for filtering by social networks
-    private function buildSocialNetworkCondition($userId, $relationship)
+    /**
+     * @param $result
+     * @param $id
+     * @return array
+     */
+    protected function buildResponse($result, $id)
     {
-        $socialNetworks = $this->tokensModel->getConnectedNetworks($userId);
-        $whereSocialNetwork = array();
-        foreach ($socialNetworks as $socialNetwork) {
-            $whereSocialNetwork[] = "EXISTS ($relationship.$socialNetwork)";
+        $response = array();
+        foreach ($result as $row) {
+            $content = new Interest();
+
+            $content->setId($row['id']);
+            $this->hydrateNodeProperties($content, $row);
+            $this->hydrateSynonymous($content, $row);
+            $this->hydrateTags($content, $row);
+            $this->hydrateTypes($content, $row);
+            $this->hydrateUserRates($content, $row, $id);
+
+            $response[] = $content;
         }
 
-        return implode(' OR ', $whereSocialNetwork);
+        return $response;
     }
 
-    protected function getChoices()
+    protected function hydrateUserRates(Interest $content, Row $row, $id)
     {
-        return array('type' => LinkModel::getValidTypes());
+        $user = array(
+            'user' => array('id' => $id),
+            'rate' => $row->offsetGet('rate'),
+        );
+        $content->addUserRate($user);
     }
+
 }

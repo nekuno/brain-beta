@@ -305,6 +305,10 @@ class LinkModel
 
         $linkArray = isset($data['synonymous']) ? array_merge($linkArray, $this->addSynonymousLink($linkArray['id'], $data['synonymous'])) : $linkArray;
 
+        if (isset($data['additionalLabels'])){
+            $linkArray['additionalLabels'] = $data['additionalLabels'];
+        }
+
         return $linkArray;
     }
 
@@ -391,6 +395,9 @@ class LinkModel
 
         $linkArray = isset($data['synonymous']) ? array_merge($linkArray, $this->addSynonymousLink($linkArray['id'], $data['synonymous'])) : $linkArray;
 
+        if (isset($data['additionalLabels'])){
+            $linkArray['additionalLabels'] = $data['additionalLabels'];
+        }
         return $linkArray;
     }
 

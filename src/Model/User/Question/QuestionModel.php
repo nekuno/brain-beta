@@ -1,6 +1,6 @@
 <?php
 
-namespace Model\Questionnaire;
+namespace Model\User\Question;
 
 use Everyman\Neo4j\Label;
 use Everyman\Neo4j\Node;
@@ -8,6 +8,7 @@ use Everyman\Neo4j\Query\Row;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 use Manager\UserManager;
+use Service\Validator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class QuestionModel
@@ -19,19 +20,18 @@ class QuestionModel
     protected $gm;
 
     /**
-     * @var UserManager
+     * @var Validator
      */
-    protected $um;
+    protected $validator;
 
     /**
      * @param GraphManager $gm
-     * @param UserManager $um
+     * @param Validator $validator
      */
-    public function __construct(GraphManager $gm, UserManager $um)
+    public function __construct(GraphManager $gm, Validator $validator)
     {
-
         $this->gm = $gm;
-        $this->um = $um;
+        $this->validator = $validator;
     }
 
     public function getAll($locale, $skip = null, $limit = null)
@@ -303,14 +303,13 @@ class QuestionModel
      */
     public function skip($id, $userId)
     {
-
-        $user = $this->um->getById($userId);
+        $this->validator->validateUserId($userId);
 
         $qb = $this->gm->createQueryBuilder();
         $qb
             ->match('(q:Question)', '(u:User)')
             ->where('NOT q:RegisterQuestion', 'u.qnoow_id = { userId } AND id(q) = { id }')
-            ->setParameter('userId', $user->getId())
+            ->setParameter('userId', $userId)
             ->setParameter('id', (integer)$id)
             ->createUnique('(u)-[r:SKIPS]->(q)')
             ->set('r.timestamp = timestamp()')
@@ -337,13 +336,12 @@ class QuestionModel
      */
     public function report($id, $userId, $reason)
     {
-
-        $user = $this->um->getById($userId);
+        $this->validator->validateUserId($userId);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(q:Question)', '(u:User)')
             ->where('u.qnoow_id = { userId } AND id(q) = { id }')
-            ->setParameter('userId', $user->getId())
+            ->setParameter('userId', $userId)
             ->setParameter('id', (integer)$id)
             ->createUnique('(u)-[r:REPORTS]->(q)')
             ->set('r.reason = { reason }', 'r.timestamp = timestamp()')
@@ -466,47 +464,15 @@ class QuestionModel
      */
     public function validate(array $data, $userRequired = true)
     {
+        $choices = $this->getChoices();
+        $this->validator->validateQuestion($data, $choices, $userRequired);
+    }
 
-        $errors = array();
-
-        $locales = array('en', 'es');
-        if (!isset($data['locale'])) {
-            $errors['locale'] = array('The locale is required');
-        } elseif (!in_array($data['locale'], $locales)) {
-            $errors['locale'] = array(sprintf('The locale must be one of "%s")', implode('", "', $locales)));
-        }
-
-        if (!isset($data['text']) || $data['text'] === '' || !is_string($data['text'])) {
-            $errors['text'] = array('The text of the question is required');
-        }
-
-        if ($userRequired) {
-            if (!isset($data['userId']) || !is_int($data['userId'])) {
-                $errors['userId'] = array(sprintf('"userId" is required and must be integer'));
-            } else {
-                try {
-                    $this->um->getById($data['userId']);
-                } catch (NotFoundHttpException $e) {
-                    $errors['userId'] = array($e->getMessage());
-                }
-            }
-        }
-
-        if (!isset($data['answers']) || !is_array($data['answers']) || count($data['answers']) <= 1) {
-            $errors['answers'] = array('At least, two answers are required');
-        } elseif (6 < count($data['answers'])) {
-            $errors['answers'] = array('Maximum of 6 answers allowed');
-        } else {
-            foreach ($data['answers'] as $answer) {
-                if (!isset($answer['text']) || !is_string($answer['text'])) {
-                    $errors['answers'] = array('Each answer must be an array with key "text" string');
-                }
-            }
-        }
-
-        if (count($errors) > 0) {
-            throw new ValidationException($errors);
-        }
+    protected function getChoices()
+    {
+        return array(
+            'locale' => array('en', 'es'),
+        );
     }
 
     public function build(Row $row, $locale)

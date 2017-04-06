@@ -218,6 +218,37 @@ class Validator
         }
     }
 
+    public function validateQuestion(array $data, array $choices = array(), $userIdRequired = false)
+    {
+        $this->validate($data, $this->metadata['questions'], $choices);
+
+        $this->validateUserInData($data, $userIdRequired);
+
+        foreach ($data['answers'] as $answer) {
+            if (!isset($answer['text']) || !is_string($answer['text'])) {
+                throw new ValidationException(array('answers', 'Each answer must be an array with key "text" string'));
+            }
+        }
+    }
+
+    public function validateAnswer(array $data)
+    {
+        $this->validate($data, $this->metadata['answers'], array());
+
+        $this->validateUserInData($data);
+    }
+
+    protected function validateUserInData(array $data, $userIdRequired = true)
+    {
+        if ($userIdRequired && !isset($data['userId'])) {
+            throw new ValidationException(array('userId', 'User id is required for this question'));
+        }
+
+        if (isset($data['userId'])) {
+            $this->validateUserId($data['userId']);
+        }
+    }
+
     public function validateEditFilterContent(array $data, array $choices = array())
     {
         return $this->validate($data, $this->contentFilterModel->getFilters(), $choices);
@@ -281,6 +312,22 @@ class Validator
                         }
                         break;
 
+                    case 'array':
+                        if (!is_array($dataValue)) {
+                            $fieldErrors[] = 'Must be an array';
+                        } else {
+                            if (isset($fieldData['min'])) {
+                                if (count($dataValue) < $fieldData['min']) {
+                                    $fieldErrors[] = 'Array length must be greater than ' . $fieldData['min'];
+                                }
+                            }
+                            if (isset($fieldData['max'])) {
+                                if (count($dataValue) > $fieldData['max']) {
+                                    $fieldErrors[] = 'Array length must be less than ' . $fieldData['max'];
+                                }
+                            }
+                        }
+                        break;
                     case 'birthday_range':
                     case 'integer_range':
                         if (!is_array($dataValue)) {

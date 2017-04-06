@@ -3,9 +3,9 @@
 namespace Model\Neo4j;
 
 use Model\Link\LinkModel;
-use Model\Questionnaire\QuestionModel;
+use Model\User\Question\QuestionModel;
 use Model\User;
-use Model\User\AnswerModel;
+use Model\User\Question\AnswerManager;
 use Model\User\ProfileModel;
 use Model\User\RateModel;
 use Manager\UserManager;
@@ -57,7 +57,7 @@ class Fixtures
     protected $qm;
 
     /**
-     * @var AnswerModel
+     * @var AnswerManager
      */
     protected $am;
 

@@ -15,7 +15,6 @@ use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use Event\ConsistencyEvent;
 use Event\ProcessLinkEvent;
-use Event\ProcessLinksEvent;
 use GuzzleHttp\Exception\RequestException;
 use Model\Link\Creator\Creator;
 use Model\Link\LinkModel;
@@ -67,15 +66,10 @@ class ProcessorService implements LoggerAwareInterface
      */
     public function process(array $preprocessedLinks, $userId)
     {
-        if (empty($preprocessedLinks)) {
-            return array();
-        }
-        $source = $this->getCommonSource($preprocessedLinks);
-        $this->dispatcher->dispatch(\AppEvents::PROCESS_START, new ProcessLinksEvent($userId, $source, $preprocessedLinks));
-
         $links = array();
         foreach ($preprocessedLinks as $key => $preprocessedLink) {
 
+            $source = $preprocessedLink->getSource();
             $this->dispatcher->dispatch(\AppEvents::PROCESS_LINK, new ProcessLinkEvent($userId, $source, $preprocessedLink));
 
             try {
@@ -92,9 +86,8 @@ class ProcessorService implements LoggerAwareInterface
                 $links = array_merge($links, $processedLinks);
             }
         }
+        $source = $this->getCommonSource($preprocessedLinks);
         $links = array_merge($links, $this->processLastLinks($userId, $source));
-
-        $this->dispatcher->dispatch(\AppEvents::PROCESS_FINISH, new ProcessLinksEvent($userId, $source, $preprocessedLinks));
 
         return $links;
     }

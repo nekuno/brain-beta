@@ -178,8 +178,10 @@ class SpotifyTrackProcessorTest extends AbstractProcessorTest
                     'synonymous' => array(),
                     'imageProcessed' => null,
                     'additionalLabels' => array('Audio'),
-                    'embed_type' => 'spotify',
-                    'embed_id' => 'spotify:track:4vLYewWIvqHfKtJDk8c8tq',
+                    'additionalFields' => array(
+                        'embed_type' => 'spotify',
+                        'embed_id' => 'spotify:track:4vLYewWIvqHfKtJDk8c8tq',
+                    )
                 )
             )
         );

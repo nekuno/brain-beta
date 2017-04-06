@@ -1,58 +1,12 @@
 <?php
 
-namespace Model\User;
+namespace Model\User\Content;
 
-use Everyman\Neo4j\Node;
+use Everyman\Neo4j\Query\Row;
 use Model\Link\LinkModel;
-use Model\User\Token\TokensModel;
-use Paginator\PaginatedInterface;
-use Model\Neo4j\GraphManager;
-use Service\Validator;
 
-class ContentComparePaginatedModel implements PaginatedInterface
+class ContentComparePaginatedModel extends AbstractContentPaginatedModel
 {
-    /**
-     * @var GraphManager
-     */
-    protected $gm;
-
-    /**
-     * @var TokensModel
-     */
-    protected $tokensModel;
-
-    /**
-     * @var LinkModel
-     */
-    protected $linkModel;
-
-    /**
-     * @var Validator
-     */
-    protected $validator;
-
-    //TODO: Try to unify this with ContentCompareModel, maybe using from a superclass
-    public function __construct(GraphManager $gm, TokensModel $tokensModel, LinkModel $linkModel, Validator $validator)
-    {
-        $this->gm = $gm;
-        $this->tokensModel = $tokensModel;
-        $this->linkModel = $linkModel;
-        $this->validator = $validator;
-    }
-
-    /**
-     * Hook point for validating the query.
-     * @param array $filters
-     * @return boolean
-     */
-    public function validateFilters(array $filters)
-    {
-        $userId = isset($filters['id'])? $filters['id'] : null;
-        $this->validator->validateUserId($userId);
-
-        return $this->validator->validateRecommendateContent($filters, $this->getChoices());
-    }
-
     /**
      * Slices the query according to $offset, and $limit.
      * @param array $filters
@@ -63,7 +17,6 @@ class ContentComparePaginatedModel implements PaginatedInterface
      */
     public function slice(array $filters, $offset, $limit)
     {
-        $response = array();
         $id = $filters['id'];
         $id2 = $filters['id2'];
         $types = isset($filters['type']) ? $filters['type'] : array();
@@ -114,58 +67,7 @@ class ContentComparePaginatedModel implements PaginatedInterface
         $result = $query->getResultSet();
 
         //TODO: Build with linkModel
-        foreach ($result as $row) {
-            $content = array();
-
-            $content['id'] = $row['id'];
-            $content['url'] = $row['content']->getProperty('url');
-            $content['title'] = $row['content']->getProperty('title');
-            $content['description'] = $row['content']->getProperty('description');
-            $content['thumbnail'] = $row['content']->getProperty('thumbnail');
-            $content['synonymous'] = array();
-
-            if (isset($row['synonymous'])) {
-                foreach ($row['synonymous'] as $synonymousLink) {
-                    /* @var $synonymousLink Node */
-                    $synonymous = array();
-                    $synonymous['id'] = $synonymousLink->getId();
-                    $synonymous['url'] = $synonymousLink->getProperty('url');
-                    $synonymous['title'] = $synonymousLink->getProperty('title');
-                    $synonymous['thumbnail'] = $synonymousLink->getProperty('thumbnail');
-
-                    $content['synonymous'][] = $synonymous;
-                }
-            }
-
-            foreach ($row['tags'] as $tag) {
-                $content['tags'][] = $tag;
-            }
-
-            foreach ($row['types'] as $type) {
-                $content['types'][] = $type;
-            }
-
-            $user1 = array();
-            $user1['user']['id'] = $id;
-            $user1['rate'] = $row['rate1'];
-            $content['user_rates'][] = $user1;
-
-            if (null != $row['rate2']) {
-                $user2 = array();
-                $user2['user']['id'] = $id2;
-                $user2['rate'] = $row['rate2'];
-                $content['user_rates'][] = $user2;
-            }
-
-            if ($row['content']->getProperty('embed_type')) {
-                $content['embed']['type'] = $row['content']->getProperty('embed_type');
-                $content['embed']['id'] = $row['content']->getProperty('embed_id');
-            }
-
-            $content['match'] = $row['affinity'];
-
-            $response[] = $content;
-        }
+        $response = $this->buildResponse($result, $id, $id2);
 
         return $response;
     }
@@ -264,20 +166,51 @@ class ContentComparePaginatedModel implements PaginatedInterface
         return $totals;
     }
 
-    // TODO: Useful for filtering by social networks
-    private function buildSocialNetworkCondition($userId, $relationship)
+    /**
+     * @param $result
+     * @param $id
+     * @param $id2
+     * @return array
+     */
+    protected function buildResponse($result, $id, $id2)
     {
-        $socialNetworks = $this->tokensModel->getConnectedNetworks($userId);
-        $whereSocialNetwork = array();
-        foreach ($socialNetworks as $socialNetwork) {
-            $whereSocialNetwork[] = "EXISTS ($relationship.$socialNetwork)";
+        $response = array();
+        foreach ($result as $row) {
+            $content = new ComparedInterest();
+
+            $content->setId($row['id']);
+            $this->hydrateNodeProperties($content, $row);
+            $this->hydrateSynonymous($content, $row);
+            $this->hydrateTags($content, $row);
+            $this->hydrateTypes($content, $row);
+            $this->hydrateUserRates($content, $row, $id, $id2);
+            $this->hydrateMatch($content, $row);
+
+            $response[] = $content;
         }
 
-        return implode(' OR ', $whereSocialNetwork);
+        return $response;
     }
 
-    protected function getChoices()
+    protected function hydrateUserRates(Interest $content, Row $row, $id, $id2 = null)
     {
-        return array('type' => LinkModel::getValidTypes());
+        $user = array(
+            'user' => array('id' => $id),
+            'rate' => $row->offsetGet('rate1'),
+        );
+        $content->addUserRate($user);
+
+        if ($row->offsetExists('rate2') && $row->offsetGet('rate2')){
+            $user2 = array(
+                'user' => array('id' => $id2),
+                'rate' => $row->offsetGet('rate2'),
+            );
+            $content->addUserRate($user2);
+        }
+    }
+
+    protected function hydrateMatch(ComparedInterest $content, Row $row)
+    {
+        $content->setMatch($row['affinity']);
     }
 }

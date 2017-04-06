@@ -3,7 +3,6 @@
 namespace Model\User;
 
 use Event\ContentRatedEvent;
-use Everyman\Neo4j\Client;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
 use Model\Exception\ValidationException;
@@ -26,24 +25,17 @@ class RateModel
     protected $dispatcher;
 
     /**
-     * @var \Everyman\Neo4j\Client
-     */
-    protected $client;
-    /**
      * @var \Model\Neo4j\GraphManager
      */
     protected $gm;
 
     /**
      * @param EventDispatcher $dispatcher
-     * @param Client $client
      * @param GraphManager $gm
      */
-    public function __construct(EventDispatcher $dispatcher, Client $client, GraphManager $gm)
+    public function __construct(EventDispatcher $dispatcher, GraphManager $gm)
     {
-
         $this->dispatcher = $dispatcher;
-        $this->client = $client;
         $this->gm = $gm;
     }
 
