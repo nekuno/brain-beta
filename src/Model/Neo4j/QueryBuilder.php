@@ -194,6 +194,28 @@ class QueryBuilder
         return $this->add('merge', implode(', ', $merges));
     }
 
+    public function onCreate($onCreate = null)
+    {
+        if (empty($onCreate)) {
+            return $this;
+        }
+
+        $onCreates = is_array($onCreate) ? $onCreate : func_get_args();
+
+        return $this->add('on create', implode(', ', $onCreates));
+    }
+
+    public function onMatch($onMatch = null)
+    {
+        if (empty($onMatch)) {
+            return $this;
+        }
+
+        $onMatches = is_array($onMatch) ? $onMatch : func_get_args();
+
+        return $this->add('on match', implode(', ', $onMatches));
+    }
+
     /**
      * @param mixed $set
      * @return QueryBuilder

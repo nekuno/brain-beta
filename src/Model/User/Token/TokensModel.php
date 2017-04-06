@@ -218,7 +218,7 @@ class TokensModel
         $count = $row->offsetGet('count');
 
         if ($count === 1) {
-            $this->tokenStatusManager->remove($userId, $resourceOwner);
+            $this->tokenStatusManager->removeOne($userId, $resourceOwner);
         }
 
         return $token;

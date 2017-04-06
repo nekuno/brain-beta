@@ -8,6 +8,8 @@ class TokenStatus
 
     protected $processed = 0;
 
+    protected $resourceOwner;
+
     protected $updatedAt;
 
     /**
@@ -40,6 +42,22 @@ class TokenStatus
     public function setProcessed($processed)
     {
         $this->processed = $processed;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getResourceOwner()
+    {
+        return $this->resourceOwner;
+    }
+
+    /**
+     * @param mixed $resourceOwner
+     */
+    public function setResourceOwner($resourceOwner)
+    {
+        $this->resourceOwner = $resourceOwner;
     }
 
     /**

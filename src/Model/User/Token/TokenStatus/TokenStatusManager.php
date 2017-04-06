@@ -12,7 +12,6 @@ use Service\Validator;
 class TokenStatusManager
 {
     protected $graphManager;
-
     protected $validator;
 
     /**
@@ -67,31 +66,49 @@ class TokenStatusManager
     /**
      * @param $userId
      * @param null $resource
-     * @return TokenStatus[]
+     * @return TokenStatus
      */
-    public function get($userId, $resource = null)
+    public function getOne($userId, $resource)
     {
         $qb = $this->mergeTokenStatusQuery($userId, $resource);
         $this->returnStatusQuery($qb);
 
         $result = $qb->getQuery()->getResultSet();
+        $tokenStatus = $this->buildOne($result->current());
 
+        return $tokenStatus;
+    }
+
+    /**
+     * @param $userId
+     * @return TokenStatus[]
+     */
+    public function getAll($userId)
+    {
+        $qb = $this->mergeAllTokenStatusQuery($userId);
+        $this->returnStatusQuery($qb);
+
+        $result = $qb->getQuery()->getResultSet();
         $statuses = $this->buildMany($result);
 
         return $statuses;
     }
 
-    public function remove($userId, $resource)
+    /**
+     * @param $userId
+     * @param $resource
+     * @return TokenStatus
+     */
+    public function removeOne($userId, $resource)
     {
-        $qb = $this->mergeTokenStatusQuery($userId, $resource);
+        $tokenStatusToBeDeleted = $this->getOne($userId, $resource);
 
+        $qb = $this->mergeTokenStatusQuery($userId, $resource);
         $this->deleteStatusQuery($qb);
 
-        $result = $qb->getQuery()->getResultSet();
+        $qb->getQuery()->getResultSet();
 
-        $tokenStatus = $this->buildOne($result->current());
-
-        return $tokenStatus;
+        return $tokenStatusToBeDeleted;
     }
 
     protected function validate($fetched)
@@ -118,15 +135,39 @@ class TokenStatusManager
             )
         );
         $qb->merge('(token)<-[:STATUS_OF]-(status:TokenStatus')
-            ->with('status')
+            ->onCreate('SET status.updatedAt = timestamp()')
+            ->with('status', 'token')
             ->limit(1);
+
+        return $qb;
+    }
+
+    /**
+     * @param $userId
+     * @return \Model\Neo4j\QueryBuilder
+     */
+    protected function mergeAllTokenStatusQuery($userId)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(u:User{qnoow_id: {userId}})<-[:TOKEN_OF]-(token:Token)')
+            ->with('token');
+        $qb->setParameters(
+            array(
+                'userId' => (integer)$userId,
+            )
+        );
+
+        $qb->merge('(token)<-[:STATUS_OF]-(status:TokenStatus')
+            ->onCreate('SET status.updatedAt = timestamp()')
+            ->with('status', 'token');
 
         return $qb;
     }
 
     protected function setUpdateTimeQuery(QueryBuilder $qb)
     {
-        $qb->set('status.updatedAt = time()');
+        $qb->set('status.updatedAt = timestamp()');
     }
 
     /**
@@ -159,12 +200,15 @@ class TokenStatusManager
 
         /** @var Node $statusNode */
         $statusNode = $row->offsetGet('status');
+        /** @var Node $tokenNode */
+        $tokenNode = $row->offsetGet('token');
 
         $tokenStatus = new TokenStatus();
 
         $tokenStatus->setFetched((integer)$statusNode->getProperty('fetched'));
         $tokenStatus->setProcessed((integer)$statusNode->getProperty('processed'));
         $tokenStatus->setUpdatedAt($statusNode->getProperty('updatedAt'));
+        $tokenStatus->setResourceOwner($tokenNode->getProperty('resource'));
 
         return $tokenStatus;
     }
@@ -173,7 +217,7 @@ class TokenStatusManager
     {
         $statuses = array();
         foreach ($resultSet as $row) {
-            $statuses = $this->buildOne($row);
+            $statuses[] = $this->buildOne($row);
         }
 
         return $statuses;
