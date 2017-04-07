@@ -117,7 +117,7 @@ class PhotoManager
         $saved = file_put_contents($this->base . $path, $file);
 
         if ($saved === false) {
-            throw new ValidationException(array('photo' => array('File can not be saved')));
+            throw new ValidationException(array('photo' => 'File can not be saved'));
         }
 
         $qb = $this->gm->createQueryBuilder();
@@ -175,7 +175,7 @@ class PhotoManager
 
         $max = 5000000;
         if (strlen($file) > $max) {
-            throw new ValidationException(array('photo' => array(sprintf('Max "%s" bytes file size exceed', $max))));
+            throw new ValidationException(array('photo' => array(sprintf('Max "%s" bytes file size exceed ("%s")', $max, strlen($file)))));
         }
 
         $extension = null;
