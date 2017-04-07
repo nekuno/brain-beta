@@ -38,7 +38,9 @@ class PhotoController
 
         if ($request->request->has('base64')) {
             $base64 = $request->request->get('base64');
-            $file = base64_decode($base64);
+            if (!$file = base64_decode($base64)) {
+                throw new ValidationException(array('photo' => array('Invalid "base64" provided')));
+            }
         } elseif ($request->request->has('url')) {
             $url = $request->request->get('url');
             if (filter_var($url, FILTER_VALIDATE_URL) === false) {

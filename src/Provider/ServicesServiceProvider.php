@@ -45,7 +45,7 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['chatMessageNotifications.service'] = $app->share(
             function (Application $app) {
-                return new ChatMessageNotifications($app['emailNotification.service'], $app['orm.ems']['mysql_brain'], $app['dbs']['mysql_brain'], $app['translator'], $app['users.manager'], $app['users.profile.model']);
+                return new ChatMessageNotifications($app['instant.client'], $app['emailNotification.service'], $app['orm.ems']['mysql_brain'], $app['dbs']['mysql_brain'], $app['translator'], $app['users.manager'], $app['users.profile.model']);
             }
         );
 
