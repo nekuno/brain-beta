@@ -201,7 +201,7 @@ class TokenStatusManager
 
     protected function returnStatusQuery(QueryBuilder $qb)
     {
-        $qb->returns('status');
+        $qb->returns('status', 'token');
     }
 
     protected function buildOne(ResultSet $resultSet)
@@ -227,7 +227,7 @@ class TokenStatusManager
         $tokenStatus->setFetched((integer)$statusNode->getProperty('fetched'));
         $tokenStatus->setProcessed((integer)$statusNode->getProperty('processed'));
         $tokenStatus->setUpdatedAt($statusNode->getProperty('updatedAt'));
-        $tokenStatus->setResourceOwner($tokenNode->getProperty('resource'));
+        $tokenStatus->setResourceOwner($tokenNode->getProperty('resourceOwner'));
 
         return $tokenStatus;
     }
