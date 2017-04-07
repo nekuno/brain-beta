@@ -219,7 +219,7 @@ class Validator
     public function validateTokenStatus($parameter)
     {
         $data = array('boolean' => $parameter);
-        $metadata = array('boolean' => array('type' => 'boolean'));
+        $metadata = array('boolean' => array('type' => 'integer', 'min' => 0, 'max' => 1));
         return $this->validate($data, $metadata);
     }
 
