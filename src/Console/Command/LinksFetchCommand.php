@@ -97,7 +97,7 @@ class LinksFetchCommand extends ApplicationAwareCommand
     private function setUpSubscribers(OutputInterface $output)
     {
         $fetchLinksSubscriber = new FetchLinksSubscriber($output);
-        $fetchLinksInstantSubscriber = new FetchLinksInstantSubscriber($this->app['guzzle.client'], $this->app['instant.host']);
+        $fetchLinksInstantSubscriber = new FetchLinksInstantSubscriber($this->app['instant.client']);
         $oauthTokenSubscriber = new OAuthTokenSubscriber($this->app['users.tokens.model'], $this->app['mailer'], $this->app['logger'], $this->app['amqp']);
         $dispatcher = $this->app['dispatcher.service'];
         /* @var $dispatcher EventDispatcher */
