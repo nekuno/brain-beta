@@ -81,7 +81,18 @@ class GraphManager implements LoggerAwareInterface
         }
 
         return $return;
+    }
 
+    public function hasLabelName(Node $node, $name)
+    {
+        /** @var Label[] $labels */
+        $labels = $node->getLabels();
+        $labels = array_filter($labels, function($label) use ($name) {
+            /** @var $label Label */
+            return $label->getName() == $name;
+        });
+
+        return !empty($labels);
     }
 
     /** Copies every relationship and property from node 1 to node 2 and deletes node 1
