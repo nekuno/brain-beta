@@ -510,7 +510,7 @@ class UserManager implements PaginatedInterface
         $data['username'] = $this->getVerifiedUsername(trim($data['username']));
 
         $qb = $this->gm->createQueryBuilder();
-        $qb->create('(u:User)')
+        $qb->create('(u:User:UserEnabled)')
             ->set('u.qnoow_id = { qnoow_id }')
             ->setParameter('qnoow_id', $data['userId'])
             ->set('u.status = { status }')
@@ -558,8 +558,8 @@ class UserManager implements PaginatedInterface
             ->limit(1)
         ->setParameter('qnoow_id', (integer) $userId);
 
-        $label = $enabled ? 'UserActive' : 'UserInactive' ;
-        $qb->remove('u:UserActive:UserInactive');
+        $label = $enabled ? 'UserEnabled' : 'UserDisabled' ;
+        $qb->remove('u:UserEnabled:UserDisabled');
         $qb->set("u:$label");
 
         $qb->returns('u');
@@ -1297,7 +1297,7 @@ class UserManager implements PaginatedInterface
 
     protected function isEnabled(Node $node)
     {
-        return $this->gm->hasLabelName($node, 'UserActive');
+        return $this->gm->hasLabelName($node, 'UserEnabled');
     }
 
     public function buildPublic(Row $row)
