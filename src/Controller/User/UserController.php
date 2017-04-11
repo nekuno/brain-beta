@@ -134,6 +134,21 @@ class UserController
         return $app->json();
     }
 
+    public function setEnableAction(Request $request, Application $app, User $user)
+    {
+        $enabled = $request->request->get('enabled');
+        /* @var $model UserManager */
+        $model = $app['users.manager'];
+        try{
+            $model->setEnabled($user->getId(), $enabled);
+        } catch (NotFoundHttpException $e)
+        {
+            return $app->json($e->getMessage(), 404);
+        }
+
+        return $app->json();
+    }
+
     /**
      * @param Application $app
      * @param Request $request

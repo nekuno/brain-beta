@@ -504,7 +504,6 @@ class UserManager implements PaginatedInterface
      */
     public function create(array $data)
     {
-
         $this->validate($data);
 
         $data['userId'] = $this->getNextId();
@@ -548,7 +547,31 @@ class UserManager implements PaginatedInterface
         $this->dispatcher->dispatch(\AppEvents::USER_UPDATED, new UserEvent($user));
 
         return $user;
+    }
 
+    public function setEnabled($userId, $enabled)
+    {
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match('(u:User)')
+            ->where('u.qnoow_id = { qnoow_id }')
+            ->with('u')
+            ->limit(1)
+        ->setParameter('qnoow_id', (integer) $userId);
+
+        $label = $enabled ? 'UserActive' : 'UserInactive' ;
+        $qb->remove('u:UserActive:UserInactive');
+        $qb->set("u:$label");
+
+        $qb->returns('u');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() == 0)
+        {
+            throw new NotFoundHttpException(sprintf('User "%d" not found', $userId));
+        }
+
+        return true;
     }
 
     /**
