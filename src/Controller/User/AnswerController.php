@@ -249,7 +249,7 @@ class AnswerController
      */
     public function getUserAnswersCompareAction(Request $request, Application $app, User $user)
     {
-        $otherUserId = $request->attributes->get('id');
+        $otherUserId = $request->attributes->get('userId');
         $locale = $request->query->get('locale');
         $showOnlyCommon = $request->query->get('showOnlyCommon', 0);
 

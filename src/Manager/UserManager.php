@@ -70,7 +70,6 @@ class UserManager implements PaginatedInterface
      */
     public function createUser()
     {
-
         $user = new User();
 
         return $user;
@@ -83,7 +82,6 @@ class UserManager implements PaginatedInterface
      */
     public function getAll($includeGhosts = false)
     {
-
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(u:User)');
         if (!$includeGhosts) {
@@ -556,9 +554,9 @@ class UserManager implements PaginatedInterface
             ->where('u.qnoow_id = { qnoow_id }')
             ->with('u')
             ->limit(1)
-        ->setParameter('qnoow_id', (integer) $userId);
+            ->setParameter('qnoow_id', (integer)$userId);
 
-        $label = $enabled ? 'UserEnabled' : 'UserDisabled' ;
+        $label = $enabled ? 'UserEnabled' : 'UserDisabled';
         $qb->remove('u:UserEnabled:UserDisabled');
         $qb->set("u:$label");
 
@@ -566,12 +564,18 @@ class UserManager implements PaginatedInterface
 
         $result = $qb->getQuery()->getResultSet();
 
-        if ($result->count() == 0)
-        {
+        if ($result->count() == 0) {
             throw new NotFoundHttpException(sprintf('User "%d" not found', $userId));
         }
 
         return true;
+    }
+
+    public function isEnabled($userId)
+    {
+        $user = $this->getById($userId);
+
+        return $user->isEnabled();
     }
 
     /**
@@ -1236,7 +1240,7 @@ class UserManager implements PaginatedInterface
 
         $this->buildNodeProperties($user, $node);
         $this->buildPhoto($user, $node);
-        $user->setEnabled($this->isEnabled($node));
+        $user->setEnabled($this->isNodeEnabled($node));
 
         return $user;
     }
@@ -1272,7 +1276,7 @@ class UserManager implements PaginatedInterface
     {
         $metadata = $this->getMetadata();
 
-        if (!isset($metadata[$key])){
+        if (!isset($metadata[$key])) {
             return $value;
         }
 
@@ -1295,7 +1299,7 @@ class UserManager implements PaginatedInterface
         $user->setPhoto($photo);
     }
 
-    protected function isEnabled(Node $node)
+    protected function isNodeEnabled(Node $node)
     {
         return $this->gm->hasLabelName($node, 'UserEnabled');
     }
@@ -1411,7 +1415,6 @@ class UserManager implements PaginatedInterface
         unset($userArray['credentialsExpired']);
         unset($userArray['email']);
         unset($userArray['emailCanonical']);
-        unset($userArray['enabled']);
         unset($userArray['expired']);
         unset($userArray['expiresAt']);
         unset($userArray['locked']);

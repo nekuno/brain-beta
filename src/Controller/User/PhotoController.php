@@ -21,12 +21,11 @@ class PhotoController
         return $app->json($photos);
     }
 
-    public function getAction(Application $app, $id)
+    public function getAction(Application $app, $userId)
     {
-
         $manager = $app['users.photo.manager'];
 
-        $photos = $manager->getAll($id);
+        $photos = $manager->getAll($userId);
 
         return $app->json($photos);
     }
@@ -60,10 +59,10 @@ class PhotoController
         return $app->json($photo, 201);
     }
 
-    public function postProfileAction(Application $app, Request $request, User $user, $id)
+    public function postProfileAction(Application $app, Request $request, User $user, $photoId)
     {
 
-        $photo = $app['users.photo.manager']->getById($id);
+        $photo = $app['users.photo.manager']->getById($photoId);
 
         if ($photo->getUserId() !== $user->getId()) {
             throw new AccessDeniedHttpException('Photo not allowed');
@@ -123,18 +122,18 @@ class PhotoController
 
     }
 
-    public function deleteAction(Application $app, User $user, $id)
+    public function deleteAction(Application $app, User $user, $photoId)
     {
 
         $manager = $app['users.photo.manager'];
 
-        $photo = $manager->getById($id);
+        $photo = $manager->getById($photoId);
 
         if ($photo->getUserId() !== $user->getId()) {
             throw new AccessDeniedHttpException('Photo not allowed');
         }
 
-        $manager->remove($id);
+        $manager->remove($photoId);
 
         return $app->json($photo);
     }
