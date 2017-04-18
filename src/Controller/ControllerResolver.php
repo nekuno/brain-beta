@@ -13,7 +13,6 @@ use Symfony\Component\Security\Core\Exception\AuthenticationException;
  */
 class ControllerResolver extends BaseControllerResolver
 {
-
     protected function doGetArguments(Request $request, $controller, array $parameters)
     {
         foreach ($parameters as $param) {
@@ -31,7 +30,7 @@ class ControllerResolver extends BaseControllerResolver
                     throw new \RuntimeException(sprintf('Controller "%s" uses User "$%s" but user is not authenticated (missing jwt).', $repr, $param->name));
                 }
 
-                $this->checkUser($request);
+                $this->checkOwnUser($request);
 
                 $request->attributes->set($param->getName(), $this->app['user']);
 
@@ -81,7 +80,7 @@ class ControllerResolver extends BaseControllerResolver
         return array($otherUserId, $otherUser);
     }
 
-    protected function checkUser(Request $request)
+    protected function checkOwnUser(Request $request)
     {
         if (!$this->isUserCorrect($this->app['user'], $request->getPathInfo())) {
             throw new AuthenticationException('User is disabled');
