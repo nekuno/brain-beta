@@ -3,7 +3,6 @@
 namespace Model\User\Recommendation;
 
 use Everyman\Neo4j\Query\ResultSet;
-use Model\User\GhostUser\GhostUserManager;
 
 class UserRecommendationPaginatedModel extends AbstractUserPaginatedModel
 {
@@ -44,8 +43,8 @@ class UserRecommendationPaginatedModel extends AbstractUserPaginatedModel
 
         $qb->setParameters($parameters);
 
-        $qb->match('(u:User {qnoow_id: {userId}})-[:MATCHES|:SIMILARITY]-(anyUser:User)')
-            ->where('u <> anyUser', 'NOT (anyUser:' . GhostUserManager::LABEL_GHOST_USER . ')', 'NOT (u)-[:DISLIKES|:IGNORES]->(anyUser)')
+        $qb->match('(u:User {qnoow_id: {userId}})-[:MATCHES|:SIMILARITY]-(anyUser:UserEnabled)')
+            ->where('u <> anyUser', 'NOT (u)-[:DISLIKES|:IGNORES]->(anyUser)')
             ->with('DISTINCT anyUser', 'u')
             ->limit(self::USER_SAFETY_LIMIT)
             ->with('u', 'anyUser')
@@ -149,8 +148,8 @@ class UserRecommendationPaginatedModel extends AbstractUserPaginatedModel
 
         $qb->setParameters($parameters);
 
-        $qb->match('(u:User {qnoow_id: {userId}}), (anyUser:User)')
-            ->where('u <> anyUser', 'NOT (anyUser:' . GhostUserManager::LABEL_GHOST_USER . ')', 'NOT (u)-[:LIKES|:DISLIKES]->(anyUser)')
+        $qb->match('(u:User {qnoow_id: {userId}}), (anyUser:UserEnabled)')
+            ->where('u <> anyUser', 'NOT (u)-[:LIKES|:DISLIKES]->(anyUser)')
             ->with('DISTINCT anyUser as anyUser', 'u')
             ->limit(self::USER_SAFETY_LIMIT)
             ->with('u', 'anyUser')

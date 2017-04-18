@@ -19,13 +19,13 @@ class ThreadController
      *
      * @param Application $app
      * @param Request $request
-     * @param string $id threadId
+     * @param string $threadId threadId
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      * @throws \Exception
      */
-    public function getRecommendationAction(Application $app, Request $request, $id)
+    public function getRecommendationAction(Application $app, Request $request, $threadId)
     {
-        $thread = $app['users.threads.manager']->getById($id);
+        $thread = $app['users.threads.manager']->getById($threadId);
 
         $result = $this->getRecommendations($app, $thread, $request);
         if (!is_array($result)) {
@@ -78,27 +78,27 @@ class ThreadController
      * @param Application $app
      * @param Request $request
      * @param User $user
-     * @param integer $id
+     * @param integer $threadId
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      * @throws \Exception
      */
-    public function putAction(Application $app, Request $request, User $user, $id)
+    public function putAction(Application $app, Request $request, User $user, $threadId)
     {
-        $thread = $app['users.threads.manager']->update($id, $user->getId(), $request->request->all());
+        $thread = $app['users.threads.manager']->update($threadId, $user->getId(), $request->request->all());
 
         return $app->json($thread, 201);
     }
 
     /**
      * @param Application $app
-     * @param integer $id
+     * @param integer $threadId
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      * @throws \Exception
      */
-    public function deleteAction(Application $app, $id)
+    public function deleteAction(Application $app, $threadId)
     {
         try {
-            $relationships = $app['users.threads.manager']->deleteById($id);
+            $relationships = $app['users.threads.manager']->deleteById($threadId);
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
                 throw $e;

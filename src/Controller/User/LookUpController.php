@@ -36,13 +36,13 @@ class LookUpController
 
     /**
      * @param Application $app
-     * @param integer $id
+     * @param integer $userId
      * @param Request $request
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      * @throws \Exception
      */
 
-    public function setAction(Application $app, Request $request, $id)
+    public function setAction(Application $app, Request $request, $userId)
     {
         $userData = array();
         $userData['email'] = $request->request->get('email');
@@ -51,7 +51,7 @@ class LookUpController
         $userData['gender'] = $request->request->get('gender');
         $userData['location'] = $request->request->get('location');
 
-        $lookUpData = $app['users.lookup.model']->set($id, $userData);
+        $lookUpData = $app['users.lookup.model']->set($userId, $userData);
 
         return $app->json($lookUpData);
     }
