@@ -32,12 +32,10 @@ class PhotoController
 
     public function postAction(Application $app, Request $request, User $user)
     {
-
         $manager = $app['users.photo.manager'];
 
         if ($request->request->has('base64')) {
-            $base64 = $request->request->get('base64');
-            if (!$file = base64_decode($base64)) {
+            if (!$file = base64_decode($request->request->get('base64'))) {
                 throw new ValidationException(array('photo' => array('Invalid "base64" provided')));
             }
         } elseif ($request->request->has('url')) {
