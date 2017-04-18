@@ -99,7 +99,7 @@ abstract class Photo implements \JsonSerializable
      */
     public function getPath()
     {
-        return $this->path;
+        return $this->path ? $this->path . '?v=' . time() : null;
     }
 
     /**
