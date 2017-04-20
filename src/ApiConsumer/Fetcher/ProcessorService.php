@@ -135,7 +135,7 @@ class ProcessorService implements LoggerAwareInterface
 
     private function separateUrls($url)
     {
-        preg_match_all('~(?:https?:)?//.*?(?=$|(?:https?:)?//)~', $url, $matches);
+        preg_match_all('~(?:https?://).*?(?=$|(?:https?://))~', $url, $matches);
 
         return $matches[0];
     }
