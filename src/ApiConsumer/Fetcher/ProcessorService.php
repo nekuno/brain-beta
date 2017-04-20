@@ -67,6 +67,8 @@ class ProcessorService implements LoggerAwareInterface
     public function process(array $preprocessedLinks, $userId)
     {
         $links = array();
+        $this->preProcess($preprocessedLinks);
+
         foreach ($preprocessedLinks as $key => $preprocessedLink) {
 
             $source = $preprocessedLink->getSource();
@@ -217,6 +219,8 @@ class ProcessorService implements LoggerAwareInterface
         $source = $this->getCommonSource($preprocessedLinks);
 
         $links = array();
+        $this->preProcess($preprocessedLinks);
+
         foreach ($preprocessedLinks as $key => $preprocessedLink) {
             $this->logNotice(sprintf('Reprocessing link %s', $preprocessedLink->getUrl()));
             try {
