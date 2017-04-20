@@ -128,6 +128,7 @@ class ProcessorService implements LoggerAwareInterface
                 $newPreprocessedLinks[] = $preprocessedLink;
             }
         }
+        $this->logNotice(sprintf('%s links preprocessed', count($newPreprocessedLinks)));
 
         return $newPreprocessedLinks;
     }
