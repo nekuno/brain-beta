@@ -92,6 +92,53 @@ class ProcessorService implements LoggerAwareInterface
         return $links;
     }
 
+    /**
+     * @param PreprocessedLink[] $preprocessedLinks
+     * @return array
+     */
+    public function preProcess(array $preprocessedLinks)
+    {
+        $this->logNotice(sprintf('%s links to preprocess', count($preprocessedLinks)));
+        $newPreprocessedLinks = array();
+        foreach ($preprocessedLinks as $key => $preprocessedLink) {
+            $source = $preprocessedLink->getSource();
+            $url = $preprocessedLink->getUrl();
+            $this->logInfo(sprintf('Preprocessing link %s', $url));
+
+            $urls = $this->separateUrls($url);
+
+            // Fuse urls if is query param, e.g. http://example.com/?q=http://example.com
+            foreach ($urls as $index => $singleUrl) {
+                if (substr($singleUrl, -1, 1) === "=" && isset($urls[$index + 1])) {
+                    $urls[$index] .= $urls[$index + 1];
+                }
+                $this->logInfo(sprintf('Preprocessed link %s', $urls[$index]));
+            }
+
+            // Create new PreprocessedLinks if needed
+            if (count($urls) > 1 || $url !== $urls[0]) {
+                $this->logNotice(sprintf('Preprocessed link %s differs from original %s, or more urls can be extracted', $urls[0], $url));
+                foreach ($urls as $singleUrl) {
+                    $newPreprocessedLink = new PreprocessedLink($singleUrl);
+                    $newPreprocessedLink->setSource($source);
+                    $newPreprocessedLinks[] = $newPreprocessedLink;
+                    $this->logNotice(sprintf('New preprocessed link %s created', $singleUrl));
+                }
+            } else {
+                $newPreprocessedLinks[] = $preprocessedLink;
+            }
+        }
+
+        return $newPreprocessedLinks;
+    }
+
+    private function separateUrls($url)
+    {
+        preg_match_all('~(?:https?:)?//.*?(?=$|(?:https?:)?//)~', $url, $matches);
+
+        return $matches[0];
+    }
+
     private function fullProcessSingle(PreprocessedLink $preprocessedLink, $userId, $processedTimes = 0)
     {
         try {
@@ -471,6 +518,17 @@ class ProcessorService implements LoggerAwareInterface
     {
         if ($this->logger instanceof LoggerInterface) {
             $this->logger->notice($message);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private function logInfo($message)
+    {
+        if ($this->logger instanceof LoggerInterface) {
+            $this->logger->info($message);
 
             return true;
         }
