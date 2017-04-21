@@ -103,7 +103,6 @@ class ProcessorService implements LoggerAwareInterface
         $this->logNotice(sprintf('%s links to preprocess', count($preprocessedLinks)));
         $newPreprocessedLinks = array();
         foreach ($preprocessedLinks as $key => $preprocessedLink) {
-            $source = $preprocessedLink->getSource();
             $url = $preprocessedLink->getUrl();
             $this->logInfo(sprintf('Preprocessing link %s', $url));
 
@@ -121,8 +120,8 @@ class ProcessorService implements LoggerAwareInterface
             if (count($urls) > 1 || $url !== $urls[0]) {
                 $this->logNotice(sprintf('Preprocessed link %s differs from original %s, or more urls can be extracted', $urls[0], $url));
                 foreach ($urls as $singleUrl) {
-                    $newPreprocessedLink = new PreprocessedLink($singleUrl);
-                    $newPreprocessedLink->setSource($source);
+                    $newPreprocessedLink = clone $preprocessedLink;
+                    $newPreprocessedLink->setUrl($singleUrl);
                     $newPreprocessedLinks[] = $newPreprocessedLink;
                     $this->logNotice(sprintf('New preprocessed link %s created', $singleUrl));
                 }
