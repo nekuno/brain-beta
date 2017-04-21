@@ -164,6 +164,7 @@ class UserController
             }
             $user = $app['register.service']->register($data['user'], $data['profile'], $data['token'], $data['oauth'], $data['trackingData']);
         } catch (\Exception $e) {
+            $errorMessage = $this->exceptionMessagesToString($e);
             $message = \Swift_Message::newInstance()
                 ->setSubject('Nekuno registration error')
                 ->setFrom('enredos@nekuno.com', 'Nekuno')
@@ -171,6 +172,7 @@ class UserController
                 ->setContentType('text/html')
                 ->setBody($app['twig']->render('email-notifications/registration-error-notification.html.twig', array(
                     'e' => $e,
+                    'errorMessage' => $errorMessage,
                     'data' => json_encode($request->request->all()),
                 )));
 
@@ -687,5 +689,21 @@ class UserController
         $stats = $model->getComparedStats($user->getId(), $otherUserId);
 
         return $app->json($stats->toArray());
+    }
+
+    private function exceptionMessagesToString(\Exception $e)
+    {
+        $errorMessage = $e->getMessage();
+        if ($e instanceof ValidationException) {
+            foreach ($e->getErrors() as $errors) {
+                if (is_array($errors)) {
+                    $errorMessage .= "\n" . implode("\n", $errors);
+                } elseif (is_string($errors)) {
+                    $errorMessage .= "\n" . $errors . "\n";
+                }
+            }
+        }
+
+        return $errorMessage;
     }
 }
