@@ -7,7 +7,7 @@ class ProfilePhoto extends Photo
 
     public function getDefaultPath()
     {
-        return 'bundles/qnoowweb/images/user-no-img.jpg';
+        return 'bundles/qnoowlanding/images/user-no-img.jpg';
     }
 
     protected function getSizes()

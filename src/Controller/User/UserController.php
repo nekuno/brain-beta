@@ -134,6 +134,21 @@ class UserController
         return $app->json();
     }
 
+    public function setEnableAction(Request $request, Application $app, User $user)
+    {
+        $enabled = $request->request->get('enabled');
+        /* @var $model UserManager */
+        $model = $app['users.manager'];
+        try{
+            $model->setEnabled($user->getId(), $enabled);
+        } catch (NotFoundHttpException $e)
+        {
+            return $app->json($e->getMessage(), 404);
+        }
+
+        return $app->json();
+    }
+
     /**
      * @param Application $app
      * @param Request $request
@@ -203,7 +218,7 @@ class UserController
      */
     public function getMatchingAction(Request $request, Application $app, User $user)
     {
-        $otherUserId = $request->get('id');
+        $otherUserId = $request->get('userId');
 
         if (null === $otherUserId) {
             return $app->json(array(), 400);
@@ -233,7 +248,7 @@ class UserController
      */
     public function getSimilarityAction(Request $request, Application $app, User $user)
     {
-        $otherUserId = $request->get('id');
+        $otherUserId = $request->get('userId');
 
         if (null === $otherUserId) {
             return $app->json(array(), 400);
@@ -316,7 +331,7 @@ class UserController
      */
     public function getUserContentCompareAction(Request $request, Application $app, User $user)
     {
-        $otherUserId = $request->get('id');
+        $otherUserId = $request->get('userId');
         $tag = $request->get('tag', array());
         $type = $request->get('type', array());
         $showOnlyCommon = $request->get('showOnlyCommon', 0);
@@ -659,7 +674,7 @@ class UserController
      */
     public function statsCompareAction(Request $request, Application $app, User $user)
     {
-        $otherUserId = $request->get('id');
+        $otherUserId = $request->get('userId');
         if (null === $otherUserId) {
             throw new NotFoundHttpException('User not found');
         }

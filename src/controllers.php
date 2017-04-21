@@ -305,7 +305,7 @@ $app->error(
             $response['debug'] = array(
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
-                'trace' => $e->getTrace(),
+                'trace' => explode("\n", $e->getTraceAsString())
             );
         }
 

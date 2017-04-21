@@ -3,6 +3,7 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
+use Model\User;
 use Model\User\Token\TokensModel;
 use Service\AMQPManager;
 use Symfony\Component\Console\Input\InputInterface;
@@ -36,7 +37,7 @@ class RabbitMQEnqueueFetchingCommand extends ApplicationAwareCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $userId = $input->getOption('user');
+        $userIdOption = $input->getOption('user');
         $resourceOwnerOption = $input->getOption('resource');
         $public = $input->getOption('public');
 
@@ -45,14 +46,8 @@ class RabbitMQEnqueueFetchingCommand extends ApplicationAwareCommand
             exit;
         }
 
-        $messages = $this->getMessages($userId, $resourceOwnerOption, $public, $output);
-
-        /* @var $amqpManager AMQPManager */
-        $amqpManager = $this->app['amqpManager.service'];
-        foreach ($messages as $message) {
-            $output->writeln(sprintf('Enqueuing resource %s for user %d', $message['resourceOwner'], $message['userId']));
-            $amqpManager->enqueueRefetching($message);
-        }
+        $messages = $this->getMessages($userIdOption, $resourceOwnerOption, $public, $output);
+        $this->enqueueMessages($messages, $output);
     }
 
     private function isValidResourceOwner($resourceOwnerOption)
@@ -62,44 +57,83 @@ class RabbitMQEnqueueFetchingCommand extends ApplicationAwareCommand
         return $resourceOwnerOption == null || in_array($resourceOwnerOption, $availableResourceOwners);
     }
 
-    private function getResourceOwners($resourceOwner, $userId)
+    private function getMessages($userIdOption, $resourceOwnerOption, $public, OutputInterface $output)
     {
-        /** @var TokensModel $tokensModel */
-        $tokensModel = $this->app['users.tokens.model'];
+        if ($userIdOption && $resourceOwnerOption){
+            $messages = array($this->buildMessage($userIdOption, $resourceOwnerOption, $public));
+        } else {
+            $users = $this->getUsers($userIdOption, $output);
+            $messages = $this->buildMessages($users, $resourceOwnerOption, $public);
+        }
 
-        return null != $resourceOwner ? array($resourceOwner) : $tokensModel->getConnectedNetworks($userId);
+        return $messages;
     }
 
-    private function getUsers($userId)
+    private function getUsers($userIdOption, OutputInterface $output)
     {
         $usersModel = $this->app['users.manager'];
 
-        return null == $userId ? $usersModel->getAll() : array($usersModel->getById($userId));
-    }
-
-    private function getMessages($userId, $resourceOwnerOption, $public, OutputInterface $output)
-    {
         try {
-            $users = $this->getUsers($userId);
+            return null == $userIdOption ? $usersModel->getAll() : array($usersModel->getById($userIdOption));
         } catch (\Exception $e) {
             $output->writeln($e->getMessage());
             exit;
         }
+    }
 
+    private function getResourceOwners($resourceOwnerOption, $userId)
+    {
+        /** @var TokensModel $tokensModel */
+        $tokensModel = $this->app['users.tokens.model'];
+        $connectedNetworks = $tokensModel->getConnectedNetworks($userId);
+
+        if (null == $resourceOwnerOption) {
+            return $connectedNetworks;
+        }
+
+        return in_array($resourceOwnerOption, $connectedNetworks) ? array($resourceOwnerOption) : array();
+    }
+
+    /**
+     * @param $messages
+     * @param OutputInterface $output
+     */
+    protected function enqueueMessages($messages, OutputInterface $output)
+    {
+        /* @var $amqpManager AMQPManager */
+        $amqpManager = $this->app['amqpManager.service'];
+        foreach ($messages as $message) {
+            $output->writeln(sprintf('Enqueuing resource %s for user %d', $message['resourceOwner'], $message['userId']));
+            $amqpManager->enqueueRefetching($message);
+        }
+    }
+
+    /**
+     * @param $users User[]
+     * @param $resourceOwnerOption
+     * @param $public
+     * @return array
+     */
+    private function buildMessages($users, $resourceOwnerOption, $public)
+    {
         $messages = array();
         foreach ($users as $user) {
             $resourceOwners = $this->getResourceOwners($resourceOwnerOption, $user->getId());
 
             foreach ($resourceOwners as $resourceOwner) {
-                $messages[] = array(
-                    'userId' => $user->getId(),
-                    'resourceOwner' => $resourceOwner,
-                    'public' => $public,
-                );
+                $messages[] = $this->buildMessage($user->getId(), $resourceOwner, $public);
             }
         }
 
         return $messages;
     }
 
+    private function buildMessage($userId, $resourceOwner, $public)
+    {
+        return array(
+            'userId' => $userId,
+            'resourceOwner' => $resourceOwner,
+            'public' => $public,
+        );
+    }
 }

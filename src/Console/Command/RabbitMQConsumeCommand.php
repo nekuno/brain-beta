@@ -130,7 +130,7 @@ class RabbitMQConsumeCommand extends ApplicationAwareCommand
     {
         $subscribers = array(
             new ExceptionLoggerSubscriber($this->app['monolog']),
-            new FetchLinksInstantSubscriber($this->app['guzzle.client'], $this->app['instant.host']),
+            new FetchLinksInstantSubscriber($this->app['instant.client']),
             new FetchLinksSubscriber($output));
         $dispatcher = $this->getDispatcher($subscribers);
 
@@ -149,7 +149,7 @@ class RabbitMQConsumeCommand extends ApplicationAwareCommand
     {
         $subscribers = array(
             new ExceptionLoggerSubscriber($this->app['monolog']),
-            new FetchLinksInstantSubscriber($this->app['guzzle.client'], $this->app['instant.host']),
+            new FetchLinksInstantSubscriber($this->app['guzzle.client']),
             new FetchLinksSubscriber($output));
         $dispatcher = $this->getDispatcher($subscribers);
 

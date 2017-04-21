@@ -6,7 +6,6 @@ use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
 use Manager\PhotoManager;
 use Model\Neo4j\GraphManager;
-use Model\User\GhostUser\GhostUserManager;
 use Model\Metadata\ProfileFilterMetadataManager;
 use Model\User\ProfileModel;
 use Model\Metadata\UserFilterMetadataManager;
@@ -79,8 +78,8 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
 
         $qb->setParameters($parameters);
 
-        $qb->match('(anyUser:User)')
-            ->where('{userId} <> anyUser.qnoow_id', 'NOT (anyUser:' . GhostUserManager::LABEL_GHOST_USER . ')');
+        $qb->match('(anyUser:UserEnabled)')
+            ->where('{userId} <> anyUser.qnoow_id');
 
         if (null !== $additionalCondition) {
             $qb->add('', $additionalCondition);

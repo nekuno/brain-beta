@@ -30,16 +30,16 @@ class InvitationController
 
     /**
      * @param Application $app
-     * @param integer $id
+     * @param integer $invitationId
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      * @throws \Exception
      */
-    public function getAction(Application $app, $id)
+    public function getAction(Application $app, $invitationId)
     {
         /* @var $model InvitationModel */
         $model = $app['users.invitations.model'];
 
-        $result = $model->getById($id);
+        $result = $model->getById($invitationId);
 
         return $app->json($result);
     }
@@ -101,36 +101,36 @@ class InvitationController
      * @param Request $request
      * @param Application $app
      * @param User $user
-     * @param integer $id
+     * @param integer $invitationId
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      * @throws \Exception
      */
-    public function putAction(Request $request, Application $app, User $user, $id)
+    public function putAction(Request $request, Application $app, User $user, $invitationId)
     {
         $data = $request->request->all();
         $data['userId'] = $user->getId();
         /* @var $model InvitationModel */
         $model = $app['users.invitations.model'];
 
-        $invitation = $model->update($data + array('invitationId' => $id));
+        $invitation = $model->update($data + array('invitationId' => $invitationId));
 
         return $app->json($invitation);
     }
 
     /**
      * @param Application $app
-     * @param integer $id
+     * @param integer $invitationId
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      * @throws \Exception
      */
-    public function deleteAction(Application $app, $id)
+    public function deleteAction(Application $app, $invitationId)
     {
         /* @var $model InvitationModel */
         $model = $app['users.invitations.model'];
 
-        $invitation = $model->getById($id);
+        $invitation = $model->getById($invitationId);
 
-        $model->remove($id);
+        $model->remove($invitationId);
 
         return $app->json($invitation);
     }
@@ -204,11 +204,11 @@ class InvitationController
      * @param Request $request
      * @param Application $app
      * @param User $user
-     * @param integer $id
+     * @param integer $invitationId
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      * @throws \Exception
      */
-    public function sendAction(Request $request, Application $app, User $user, $id)
+    public function sendAction(Request $request, Application $app, User $user, $invitationId)
     {
         $data = $request->request->all();
         $recipients = 0;
@@ -219,7 +219,7 @@ class InvitationController
             $app['translator']->setLocale($data['locale']);
         }
 
-        if ($sendData = $model->prepareSend($id, $user->getUsername(), $data, $app['social_host'])) {
+        if ($sendData = $model->prepareSend($invitationId, $user->getUsername(), $data, $app['social_host'])) {
             /* @var $emailNotification EmailNotifications */
             $emailNotification = $app['emailNotification.service'];
             $recipients = $emailNotification->send(

@@ -21,24 +21,23 @@ class PhotoController
         return $app->json($photos);
     }
 
-    public function getAction(Application $app, $id)
+    public function getAction(Application $app, $userId)
     {
-
         $manager = $app['users.photo.manager'];
 
-        $photos = $manager->getAll($id);
+        $photos = $manager->getAll($userId);
 
         return $app->json($photos);
     }
 
     public function postAction(Application $app, Request $request, User $user)
     {
-
         $manager = $app['users.photo.manager'];
 
         if ($request->request->has('base64')) {
-            $base64 = $request->request->get('base64');
-            $file = base64_decode($base64);
+            if (!$file = base64_decode($request->request->get('base64'))) {
+                throw new ValidationException(array('photo' => array('Invalid "base64" provided')));
+            }
         } elseif ($request->request->has('url')) {
             $url = $request->request->get('url');
             if (filter_var($url, FILTER_VALIDATE_URL) === false) {
@@ -58,10 +57,10 @@ class PhotoController
         return $app->json($photo, 201);
     }
 
-    public function postProfileAction(Application $app, Request $request, User $user, $id)
+    public function postProfileAction(Application $app, Request $request, User $user, $photoId)
     {
 
-        $photo = $app['users.photo.manager']->getById($id);
+        $photo = $app['users.photo.manager']->getById($photoId);
 
         if ($photo->getUserId() !== $user->getId()) {
             throw new AccessDeniedHttpException('Photo not allowed');
@@ -121,18 +120,18 @@ class PhotoController
 
     }
 
-    public function deleteAction(Application $app, User $user, $id)
+    public function deleteAction(Application $app, User $user, $photoId)
     {
 
         $manager = $app['users.photo.manager'];
 
-        $photo = $manager->getById($id);
+        $photo = $manager->getById($photoId);
 
         if ($photo->getUserId() !== $user->getId()) {
             throw new AccessDeniedHttpException('Photo not allowed');
         }
 
-        $manager->remove($id);
+        $manager->remove($photoId);
 
         return $app->json($photo);
     }

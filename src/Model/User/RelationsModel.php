@@ -291,7 +291,8 @@ class RelationsModel
 
         $qb = $this->gm->createQueryBuilder();
 
-        $qb->match('(from:User {qnoow_id: { from }})-[r:' . RelationsModel::BLOCKS . ']-(to:User {qnoow_id: { to }})')
+        $qb->match('(from:UserEnabled {qnoow_id: { from }})', '(to:UserEnabled {qnoow_id: { to }})')
+            ->match('(from)-[r:' . RelationsModel::BLOCKS . ']-(to)')
             ->setParameter('from', (integer)$from)
             ->setParameter('to', (integer)$to)
             ->returns('from', 'to', 'r');

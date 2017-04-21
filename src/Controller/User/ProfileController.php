@@ -11,10 +11,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-/**
- * Class ProfileController
- * @package Controller
- */
 class ProfileController
 {
     /**
@@ -42,7 +38,7 @@ class ProfileController
     public function getOtherAction(Request $request, Application $app)
     {
         $locale = $request->query->get('locale');
-        $id = $request->get('id');
+        $id = $request->get('userId');
         /* @var $model ProfileModel */
         $model = $app['users.profile.model'];
 

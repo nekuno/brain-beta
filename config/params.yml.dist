@@ -2,6 +2,7 @@ params:
 
     ## Secret jwt key
     secret: my secret key
+    instant_api_secret: cliweodwfqpokfrfkcporfkpoqefrefqefbgw
 
     ## Valid IPs
     dev_custom_ip_1:

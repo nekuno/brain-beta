@@ -2,42 +2,35 @@
 
 namespace Console\Command;
 
-use ApiConsumer\EventListener\FetchLinksInstantSubscriber;
-use ApiConsumer\EventListener\FetchLinksSubscriber;
-use ApiConsumer\EventListener\OAuthTokenSubscriber;
 use ApiConsumer\Fetcher\FetcherService;
 use ApiConsumer\Fetcher\ProcessorService;
 use Console\ApplicationAwareCommand;
-use Event\ProcessLinksEvent;
 use Psr\Log\LogLevel;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Validator\Exception\MissingOptionsException;
 
-class LinksFetchCommand extends ApplicationAwareCommand
+class LinksFetchAndPreProcessCommand extends ApplicationAwareCommand
 {
-
     protected function configure()
     {
-
-        $this->setName('links:fetch')
-            ->setDescription('Fetch links from given resource owner')
+        $this->setName('links:fetch-and-preprocess')
+            ->setDescription('Preprocess urls')
             ->setDefinition(
                 array(
                     new InputOption(
                         'resource',
                         null,
                         InputOption::VALUE_OPTIONAL,
-                        'The resource owner which should fetch links'
+                        'The resource owner which should preprocess links'
                     ),
                     new InputOption(
-                        'user',
+                        'userId',
                         null,
                         InputOption::VALUE_OPTIONAL,
-                        'ID of the user to fetch links from'
+                        'ID of the user to preprocess links from'
                     ),
                 )
             );
@@ -45,9 +38,8 @@ class LinksFetchCommand extends ApplicationAwareCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-
         $resource = $input->getOption('resource');
-        $userId = $input->getOption('user');
+        $userId = $input->getOption('userId');
 
         if (null === $resource && null === $userId) {
             throw new MissingOptionsException ("You must provide the user or the resource to fetch links from", array("resource", "user"));
@@ -73,38 +65,20 @@ class LinksFetchCommand extends ApplicationAwareCommand
         $fetcherService->setLogger($logger);
         $processorService->setLogger($logger);
 
-        $dispatcher = $this->setUpSubscribers($output);
+        try {
+            $links = $fetcherService->fetchUser($userId, $resource);
+            $processorService->preProcess($links);
 
-            try {
-                $links = $fetcherService->fetchUser($userId, $resource);
-                $dispatcher->dispatch(\AppEvents::PROCESS_START, new ProcessLinksEvent($userId, $resource, $links));
-                $processorService->process($links, $userId);
-                $dispatcher->dispatch(\AppEvents::PROCESS_FINISH, new ProcessLinksEvent($userId, $resource, $links));
-
-            } catch (\Exception $e) {
-                $output->writeln(
-                    sprintf(
-                        'Error fetching links for user %d with message: %s',
-                        $userId,
-                        $e->getMessage()
-                    )
-                );
-            }
+        } catch (\Exception $e) {
+            $output->writeln(
+                sprintf(
+                    'Error fetching links for user %d with message: %s',
+                    $userId,
+                    $e->getMessage()
+                )
+            );
+        }
 
         $output->writeln('Success!');
-    }
-
-    private function setUpSubscribers(OutputInterface $output)
-    {
-        $fetchLinksSubscriber = new FetchLinksSubscriber($output);
-        $fetchLinksInstantSubscriber = new FetchLinksInstantSubscriber($this->app['instant.client']);
-        $oauthTokenSubscriber = new OAuthTokenSubscriber($this->app['users.tokens.model'], $this->app['mailer'], $this->app['logger'], $this->app['amqp']);
-        $dispatcher = $this->app['dispatcher.service'];
-        /* @var $dispatcher EventDispatcher */
-        $dispatcher->addSubscriber($fetchLinksSubscriber);
-        $dispatcher->addSubscriber($fetchLinksInstantSubscriber);
-        $dispatcher->addSubscriber($oauthTokenSubscriber);
-
-        return $dispatcher;
     }
 }

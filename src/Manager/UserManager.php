@@ -26,7 +26,6 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
-
 class UserManager implements PaginatedInterface
 {
 
@@ -71,7 +70,6 @@ class UserManager implements PaginatedInterface
      */
     public function createUser()
     {
-
         $user = new User();
 
         return $user;
@@ -84,7 +82,6 @@ class UserManager implements PaginatedInterface
      */
     public function getAll($includeGhosts = false)
     {
-
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(u:User)');
         if (!$includeGhosts) {
@@ -456,14 +453,18 @@ class UserManager implements PaginatedInterface
     public function validateUsername($userId, $username)
     {
         $username = trim($username);
-        if(!ctype_alnum(str_replace('_', '', $username))) {
-            throw new ValidationException(array(
-                'username' => array('Invalid username. Only letters, numbers and _ are valid.'))
+        if (!ctype_alnum(str_replace('_', '', $username))) {
+            throw new ValidationException(
+                array(
+                    'username' => array('Invalid username. Only letters, numbers and _ are valid.')
+                )
             );
         }
         if (strlen($username) > 25) {
-            throw new ValidationException(array(
-                    'username' => array('Invalid username. Max 25 characters.'))
+            throw new ValidationException(
+                array(
+                    'username' => array('Invalid username. Max 25 characters.')
+                )
             );
         }
         $user = array('username' => $username);
@@ -472,10 +473,12 @@ class UserManager implements PaginatedInterface
             $qb = $this->gm->createQueryBuilder();
             $qb->match("(u:User { $key: { value$key }})")
                 ->where('u.qnoow_id <> { userId }')
-                ->setParameters(array(
-                    'userId' => $userId,
-                    "value$key" => $value,
-                ))
+                ->setParameters(
+                    array(
+                        'userId' => $userId,
+                        "value$key" => $value,
+                    )
+                )
                 ->returns('u AS users')
                 ->limit(1);
 
@@ -499,14 +502,13 @@ class UserManager implements PaginatedInterface
      */
     public function create(array $data)
     {
-
         $this->validate($data);
 
         $data['userId'] = $this->getNextId();
         $data['username'] = $this->getVerifiedUsername(trim($data['username']));
 
         $qb = $this->gm->createQueryBuilder();
-        $qb->create('(u:User)')
+        $qb->create('(u:User:UserEnabled)')
             ->set('u.qnoow_id = { qnoow_id }')
             ->setParameter('qnoow_id', $data['userId'])
             ->set('u.status = { status }')
@@ -543,7 +545,37 @@ class UserManager implements PaginatedInterface
         $this->dispatcher->dispatch(\AppEvents::USER_UPDATED, new UserEvent($user));
 
         return $user;
+    }
 
+    public function setEnabled($userId, $enabled)
+    {
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match('(u:User)')
+            ->where('u.qnoow_id = { qnoow_id }')
+            ->with('u')
+            ->limit(1)
+            ->setParameter('qnoow_id', (integer)$userId);
+
+        $label = $enabled ? 'UserEnabled' : 'UserDisabled';
+        $qb->remove('u:UserEnabled:UserDisabled');
+        $qb->set("u:$label");
+
+        $qb->returns('u');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() == 0) {
+            throw new NotFoundHttpException(sprintf('User "%d" not found', $userId));
+        }
+
+        return true;
+    }
+
+    public function isEnabled($userId)
+    {
+        $user = $this->getById($userId);
+
+        return $user->isEnabled();
     }
 
     /**
@@ -1103,7 +1135,6 @@ class UserManager implements PaginatedInterface
             'usernameCanonical' => array('type' => 'string', 'editable' => false),
             'email' => array('type' => 'string'),
             'emailCanonical' => array('type' => 'string', 'editable' => false),
-            'enabled' => array('type' => 'boolean', 'default' => true),
             'salt' => array('type' => 'string', 'editable' => false),
             'password' => array('type' => 'string', 'editable' => false),
             'plainPassword' => array('type' => 'string', 'visible' => false),
@@ -1203,34 +1234,74 @@ class UserManager implements PaginatedInterface
 
     public function build(Row $row)
     {
-
         /* @var $node Node */
         $node = $row->offsetGet('u');
-        $properties = $node->getProperties();
-        if (isset($properties['qnoow_id'])) {
-            $properties['id'] = $properties['qnoow_id'];
-            unset($properties['qnoow_id']);
-        }
-        $metadata = $this->getMetadata();
         $user = $this->createUser();
-        $photo = $this->pm->createProfilePhoto();
-        $photo->setUserId($user->getId());
-        $user->setPhoto($photo);
+
+        $this->buildNodeProperties($user, $node);
+        $this->buildPhoto($user, $node);
+        $user->setEnabled($this->isNodeEnabled($node));
+
+        return $user;
+    }
+
+    protected function buildNodeProperties(User $user, Node $node)
+    {
+        $properties = $this->getBuildingProperties($node);
 
         foreach ($properties as $key => $value) {
             $method = 'set' . ucfirst($key);
             if (method_exists($user, $method)) {
-                if (isset($metadata[$key]['type']) && $metadata[$key]['type'] === 'datetime') {
-                    $value = new \DateTime($value);
-                } elseif (isset($metadata[$key]['type']) && $metadata[$key]['type'] === 'photo') {
-                    $photo->setPath($value);
-                    continue;
-                }
+                $value = $this->modifyByType($key, $value);
                 $user->{$method}($value);
             }
         }
+    }
 
-        return $user;
+    protected function getBuildingProperties(Node $node)
+    {
+        $properties = $node->getProperties();
+
+        if (isset($properties['qnoow_id'])) {
+            $properties['id'] = $properties['qnoow_id'];
+            unset($properties['qnoow_id']);
+        }
+        unset($properties['photo']);
+        unset($properties['enabled']); //TODO: Remove after a database query
+
+        return $properties;
+    }
+
+    protected function modifyByType($key, $value)
+    {
+        $metadata = $this->getMetadata();
+
+        if (!isset($metadata[$key])) {
+            return $value;
+        }
+
+        switch ($metadata[$key]['type']) {
+            case 'datetime':
+                $value = new \DateTime($value);
+                break;
+            default:
+                break;
+        }
+
+        return $value;
+    }
+
+    protected function buildPhoto(User $user, Node $node)
+    {
+        $photo = $this->pm->createProfilePhoto();
+        $photo->setUserId($user->getId());
+        $photo->setPath($node->getProperty('photo'));
+        $user->setPhoto($photo);
+    }
+
+    protected function isNodeEnabled(Node $node)
+    {
+        return $this->gm->hasLabelName($node, 'UserEnabled');
     }
 
     public function buildPublic(Row $row)
@@ -1248,7 +1319,6 @@ class UserManager implements PaginatedInterface
         $photo->setUserId($user->getId());
         $user->setPhoto($photo);
         $user->setUsername($user->getUsername());
-        $user->setPhoto($photo);
 
         foreach ($properties as $key => $value) {
             switch ($key) {
@@ -1263,7 +1333,6 @@ class UserManager implements PaginatedInterface
                     break;
                 case 'photo':
                     $photo->setPath($value);
-                    $user->setPhoto($photo);
                     break;
             }
         }
@@ -1346,7 +1415,6 @@ class UserManager implements PaginatedInterface
         unset($userArray['credentialsExpired']);
         unset($userArray['email']);
         unset($userArray['emailCanonical']);
-        unset($userArray['enabled']);
         unset($userArray['expired']);
         unset($userArray['expiresAt']);
         unset($userArray['locked']);
