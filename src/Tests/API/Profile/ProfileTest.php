@@ -318,8 +318,6 @@ class ProfileTest extends ProfileAPITest
     {
         foreach ($metadata as $value) {
             $this->assertArrayHasKey('label', $value, "Filters has not label key");
-            $this->assertArrayNotHasKey('labelFilter', $value, "Filters has labelFilter key");
-            $this->assertArrayNotHasKey('filterable', $value, "Filters has filterable key");
         }
    }
 

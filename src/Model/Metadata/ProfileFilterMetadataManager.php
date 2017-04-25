@@ -139,15 +139,6 @@ class ProfileFilterMetadataManager extends FilterMetadataManager
             $publicMetadata[$name] = $publicField;
         }
 
-        foreach ($publicMetadata as &$item) {
-            if (isset($item['labelFilter'])) {
-                unset($item['labelFilter']);
-            }
-            if (isset($item['filterable'])) {
-                unset($item['filterable']);
-            }
-        }
-
         return $publicMetadata;
     }
 

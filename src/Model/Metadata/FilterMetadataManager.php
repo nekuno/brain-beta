@@ -41,18 +41,10 @@ abstract class FilterMetadataManager
     public function getFilters($locale = null)
     {
         $locale = $this->getLocale($locale);
-        $metadata = $this->getMetadata($locale, false);
+        $metadata = $this->getMetadata($locale);
         $labels = array();
         foreach ($metadata as $key => &$item) {
-            if (isset($item['labelFilter'])) {
-                $item['label'] = $item['labelFilter'][$locale];
-                unset($item['labelFilter']);
-            }
-            if (isset($item['filterable']) && $item['filterable'] === false) {
-                unset($metadata[$key]);
-            } else {
-                $labels[] = $item['label'];
-            }
+            $labels[] = $item['label'];
         }
 
         if (!empty($labels)) {
@@ -65,10 +57,9 @@ abstract class FilterMetadataManager
     /**
      * Returns the metadata for filtering users
      * @param null $locale Locale of the metadata
-     * @param bool $filter Filter non public attributes
      * @return array
      */
-    public function getMetadata($locale = null, $filter = true)
+    public function getMetadata($locale = null)
     {
         $locale = $this->getLocale($locale);
 
@@ -80,17 +71,6 @@ abstract class FilterMetadataManager
             $publicField = $this->modifyPublicFieldByType($publicField, $name, $values, $locale);
 
             $publicMetadata[$name] = $publicField;
-        }
-
-        if ($filter) {
-            foreach ($publicMetadata as &$item) {
-                if (isset($item['labelFilter'])) {
-                    unset($item['labelFilter']);
-                }
-                if (isset($item['filterable'])) {
-                    unset($item['filterable']);
-                }
-            }
         }
 
         return $publicMetadata;

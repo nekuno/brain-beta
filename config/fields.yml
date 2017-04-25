@@ -173,10 +173,9 @@ profile:
         label: &zodiacSignLabel
             en: 'Zodiac sign'
             es: 'Signo del zodíaco'
-        labelFilter: &zodiacSignLabelFilter
+        labelEdit: &zodiacSignLabelEdit
             en: 'Zodiac'
             es: 'Zodiaco'
-        labelEdit: *zodiacSignLabelFilter
     height:
         type: integer
         min: 50
@@ -348,7 +347,6 @@ profile:
         notErasable: true
     orientationRequired:
         type: boolean
-        filterable: false
         label:
             en: 'Orientation required'
             es: 'Orientación obligatoria'
@@ -668,7 +666,9 @@ filters:
             max: 99
         zodiacSign:
             type: multiple_choices
-            label: *zodiacSignLabelFilter
+            label:
+                en: 'Zodiac'
+                es: 'Zodiaco'
         height:
             type: integer_range
             min: 50
