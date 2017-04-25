@@ -9,7 +9,7 @@ use Model\Link\LinkModel;
 use Model\Neo4j\GraphManager;
 use Paginator\PaginatedInterface;
 use Service\ImageTransformations;
-use Service\Validator;
+use Service\Validator\Validator;
 
 abstract class AbstractContentPaginatedModel implements PaginatedInterface
 {

@@ -9,7 +9,7 @@ use Everyman\Neo4j\Relationship;
 use Model\Neo4j\GraphManager;
 use Model\Metadata\ProfileFilterMetadataManager;
 use Model\Metadata\UserFilterMetadataManager;
-use Service\Validator;
+use Service\Validator\Validator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class FilterUsersManager

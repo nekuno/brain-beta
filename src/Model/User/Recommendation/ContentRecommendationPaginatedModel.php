@@ -8,7 +8,7 @@ use Model\Link\LinkModel;
 use Model\User\Affinity\AffinityModel;
 use Model\Neo4j\GraphManager;
 use Service\ImageTransformations;
-use Service\Validator;
+use Service\Validator\Validator;
 
 class ContentRecommendationPaginatedModel extends AbstractContentPaginatedModel
 {

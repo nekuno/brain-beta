@@ -8,7 +8,7 @@ use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 use Model\User\Group\Group;
 use Service\TokenGenerator;
-use Service\Validator;
+use Service\Validator\Validator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 

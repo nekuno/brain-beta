@@ -16,7 +16,8 @@ use Service\RegisterService;
 use Service\SocialNetwork;
 use Service\TokenGenerator;
 use Service\UserAggregator;
-use Service\Validator;
+use Service\Validator\Validator;
+use Service\Validator\ValidatorFactory;
 use Silex\Application;
 use Silex\ServiceProviderInterface;
 use Silex\Translator;
@@ -96,6 +97,12 @@ class ServicesServiceProvider implements ServiceProviderInterface
         $app['validator.service'] = $app->share(
             function (Application $app) {
                 return new Validator($app['neo4j.graph_manager'], $app['users.profileFilter.model'], $app['users.userFilter.model'], $app['users.contentFilter.model'], $app['fields']);
+            }
+        );
+
+        $app['validator.factory'] = $app->share(
+            function (Application $app) {
+                return new ValidatorFactory($app['neo4j.graph_manager'], $app['fields'], $app['validatorConfig']);
             }
         );
 

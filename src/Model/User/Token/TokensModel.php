@@ -10,7 +10,7 @@ use HWI\Bundle\OAuthBundle\DependencyInjection\Configuration;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 use Model\User\Token\TokenStatus\TokenStatusManager;
-use Service\Validator;
+use Service\Validator\Validator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;

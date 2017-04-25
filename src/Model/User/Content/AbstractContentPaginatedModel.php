@@ -8,7 +8,7 @@ use Model\Link\LinkModel;
 use Model\Neo4j\GraphManager;
 use Model\User\Token\TokensModel;
 use Paginator\PaginatedInterface;
-use Service\Validator;
+use Service\Validator\Validator;
 
 abstract class AbstractContentPaginatedModel implements PaginatedInterface
 {

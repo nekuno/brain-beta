@@ -7,7 +7,7 @@ use Everyman\Neo4j\Node;
 use Model\Link\LinkModel;
 use Model\Neo4j\GraphManager;
 use Model\Metadata\ContentFilterMetadataManager;
-use Service\Validator;
+use Service\Validator\Validator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class FilterContentManager

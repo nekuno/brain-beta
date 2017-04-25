@@ -1,6 +1,6 @@
 <?php
 
-namespace Service;
+namespace Service\Validator;
 
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
@@ -253,7 +253,7 @@ class Validator
             $this->validateUserId($data['userId']);
         }
     }
-
+//TODO: Move to ProfileValidator
     public function validateProfile(array $data)
     {
         $metadata = $this->profileFilterModel->getProfileMetadata();
