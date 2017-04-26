@@ -286,20 +286,19 @@ class RelationsModel
         return $return;
     }
 
-    public function contact($from, $to)
+    public function canContact($from, $to)
     {
-
         $qb = $this->gm->createQueryBuilder();
 
         $qb->match('(from:UserEnabled {qnoow_id: { from }})', '(to:UserEnabled {qnoow_id: { to }})')
-            ->match('(from)-[r:' . RelationsModel::BLOCKS . ']-(to)')
+            ->where('NOT (from)-[:' . RelationsModel::BLOCKS . ']-(to)')
             ->setParameter('from', (integer)$from)
             ->setParameter('to', (integer)$to)
-            ->returns('from', 'to', 'r');
+            ->returns('from', 'to');
 
         $result = $qb->getQuery()->getResultSet();
 
-        return $result->count() === 0;
+        return $result->count() !== 0;
     }
 
     protected function getMessaged($id)
@@ -350,11 +349,12 @@ class RelationsModel
 
     protected function validate($relation)
     {
-
         $relations = self::getRelations();
 
         if (!in_array($relation, $relations)) {
-            throw new ValidationException(array(), sprintf('Relation type "%s" not allowed, possible values "%s"', $relation, implode('", "', $relations)));
+            $message = sprintf('Relation type "%s" not allowed, possible values "%s"', $relation, implode('", "', $relations));
+            $errors = array('type' => array($message));
+            throw new ValidationException($errors, $message);
         }
     }
 
@@ -378,6 +378,8 @@ class RelationsModel
                 return array(self::DISLIKES, self::IGNORES);
             case self::DISLIKES:
                 return array(self::LIKES, self::IGNORES);
+            case self::BLOCKS:
+                return array(self::LIKES);
         }
 
         return array();

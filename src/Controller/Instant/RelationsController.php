@@ -33,7 +33,7 @@ class RelationsController
         /* @var $model RelationsModel */
         $model = $app['users.relations.model'];
 
-        $contact = $model->contact($from, $to);
+        $contact = $model->canContact($from, $to);
 
         return $app->json(array(), $contact ? 200 : 404);
     }
