@@ -30,7 +30,8 @@ class ContentComparePaginatedModel extends AbstractContentPaginatedModel
 
         $qb->match("(u:User), (u2:User)")
             ->where("u.qnoow_id = { userId }","u2.qnoow_id = { userId2 }")
-            ->match("(u)-[r:LIKES]->(content:Link {processed: 1})");
+            ->match("(u)-[r:LIKES]->(content:Link {processed: 1})")
+            ->where("NOT (u2)-[:REPORTS]->(content)");
         $qb->filterContentByType($types, 'content', array('u2', 'r'));
 
         if (isset($filters['tag'])) {
@@ -94,7 +95,8 @@ class ContentComparePaginatedModel extends AbstractContentPaginatedModel
 
         $qb->match("(u:User)","(u2:User)")
             ->where("u.qnoow_id = { userId }", "u2.qnoow_id = { userId2 }")
-            ->match("(u)-[r:LIKES]->(content:Link {processed: 1})");
+            ->match("(u)-[r:LIKES]->(content:Link {processed: 1})")
+            ->where("NOT (u2)-[:REPORTS]->(content)");
         $qb->filterContentByType($types, 'content', array('u2', 'r'));
 
         if ($showOnlyCommon) {
@@ -133,19 +135,19 @@ class ContentComparePaginatedModel extends AbstractContentPaginatedModel
     {
         $types = LinkModel::getValidTypes();
         $qb = $this->gm->createQueryBuilder();
-        $qb->match("(u:User {qnoow_id: { userId }})")
-            ->setParameter('userId', $userId);
-        $with = 'u,';
-        if ($showOnlyCommon) {
-            $qb->with(trim($with, ','))
-                ->match("(ownU:User {qnoow_id: { ownUserId }})")
-                ->setParameter('ownUserId', $ownUserId);
-            $with .= 'ownU,';
-        }
+        $qb->match("(u:User {qnoow_id: { userId }}), (ownU:User {qnoow_id: { ownUserId }})")
+            ->setParameters(array(
+                'userId' => $userId,
+                'ownUserId' => $ownUserId,
+            ));
+        $with = 'u, ownU,';
+
         foreach ($types as $type) {
             $qb->optionalMatch("(u)-[:LIKES]->(content$type:$type {processed: 1})");
             if ($showOnlyCommon) {
-                $qb->where("(ownU)-[:LIKES]->(content$type)");
+                $qb->where("(ownU)-[:LIKES]->(content$type) AND NOT (ownU)-[:REPORTS]->(content$type)");
+            } else {
+                $qb->where("NOT (ownU)-[:REPORTS]->(content$type)");
             }
             $qb->with($with . "count(DISTINCT content$type) AS count$type");
             $with .= "count$type,";

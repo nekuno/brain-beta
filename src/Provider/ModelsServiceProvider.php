@@ -7,6 +7,7 @@ use Model\EnterpriseUser\EnterpriseUserModel;
 use Model\Link\LinkModel;
 use Model\Popularity\PopularityManager;
 use Model\Popularity\PopularityPaginatedModel;
+use Model\User\Content\ContentReportModel;
 use Model\User\Question\QuestionModel;
 use Model\User\Affinity\AffinityModel;
 use Model\User\Question\AnswerManager;
@@ -196,6 +197,13 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
 
                 return new RateModel($app['dispatcher'], $app['neo4j.graph_manager']);
+            }
+        );
+
+        $app['users.report.model'] = $app->share(
+            function ($app) {
+
+                return new ContentReportModel($app['neo4j.graph_manager']);
             }
         );
 
