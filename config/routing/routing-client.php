@@ -17,9 +17,10 @@ $app->post('/register', 'users.controller:registerAction');
 $app->put('/users', 'users.controller:putAction');
 $app->post('/users/validate', 'users.controller:validateAction');
 $app->get('/users/available/{username}', 'users.controller:availableAction');
+$app->post('users/enable', 'users.controller:setEnableAction');
 
 $app->get('/profile', 'users.profile.controller:getAction');
-$app->get('/profile/{id}', 'users.profile.controller:getOtherAction')->value('id', null);
+$app->get('/profile/{userId}', 'users.profile.controller:getOtherAction')->value('userId', null);
 $app->put('/profile', 'users.profile.controller:putAction');
 $app->post('/profile/validate', 'users.profile.controller:validateAction');
 $app->get('/profile/metadata', 'users.profile.controller:getMetadataAction');
@@ -68,10 +69,10 @@ $app->delete('/reports/{to}', 'users.relations.controller:deleteAction')->value(
 $app->get('/relations/{to}', 'users.relations.controller:getAction');
 $app->get('/other-relations/{from}', 'users.relations.controller:getOtherAction');
 
-$app->get('/matching/{id}', 'users.controller:getMatchingAction');
-$app->get('/similarity/{id}', 'users.controller:getSimilarityAction');
+$app->get('/matching/{userId}', 'users.controller:getMatchingAction');
+$app->get('/similarity/{userId}', 'users.controller:getSimilarityAction');
 $app->get('content', 'users.controller:getUserContentAction');
-$app->get('/content/compare/{id}', 'users.controller:getUserContentCompareAction');
+$app->get('/content/compare/{userId}', 'users.controller:getUserContentCompareAction');
 $app->get('/content/tags', 'users.controller:getUserContentTagsAction');
 $app->post('/content/rate', 'users.controller:rateContentAction');
 $app->get('/filters', 'users.controller:getAllFiltersAction');
@@ -82,12 +83,13 @@ $app->get('/recommendations/content', 'users.controller:getContentRecommendation
 $app->get('/recommendations/content/tags', 'users.controller:getContentAllTagsAction');
 $app->get('/status', 'users.controller:statusAction');
 $app->get('/stats', 'users.controller:statsAction');
-$app->get('/stats/compare/{id}', 'users.controller:statsCompareAction');
+$app->get('/stats/compare/{userId}', 'users.controller:statsCompareAction');
 
 $app->get('/affinity/{linkId}', 'users.controller:getAffinityAction');
 
+/** Answer routes */
 $app->get('/answers', 'users.answers.controller:indexAction');
-$app->get('/answers/compare/{id}', 'users.answers.controller:getUserAnswersCompareAction');
+$app->get('/answers/compare/{userId}', 'users.answers.controller:getUserAnswersCompareAction');
 $app->post('/answers/explain', 'users.answers.controller:explainAction');
 $app->post('/answers', 'users.answers.controller:answerAction');
 $app->get('/users/{userId}/answers/count', 'users.answers.controller:countAction');
@@ -99,13 +101,13 @@ $app->get('/data/status', 'users.data.controller:getStatusAction')->value('resou
 
 /** Questionnaire routes */
 $app->get('/questions/next', 'questionnaire.questions.controller:getNextQuestionAction');
-$app->get('/other-questions/{id}/next', 'questionnaire.questions.controller:getNextOtherQuestionAction');
+$app->get('/other-questions/{userId}/next', 'questionnaire.questions.controller:getNextOtherQuestionAction');
 $app->get('/questions/register', 'questionnaire.questions.controller:getDivisiveQuestionsAction');
 $app->post('/questions', 'questionnaire.questions.controller:postQuestionAction');
 $app->post('/questions/validate', 'questionnaire.questions.controller:validateAction');
-$app->get('/questions/{id}', 'questionnaire.questions.controller:getQuestionAction');
-$app->post('/questions/{id}/skip', 'questionnaire.questions.controller:skipAction');
-$app->post('/questions/{id}/report', 'questionnaire.questions.controller:reportAction');
+$app->get('/questions/{questionId}', 'questionnaire.questions.controller:getQuestionAction');
+$app->post('/questions/{questionId}/skip', 'questionnaire.questions.controller:skipAction');
+$app->post('/questions/{questionId}/report', 'questionnaire.questions.controller:reportAction');
 
 /** Content routes */
 $app->post('/add/links', 'fetch.controller:addLinkAction');
@@ -113,36 +115,36 @@ $app->put('links/images', 'links.controller:checkImagesAction');
 
 /** LookUp routes */
 $app->get('/lookUp', 'lookUp.controller:getAction');
-$app->post('lookUp/users/{id}', 'lookUp.controller:setAction');
+$app->post('lookUp/users/{userId}', 'lookUp.controller:setAction');
 
 $app->post('/lookUp/webHook', 'lookUp.controller:setFromWebHookAction')->bind('setLookUpFromWebHook');
 
 /** Thread routes */
-$app->get('/threads/{id}/recommendation', 'users.threads.controller:getRecommendationAction');
-$app->put('/threads/{id}', 'users.threads.controller:putAction');
-$app->delete('/threads/{id}', 'users.threads.controller:deleteAction');
+$app->get('/threads/{threadId}/recommendation', 'users.threads.controller:getRecommendationAction');
+$app->put('/threads/{threadId}', 'users.threads.controller:putAction');
+$app->delete('/threads/{threadId}', 'users.threads.controller:deleteAction');
 
 /** Group routes */
-$app->get('/groups/{id}', 'users.groups.controller:getAction');
+$app->get('/groups/{groupId}', 'users.groups.controller:getAction');
 $app->post('/groups', 'users.groups.controller:postAction');
-$app->get('/groups/{id}/members', 'users.groups.controller:getMembersAction');
-$app->post('/groups/{id}/members', 'users.groups.controller:addUserAction');
-$app->delete('/groups/{id}/members', 'users.groups.controller:removeUserAction');
-$app->get('/groups/{id}/contents', 'users.groups.controller:getContentsAction');
+$app->get('/groups/{groupId}/members', 'users.groups.controller:getMembersAction');
+$app->post('/groups/{groupId}/members', 'users.groups.controller:addUserAction');
+$app->delete('/groups/{groupId}/members', 'users.groups.controller:removeUserAction');
+$app->get('/groups/{groupId}/contents', 'users.groups.controller:getContentsAction');
 
 /** Invitation routes */
 $app->get('/invitations', 'users.invitations.controller:indexByUserAction');
 $app->get('/invitations/available', 'users.invitations.controller:getAvailableByUserAction');
 $app->post('/invitations/available/{nOfAvailable}', 'users.invitations.controller:setUserAvailableAction');
-$app->get('/invitations/{id}', 'users.invitations.controller:getAction');
+$app->get('/invitations/{invitationId}', 'users.invitations.controller:getAction');
 $app->post('/invitations', 'users.invitations.controller:postAction');
-$app->put('/invitations/{id}', 'users.invitations.controller:putAction');
-$app->delete('/invitations/{id}', 'users.invitations.controller:deleteAction');
+$app->put('/invitations/{invitationId}', 'users.invitations.controller:putAction');
+$app->delete('/invitations/{invitationId}', 'users.invitations.controller:deleteAction');
 $app->post('/invitations/validate', 'users.invitations.controller:validateAction');
 $app->post('/invitations/token/validate/{token}', 'users.invitations.controller:validateTokenAction');
 $app->post('/invitations/consume/{token}', 'users.invitations.controller:consumeAction');
 $app->get('/invitations/count', 'users.invitations.controller:countByUserAction');
-$app->post('/invitations/{id}/send', 'users.invitations.controller:sendAction');
+$app->post('/invitations/{invitationId}/send', 'users.invitations.controller:sendAction');
 
 /**
  * Tokens routes
@@ -158,7 +160,7 @@ $app->get('/client/blog-feed', 'client.controller:getBlogFeedAction');
 
 /** Photo routes */
 $app->get('/photos', 'users.photos.controller:getAllAction');
-$app->get('/photos/{id}', 'users.photos.controller:getAction');
+$app->get('/photos/{userId}', 'users.photos.controller:getAction');
 $app->post('/photos', 'users.photos.controller:postAction');
-$app->post('/photos/{id}/profile', 'users.photos.controller:postProfileAction');
-$app->delete('/photos/{id}', 'users.photos.controller:deleteAction');
+$app->post('/photos/{photoId}/profile', 'users.photos.controller:postProfileAction');
+$app->delete('/photos/{photoId}', 'users.photos.controller:deleteAction');

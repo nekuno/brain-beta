@@ -16,20 +16,14 @@ class UserRelationsSubscriber implements EventSubscriberInterface
     protected $client;
 
     /**
-     * @var string
-     */
-    protected $host;
-
-    /**
      * @var UserManager
      */
     protected $userManager;
 
-    public function __construct(Client $client, UserManager $userManager, $host)
+    public function __construct(Client $client, UserManager $userManager)
     {
         $this->client = $client;
         $this->userManager = $userManager;
-        $this->host = $host;
     }
 
     public static function getSubscribedEvents()
@@ -65,8 +59,8 @@ class UserRelationsSubscriber implements EventSubscriberInterface
             ),
         );
         try {
-            $this->client->post($this->host . 'api/notification', array('json' => $jsonTo));
-            $this->client->post($this->host . 'api/notification', array('json' => $jsonFrom));
+            $this->client->post('api/notification', array('json' => $jsonTo));
+            $this->client->post('api/notification', array('json' => $jsonFrom));
         } catch (RequestException $e) {
 
         }

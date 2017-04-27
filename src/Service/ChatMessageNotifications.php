@@ -12,12 +12,18 @@ use Silex\Translator;
 use Silex\Application;
 use Symfony\Component\Console\Output\OutputInterface;
 use Console\Command\SwiftMailerChatSendCommand;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 
 /**
  * ChatMessageNotifications
  */
 class ChatMessageNotifications
 {
+    /**
+     * @var Client
+     */
+    protected $client;
 
     /**
      * @var EmailNotifications
@@ -49,8 +55,9 @@ class ChatMessageNotifications
      */
     protected $profileModel;
 
-    function __construct(EmailNotifications $emailNotifications, EntityManager $entityManagerBrain, Connection $connectionBrain, Translator $translator, UserManager $userManager, ProfileModel $profileModel)
+    function __construct(Client $client, EmailNotifications $emailNotifications, EntityManager $entityManagerBrain, Connection $connectionBrain, Translator $translator, UserManager $userManager, ProfileModel $profileModel)
     {
+        $this->client = $client;
         $this->emailNotifications = $emailNotifications;
         $this->entityManagerBrain = $entityManagerBrain;
         $this->connectionBrain = $connectionBrain;
@@ -120,19 +127,13 @@ class ChatMessageNotifications
 
     public function createDefaultMessage($to, $locale)
     {
-        $qb = $this->connectionBrain->createQueryBuilder()
-            ->insert('chat_message')->values(array(
-                'user_to' => $to,
-                'user_from' => 16,
-                'text' => ":text",
-                'readed' => 0,
-                'createdAt' => ':now',
-            ));
-
-        $qb->setParameter('now', new \DateTime('now'), \Doctrine\DBAL\Types\Type::DATETIME);
         $this->translator->setLocale($locale);
-        $qb->setParameter('text', $this->translator->trans('messages.register'));
-        $qb->execute();
+        $json = array('userFromId' => 16, 'userToId' => $to, 'text' => $this->translator->trans('messages.register'));
+        try {
+            $this->client->post('api/message', array('json' => $json));
+        } catch (RequestException $e) {
+
+        }
     }
 
     protected function filterMessages(array $chatMessages)

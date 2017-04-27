@@ -45,12 +45,12 @@ class SubscribersServiceProvider implements ServiceProviderInterface
         $dispatcher->addSubscriber(new UserTrackingSubscriber($app['users.tracking.model']));
         $dispatcher->addSubscriber(new UserSubscriber($app['users.threads.manager'], $app['chatMessageNotifications.service']));
         $dispatcher->addSubscriber(new ChannelSubscriber($app['userAggregator.service']));
-        $dispatcher->addSubscriber(new UserDataStatusSubscriber($app['orm.ems']['mysql_brain'], $app['amqpManager.service']));
+        $dispatcher->addSubscriber(new UserDataStatusSubscriber($app['users.tokenStatus.manager'], $app['amqpManager.service']));
         $dispatcher->addSubscriber(new UserAnswerSubscriber($app['amqpManager.service']));
         $dispatcher->addSubscriber(new InvitationSubscriber($app['neo4j.graph_manager'], $app['users.invitations.model']));
         $dispatcher->addSubscriber(new LookUpSocialNetworkSubscriber($app['neo4j.graph_manager'], $app['amqpManager.service']));
         $dispatcher->addSubscriber(new SimilarityMatchingSubscriber($app['emailNotification.service'], $app['users.manager'], $app['users.profile.model'], $app['users.groups.model'], $app['translator'], $app['notificationManager.service'], $app['social_host']));
-        $dispatcher->addSubscriber(new UserRelationsSubscriber($app['guzzle.client'], $app['users.manager'], $app['instant.host']));
+        $dispatcher->addSubscriber(new UserRelationsSubscriber($app['instant.client'], $app['users.manager']));
         $dispatcher->addSubscriber(new PrivacySubscriber($app['translator'], $app['users.groups.model'], $app['users.manager'], $app['users.profile.model'], $app['users.invitations.model'], $app['social_host']));
         $dispatcher->addSubscriber(new ExceptionLoggerSubscriber($app['monolog']));
         $dispatcher->addSubscriber(new ConsistencySubscriber($app['consistency.service'], $app['popularity.manager']));

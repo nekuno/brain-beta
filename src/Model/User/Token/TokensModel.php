@@ -3,14 +3,13 @@
 namespace Model\User\Token;
 
 use ApiConsumer\Event\OAuthTokenEvent;
-use Doctrine\ORM\EntityManager;
 use Event\AccountConnectEvent;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use HWI\Bundle\OAuthBundle\DependencyInjection\Configuration;
-use Model\Entity\DataStatus;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
+use Model\User\Token\TokenStatus\TokenStatusManager;
 use Service\Validator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
@@ -34,16 +33,15 @@ class TokensModel
      */
     protected $gm;
 
-    /**
-     * @var EntityManager
-     */
-    protected $entityManagerBrain;
+    protected $tokenStatusManager;
 
-    public function __construct(EventDispatcher $dispatcher, GraphManager $graphManager, EntityManager $entityManagerBrain, Validator $validator)
+    protected $validator;
+
+    public function __construct(EventDispatcher $dispatcher, GraphManager $graphManager, TokenStatusManager $tokenStatusManager, Validator $validator)
     {
         $this->dispatcher = $dispatcher;
         $this->gm = $graphManager;
-        $this->entityManagerBrain = $entityManagerBrain;
+        $this->tokenStatusManager = $tokenStatusManager;
         $this->validator = $validator;
     }
 
@@ -186,14 +184,14 @@ class TokensModel
     }
 
     /**
-     * @param int $id
+     * @param int $userId
      * @param string $resourceOwner
      * @return Token
      */
-    public function remove($id, $resourceOwner)
+    public function remove($userId, $resourceOwner)
     {
 
-        list($userNode, $tokenNode) = $this->getUserAndTokenNodesById($id, $resourceOwner);
+        list($userNode, $tokenNode) = $this->getUserAndTokenNodesById($userId, $resourceOwner);
 
         if (!($userNode instanceof Node)) {
             throw new NotFoundHttpException('User not found');
@@ -203,12 +201,12 @@ class TokensModel
             throw new NotFoundHttpException('Token not found');
         }
 
-        $token = $this->getById($id, $resourceOwner);
+        $token = $this->getById($userId, $resourceOwner);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(user:User)<-[token_of:TOKEN_OF]-(token:Token)')
             ->where('user.qnoow_id = { id }', 'token.resourceOwner = { resourceOwner }')
-            ->setParameter('id', (integer)$id)
+            ->setParameter('id', (integer)$userId)
             ->setParameter('resourceOwner', $resourceOwner)
             ->delete('token', 'token_of')
             ->returns('COUNT(token_of) AS count');
@@ -220,13 +218,7 @@ class TokensModel
         $count = $row->offsetGet('count');
 
         if ($count === 1) {
-            $repository = $this->entityManagerBrain->getRepository('\Model\Entity\DataStatus');
-            $dataStatus = $repository->findOneBy(array('userId' => $id, 'resourceOwner' => $resourceOwner));
-
-            if ($dataStatus instanceof DataStatus) {
-                $this->entityManagerBrain->remove($dataStatus);
-                $this->entityManagerBrain->flush();
-            }
+            $this->tokenStatusManager->removeOne($userId, $resourceOwner);
         }
 
         return $token;

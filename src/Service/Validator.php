@@ -74,9 +74,11 @@ class Validator
             $errors['userId'][] = array(sprintf('User with id %d not found', $userId));
         }
 
-        if (count($errors['userId']) > 0) {
-            throw new ValidationException($errors);
+        if (empty($errors['userId'])){
+            unset($errors['userId']);
         }
+
+        $this->throwException($errors);
     }
 
     public function validateGroupId($groupId)
@@ -100,9 +102,11 @@ class Validator
             $errors['groupId'][] = array(sprintf('Group with id %d not found', $groupId));
         }
 
-        if (count($errors['groupId']) > 0) {
-            throw new ValidationException($errors);
+        if (empty($errors['groupId'])){
+            unset($errors['groupId']);
         }
+
+        $this->throwException($errors);
     }
 
     public function validateEditThread(array $data, array $choices = array())
@@ -136,9 +140,7 @@ class Validator
             }
         }
 
-        if (count($errors) > 0) {
-            throw new ValidationException($errors);
-        }
+        $this->throwException($errors);
     }
 
     public function validateInvitation(array $data, $invitationIdRequired = false)
@@ -184,9 +186,7 @@ class Validator
             }
         }
 
-        if (count($errors) > 0) {
-            throw new ValidationException($errors);
-        }
+        $this->throwException($errors);
     }
 
     protected function validateTokenResourceId($resourceId, $userId, $resourceOwner)
@@ -210,12 +210,17 @@ class Validator
         $result = $query->getResultSet();
 
         if ($result->count() > 0) {
-            $errors['groupId'][] = 'There is other user with the same resourceId already registered';
+            $errors = array('groupId' => array('There is other user with the same resourceId already registered'));
         }
 
-        if (count($errors) > 0) {
-            throw new ValidationException($errors);
-        }
+        $this->throwException($errors);
+    }
+
+    public function validateTokenStatus($parameter)
+    {
+        $data = array('boolean' => $parameter);
+        $metadata = array('boolean' => array('type' => 'integer', 'min' => 0, 'max' => 1));
+        return $this->validate($data, $metadata);
     }
 
     public function validateQuestion(array $data, array $choices = array(), $userIdRequired = false)
@@ -226,7 +231,7 @@ class Validator
 
         foreach ($data['answers'] as $answer) {
             if (!isset($answer['text']) || !is_string($answer['text'])) {
-                throw new ValidationException(array('answers', 'Each answer must be an array with key "text" string'));
+                $this->throwException(array('answers', 'Each answer must be an array with key "text" string'));
             }
         }
     }
@@ -241,7 +246,7 @@ class Validator
     protected function validateUserInData(array $data, $userIdRequired = true)
     {
         if ($userIdRequired && !isset($data['userId'])) {
-            throw new ValidationException(array('userId', 'User id is required for this question'));
+            $this->throwException(array('userId', 'User id is required for this question'));
         }
 
         if (isset($data['userId'])) {
@@ -517,11 +522,19 @@ class Validator
             }
         }
 
+        $this->throwException($errors);
+
+        return true;
+    }
+
+    /**
+     * @param $errors
+     */
+    protected function throwException($errors)
+    {
         if (count($errors) > 0) {
             throw new ValidationException($errors);
         }
-
-        return true;
     }
 
     private function validateLocation($dataValue)
