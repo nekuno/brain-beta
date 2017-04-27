@@ -59,8 +59,8 @@ class MigrateDataStatusCommand extends ApplicationAwareCommand
         $tokenStatusManager = $this->app['users.tokenStatus.manager'];
 
         try {
-            $tokenStatusManager->setFetched($userId, $resourceOwner, $fetched);
-            $tokenStatusManager->setProcessed($userId, $resourceOwner, $processed);
+            $tokenStatusManager->setFetched($userId, $resourceOwner, (integer)$fetched);
+            $tokenStatusManager->setProcessed($userId, $resourceOwner, (integer)$processed);
             $tokenStatusManager->setUpdatedAt($userId, $resourceOwner, $updatedAt);
         } catch (NotFoundHttpException $e) {
             $output->writeln(sprintf('NOTICE: Token for this user and resource not found.'));
