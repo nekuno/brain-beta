@@ -6,9 +6,9 @@ use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
 use Model\Exception\ValidationException;
-use Model\Neo4j\GraphManager;
+use Model\User;
 
-class ContentReportModel
+class ContentReportModel extends ContentPaginatedModel
 {
     const NOT_INTERESTING = 'not interesting';
     const HARMFUL = 'harmful';
@@ -16,20 +16,177 @@ class ContentReportModel
     const OTHER = 'other';
 
     /**
-     * @var GraphManager
+     * Slices the query according to $offset, and $limit.
+     * @param array $filters
+     * @param int $offset
+     * @param int $limit
+     * @throws \Exception
+     * @return array
      */
-    protected $gm;
-
-    /**
-     * @param GraphManager $gm
-     */
-    public function __construct(GraphManager $gm)
+    public function slice(array $filters, $offset, $limit)
     {
-        $this->gm = $gm;
+        $qb = $this->gm->createQueryBuilder();
+        $userId = $filters['id'];
+        $types = isset($filters['type']) ? $filters['type'] : array();
+
+        $qb->match("(u:User)-[r:REPORTS]->(content:Link)");
+        if ($userId) {
+            $qb->where("(u.qnoow_id = { userId })")
+                ->with('u, r, content');
+        }
+        $qb->filterContentByType($types, 'content', array('u', 'r'));
+
+        $qb->optionalMatch("(content)-[:TAGGED]->(tag:Tag)")
+            ->optionalMatch("(content)-[:SYNONYMOUS]->(synonymousLink:Link)")
+            ->returns("DISTINCT content, id(content) as id, 
+            collect(distinct { user: u, report: r }) as reports, labels(content) as types, collect(distinct tag.name) as tags, COLLECT (DISTINCT synonymousLink) AS synonymous")
+            ->orderBy("content.created DESC")
+            ->skip("{ offset }")
+            ->limit("{ limit }")
+            ->setParameters(
+                array(
+                    'userId' => (integer)$userId,
+                    'offset' => (integer)$offset,
+                    'limit' => (integer)$limit,
+                )
+            );
+
+        $query = $qb->getQuery();
+
+        $result = $query->getResultSet();
+
+        $response = $this->buildResponse($result);
+
+        return $response;
     }
 
     /**
-     * Get a list of recommended tag
+     * Get a list of reports for content
+     * @param $contentId
+     * @throws \Exception
+     * @return array
+     */
+    public function getById($contentId)
+    {
+        $params = array('contentId' => (integer)$contentId,);
+
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(u:User)-[r:REPORTS]->(content:Link)')
+            ->where('id(content) = { contentId }')
+            ->setParameters($params)
+            ->optionalMatch("(content)-[:TAGGED]->(tag:Tag)")
+            ->optionalMatch("(content)-[:SYNONYMOUS]->(synonymousLink:Link)")
+            ->returns("DISTINCT content, id(content) as id, 
+            collect(distinct { user: u, report: r }) as reports, labels(content) as types, collect(distinct tag.name) as tags, COLLECT (DISTINCT synonymousLink) AS synonymous");
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        if ($result->count() < 1) {
+            throw new ValidationException(array('report' => array('Content not found')));
+        }
+
+        return $this->buildResponse($result);
+    }
+
+    /**
+     * Counts the total results from queryset.
+     * @param array $filters
+     * @throws \Exception
+     * @return int
+     */
+    public function countTotal(array $filters)
+    {
+        $userId = $filters['id'];
+        $types = isset($filters['type']) ? $filters['type'] : array();
+
+        $qb = $this->gm->createQueryBuilder();
+        $count = 0;
+
+        $qb->match("(u:User)-[r:REPORTS]->(content:Link)");
+        if ($userId) {
+            $qb->where("(u.qnoow_id = { userId })")
+                ->with('u, r, content');
+        }
+        $qb->filterContentByType($types, 'content', array('u', 'r'));
+
+        $qb->returns("count(distinct content) as total")
+            ->setParameters(
+                array(
+                    'userId' => (integer)$userId,
+                )
+            );
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        foreach ($result as $row) {
+            $count = $row['total'];
+        }
+
+        return $count;
+    }
+
+    /**
+     * Hook point for validating the query.
+     * @param array $filters
+     * @return boolean
+     */
+    public function validateFilters(array $filters)
+    {
+        $userId = isset($filters['id']) ? $filters['id'] : null;
+        if ($userId) {
+            $this->validator->validateUserId($userId);
+        }
+
+        return $this->validator->validateRecommendateContent($filters, $this->getChoices());
+    }
+
+    /**
+     * @param $result
+     * @param $id
+     * @return array
+     */
+    protected function buildResponse($result, $id = null)
+    {
+        $response = array();
+        /** @var Row $row */
+        foreach ($result as $row) {
+            $content = new Interest();
+
+            $content->setId($row['id']);
+            $this->hydrateNodeProperties($content, $row);
+            $this->hydrateSynonymous($content, $row);
+            $this->hydrateTags($content, $row);
+            $this->hydrateTypes($content, $row);
+
+            $formattedReports = array();
+            $reports = $row->offsetGet('reports');
+            /** @var Row $report */
+            foreach($reports as $report) {
+                $userNode = $report->offsetGet('user');
+                $reportRelationship = $report->offsetGet('report');
+                $formattedReports[] = array(
+                    'id' => $userNode->getProperty('qnoow_id'),
+                    'username' => $userNode->getProperty('username'),
+                    'reason' => $reportRelationship->getProperty('reason'),
+                    'reasonText' => $reportRelationship->getProperty('reasonText'),
+                    'created' => $reportRelationship->getProperty('created'),
+                );
+            }
+
+            $response[] = array(
+                'content' => $content,
+                'reports' => $formattedReports,
+            );
+        }
+
+        return $response;
+    }
+
+    /**
+     * Report a content
      * @param $userId
      * @param $contentId
      * @param $reason
@@ -55,6 +212,7 @@ class ContentReportModel
             ->merge('(u)-[r:REPORTS]->(content)')
             ->set('r.reason = { reason }')
             ->set('r.reasonText = { reasonText }')
+            ->set('r.created = timestamp()')
             ->setParameters($params)
             ->returns('content, r');
 
