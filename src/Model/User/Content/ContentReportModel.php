@@ -172,7 +172,7 @@ class ContentReportModel extends ContentPaginatedModel
                     'username' => $userNode->getProperty('username'),
                     'reason' => $reportRelationship->getProperty('reason'),
                     'reasonText' => $reportRelationship->getProperty('reasonText'),
-                    'created' => $reportRelationship->getProperty('created'),
+                    'created' => (int) ($reportRelationship->getProperty('created')/1000),
                 );
             }
 
