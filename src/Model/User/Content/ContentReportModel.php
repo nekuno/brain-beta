@@ -34,6 +34,7 @@ class ContentReportModel extends ContentPaginatedModel
             $qb->where("(u.qnoow_id = { userId })")
                 ->with('u, r, content');
         }
+        $qb->where("NOT (content:LinkDisabled)");
         $qb->filterContentByType($types, 'content', array('u', 'r'));
 
         $qb->optionalMatch("(content)-[:TAGGED]->(tag:Tag)")
@@ -106,8 +107,10 @@ class ContentReportModel extends ContentPaginatedModel
 
         $qb->match("(u:User)-[r:REPORTS]->(content:Link)");
         if ($userId) {
-            $qb->where("(u.qnoow_id = { userId })")
+            $qb->where("(u.qnoow_id = { userId }) AND NOT (content:LinkDisabled)")
                 ->with('u, r, content');
+        } else {
+            $qb->where("NOT (content:LinkDisabled)");
         }
         $qb->filterContentByType($types, 'content', array('u', 'r'));
 
@@ -221,6 +224,37 @@ class ContentReportModel extends ContentPaginatedModel
 
         if ($result->count() < 1) {
             throw new ValidationException(array('report' => array('Content not found')));
+        }
+
+        /* @var $row Row */
+        $row = $result->current();
+
+        return $this->build($row);
+    }
+
+    /**
+     * Delete a reported content
+     * @param $contentId
+     * @throws \Exception
+     * @return array
+     */
+    public function disable($contentId)
+    {
+        $params = array('contentId' => (integer)$contentId,);
+
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(u:User)-[r:REPORTS]->(content:Link)')
+            ->where('id(content) = { contentId } AND NOT (content:LinkDisabled)')
+            ->set('content:LinkDisabled')
+            ->setParameters($params)
+            ->returns('content, r');
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        if ($result->count() < 1) {
+            throw new ValidationException(array('delete_report' => array('Content not found')));
         }
 
         /* @var $row Row */

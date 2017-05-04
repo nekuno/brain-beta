@@ -45,4 +45,14 @@ class ContentController
 
         return $app->json($result);
     }
+
+    public function disableAction(Application $app, $id)
+    {
+        /* @var $model ContentReportModel */
+        $model = $app['users.content.report.model'];
+
+        $result = $model->disable($id);
+
+        return $app->json($result);
+    }
 }
