@@ -34,7 +34,11 @@ class ContentReportModel extends ContentPaginatedModel
             $qb->where("(u.qnoow_id = { userId })")
                 ->with('u, r, content');
         }
-        $qb->where("NOT (content:LinkDisabled)");
+        if ($filters['disabled']) {
+            $qb->where("(content:LinkDisabled)");
+        } else {
+            $qb->where("NOT (content:LinkDisabled)");
+        }
         $qb->filterContentByType($types, 'content', array('u', 'r'));
 
         $qb->optionalMatch("(content)-[:TAGGED]->(tag:Tag)")
@@ -233,7 +237,7 @@ class ContentReportModel extends ContentPaginatedModel
     }
 
     /**
-     * Delete a reported content
+     * Disable a reported content
      * @param $contentId
      * @throws \Exception
      * @return array
@@ -254,7 +258,38 @@ class ContentReportModel extends ContentPaginatedModel
         $result = $query->getResultSet();
 
         if ($result->count() < 1) {
-            throw new ValidationException(array('delete_report' => array('Content not found')));
+            throw new ValidationException(array('disable_report' => array('Content not found')));
+        }
+
+        /* @var $row Row */
+        $row = $result->current();
+
+        return $this->build($row);
+    }
+
+    /**
+     * Enable a reported content
+     * @param $contentId
+     * @throws \Exception
+     * @return array
+     */
+    public function enable($contentId)
+    {
+        $params = array('contentId' => (integer)$contentId,);
+
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(u:User)-[r:REPORTS]->(content:Link)')
+            ->where('id(content) = { contentId } AND (content:LinkDisabled)')
+            ->remove('content:LinkDisabled')
+            ->setParameters($params)
+            ->returns('content, r');
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        if ($result->count() < 1) {
+            throw new ValidationException(array('enable_report' => array('Content not found')));
         }
 
         /* @var $row Row */

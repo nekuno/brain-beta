@@ -12,7 +12,11 @@ class ContentController
     {
         $id = $request->get('id', null);
         $type = $request->get('type', array());
-        $filters = array('id' => $id);
+        $disabled = $request->get('disabled', null);
+        $filters = array(
+            'id' => $id,
+            'disabled' => $disabled,
+        );
         foreach ($type as $singleType) {
             if (!empty($singleType)) {
                 $filters['type'][] = urldecode($singleType);
@@ -52,6 +56,16 @@ class ContentController
         $model = $app['users.content.report.model'];
 
         $result = $model->disable($id);
+
+        return $app->json($result);
+    }
+
+    public function enableAction(Application $app, $id)
+    {
+        /* @var $model ContentReportModel */
+        $model = $app['users.content.report.model'];
+
+        $result = $model->enable($id);
 
         return $app->json($result);
     }
