@@ -30,6 +30,16 @@ class ContentReportModel extends ContentPaginatedModel
         $types = isset($filters['type']) ? $filters['type'] : array();
         $order = $filters['order'] ? $filters['order'] : 'created';
         $orderDir = $filters['orderDir'] ? $filters['orderDir'] : 'desc';
+        switch ($order) {
+            case 'created':
+                $orderParam = "head(reports).report.created $orderDir";
+                break;
+            case 'reports':
+                $orderParam = "count(reports) $orderDir";
+                break;
+            default:
+                $orderParam = "head(reports).report.created $orderDir";
+        }
 
         $qb->match("(u:User)-[r:REPORTS]->(content:Link)");
         if ($userId) {
@@ -42,11 +52,11 @@ class ContentReportModel extends ContentPaginatedModel
             $qb->where("NOT (content:LinkDisabled)");
         }
         $qb->filterContentByType($types, 'content', array('u', 'r'));
-        $qb->orderBy("r.$order $orderDir");
+        $qb->orderBy("r.created $orderDir");
         $qb->optionalMatch("(content)-[:TAGGED]->(tag:Tag)")
             ->optionalMatch("(content)-[:SYNONYMOUS]->(synonymousLink:Link)")
             ->returns('DISTINCT content, id(content) as id, collect(distinct { user: u, report: r }) as reports, labels(content) as types, collect(distinct tag.name) as tags, COLLECT (DISTINCT synonymousLink) AS synonymous')
-            ->orderBy("head(reports).report.$order $orderDir")
+            ->orderBy($orderParam)
             ->skip("{ offset }")
             ->limit("{ limit }")
             ->setParameters(
