@@ -13,9 +13,13 @@ class ContentController
         $id = $request->get('id', null);
         $type = $request->get('type', array());
         $disabled = $request->get('disabled', null);
+        $order = $request->get('order', null);
+        $orderDir = $request->get('orderDir', null);
         $filters = array(
             'id' => $id,
             'disabled' => $disabled,
+            'order' => $order,
+            'orderDir' => $orderDir,
         );
         foreach ($type as $singleType) {
             if (!empty($singleType)) {

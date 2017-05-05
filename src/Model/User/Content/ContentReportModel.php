@@ -28,6 +28,8 @@ class ContentReportModel extends ContentPaginatedModel
         $qb = $this->gm->createQueryBuilder();
         $userId = $filters['id'];
         $types = isset($filters['type']) ? $filters['type'] : array();
+        $order = $filters['order'] ? $filters['order'] : 'created';
+        $orderDir = $filters['orderDir'] ? $filters['orderDir'] : 'desc';
 
         $qb->match("(u:User)-[r:REPORTS]->(content:Link)");
         if ($userId) {
@@ -43,9 +45,9 @@ class ContentReportModel extends ContentPaginatedModel
 
         $qb->optionalMatch("(content)-[:TAGGED]->(tag:Tag)")
             ->optionalMatch("(content)-[:SYNONYMOUS]->(synonymousLink:Link)")
-            ->returns("DISTINCT content, id(content) as id, 
+            ->returns("DISTINCT content, r, id(content) as id, 
             collect(distinct { user: u, report: r }) as reports, labels(content) as types, collect(distinct tag.name) as tags, COLLECT (DISTINCT synonymousLink) AS synonymous")
-            ->orderBy("content.created DESC")
+            ->orderBy("r.$order $orderDir")
             ->skip("{ offset }")
             ->limit("{ limit }")
             ->setParameters(
