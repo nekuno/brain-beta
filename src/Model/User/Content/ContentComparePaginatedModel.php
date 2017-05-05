@@ -31,7 +31,7 @@ class ContentComparePaginatedModel extends AbstractContentPaginatedModel
         $qb->match("(u:User), (u2:User)")
             ->where("u.qnoow_id = { userId }","u2.qnoow_id = { userId2 }")
             ->match("(u)-[r:LIKES]->(content:Link {processed: 1})")
-            ->where("NOT (u2)-[:REPORTS]->(content)");
+            ->where("NOT (u2)-[:REPORTS]->(content) AND NOT (content:LinkDisabled)");
         $qb->filterContentByType($types, 'content', array('u2', 'r'));
 
         if (isset($filters['tag'])) {
@@ -96,7 +96,7 @@ class ContentComparePaginatedModel extends AbstractContentPaginatedModel
         $qb->match("(u:User)","(u2:User)")
             ->where("u.qnoow_id = { userId }", "u2.qnoow_id = { userId2 }")
             ->match("(u)-[r:LIKES]->(content:Link {processed: 1})")
-            ->where("NOT (u2)-[:REPORTS]->(content)");
+            ->where("NOT (u2)-[:REPORTS]->(content) AND NOT (content:LinkDisabled)");
         $qb->filterContentByType($types, 'content', array('u2', 'r'));
 
         if ($showOnlyCommon) {
@@ -145,9 +145,9 @@ class ContentComparePaginatedModel extends AbstractContentPaginatedModel
         foreach ($types as $type) {
             $qb->optionalMatch("(u)-[:LIKES]->(content$type:$type {processed: 1})");
             if ($showOnlyCommon) {
-                $qb->where("(ownU)-[:LIKES]->(content$type) AND NOT (ownU)-[:REPORTS]->(content$type)");
+                $qb->where("(ownU)-[:LIKES]->(content$type) AND NOT (ownU)-[:REPORTS]->(content$type) AND NOT (content$type:LinkDisabled)");
             } else {
-                $qb->where("NOT (ownU)-[:REPORTS]->(content$type)");
+                $qb->where("NOT (ownU)-[:REPORTS]->(content$type) AND NOT (content$type:LinkDisabled)");
             }
             $qb->with($with . "count(DISTINCT content$type) AS count$type");
             $with .= "count$type,";

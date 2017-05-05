@@ -453,7 +453,7 @@ class UserController
 
         try {
             /* @var ContentReportModel $model */
-            $model = $app['users.report.model'];
+            $model = $app['users.content.report.model'];
             $result = $model->report($user->getId(), $contentId, $reason, $reasonText);
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {

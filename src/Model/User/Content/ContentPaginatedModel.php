@@ -23,7 +23,8 @@ class ContentPaginatedModel extends AbstractContentPaginatedModel
 
         $qb->match("(u:User)")
             ->where("u.qnoow_id = { userId }")
-            ->match("(u)-[r:LIKES]->(content:Link {processed: 1})");
+            ->match("(u)-[r:LIKES]->(content:Link {processed: 1})")
+            ->where("NOT (content:LinkDisabled)");
         $qb->filterContentByType($types, 'content', array('u', 'r'));
 
         if (isset($filters['tag'])) {
@@ -73,7 +74,8 @@ class ContentPaginatedModel extends AbstractContentPaginatedModel
 
         $qb->match("(u:User)")
             ->where("u.qnoow_id = { userId }")
-            ->match("(u)-[r:LIKES]->(content:Link {processed: 1})");
+            ->match("(u)-[r:LIKES]->(content:Link {processed: 1})")
+            ->where("NOT (content:LinkDisabled)");
 
         $qb->filterContentByType($types,'content', array('r'));
 
@@ -111,7 +113,7 @@ class ContentPaginatedModel extends AbstractContentPaginatedModel
         $with = 'u,';
         foreach ($types as $type) {
             $qb->optionalMatch("(u)-[:LIKES]->(content$type:$type)")
-                ->where('content' . $type . '.processed = 1');
+                ->where('content' . $type . '.processed = 1 AND NOT (content' . $type . ':LinkDisabled)');
             $qb->with($with . "count(DISTINCT content$type) AS count$type");
             $with .= "count$type,";
         }

@@ -50,6 +50,11 @@ $admin->get('/users/tracking', 'admin.userTracking.controller:getAllAction');
 $admin->get('/users/{id}/tracking', 'admin.userTracking.controller:getAction');
 $admin->get('/users/csv', 'admin.userTracking.controller:getCsvAction');
 
+/** Content routes */
+$admin->get('/content/reported', 'admin.content.controller:getReportedAction');
+$admin->get('/content/reported/{id}', 'admin.content.controller:getReportedByIdAction');
+$admin->post('/content/disable/{id}', 'admin.content.controller:disableAction');
+$admin->post('/content/enable/{id}', 'admin.content.controller:enableAction');
 
 $app->mount('/admin', $admin);
 
