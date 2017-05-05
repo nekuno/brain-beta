@@ -112,8 +112,11 @@ class ContentReportModel extends ContentPaginatedModel
 
         $qb->match("(u:User)-[r:REPORTS]->(content:Link)");
         if ($userId) {
-            $qb->where("(u.qnoow_id = { userId }) AND NOT (content:LinkDisabled)")
+            $qb->where("(u.qnoow_id = { userId })")
                 ->with('u, r, content');
+        }
+        if ($filters['disabled']) {
+            $qb->where("(content:LinkDisabled)");
         } else {
             $qb->where("NOT (content:LinkDisabled)");
         }
