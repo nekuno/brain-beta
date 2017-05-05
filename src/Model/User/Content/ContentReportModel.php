@@ -42,13 +42,11 @@ class ContentReportModel extends ContentPaginatedModel
             $qb->where("NOT (content:LinkDisabled)");
         }
         $qb->filterContentByType($types, 'content', array('u', 'r'));
-
+        $qb->orderBy("r.$order $orderDir");
         $qb->optionalMatch("(content)-[:TAGGED]->(tag:Tag)")
             ->optionalMatch("(content)-[:SYNONYMOUS]->(synonymousLink:Link)")
-            ->with("DISTINCT content, r, id(content) as id, 
-            collect(distinct { user: u, report: r }) as reports, labels(content) as types, collect(distinct tag.name) as tags, COLLECT (DISTINCT synonymousLink) AS synonymous")
-            ->orderBy("r.$order $orderDir")
-            ->returns('content, id, reports, types, tags, synonymous')
+            ->returns('DISTINCT content, id(content) as id, collect(distinct { user: u, report: r }) as reports, labels(content) as types, collect(distinct tag.name) as tags, COLLECT (DISTINCT synonymousLink) AS synonymous')
+            ->orderBy("head(reports).report.$order $orderDir")
             ->skip("{ offset }")
             ->limit("{ limit }")
             ->setParameters(
