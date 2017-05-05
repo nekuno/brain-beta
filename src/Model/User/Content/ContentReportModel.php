@@ -45,9 +45,10 @@ class ContentReportModel extends ContentPaginatedModel
 
         $qb->optionalMatch("(content)-[:TAGGED]->(tag:Tag)")
             ->optionalMatch("(content)-[:SYNONYMOUS]->(synonymousLink:Link)")
-            ->returns("DISTINCT content, r, id(content) as id, 
+            ->with("DISTINCT content, r, id(content) as id, 
             collect(distinct { user: u, report: r }) as reports, labels(content) as types, collect(distinct tag.name) as tags, COLLECT (DISTINCT synonymousLink) AS synonymous")
             ->orderBy("r.$order $orderDir")
+            ->returns('content, id, reports, types, tags, synonymous')
             ->skip("{ offset }")
             ->limit("{ limit }")
             ->setParameters(
