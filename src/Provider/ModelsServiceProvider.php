@@ -200,10 +200,10 @@ class ModelsServiceProvider implements ServiceProviderInterface
             }
         );
 
-        $app['users.report.model'] = $app->share(
+        $app['users.content.report.model'] = $app->share(
             function ($app) {
 
-                return new ContentReportModel($app['neo4j.graph_manager']);
+                return new ContentReportModel($app['neo4j.graph_manager'], $app['links.model'], $app['validator.service']);
             }
         );
 
