@@ -65,11 +65,11 @@ class RelationsModel
         );
     }
 
-    public function getAll($from, $relation)
+    public function getAll($relation, $from = null, $to = null)
     {
         $this->validate($relation);
 
-        $qb = $this->matchRelationshipQuery($relation, $from, null);
+        $qb = $this->matchRelationshipQuery($relation, $from, $to);
         $this->returnRelationshipQuery($qb);
 
         $result = $qb->getQuery()->getResultSet();

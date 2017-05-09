@@ -2,6 +2,7 @@
 
 namespace Model\User;
 
+use Model\User;
 use Paginator\PaginatedInterface;
 
 class RelationsPaginatedModel extends RelationsModel implements PaginatedInterface
@@ -17,15 +18,57 @@ class RelationsPaginatedModel extends RelationsModel implements PaginatedInterfa
     {
         list ($relation, $from, $to) = $this->getParameters($filters);
 
-        $qb = $this->matchRelationshipQuery($relation, $from, $to)
-            ->skip((integer)$offset)
-            ->limit((integer)$limit);
+        $relations = $this->getAll($relation, $from, $to);
+        $userReports = $this->aggregateRelationsByUserTo($relations);
+        $userReports = array_slice($userReports, $offset, $limit);
+        
+        $this->orderByRelationCount($userReports);
 
-        $this->returnRelationshipQuery($qb);
+        return $userReports;
+    }
 
-        $result = $qb->getQuery()->getResultSet();
+    protected function aggregateRelationsByUserTo(array $relations)
+    {
+        $userList = array();
+        foreach ($relations as $relation) {
+            $userTo = $relation['to'];
+            $userToId = $userTo['qnoow_id'];
+            if ($this->isUserInList($userToId, $userList)) {
+                $userList[$userToId]['relations'][] = $relation;
+            } else {
+                $userList[$userToId] = array(
+                    'user' => $userTo,
+                    'relations' => array($relation)
+                );
+            }
+        }
 
-        return $this->buildMany($result);
+        return $userList;
+    }
+
+    protected function orderByRelationCount(array &$userReports)
+    {
+        $size = array();
+        foreach ($userReports as $userId => $relations) {
+            $size[$userId] = count($relations);
+        }
+        array_multisort($size, SORT_DESC, $userReports);
+    }
+
+    /**
+     * @param $userToId
+     * @param User[] $userList
+     * @return bool
+     */
+    protected function isUserInList($userToId, array $userList)
+    {
+        foreach ($userList as $user) {
+            if ($user->getId() === $userToId) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function countTotal(array $filters)
