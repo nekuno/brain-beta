@@ -5,6 +5,7 @@ namespace Model\User;
 use Doctrine\DBAL\Connection;
 use Event\UserBothLikedEvent;
 use Everyman\Neo4j\Node;
+use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
 use Model\Exception\ValidationException;
@@ -73,11 +74,7 @@ class RelationsModel
 
         $result = $qb->getQuery()->getResultSet();
 
-        $return = array();
-        /* @var $row Row */
-        foreach ($result as $row) {
-            $return[] = $this->build($row);
-        }
+        $return = $this->buildMany($result);
 
         return $return;
     }
@@ -99,29 +96,24 @@ class RelationsModel
         /* @var $row Row */
         $row = $result->current();
 
-        return $this->build($row);
+        return $this->buildOne($row);
     }
 
     public function countFrom($from, $relation)
     {
-        $this->validate($relation);
-
-        $qb = $this->matchRelationshipQuery($relation, $from, null);
-        $this->returnCountRelationshipsQuery($qb);
-
-        $result = $qb->getQuery()->getResultSet();
-
-        /* @var $row Row */
-        $row = $result->current();
-
-        return $row->offsetGet('count');
+        return $this->count($relation, $from, null);
     }
 
     public function countTo($to, $relation)
     {
+        return $this->count($relation, null, $to);
+    }
+
+    protected function count($relation, $from, $to)
+    {
         $this->validate($relation);
 
-        $qb = $this->matchRelationshipQuery($relation, null, $to);
+        $qb = $this->matchRelationshipQuery($relation, $from, $to);
         $this->returnCountRelationshipsQuery($qb);
 
         $result = $qb->getQuery()->getResultSet();
@@ -163,7 +155,7 @@ class RelationsModel
         /* @var $row Row */
         $row = $result->current();
 
-        return $this->build($row);
+        return $this->buildOne($row);
     }
 
     public function remove($from, $to, $relation)
@@ -273,7 +265,7 @@ class RelationsModel
         return $messaged;
     }
 
-    protected function build(Row $row)
+    protected function buildOne(Row $row)
     {
         /* @var $from Node */
         $from = $row->offsetGet('from');
@@ -290,6 +282,21 @@ class RelationsModel
             ),
             $relationship->getProperties()
         );
+    }
+
+    /**
+     * @param $result
+     * @return array
+     */
+    protected function buildMany(ResultSet $result)
+    {
+        $return = array();
+        /* @var $row Row */
+        foreach ($result as $row) {
+            $return[] = $this->buildOne($row);
+        }
+
+        return $return;
     }
 
     protected function validate($relation)
@@ -362,7 +369,7 @@ class RelationsModel
         $qb->with('from', 'to', 'r');
     }
 
-    private function relationMustBeCreated($from, $to, $relation)
+    protected function relationMustBeCreated($from, $to, $relation)
     {
         if ($relation === self::IGNORES) {
             $likes = $this->get($from, $to, self::LIKES);
@@ -375,7 +382,7 @@ class RelationsModel
         return true;
     }
 
-    private function getRelationsToDelete($relation)
+    protected function getRelationsToDelete($relation)
     {
         switch ($relation) {
             case self::LIKES:
@@ -391,7 +398,7 @@ class RelationsModel
         return array();
     }
 
-    private function getRelationsToAdd($relation)
+    protected function getRelationsToAdd($relation)
     {
         switch ($relation) {
             case self::REPORTS:
@@ -403,17 +410,17 @@ class RelationsModel
         return array();
     }
 
-    private function matchRelationshipQuery($relation, $from = null, $to = null)
+    protected function matchRelationshipQuery($relation, $from = null, $to = null)
     {
         return $this->initialRelationshipQuery($relation, $from, $to, false);
     }
 
-    private function mergeRelationshipQuery($relation, $from, $to)
+    protected function mergeRelationshipQuery($relation, $from, $to)
     {
         return $this->initialRelationshipQuery($relation, $from, $to, true);
     }
 
-    private function initialRelationshipQuery($relation, $from, $to, $merge = false)
+    protected function initialRelationshipQuery($relation, $from, $to, $merge = false)
     {
         $userFrom = $from ? '(from:UserEnabled {qnoow_id: { from }})' : '(from:UserEnabled)';
         $userTo = $to ? '(to:UserEnabled {qnoow_id: { to }})' : '(to:UserEnabled)';
@@ -441,12 +448,12 @@ class RelationsModel
         return $qb;
     }
 
-    private function returnRelationshipQuery(QueryBuilder $qb)
+    protected function returnRelationshipQuery(QueryBuilder $qb)
     {
         $qb->returns('from', 'to', 'r');
     }
 
-    private function returnCountRelationshipsQuery(QueryBuilder $qb)
+    protected function returnCountRelationshipsQuery(QueryBuilder $qb)
     {
         $qb->returns('count (r) AS count');
     }

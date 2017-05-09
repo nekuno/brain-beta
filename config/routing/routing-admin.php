@@ -49,6 +49,7 @@ $admin->post('/enterpriseUsers/{enterpriseUserId}/invitations/{id}', 'admin.ente
 $admin->get('/users/tracking', 'admin.userTracking.controller:getAllAction');
 $admin->get('/users/{id}/tracking', 'admin.userTracking.controller:getAction');
 $admin->get('/users/csv', 'admin.userTracking.controller:getCsvAction');
+$admin->get('/users/reported', 'admin.userTracking.controller:getReportedAction');
 
 /** Content routes */
 $admin->get('/content/reported', 'admin.content.controller:getReportedAction');
