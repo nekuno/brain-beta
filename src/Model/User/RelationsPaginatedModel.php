@@ -2,7 +2,6 @@
 
 namespace Model\User;
 
-use Model\User;
 use Paginator\PaginatedInterface;
 
 class RelationsPaginatedModel extends RelationsModel implements PaginatedInterface
@@ -21,7 +20,7 @@ class RelationsPaginatedModel extends RelationsModel implements PaginatedInterfa
         $relations = $this->getAll($relation, $from, $to);
         $userReports = $this->aggregateRelationsByUserTo($relations);
         $userReports = array_slice($userReports, $offset, $limit);
-        
+
         $this->orderByRelationCount($userReports);
 
         return $userReports;
@@ -33,7 +32,7 @@ class RelationsPaginatedModel extends RelationsModel implements PaginatedInterfa
         foreach ($relations as $relation) {
             $userTo = $relation['to'];
             $userToId = $userTo['qnoow_id'];
-            if ($this->isUserInList($userToId, $userList)) {
+            if ($this->isUserInCurrentList($userToId, $userList)) {
                 $userList[$userToId]['relations'][] = $relation;
             } else {
                 $userList[$userToId] = array(
@@ -57,18 +56,12 @@ class RelationsPaginatedModel extends RelationsModel implements PaginatedInterfa
 
     /**
      * @param $userToId
-     * @param User[] $userList
+     * @param array $userList
      * @return bool
      */
-    protected function isUserInList($userToId, array $userList)
+    protected function isUserInCurrentList($userToId, array $userList)
     {
-        foreach ($userList as $user) {
-            if ($user->getId() === $userToId) {
-                return true;
-            }
-        }
-
-        return false;
+        return isset($userList[$userToId]) && is_array($userList[$userToId]);
     }
 
     public function countTotal(array $filters)
