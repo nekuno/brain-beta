@@ -157,6 +157,7 @@ $app->put('/tokens/{resourceOwner}', 'users.tokens.controller:putAction');
 /**
  * Client routes
  */
+$app->get('/client/status', 'client.controller:getStatus');
 $app->get('/client/blog-feed', 'client.controller:getBlogFeedAction');
 
 /** Photo routes */
