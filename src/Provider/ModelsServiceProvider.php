@@ -7,6 +7,7 @@ use Model\EnterpriseUser\EnterpriseUserModel;
 use Model\Link\LinkModel;
 use Model\Popularity\PopularityManager;
 use Model\Popularity\PopularityPaginatedModel;
+use Model\User\ContactModel;
 use Model\User\Content\ContentReportModel;
 use Model\User\Question\QuestionModel;
 use Model\User\Affinity\AffinityModel;
@@ -409,14 +410,21 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.relations.model'] = $app->share(
             function ($app) {
 
-                return new RelationsModel($app['neo4j.graph_manager'], $app['dbs']['mysql_brain'], $app['users.manager'], $app['dispatcher']);
+                return new RelationsModel($app['neo4j.graph_manager'], $app['dispatcher']);
             }
         );
 
         $app['users.relations.paginated.model'] = $app->share(
             function ($app) {
 
-                return new RelationsPaginatedModel($app['neo4j.graph_manager'], $app['dbs']['mysql_brain'], $app['users.manager'], $app['dispatcher']);
+                return new RelationsPaginatedModel($app['neo4j.graph_manager'], $app['dispatcher']);
+            }
+        );
+
+        $app['users.contact.model'] = $app->share(
+            function ($app) {
+
+                return new ContactModel($app['neo4j.graph_manager'], $app['dbs']['mysql_brain'], $app['users.manager'], $app['users.relations.model']);
             }
         );
 

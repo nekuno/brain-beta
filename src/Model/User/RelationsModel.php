@@ -2,7 +2,6 @@
 
 namespace Model\User;
 
-use Doctrine\DBAL\Connection;
 use Event\UserBothLikedEvent;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\ResultSet;
@@ -10,7 +9,6 @@ use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
-use Manager\UserManager;
 use Model\Neo4j\QueryBuilder;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -30,26 +28,14 @@ class RelationsModel
     protected $gm;
 
     /**
-     * @var Connection
-     */
-    protected $connectionBrain;
-
-    /**
-     * @var UserManager
-     */
-    protected $userManager;
-
-    /**
      * @var EventDispatcher
      */
     protected $dispatcher;
 
-    public function __construct(GraphManager $gm, Connection $connectionBrain, UserManager $userManager, EventDispatcher $dispatcher)
+    public function __construct(GraphManager $gm, EventDispatcher $dispatcher)
     {
 
         $this->gm = $gm;
-        $this->connectionBrain = $connectionBrain;
-        $this->userManager = $userManager;
         $this->dispatcher = $dispatcher;
     }
 
@@ -170,99 +156,12 @@ class RelationsModel
         return $return;
     }
 
-    public function contactFrom($id)
+    public function getCanContactQuery($from = null, $to = null)
     {
-        $messaged = $this->getMessaged($id);
-
-        $qb = $this->gm->createQueryBuilder();
-
-        $qb->match('(from:User {qnoow_id: { id }})', '(to:User)')
-            ->where('to.qnoow_id <> { id }')
-            ->optionalMatch('(from)-[fav:FAVORITES]->(to)')
-            ->setParameter('id', (integer)$id)
-            ->with('from', 'to', 'fav')
-            ->where('to.qnoow_id IN { messaged } OR NOT fav IS NULL')
-            ->setParameter('messaged', $messaged)
-            ->with('from', 'to')
-            ->where('NOT (from)-[:' . RelationsModel::BLOCKS . ']-(to)')
-            ->returns('to AS u')
-            ->orderBy('u.qnoow_id');
-
-        $result = $qb->getQuery()->getResultSet();
-        $return = array();
-
-        foreach ($result as $row) {
-            /* @var $row Row */
-            $return[] = $this->userManager->build($row);
-        }
-
-        return $return;
-    }
-
-    public function contactTo($id)
-    {
-        $messaged = $this->getMessaged($id);
-
-        $qb = $this->gm->createQueryBuilder();
-
-        $qb->match('(from:User {qnoow_id: { id }})', '(to:User)')
-            ->where('to.qnoow_id <> { id }')
-            ->optionalMatch('(from)<-[fav:FAVORITES]-(to)')
-            ->setParameter('id', (integer)$id)
-            ->with('from', 'to', 'fav')
-            ->where('to.qnoow_id IN { messaged } OR NOT fav IS NULL')
-            ->setParameter('messaged', $messaged)
-            ->with('from', 'to')
-            ->where('NOT (from)-[:' . RelationsModel::BLOCKS . ']-(to)')
-            ->returns('to AS u')
-            ->orderBy('u.qnoow_id');
-
-        $result = $qb->getQuery()->getResultSet();
-        $return = array();
-
-        foreach ($result as $row) {
-            /* @var $row Row */
-            $return[] = $this->userManager->build($row);
-        }
-
-        return $return;
-    }
-
-    public function canContact($from, $to)
-    {
-        $qb = $this->matchRelationshipQuery(self::BLOCKS, $from, $to);
+        $qb = $this->matchRelationshipQuery(RelationsModel::BLOCKS, $from, $to);
         $this->returnRelationshipQuery($qb);
 
-        $result = $qb->getQuery()->getResultSet();
-
-        return $result->count() !== 0;
-    }
-
-    protected function getMessaged($id)
-    {
-
-        $messaged = $this->connectionBrain->executeQuery(
-            '
-            SELECT * FROM (
-              SELECT user_to AS user FROM chat_message
-              WHERE user_from = :id
-              GROUP BY user_to
-              UNION
-              SELECT user_from AS user FROM chat_message
-              WHERE user_to = :id
-              GROUP BY user_from
-            ) AS tmp ORDER BY tmp.user',
-            array('id' => (integer)$id)
-        )->fetchAll(\PDO::FETCH_COLUMN);
-
-        $messaged = array_map(
-            function ($i) {
-                return (integer)$i;
-            },
-            $messaged
-        );
-
-        return $messaged;
+        return $qb;
     }
 
     protected function buildOne(Row $row)

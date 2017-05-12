@@ -638,7 +638,7 @@ class UserManager implements PaginatedInterface
         $query = $qb->getQuery();
         $result = $query->getResultSet();
 
-        return $this->parseResultSet($result);
+        return $this->buildMany($result);
 
     }
 
@@ -661,7 +661,7 @@ class UserManager implements PaginatedInterface
         $query = $qb->getQuery();
         $result = $query->getResultSet();
 
-        return $this->parseResultSet($result);
+        return $this->buildMany($result);
 
     }
 
@@ -686,7 +686,7 @@ class UserManager implements PaginatedInterface
         $query = $qb->getQuery();
         $result = $query->getResultSet();
 
-        return $this->parseResultSet($result);
+        return $this->buildMany($result);
 
     }
 
@@ -719,7 +719,7 @@ class UserManager implements PaginatedInterface
 
         $query = $qb->getQuery();
 
-        return $this->parseResultSet($query->getResultSet());
+        return $this->buildMany($query->getResultSet());
     }
 
     public function getByCreatedGroup($groupId)
@@ -1245,6 +1245,20 @@ class UserManager implements PaginatedInterface
         return $user;
     }
 
+    /**
+     * @param ResultSet $resultSet
+     * @return User[]
+     */
+    public function buildMany(ResultSet $resultSet)
+    {
+        $users = array();
+        foreach ($resultSet as $row) {
+            $users[] = $this->build($row);
+        }
+
+        return $users;
+    }
+
     protected function buildNodeProperties(User $user, Node $node)
     {
         $properties = $this->getBuildingProperties($node);
@@ -1476,21 +1490,6 @@ class UserManager implements PaginatedInterface
         }
 
         return $this->build($rs->current());
-    }
-
-    /**
-     * @param $resultSet
-     * @return User[]
-     */
-    protected function parseResultSet($resultSet)
-    {
-        $users = array();
-        foreach ($resultSet as $row) {
-            $users[] = $this->build($row);
-        }
-
-        return $users;
-
     }
 
     protected function setDefaults(array &$user)
