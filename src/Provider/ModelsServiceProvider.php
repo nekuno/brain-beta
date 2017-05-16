@@ -7,6 +7,7 @@ use Model\EnterpriseUser\EnterpriseUserModel;
 use Model\Link\LinkModel;
 use Model\Popularity\PopularityManager;
 use Model\Popularity\PopularityPaginatedModel;
+use Model\User\ContactModel;
 use Model\User\Content\ContentReportModel;
 use Model\User\Question\QuestionModel;
 use Model\User\Affinity\AffinityModel;
@@ -40,6 +41,7 @@ use Model\User\Recommendation\SocialUserRecommendationPaginatedModel;
 use Model\User\Recommendation\UserPopularRecommendationPaginatedModel;
 use Model\User\Recommendation\UserRecommendationPaginatedModel;
 use Model\User\RelationsModel;
+use Model\User\RelationsPaginatedModel;
 use Model\User\Similarity\SimilarityModel;
 use Model\User\SocialNetwork\LinkedinSocialNetworkModel;
 use Model\User\SocialNetwork\SocialProfileManager;
@@ -49,6 +51,7 @@ use Model\User\Thread\ThreadPaginatedModel;
 use Model\User\Thread\UsersThreadManager;
 use Model\User\Token\TokensModel;
 use Model\User\Token\TokenStatus\TokenStatusManager;
+use Model\User\UserDisabledPaginatedModel;
 use Model\User\UserFilterModel;
 use Model\User\UserStatsManager;
 use Manager\UserManager;
@@ -408,7 +411,28 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.relations.model'] = $app->share(
             function ($app) {
 
-                return new RelationsModel($app['neo4j.graph_manager'], $app['dbs']['mysql_brain'], $app['users.manager'], $app['dispatcher']);
+                return new RelationsModel($app['neo4j.graph_manager'], $app['dispatcher']);
+            }
+        );
+
+        $app['users.relations.paginated.model'] = $app->share(
+            function ($app) {
+
+                return new RelationsPaginatedModel($app['neo4j.graph_manager'], $app['dispatcher']);
+            }
+        );
+
+        $app['users.disabled.paginated.model'] = $app->share(
+            function ($app) {
+
+                return new UserDisabledPaginatedModel($app['neo4j.graph_manager'], $app['users.manager']);
+            }
+        );
+
+        $app['users.contact.model'] = $app->share(
+            function ($app) {
+
+                return new ContactModel($app['neo4j.graph_manager'], $app['dbs']['mysql_brain'], $app['users.manager'], $app['users.relations.model']);
             }
         );
 
