@@ -47,6 +47,11 @@ class User implements UserInterface, \JsonSerializable
     protected $enabled;
 
     /**
+     * @var boolean
+     */
+    protected $canReenable;
+
+    /**
      * The salt to use for hashing
      *
      * @var string
@@ -148,6 +153,7 @@ class User implements UserInterface, \JsonSerializable
     {
         $this->salt = base_convert(sha1(uniqid(mt_rand(), true)), 16, 36);
         $this->enabled = false;
+        $this->canReenable = true;
         $this->locked = false;
         $this->expired = false;
         $this->roles = array();
@@ -190,6 +196,7 @@ class User implements UserInterface, \JsonSerializable
                 $this->locked,
                 $this->credentialsExpired,
                 $this->enabled,
+                $this->canReenable,
                 $this->id,
             )
         );
@@ -217,6 +224,7 @@ class User implements UserInterface, \JsonSerializable
             $this->locked,
             $this->credentialsExpired,
             $this->enabled,
+            $this->canReenable,
             $this->id
             ) = $data;
     }
@@ -375,6 +383,16 @@ class User implements UserInterface, \JsonSerializable
     public function isEnabled()
     {
         return $this->enabled;
+    }
+
+    public function canReenable()
+    {
+        return $this->canReenable;
+    }
+
+    public function setCanReenable($canReenable)
+    {
+        $this->canReenable = $canReenable;
     }
 
     public function isExpired()
@@ -780,6 +798,9 @@ class User implements UserInterface, \JsonSerializable
             if ($value instanceof \DateTime) {
                 $vars[$key] = $value->format('Y-m-d H:i:s');
             }
+        }
+        if ($vars['enabled']){
+            unset($vars['canReenable']);
         }
 
         return $vars;

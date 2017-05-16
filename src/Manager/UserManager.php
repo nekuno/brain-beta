@@ -547,11 +547,16 @@ class UserManager implements PaginatedInterface
         return $user;
     }
 
-    public function setEnabled($userId, $enabled)
+    public function setEnabled($userId, $enabled, $fromAdmin = false)
     {
+        $conditions = array('u.qnoow_id = { qnoow_id }');
+        if (!$fromAdmin){
+            $conditions[] = 'NOT u.canReenable = false';
+        }
+
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(u:User)')
-            ->where('u.qnoow_id = { qnoow_id }')
+            ->where($conditions)
             ->with('u')
             ->limit(1)
             ->setParameter('qnoow_id', (integer)$userId);
@@ -576,6 +581,29 @@ class UserManager implements PaginatedInterface
         $user = $this->getById($userId);
 
         return $user->isEnabled();
+    }
+
+    public function setCanReenable($userId, $canReenable)
+    {
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match('(u:User)')
+            ->where('u.qnoow_id = { qnoow_id }')
+            ->with('u')
+            ->limit(1)
+            ->setParameter('qnoow_id', (integer)$userId);
+
+        $qb->set('u.canReenable = { canReenable }')
+            ->setParameter('canReenable', (Boolean)$canReenable);
+
+        $qb->returns('u');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() == 0) {
+            throw new NotFoundHttpException(sprintf('User "%d" not found', $userId));
+        }
+
+        return true;
     }
 
     /**
@@ -621,7 +649,6 @@ class UserManager implements PaginatedInterface
      */
     public function getByCommonLinksWithUser($id, $limit = 100)
     {
-
         $qb = $this->gm->createQueryBuilder();
 
         $qb->setParameters(array('limit' => (integer)$limit));
@@ -639,7 +666,6 @@ class UserManager implements PaginatedInterface
         $result = $query->getResultSet();
 
         return $this->buildMany($result);
-
     }
 
     /**

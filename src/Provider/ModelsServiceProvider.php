@@ -51,6 +51,7 @@ use Model\User\Thread\ThreadPaginatedModel;
 use Model\User\Thread\UsersThreadManager;
 use Model\User\Token\TokensModel;
 use Model\User\Token\TokenStatus\TokenStatusManager;
+use Model\User\UserDisabledPaginatedModel;
 use Model\User\UserFilterModel;
 use Model\User\UserStatsManager;
 use Manager\UserManager;
@@ -418,6 +419,13 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
 
                 return new RelationsPaginatedModel($app['neo4j.graph_manager'], $app['dispatcher']);
+            }
+        );
+
+        $app['users.disabled.paginated.model'] = $app->share(
+            function ($app) {
+
+                return new UserDisabledPaginatedModel($app['neo4j.graph_manager'], $app['users.manager']);
             }
         );
 
