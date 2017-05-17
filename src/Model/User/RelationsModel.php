@@ -152,6 +152,7 @@ class RelationsModel
         $qb = $this->matchRelationshipQuery($relation, $from, $to);
         $this->deleteExtraRelationshipsQuery($qb, $relation);
         $qb->delete('r');
+        $qb->getQuery()->getResultSet();
 
         return $return;
     }
