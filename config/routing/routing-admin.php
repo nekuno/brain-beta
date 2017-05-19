@@ -49,7 +49,16 @@ $admin->post('/enterpriseUsers/{enterpriseUserId}/invitations/{id}', 'admin.ente
 $admin->get('/users/tracking', 'admin.userTracking.controller:getAllAction');
 $admin->get('/users/{id}/tracking', 'admin.userTracking.controller:getAction');
 $admin->get('/users/csv', 'admin.userTracking.controller:getCsvAction');
+$admin->get('/users/reported', 'admin.userReport.controller:getReportedAction');
+$admin->get('/users/disabled', 'admin.userReport.controller:getDisabledAction');
+$admin->post('/users/{id}/enable', 'admin.userReport.controller:enableAction');
+$admin->post('/users/{id}/disable', 'admin.userReport.controller:disableAction');
 
+/** Content routes */
+$admin->get('/content/reported', 'admin.content.controller:getReportedAction');
+$admin->get('/content/reported/{id}', 'admin.content.controller:getReportedByIdAction');
+$admin->post('/content/disable/{id}', 'admin.content.controller:disableAction');
+$admin->post('/content/enable/{id}', 'admin.content.controller:enableAction');
 
 $app->mount('/admin', $admin);
 

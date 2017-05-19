@@ -225,6 +225,19 @@ $app['admin.userTracking.controller'] = $app->share(
     }
 );
 
+$app['admin.userReport.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Admin\UserReportController;
+    }
+);
+
+$app['admin.content.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Admin\ContentController;
+    }
+);
 
 
 $app['instant.users.controller'] = $app->share(

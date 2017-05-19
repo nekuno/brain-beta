@@ -6,6 +6,7 @@ use Model\Exception\ValidationException;
 use Model\User\Content\ContentPaginatedModel;
 use Model\User\ProfileFilterModel;
 use Model\User\RateModel;
+use Model\User\Content\ContentReportModel;
 use Model\User\UserStatsManager;
 use Manager\UserManager;
 use Model\User;
@@ -442,6 +443,27 @@ class UserController
         }
 
         return $app->json($result, !empty($result) ? 201 : 200);
+    }
+
+    public function reportContentAction(Request $request, Application $app, User $user)
+    {
+        $reason = $request->request->get('reason');
+        $reasonText = $request->request->get('reasonText');
+        $contentId = $request->request->get('contentId');
+
+        try {
+            /* @var ContentReportModel $model */
+            $model = $app['users.content.report.model'];
+            $result = $model->report($user->getId(), $contentId, $reason, $reasonText);
+        } catch (\Exception $e) {
+            if ($app['env'] == 'dev') {
+                throw $e;
+            }
+
+            return $app->json(array(), 500);
+        }
+
+        return $app->json($result, 201);
     }
 
     /**
