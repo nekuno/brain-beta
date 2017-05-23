@@ -7,6 +7,7 @@ use Service\AMQPManager;
 use Service\AuthService;
 use Service\ChatMessageNotifications;
 use Service\Consistency\ConsistencyCheckerService;
+use Service\DeviceService;
 use Service\EmailNotifications;
 use Service\EventDispatcher;
 use Service\ImageTransformations;
@@ -64,6 +65,12 @@ class ServicesServiceProvider implements ServiceProviderInterface
         $app['emailNotification.service'] = $app->share(
             function (Application $app) {
                 return new EmailNotifications($app['mailer'], $app['orm.ems']['mysql_brain'], $app['twig']);
+            }
+        );
+
+        $app['device.service'] = $app->share(
+            function (Application $app) {
+                return new DeviceService($app['guzzle.client'], $app['users.device.model'], $app['firebase_api_key'], $app['push_public_key'], $app['push_private_key']);
             }
         );
 

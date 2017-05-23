@@ -791,3 +791,20 @@ answers:
     userId:
         required: false
         type: integer
+
+device:
+    key:
+        required: true
+        type: string
+    endpoint:
+        required: true
+        type: string
+    userId:
+        required: true
+        type: integerç
+    token:
+        required: true
+        type: string
+    platform:
+        required: true
+        type: string

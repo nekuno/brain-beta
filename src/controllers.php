@@ -107,6 +107,12 @@ $app['users.photos.controller'] = $app->share(
     }
 );
 
+$app['users.devices.controller'] = $app->share(
+    function() {
+        return new \Controller\User\DeviceController;
+    }
+);
+
 $app['client.controller'] = $app->share(
     function() {
         return new Controller\ClientController;
@@ -236,6 +242,13 @@ $app['admin.content.controller'] = $app->share(
     function () {
 
         return new \Controller\Admin\ContentController;
+    }
+);
+
+$app['admin.developers.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Admin\DevelopersController;
     }
 );
 

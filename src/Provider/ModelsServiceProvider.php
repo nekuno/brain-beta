@@ -9,6 +9,7 @@ use Model\Popularity\PopularityManager;
 use Model\Popularity\PopularityPaginatedModel;
 use Model\User\ContactModel;
 use Model\User\Content\ContentReportModel;
+use Model\User\Device\DeviceModel;
 use Model\User\Question\QuestionModel;
 use Model\User\Affinity\AffinityModel;
 use Model\User\Question\AnswerManager;
@@ -312,6 +313,14 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
 
                 return new UserStatsManager($app['neo4j.graph_manager'], $app['users.groups.model'], $app['users.relations.model']);
+            }
+        );
+
+
+        $app['users.device.model'] = $app->share(
+            function ($app) {
+
+                return new DeviceModel($app['neo4j.graph_manager'], $app['push_private_key'], $app['validator.service']);
             }
         );
 

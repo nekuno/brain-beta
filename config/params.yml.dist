@@ -4,6 +4,11 @@ params:
     secret: my secret key
     instant_api_secret: cliweodwfqpokfrfkcporfkpoqefrefqefbgw
 
+    ## Push notifications
+    push_public_key: BMmrzjBJXzPb5WQPGuRGtatke1L86LPAauy_qRUNH_xJy7ZYeVgubWElNZedo_V28ngsRc0j8HlNukqKEP6ujmY
+    push_private_key: 5loWitrVUXEg1kTksWbLAh-5pJddBrWBe2MKRjKnIiI
+    firebase_api_key: AIzaSyBz5bncIhjgUKrqv1oyOSnWd-f52KKGYyg
+
     ## Valid IPs
     dev_custom_ip_1:
     dev_custom_ip_2:
