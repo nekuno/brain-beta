@@ -29,4 +29,19 @@ class DeviceController
         return $app->json($device->toArray());
     }
 
+    public function unSubscribeAction(Application $app, Request $request, User $user)
+    {
+        $manager = $app['users.device.model'];
+        $data = array(
+            'userId' => $user->getId(),
+            'endpoint' => $request->get('endpoint'),
+            'key' => $request->get('key'),
+            'token' => $request->get('token'),
+            'platform' => $request->get('platform'),
+        );
+
+        $device = $manager->delete($data);
+
+        return $app->json($device->toArray());
+    }
 }

@@ -794,16 +794,16 @@ answers:
 
 device:
     key:
-        required: true
+        required: false
         type: string
     endpoint:
         required: true
         type: string
     userId:
         required: true
-        type: integerç
+        type: integer
     token:
-        required: true
+        required: false
         type: string
     platform:
         required: true

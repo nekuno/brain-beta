@@ -88,7 +88,7 @@ class Device implements \JsonSerializable
         $this->endpoint = $endpoint;
     }
 
-    public function getEndpointToken()
+    public function getRegistrationIdFromEndpoint()
     {
         return preg_replace('/^.+\/([^\/]+)$/', '$1', $this->endpoint);
     }

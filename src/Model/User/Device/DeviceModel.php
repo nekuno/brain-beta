@@ -55,12 +55,12 @@ class DeviceModel
         return $return;
     }
 
-    public function exists($key)
+    public function exists($endpoint)
     {
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(d:Device)')
-            ->where('d.key = { key }')
-            ->setParameter('key', $key)
+            ->where('d.endpoint = { endpoint }')
+            ->setParameter('endpoint', $endpoint)
             ->returns('d');
 
         $query = $qb->getQuery();
@@ -96,12 +96,34 @@ class DeviceModel
         return $this->build($row);
     }
 
+    public function getByEndpoint($endpoint)
+    {
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match('(u:User)-[:HAS_DEVICE]->(d:Device)')
+            ->where('d.endpoint = { endpoint }')
+            ->setParameter('endpoint', $endpoint)
+            ->returns('u', 'd');
+
+        $query = $qb->getQuery();
+
+        $result = $query->getResultSet();
+
+        if (count($result) < 1) {
+            throw new NotFoundHttpException('Device not found');
+        }
+
+        /* @var $row Row */
+        $row = $result->current();
+
+        return $this->build($row);
+    }
+
     public function create(array $data)
     {
         $this->validate($data);
 
-        if ($this->exists($data['key'])) {
-            throw new ValidationException(array('device' => array(sprintf('Device "%s" already exists', $data['key']))));
+        if ($this->exists($data['endpoint'])) {
+            throw new ValidationException(array('device' => array(sprintf('Device with endpoint "%s" already exists', $data['endpoint']))));
         }
 
         $qb = $this->gm->createQueryBuilder();
@@ -139,8 +161,8 @@ class DeviceModel
     {
         $this->validate($data);
 
-        if (!$this->exists($data['key'])) {
-            throw new ValidationException(array('device' => array(sprintf('Device "%s" does not exist', $data['key']))));
+        if (!$this->exists($data['endpoint'])) {
+            throw new ValidationException(array('device' => array(sprintf('Device with endpoint "%s" does not exist', $data['endpoint']))));
         }
 
         $qb = $this->gm->createQueryBuilder();
@@ -172,15 +194,15 @@ class DeviceModel
         return $device;
     }
 
-    public function delete($token)
+    public function delete(array $data)
     {
-
-        $device = $this->getByToken($token);
+        $this->validate($data);
+        $device = $this->getByEndpoint($data['endpoint']);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(u:User)<-[r:HAS_DEVICE]-(d:Device)')
-            ->where('d.token = = { token }')
-            ->setParameter('token', $token)
+            ->where('d.endpoint = { endpoint }')
+            ->setParameter('endpoint', $data['endpoint'])
             ->delete('r', 'd')
             ->returns('u');
 

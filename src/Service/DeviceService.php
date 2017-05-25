@@ -38,7 +38,7 @@ class DeviceService
         $registrationIds = array();
         /** @var Device $device */
         foreach ($devices as $device) {
-            $registrationIds[] = $device->getEndpointToken();
+            $registrationIds[] = $device->getRegistrationIdFromEndpoint();
         }
 
         $payload = array(
