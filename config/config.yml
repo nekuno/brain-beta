@@ -7,6 +7,7 @@ life_time: 5184000 # 60 days
 
 push_public_key: %push_public_key%
 push_private_key: %push_private_key%
+firebase_url: %firebase_url%
 firebase_api_key: %firebase_api_key%
 
 locale.options:

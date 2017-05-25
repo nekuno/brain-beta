@@ -32,6 +32,15 @@ notifications:
       body:
         message: "¡Acabamos de descubrir que <a href=\"%urlOther%\">%usernameOther%</a> es un follower con un %value%% de %filter% contigo!"
   footer: 'Regards from Nekuno team'
+push_notifications:
+    message:
+        title: 'New message from %username%'
+    process_finish:
+        title: 'Process finished'
+        body: 'We have finished to process your network %resource%.'
+    both_user_liked:
+        title: 'Mutual like'
+        body: '%username% and you have mutual like.'
 followers:
   invitation_slogan: 'Find out if you are %compatible_or_similar% with %username%!'
   group_name: 'Followers of %username%'

@@ -15,7 +15,11 @@ class DevelopersController
     {
         /* @var $deviceService DeviceService */
         $deviceService = $app['device.service'];
-        $result = $deviceService->pushMessage('Push notification Test', 'Push notification testing worked!', $id);
+        $result = $deviceService->pushMessage(array(
+            'title' => 'Testing',
+            'body' => 'This is a testing push notification',
+            'image' => 'https://nekuno.com/bundles/qnoowlanding/www/img/logo.png'
+        ), $id);
 
         return $app->json($result);
     }
