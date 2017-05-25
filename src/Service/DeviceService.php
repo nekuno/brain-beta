@@ -115,7 +115,7 @@ class DeviceService
 
     private function validatePushData($category, $data)
     {
-        if (!array_key_exists($category, $this->getValidCategories())) {
+        if (!in_array($category, $this->getValidCategories())) {
             throw new \Exception(sprintf("Category %s does not exist", $category));
         }
 
