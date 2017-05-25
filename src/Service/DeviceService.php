@@ -91,6 +91,7 @@ class DeviceService
                     'body' => $data['body'],
                     'image' => $data['image'],
                     'image-type' => "circle",
+                    'on_click_path' => "/conversations/" . $data['slug'],
                 );
             case self::PROCESS_FINISH_CATEGORY:
                 return array(
@@ -103,12 +104,14 @@ class DeviceService
                     'body' => $this->translator->trans('push_notifications.both_user_liked.body', array('%username%' => $data['username'])),
                     'image' => $data['image'],
                     'image-type' => "circle",
+                    'on_click_path' => "/p/" . $data['slug'],
                 );
             default:
                 return array(
                     'title' => $data['title'],
                     'body' => $data['body'],
                     'image' => isset($data['image']) ? $data['image'] : null,
+                    'on_click_path' => isset($data['on_click_path']) ? $data['on_click_path'] : null,
                 );
         }
     }
@@ -121,8 +124,8 @@ class DeviceService
 
         switch ($category) {
             case self::MESSAGE_CATEGORY:
-                if (!isset($data['username']) || !isset($data['image']) || !isset($data['username'])) {
-                    throw new \Exception("Username is not defined for message category");
+                if (!isset($data['username']) || !isset($data['image']) || !isset($data['body']) || !isset($data['slug'])) {
+                    throw new \Exception("Username, image, body or slug are not defined for message category");
                 }
                 break;
             case self::PROCESS_FINISH_CATEGORY:
@@ -131,8 +134,8 @@ class DeviceService
                 }
                 break;
             case self::BOTH_USER_LIKED_CATEGORY:
-                if (!isset($data['username']) || !isset($data['image'])) {
-                    throw new \Exception("Username is not defined for both user liked category");
+                if (!isset($data['username']) || !isset($data['image']) || !isset($data['slug'])) {
+                    throw new \Exception("Username, image or slug is not defined for both user liked category");
                 }
                 break;
             case self::GENERIC_CATEGORY:
