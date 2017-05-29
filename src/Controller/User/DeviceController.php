@@ -20,7 +20,7 @@ class DeviceController
             'platform' => $request->get('platform'),
         );
 
-        if ($manager->exists($data['key'])) {
+        if ($manager->exists($data['endpoint'])) {
             $device = $manager->update($data);
         } else {
             $device = $manager->create($data);
