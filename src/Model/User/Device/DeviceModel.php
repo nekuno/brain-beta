@@ -173,7 +173,7 @@ class DeviceModel
             ->with('oldD')
             ->match('(u:User {qnoow_id: { userId }})')
             ->create('(d:Device)')
-            ->createUnique('(u)-[:HAS_DEVICE]-(d)')
+            ->createUnique('(u)-[:HAS_DEVICE]->(d)')
             ->set('d.key = { key }')
             ->set('d.token = { token }')
             ->set('d.platform = { platform }')
