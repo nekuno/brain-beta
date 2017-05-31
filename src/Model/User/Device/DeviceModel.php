@@ -138,10 +138,10 @@ class DeviceModel
             ->match('(u:User {qnoow_id: { userId }})')
             ->createUnique('(u)-[:HAS_DEVICE]->(d)')
             ->setParameters(array(
-                'key' => $data['key'],
+                'key' =>  isset($data['key']) ? $data['key'] : null,
                 'userId' => (int)$data['userId'],
                 'endpoint' => $data['endpoint'],
-                'token' => $data['token'],
+                'token' => isset($data['token']) ? $data['token'] : null,
                 'platform' => $data['platform'],
             ))
             ->returns('u', 'd');
@@ -173,12 +173,12 @@ class DeviceModel
             ->set('d.token = { token }')
             ->set('d.platform = { platform }')
             ->set('d.updatedAt = timestamp()')
-            ->with('d, u')
+            ->with('d', 'u')
             ->setParameters(array(
-                'key' => $data['key'],
+                'key' =>  isset($data['key']) ? $data['key'] : null,
                 'userId' => (int)$data['userId'],
                 'endpoint' => $data['endpoint'],
-                'token' => $data['token'],
+                'token' => isset($data['token']) ? $data['token'] : null,
                 'platform' => $data['platform'],
             ))
             ->returns('u', 'd');
