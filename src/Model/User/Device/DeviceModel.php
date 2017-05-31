@@ -138,10 +138,10 @@ class DeviceModel
             ->match('(u:User {qnoow_id: { userId }})')
             ->createUnique('(u)-[:HAS_DEVICE]->(d)')
             ->setParameters(array(
-                'key' =>  isset($data['key']) ? $data['key'] : null,
+                'key' =>  $data['key'],
                 'userId' => (int)$data['userId'],
                 'endpoint' => $data['endpoint'],
-                'token' => isset($data['token']) ? $data['token'] : null,
+                'token' => $data['token'],
                 'platform' => $data['platform'],
             ))
             ->returns('u', 'd');
@@ -167,18 +167,23 @@ class DeviceModel
 
         $qb = $this->gm->createQueryBuilder();
 
-        $qb->match('(d:Device)<-[:HAS_DEVICE]-(u:User {qnoow_id: { userId }})')
-            ->where('d.endpoint = { endpoint }')
+        $qb->match('(oldD:Device)<-[r:HAS_DEVICE]-(:User)')
+            ->where('oldD.endpoint = { endpoint }')
+            ->delete('r', 'oldD')
+            ->with('oldD')
+            ->match('(u:User {qnoow_id: { userId }})')
+            ->create('(d:Device)')
+            ->createUnique('(u)-[:HAS_DEVICE]-(d)')
             ->set('d.key = { key }')
             ->set('d.token = { token }')
             ->set('d.platform = { platform }')
             ->set('d.updatedAt = timestamp()')
             ->with('d', 'u')
             ->setParameters(array(
-                'key' =>  isset($data['key']) ? $data['key'] : null,
+                'key' =>  $data['key'],
                 'userId' => (int)$data['userId'],
                 'endpoint' => $data['endpoint'],
-                'token' => isset($data['token']) ? $data['token'] : null,
+                'token' => $data['token'],
                 'platform' => $data['platform'],
             ))
             ->returns('u', 'd');
