@@ -173,7 +173,7 @@ class DeviceModel
             ->set('d.token = { token }')
             ->set('d.platform = { platform }')
             ->set('d.updatedAt = timestamp()')
-            ->with('d')
+            ->with('d, u')
             ->setParameters(array(
                 'key' => $data['key'],
                 'userId' => (int)$data['userId'],
