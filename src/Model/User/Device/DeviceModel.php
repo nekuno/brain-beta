@@ -168,8 +168,8 @@ class DeviceModel
         $qb = $this->gm->createQueryBuilder();
 
         $qb->match('(d:Device)<-[:HAS_DEVICE]-(u:User {qnoow_id: { userId }})')
-            ->where('d.key = { key }')
-            ->set('d.endpoint = { endpoint }')
+            ->where('d.endpoint = { endpoint }')
+            ->set('d.key = { key }')
             ->set('d.token = { token }')
             ->set('d.platform = { platform }')
             ->set('d.updatedAt = timestamp()')
