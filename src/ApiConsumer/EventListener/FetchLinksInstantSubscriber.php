@@ -8,6 +8,7 @@ use Event\ProcessLinkEvent;
 use Event\ProcessLinksEvent;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\RequestException;
+use Service\DeviceService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class FetchLinksInstantSubscriber implements EventSubscriberInterface
@@ -16,6 +17,11 @@ class FetchLinksInstantSubscriber implements EventSubscriberInterface
      * @var ClientInterface
      */
     protected $client;
+
+    /**
+     * @var DeviceService
+     */
+    protected $deviceService;
 
     /**
      * @var integer
@@ -27,9 +33,10 @@ class FetchLinksInstantSubscriber implements EventSubscriberInterface
      */
     protected $links;
 
-    public function __construct(ClientInterface $client)
+    public function __construct(ClientInterface $client, DeviceService $deviceService)
     {
         $this->client = $client;
+        $this->deviceService = $deviceService;
     }
 
     public static function getSubscribedEvents()
@@ -90,16 +97,12 @@ class FetchLinksInstantSubscriber implements EventSubscriberInterface
     public function onProcessFinish(ProcessLinksEvent $event)
     {
         $jsonProcess = array('userId' => $event->getUser(), 'resource' => $event->getResourceOwner());
-        $jsonNotification = array(
-            'userId' => $event->getUser(),
-            'category' => 'process_finish',
-            'data' => array(
-                'resource' => $event->getResourceOwner(),
-            ),
+        $pushData = array(
+            'resource' => $event->getResourceOwner(),
         );
         try {
             $this->client->post('api/process/finish', array('json' => $jsonProcess));
-            $this->client->post('api/notification', array('json' => $jsonNotification));
+            $this->deviceService->pushMessage($pushData, $event->getUser(), DeviceService::PROCESS_FINISH_CATEGORY);
         } catch (RequestException $e) {
 
         }

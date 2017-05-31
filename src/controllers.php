@@ -267,6 +267,13 @@ $app['instant.relations.controller'] = $app->share(
     }
 );
 
+$app['instant.pushNotifications.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Instant\PushNotificationsController;
+    }
+);
+
 
 /**
  * Middleware for filter some request

@@ -3,27 +3,27 @@
 namespace EventListener;
 
 use Event\UserBothLikedEvent;
-use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use Manager\UserManager;
+use Service\DeviceService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class UserRelationsSubscriber implements EventSubscriberInterface
 {
     /**
-     * @var Client
-     */
-    protected $client;
-
-    /**
      * @var UserManager
      */
     protected $userManager;
 
-    public function __construct(Client $client, UserManager $userManager)
+    /**
+     * @var DeviceService
+     */
+    protected $deviceService;
+
+    public function __construct(UserManager $userManager, DeviceService $deviceService)
     {
-        $this->client = $client;
         $this->userManager = $userManager;
+        $this->deviceService = $deviceService;
     }
 
     public static function getSubscribedEvents()
@@ -40,27 +40,19 @@ class UserRelationsSubscriber implements EventSubscriberInterface
         $userToId = $event->getUserToId();
         $userTo = $this->userManager->getById($userToId);
 
-        $jsonTo = array(
-            'userId' => $userToId,
-            'category' => 'user_both_liked',
-            'data' => array(
-                'slug' => $userFrom->getSlug(),
-                'username' => $userFrom->getUsername(),
-                'photo' => $userFrom->getPhoto(),
-            ),
+        $dataTo = array(
+            'slug' => $userFrom->getSlug(),
+            'username' => $userFrom->getUsername(),
+            'image' => $userFrom->getPhoto(),
         );
-        $jsonFrom = array(
-            'userId' => $event->getUserFromId(),
-            'category' => 'user_both_liked',
-            'data' => array(
-                'slug' => $userTo->getSlug(),
-                'username' => $userTo->getUsername(),
-                'photo' => $userTo->getPhoto(),
-            ),
+        $dataFrom = array(
+            'slug' => $userTo->getSlug(),
+            'username' => $userTo->getUsername(),
+            'image' => $userTo->getPhoto(),
         );
         try {
-            $this->client->post('api/notification', array('json' => $jsonTo));
-            $this->client->post('api/notification', array('json' => $jsonFrom));
+            $this->deviceService->pushMessage($dataTo, $userToId, DeviceService::BOTH_USER_LIKED_CATEGORY);
+            $this->deviceService->pushMessage($dataFrom, $userFromId, DeviceService::BOTH_USER_LIKED_CATEGORY);
         } catch (RequestException $e) {
 
         }
