@@ -92,12 +92,14 @@ class DeviceService
                     'image' => $data['image'],
                     'image-type' => "circle",
                     'on_click_path' => "/conversations/" . $data['slug'],
+                    'notId' => rand(1, 50000),
                 );
             case self::PROCESS_FINISH_CATEGORY:
                 return array(
                     'title' => $this->translator->trans('push_notifications.process_finish.title'),
                     'body' => $this->translator->trans('push_notifications.process_finish.body', array('%resource%' => $data['resource'])),
                     'on_click_path' => "/social-networks",
+                    'notId' => rand(1, 50000),
                 );
             case self::BOTH_USER_LIKED_CATEGORY:
                 return array(
@@ -106,6 +108,7 @@ class DeviceService
                     'image' => $data['image'],
                     'image-type' => "circle",
                     'on_click_path' => "/p/" . $data['slug'],
+                    'notId' => rand(1, 50000),
                 );
             default:
                 return array(
@@ -113,6 +116,7 @@ class DeviceService
                     'body' => $data['body'],
                     'image' => isset($data['image']) ? $data['image'] : null,
                     'on_click_path' => isset($data['on_click_path']) ? $data['on_click_path'] : null,
+                    'notId' => rand(1, 50000),
                 );
         }
     }
