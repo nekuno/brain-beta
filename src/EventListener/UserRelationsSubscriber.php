@@ -43,7 +43,7 @@ class UserRelationsSubscriber implements EventSubscriberInterface
         $dataTo = array(
             'slug' => $userFrom->getSlug(),
             'username' => $userFrom->getUsername(),
-            'photo' => $userFrom->getPhoto(),
+            'image' => $userFrom->getPhoto(),
         );
         $dataFrom = array(
             'slug' => $userTo->getSlug(),
