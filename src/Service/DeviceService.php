@@ -97,6 +97,7 @@ class DeviceService
                 return array(
                     'title' => $this->translator->trans('push_notifications.process_finish.title'),
                     'body' => $this->translator->trans('push_notifications.process_finish.body', array('%resource%' => $data['resource'])),
+                    'on_click_path' => "/social-networks",
                 );
             case self::BOTH_USER_LIKED_CATEGORY:
                 return array(
