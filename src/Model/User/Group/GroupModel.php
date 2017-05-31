@@ -96,7 +96,8 @@ class GroupModel
             ->optionalMatch('(g)-[:LOCATION]->(l:Location)')
             ->optionalMatch('(g)-[:HAS_FILTER]->(f:FilterUsers)')
             ->optionalMatch('(g)-[b:BELONGS_TO]-(:User)')
-            ->returns('g', 'l', 'f', 'count(b) AS usersCount');
+            ->optionalMatch('(g)<-[:HAS_GROUP]-(i:Invitation)')
+            ->returns('g', 'l', 'f', 'collect(i) AS invitations', 'count(b) AS usersCount');
 
         $query = $qb->getQuery();
 
@@ -628,18 +629,52 @@ class GroupModel
         $invitation = array();
         if ($row->offsetExists('i')) {
             $invitationNode = $row->offsetGet('i');
+            $invitation = $this->buildInvitationFromNode($invitationNode);
+        } else if ($row->offsetExists('invitations')){
+            $invitationNodes = $row->offsetGet('invitations');
+            $invitation = $this->buildInvitationFromNodes($invitationNodes);
+        }
 
-            if ($invitationNode instanceof Node) {
-                $invitation = array(
-                    'invitation_id' => $invitationNode->getId(),
-                    'invitation_token' => $invitationNode->getProperty('token'),
-                    'invitation_image_path' => $invitationNode->getProperty('image_path'),
-                    'invitation_image_url' => $this->invitationImagesRoot . $invitationNode->getProperty('image_path'),
-                );
+        return $invitation;
+    }
+
+    private function buildInvitationFromNode($invitationNode) {
+        $invitation = array();
+        if ($invitationNode instanceof Node) {
+            $invitation = array(
+                'invitation_id' => $invitationNode->getId(),
+                'invitation_token' => $invitationNode->getProperty('token'),
+                'invitation_image_path' => $invitationNode->getProperty('image_path'),
+                'invitation_image_url' => $this->invitationImagesRoot . $invitationNode->getProperty('image_path'),
+            );
+        }
+
+        return $invitation;
+    }
+
+    /**
+     * @param Node[] $invitationNodes
+     * @return array
+     */
+    private function buildInvitationFromNodes($invitationNodes)
+    {
+        $invitation = array();
+        foreach ($invitationNodes as $invitationNode){
+            $currentInvitation = $this->buildInvitationFromNode($invitationNode);
+            if ($this->isBetterInvitation($invitation, $currentInvitation)){
+                $invitation = $currentInvitation;
             }
         }
 
         return $invitation;
+    }
+
+    private function isBetterInvitation($oldInvitation, $newInvitation)
+    {
+        $wasEmpty = empty($oldInvitation);
+        $newHasImage = !isset($oldInvitation['invitation_image_url']) && isset($newInvitation['invitation_image_url']);
+
+        return $wasEmpty || $newHasImage;
     }
 
     private function buildGroup(Node $groupNode, Node $locationNode = null, $usersCount = 0)
