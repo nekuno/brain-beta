@@ -174,6 +174,7 @@ class DeviceModel
             ->match('(u:User {qnoow_id: { userId }})')
             ->create('(d:Device)')
             ->createUnique('(u)-[:HAS_DEVICE]->(d)')
+            ->set('d.endpoint = { endpoint }')
             ->set('d.key = { key }')
             ->set('d.token = { token }')
             ->set('d.platform = { platform }')
