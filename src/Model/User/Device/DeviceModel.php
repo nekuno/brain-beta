@@ -205,7 +205,7 @@ class DeviceModel
         $device = $this->getByEndpoint($data['endpoint']);
 
         $qb = $this->gm->createQueryBuilder();
-        $qb->match('(u:User)<-[r:HAS_DEVICE]-(d:Device)')
+        $qb->match('(u:User)-[r:HAS_DEVICE]->(d:Device)')
             ->where('d.endpoint = { endpoint }')
             ->setParameter('endpoint', $data['endpoint'])
             ->delete('r', 'd')
