@@ -169,4 +169,4 @@ $app->delete('/photos/{photoId}', 'users.photos.controller:deleteAction');
 
 /** Push notifications routes */
 $app->post('/notifications/subscribe', 'users.devices.controller:subscribeAction');
-$app->post('/notifications/unsubscribe', 'users.devices.controller:unSubscribeAction');
+$app->delete('/notifications/unsubscribe', 'users.devices.controller:unSubscribeAction');
