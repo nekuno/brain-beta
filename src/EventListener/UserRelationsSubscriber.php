@@ -43,12 +43,12 @@ class UserRelationsSubscriber implements EventSubscriberInterface
         $dataTo = array(
             'slug' => $userFrom->getSlug(),
             'username' => $userFrom->getUsername(),
-            'image' => $userFrom->getPhoto(),
+            'image' => $userFrom->getPhoto()->jsonSerialize()['thumbnail']['big'],
         );
         $dataFrom = array(
             'slug' => $userTo->getSlug(),
             'username' => $userTo->getUsername(),
-            'image' => $userTo->getPhoto(),
+            'image' => $userTo->getPhoto()->jsonSerialize()['thumbnail']['big'],
         );
         try {
             $this->deviceService->pushMessage($dataTo, $userToId, DeviceService::BOTH_USER_LIKED_CATEGORY);
