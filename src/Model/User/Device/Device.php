@@ -4,9 +4,7 @@ namespace Model\User\Device;
 
 class Device implements \JsonSerializable
 {
-    protected $key;
-
-    protected $endpoint;
+    protected $registrationId;
 
     protected $userId;
 
@@ -59,38 +57,17 @@ class Device implements \JsonSerializable
     /**
      * @return mixed
      */
-    public function getKey()
+    public function getRegistrationId()
     {
-        return $this->key;
+        return $this->registrationId;
     }
 
     /**
-     * @param mixed $key
+     * @param mixed $registrationId
      */
-    public function setKey($key)
+    public function setRegistrationId($registrationId)
     {
-        $this->key = $key;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getEndpoint()
-    {
-        return $this->endpoint;
-    }
-
-    /**
-     * @param mixed $endpoint
-     */
-    public function setEndpoint($endpoint)
-    {
-        $this->endpoint = $endpoint;
-    }
-
-    public function getRegistrationIdFromEndpoint()
-    {
-        return preg_replace('/^.+\/([^\/]+)$/', '$1', $this->endpoint);
+        $this->registrationId = $registrationId;
     }
 
     /**

@@ -793,10 +793,7 @@ answers:
         type: integer
 
 device:
-    key:
-        required: false
-        type: string
-    endpoint:
+    registrationId:
         required: true
         type: string
     userId:

@@ -55,12 +55,12 @@ class DeviceModel
         return $return;
     }
 
-    public function exists($endpoint)
+    public function exists($registrationId)
     {
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(d:Device)')
-            ->where('d.endpoint = { endpoint }')
-            ->setParameter('endpoint', $endpoint)
+            ->where('d.registrationId = { registrationId }')
+            ->setParameter('registrationId', $registrationId)
             ->returns('d');
 
         $query = $qb->getQuery();
@@ -96,12 +96,12 @@ class DeviceModel
         return $this->build($row);
     }
 
-    public function getByEndpoint($endpoint)
+    public function getByRegistrationId($registrationId)
     {
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(u:User)-[:HAS_DEVICE]->(d:Device)')
-            ->where('d.endpoint = { endpoint }')
-            ->setParameter('endpoint', $endpoint)
+            ->where('d.registrationId = { registrationId }')
+            ->setParameter('registrationId', $registrationId)
             ->returns('u', 'd');
 
         $query = $qb->getQuery();
@@ -122,15 +122,14 @@ class DeviceModel
     {
         $this->validate($data);
 
-        if ($this->exists($data['endpoint'])) {
-            throw new ValidationException(array('device' => array(sprintf('Device with endpoint "%s" already exists', $data['endpoint']))));
+        if ($this->exists($data['registrationId'])) {
+            throw new ValidationException(array('device' => array(sprintf('Device with registrationId "%s" already exists', $data['registrationId']))));
         }
 
         $qb = $this->gm->createQueryBuilder();
 
         $qb->create('(d:Device)')
-            ->set('d.key = { key }')
-            ->set('d.endpoint = { endpoint }')
+            ->set('d.registrationId = { registrationId }')
             ->set('d.token = { token }')
             ->set('d.platform = { platform }')
             ->set('d.createdAt = timestamp()')
@@ -138,9 +137,8 @@ class DeviceModel
             ->match('(u:User {qnoow_id: { userId }})')
             ->createUnique('(u)-[:HAS_DEVICE]->(d)')
             ->setParameters(array(
-                'key' =>  $data['key'],
                 'userId' => (int)$data['userId'],
-                'endpoint' => $data['endpoint'],
+                'registrationId' => $data['registrationId'],
                 'token' => $data['token'],
                 'platform' => $data['platform'],
             ))
@@ -161,29 +159,27 @@ class DeviceModel
     {
         $this->validate($data);
 
-        if (!$this->exists($data['endpoint'])) {
-            throw new ValidationException(array('device' => array(sprintf('Device with endpoint "%s" does not exist', $data['endpoint']))));
+        if (!$this->exists($data['registrationId'])) {
+            throw new ValidationException(array('device' => array(sprintf('Device with registrationId "%s" does not exist', $data['registrationId']))));
         }
 
         $qb = $this->gm->createQueryBuilder();
 
         $qb->match('(oldD:Device)<-[r:HAS_DEVICE]-(:User)')
-            ->where('oldD.endpoint = { endpoint }')
+            ->where('oldD.registrationId = { registrationId }')
             ->delete('r', 'oldD')
             ->with('oldD')
             ->match('(u:User {qnoow_id: { userId }})')
             ->create('(d:Device)')
             ->createUnique('(u)-[:HAS_DEVICE]->(d)')
-            ->set('d.endpoint = { endpoint }')
-            ->set('d.key = { key }')
+            ->set('d.registrationId = { registrationId }')
             ->set('d.token = { token }')
             ->set('d.platform = { platform }')
             ->set('d.updatedAt = timestamp()')
             ->with('d', 'u')
             ->setParameters(array(
-                'key' =>  $data['key'],
                 'userId' => (int)$data['userId'],
-                'endpoint' => $data['endpoint'],
+                'registrationId' => $data['registrationId'],
                 'token' => $data['token'],
                 'platform' => $data['platform'],
             ))
@@ -203,12 +199,12 @@ class DeviceModel
     public function delete(array $data)
     {
         $this->validate($data);
-        $device = $this->getByEndpoint($data['endpoint']);
+        $device = $this->getByRegistrationId($data['registrationId']);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(u:User)-[r:HAS_DEVICE]->(d:Device)')
-            ->where('d.endpoint = { endpoint }')
-            ->setParameter('endpoint', $data['endpoint'])
+            ->where('d.registrationId = { registrationId }')
+            ->setParameter('registrationId', $data['registrationId'])
             ->delete('r', 'd')
             ->returns('u');
 
@@ -241,8 +237,7 @@ class DeviceModel
         $userNode = $row->offsetGet('u');
 
         $device = new Device();
-        $device->setKey($node->getProperty('key'));
-        $device->setEndpoint($node->getProperty('endpoint'));
+        $device->setRegistrationId($node->getProperty('registrationId'));
         $device->setUserId($userNode->getProperty('qnoow_id'));
         $device->setToken($node->getProperty('token'));
         $device->setPlatform($node->getProperty('platform'));

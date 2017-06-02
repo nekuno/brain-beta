@@ -65,11 +65,12 @@ class DeviceService
         $registrationIds = array();
         /** @var Device $device */
         foreach ($devices as $device) {
-            $registrationIds[] = $device->getRegistrationIdFromEndpoint();
+            $registrationIds[] = $device->getRegistrationId();
         }
 
         $payload = array(
             "data" => $this->getPayloadData($category, $data),
+            "collapse_key" => $this->getCollapseKey($category, $data),
             "registration_ids" => $registrationIds
         );
 
@@ -80,6 +81,21 @@ class DeviceService
                 'Content-Type' => 'application/json',
             ),
         ))->getBody()->getContents();
+    }
+
+    // This is for delivering only one notification per collapse key if delayed
+    private function getCollapseKey($category, $data)
+    {
+        switch ($category) {
+            case self::MESSAGE_CATEGORY:
+                return 'Conversation with ' . $data['username'];
+            case self::PROCESS_FINISH_CATEGORY:
+                return 'Process finished for resource ' . $data['resource'];
+            case self::BOTH_USER_LIKED_CATEGORY:
+                return 'Both user liked. You and ' . $data['username'];
+            default:
+                return 'Generic notification with title ' . $data['title'];
+        }
     }
 
     private function getPayloadData($category, $data)

@@ -14,13 +14,12 @@ class DeviceController
         $manager = $app['users.device.model'];
         $data = array(
             'userId' => $user->getId(),
-            'endpoint' => $request->get('endpoint'),
-            'key' => $request->get('key'),
+            'registrationId' => $request->get('registrationId'),
             'token' => $request->get('token'),
             'platform' => $request->get('platform'),
         );
 
-        if ($manager->exists($data['endpoint'])) {
+        if ($manager->exists($data['registrationId'])) {
             $device = $manager->update($data);
         } else {
             $device = $manager->create($data);
@@ -34,8 +33,7 @@ class DeviceController
         $manager = $app['users.device.model'];
         $data = array(
             'userId' => $user->getId(),
-            'endpoint' => $request->get('endpoint'),
-            'key' => $request->get('key'),
+            'registrationId' => $request->get('registrationId'),
             'token' => $request->get('token'),
             'platform' => $request->get('platform'),
         );
