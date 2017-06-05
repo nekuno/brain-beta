@@ -18,7 +18,7 @@ class DevelopersController
         $result = $deviceService->pushMessage(array(
             'title' => 'Testing',
             'body' => 'This is a testing push notification',
-            'image' => 'https://nekuno.com/bundles/qnoowlanding/www/img/logo.png',
+            'image' => '/img/no-img/big.jpg',
             'on_click_path' => '/social-networks',
         ), $id);
 
