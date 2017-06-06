@@ -237,6 +237,12 @@ class GroupModel
                 ->setParameter('date', (int)$data['date']);
         }
 
+        if (isset($data['image_path'])){
+            $qb->set('g.image_path = { image_path }')
+                ->with('g')
+                ->setParameter('image_path', $data['image_path']);
+        }
+
         if (isset($data['location']))
         {
             $qb->merge('(l:Location)<-[:LOCATION]-(g)');
@@ -276,6 +282,7 @@ class GroupModel
             ->where('id(g) = { id }')
             ->set('g.name = { name }')
             ->set('g.html = { html }')
+            ->set('g.image_path = { image_path }')
             ->set('g.date = { date }')
             ->with('g')
             ->merge('(l:Location)<-[:LOCATION]-(g)')
@@ -287,6 +294,7 @@ class GroupModel
                     'id' => (integer)$id,
                     'name' => $data['name'],
                     'html' => $data['html'],
+                    'image_path' => $data['image_path'],
                     'date' => $data['date'] ? (int)$data['date'] : null,
                     'address' => $data['location']['address'],
                     'latitude' => $data['location']['latitude'],
