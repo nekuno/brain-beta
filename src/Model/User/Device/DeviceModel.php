@@ -167,7 +167,7 @@ class DeviceModel
 
         $qb->match('(oldD:Device)<-[r:HAS_DEVICE]-(:User)')
             ->where('oldD.registrationId = { registrationId }')
-            ->with('oldD')
+            ->with('r', 'oldD')
             ->match('(u:User {qnoow_id: { userId }})')
             ->create('(d:Device)')
             ->createUnique('(u)-[:HAS_DEVICE]->(d)')
