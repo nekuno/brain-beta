@@ -175,6 +175,7 @@ class DeviceModel
             ->set('d.registrationId = { registrationId }')
             ->set('d.token = { token }')
             ->set('d.platform = { platform }')
+            ->set('d.createdAt = oldD.createdAt')
             ->set('d.updatedAt = timestamp()')
             ->with('d', 'u')
             ->setParameters(array(
