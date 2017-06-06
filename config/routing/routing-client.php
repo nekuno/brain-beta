@@ -166,3 +166,7 @@ $app->get('/photos/{userId}', 'users.photos.controller:getAction');
 $app->post('/photos', 'users.photos.controller:postAction');
 $app->post('/photos/{photoId}/profile', 'users.photos.controller:postProfileAction');
 $app->delete('/photos/{photoId}', 'users.photos.controller:deleteAction');
+
+/** Push notifications routes */
+$app->post('/notifications/subscribe', 'users.devices.controller:subscribeAction');
+$app->post('/notifications/unsubscribe', 'users.devices.controller:unSubscribeAction');

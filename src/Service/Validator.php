@@ -274,6 +274,11 @@ class Validator
         return $this->validate($data, $this->contentFilterModel->getFilters(), $choices);
     }
 
+    public function validateDevice($data)
+    {
+        $this->validate($data, $this->metadata['device'], array());
+    }
+
     protected function validate($data, $metadata, $dataChoices = array())
     {
         $errors = array();

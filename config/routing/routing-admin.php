@@ -60,6 +60,9 @@ $admin->get('/content/reported/{id}', 'admin.content.controller:getReportedByIdA
 $admin->post('/content/disable/{id}', 'admin.content.controller:disableAction');
 $admin->post('/content/enable/{id}', 'admin.content.controller:enableAction');
 
+/** Push notification */
+$admin->post('notifications/push/{id}', 'admin.developers.controller:pushNotificationAction');
+
 $app->mount('/admin', $admin);
 
 $admin
