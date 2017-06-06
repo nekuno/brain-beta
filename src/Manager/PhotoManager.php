@@ -5,6 +5,7 @@ namespace Manager;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Model\Exception\ValidationException;
+use Model\GroupPhoto;
 use Model\Neo4j\GraphManager;
 use Model\GalleryPhoto;
 use Model\ProfilePhoto;
@@ -50,6 +51,11 @@ class PhotoManager
         }
 
         return $success;
+    }
+
+    public function createGroupPhoto()
+    {
+        return new GroupPhoto($this->base, $this->host);
     }
 
     public function createGalleryPhoto()

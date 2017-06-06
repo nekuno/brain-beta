@@ -5,6 +5,7 @@ namespace Model\User\Group;
 use Event\GroupEvent;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
+use Manager\PhotoManager;
 use Model\Neo4j\GraphManager;
 use Model\User\Filters\FilterUsersManager;
 use Manager\UserManager;
@@ -24,6 +25,11 @@ class GroupModel
      * @var UserManager
      */
     protected $um;
+
+    /**
+     * @var PhotoManager
+     */
+    protected $pm;
 
     /**
      * @var FilterUsersManager
@@ -49,13 +55,15 @@ class GroupModel
      * @param GraphManager $gm
      * @param EventDispatcher $dispatcher
      * @param UserManager $um
+     * @param PhotoManager $pm
      * @param FilterUsersManager $filterUsersManager
      * @param Validator $validator
      */
-    public function __construct(GraphManager $gm, EventDispatcher $dispatcher, UserManager $um, FilterUsersManager $filterUsersManager, Validator $validator, $invitationImagesRoot)
+    public function __construct(GraphManager $gm, EventDispatcher $dispatcher, UserManager $um, PhotoManager $pm, FilterUsersManager $filterUsersManager, Validator $validator, $invitationImagesRoot)
     {
         $this->gm = $gm;
         $this->um = $um;
+        $this->pm = $pm;
         $this->dispatcher = $dispatcher;
         $this->filterUsersManager = $filterUsersManager;
         $this->validator = $validator;
@@ -690,6 +698,12 @@ class GroupModel
         $group = Group::createFromNode($groupNode);
         $group->setLocation($this->buildLocation($locationNode));
         $group->setDate($groupNode->getProperty('date'));
+        $photo = $this->pm->createGroupPhoto();
+        if ($groupNode->getProperty('image_path')) {
+            $photo->setPath($groupNode->getProperty('image_path'));
+            $group->setPhoto($photo);
+            $group->setImagePath($groupNode->getProperty('image_path'));
+        }
         $group->setUsersCount($usersCount);
 
 //        $additionalLabels = $this->getAdditionalGroupLabels($groupNode);
