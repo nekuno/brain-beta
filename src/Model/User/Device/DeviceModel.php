@@ -167,7 +167,6 @@ class DeviceModel
 
         $qb->match('(oldD:Device)<-[r:HAS_DEVICE]-(:User)')
             ->where('oldD.registrationId = { registrationId }')
-            ->delete('r', 'oldD')
             ->with('oldD')
             ->match('(u:User {qnoow_id: { userId }})')
             ->create('(d:Device)')
@@ -177,6 +176,7 @@ class DeviceModel
             ->set('d.platform = { platform }')
             ->set('d.createdAt = oldD.createdAt')
             ->set('d.updatedAt = timestamp()')
+            ->delete('r', 'oldD')
             ->with('d', 'u')
             ->setParameters(array(
                 'userId' => (int)$data['userId'],
