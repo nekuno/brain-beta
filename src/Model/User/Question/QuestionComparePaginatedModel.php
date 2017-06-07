@@ -2,31 +2,27 @@
 
 namespace Model\User\Question;
 
+use Model\Neo4j\GraphManager;
 use Paginator\PaginatedInterface;
 
-use Everyman\Neo4j\Client;
 use Everyman\Neo4j\Cypher\Query;
 use Everyman\Neo4j\Query\Row;
 
 class QuestionComparePaginatedModel implements PaginatedInterface
 {
     /**
-     * @var \Everyman\Neo4j\Client
-     */
-    protected $client;
-
-    /**
      * @var AnswerManager
      */
     protected $am;
 
+    protected $graphManager;
+
     /**
-     * @param \Everyman\Neo4j\Client $client
      * @param AnswerManager $am
      */
-    public function __construct(Client $client, AnswerManager $am)
+    public function __construct(GraphManager $graphManager, AnswerManager $am)
     {
-        $this->client = $client;
+        $this->graphManager = $graphManager;
         $this->am = $am;
     }
 
@@ -53,6 +49,7 @@ class QuestionComparePaginatedModel implements PaginatedInterface
      */
     public function slice(array $filters, $offset, $limit)
     {
+        $qb = $this->graphManager->createQueryBuilder();
 
         $id = $filters['id'];
         $id2 = $filters['id2'];
@@ -63,80 +60,61 @@ class QuestionComparePaginatedModel implements PaginatedInterface
             $showOnlyCommon = $filters['showOnlyCommon'];
         }
 
-        $params = array(
-            'UserId' => (integer)$id,
-            'UserId2' => (integer)$id2,
-            'offset' => (integer)$offset,
-            'limit' => (integer)$limit
-        );
+        $qb->match('(u:User), (u2:User)')
+            ->where('u.qnoow_id = {userId} AND u2.qnoow_id = {userId2}')
+            ->with('u', 'u2')
+            ->limit(1);
 
-        $commonQuery = "
-            OPTIONAL MATCH
-            (u2)-[ua2:ANSWERS]-(answer2:Answer)-[:IS_ANSWER_OF]-(question)
-        ";
+        $qb->match('(u)-[ua:ANSWERS]->(answer:Answer)-[:IS_ANSWER_OF]->(question:Question)')
+            ->where("EXISTS(answer.text_$locale)")
+            ->with('u', 'u2', 'question', 'answer', 'ua');
+
         if ($showOnlyCommon) {
-            $commonQuery = "
-                MATCH
-                (u2)-[ua2:ANSWERS]-(answer2:Answer)-[:IS_ANSWER_OF]-(question)
-            ";
+            $qb->match('(u2)-[ua2:ANSWERS]-(answer2:Answer)-[:IS_ANSWER_OF]-(question)');
+        } else {
+            $qb->optionalMatch('(u2)-[ua2:ANSWERS]-(answer2:Answer)-[:IS_ANSWER_OF]-(question)');
         }
 
-        $query = "
-            MATCH
-            (u:User), (u2:User)
-            WHERE u.qnoow_id = {UserId} AND u2.qnoow_id = {UserId2}
-            MATCH
-            (u)-[ua:ANSWERS]-(answer:Answer)-[:IS_ANSWER_OF]-(question:Question)
-            WHERE EXISTS(answer.text_$locale)
-            WITH question, answer, ua, u, u2
+        $qb->optionalMatch('(u)-[:ACCEPTS]-(acceptedAnswers:Answer)-[:IS_ANSWER_OF]-(question)');
+        $qb->optionalMatch('(u)-[rate:RATES]-(question)');
+        $qb->optionalMatch('(u2)-[:ACCEPTS]-(acceptedAnswers2:Answer)-[:IS_ANSWER_OF]-(question)');
+        $qb->optionalMatch('(u2)-[rate2:RATES]-(question)');
+        $qb->optionalMatch('(possible_answers:Answer)-[:IS_ANSWER_OF]-(question)');
 
-        ";
-        $query .= $commonQuery;
-        $query .= "
-            OPTIONAL MATCH
-            (u)-[:ACCEPTS]-(acceptedAnswers:Answer)-[:IS_ANSWER_OF]-(question)
-            OPTIONAL MATCH
-            (u)-[rate:RATES]-(question)
-            OPTIONAL MATCH
-            (u2)-[:ACCEPTS]-(acceptedAnswers2:Answer)-[:IS_ANSWER_OF]-(question)
-            OPTIONAL MATCH
-            (u2)-[rate2:RATES]-(question)
-
-            OPTIONAL MATCH
-            (possible_answers:Answer)-[:IS_ANSWER_OF]-(question)
-            RETURN
-            question,
-            {
+        $qb->returns(
+            'question',
+            'rate2 IS NOT NULL AS isCommon',
+            '{
                 question: question,
                 answer: answer,
                 userAnswer: ua,
                 rates: rate,
                 answers: collect(distinct possible_answers),
                 acceptedAnswers: collect(distinct acceptedAnswers)
-            } as other_questions,
-            {
+            } as other_questions',
+            '{
                 question: question,
                 answer: answer2,
                 userAnswer: ua2,
                 rates: rate2,
                 answers: collect(distinct possible_answers),
                 acceptedAnswers: collect(distinct acceptedAnswers2)
-            } as own_questions
+            } as own_questions'
+        )
+            ->orderBy('isCommon DESC', 'id(question)')
+            ->skip('{offset}')
+            ->limit('{limit}');
 
-            ORDER BY id(question)
-            SKIP {offset}
-            LIMIT {limit}
-            ;
-         ";
-
-        //Create the Neo4j query object
-        $contentQuery = new Query(
-            $this->client,
-            $query,
-            $params
+        $qb->setParameters(
+            array(
+                'userId' => (integer)$id,
+                'userId2' => (integer)$id2,
+                'offset' => (integer)$offset,
+                'limit' => (integer)$limit
+            )
         );
 
-        $result = $contentQuery->getResultSet();
+        $result = $qb->getQuery()->getResultSet();
 
         $own_questions_results = array();
         $other_questions_results = array();
@@ -172,48 +150,40 @@ class QuestionComparePaginatedModel implements PaginatedInterface
         $count = 0;
 
         $id = $filters['id'];
+        $id2 = $filters['id2'];
+        $locale = $filters['locale'];
 
-        $params = array(
-            'UserId' => (integer)$id,
-        );
-
-        $commonQuery = "";
+        $showOnlyCommon = false;
         if (isset($filters['showOnlyCommon'])) {
-            $id2 = $filters['id2'];
-            if ($filters['showOnlyCommon']) {
-                $commonQuery = "
-                    MATCH
-                    (u2)-[:ANSWERS]-(answer2:Answer)-[:IS_ANSWER_OF]-(question)
-                    WHERE u2.qnoow_id = {UserId2}
-                ";
-                $params['UserId2'] = (integer)$id2;
-            }
+            $showOnlyCommon = $filters['showOnlyCommon'];
         }
 
-        $query = "
-            MATCH
-            (u:User)
-            WHERE u.qnoow_id = {UserId}
-            MATCH
-            (u)-[:ANSWERS]-(answer:Answer)-[:IS_ANSWER_OF]-(question:Question)
-        ";
-        $query .= $commonQuery;
-        $query .= "
-            RETURN
-            count(distinct question) as total
-            ;
-         ";
-
-        //Create the Neo4j query object
-        $contentQuery = new Query(
-            $this->client,
-            $query,
-            $params
+        $params = array(
+            'userId' => (integer)$id,
+            'userId2' => (integer)$id2
         );
 
-        //Execute query
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(u:User), (u2:User)')
+            ->where('u.qnoow_id = {userId} AND u2.qnoow_id = {userId2}')
+            ->with('u', 'u2')
+            ->limit(1);
+
+        $qb->match('(u)-[ua:ANSWERS]->(answer:Answer)-[:IS_ANSWER_OF]->(question:Question)')
+            ->where("EXISTS(answer.text_$locale)")
+            ->with('u', 'u2', 'question', 'answer', 'ua');
+
+        if ($showOnlyCommon) {
+            $qb->match('(u2)-[ua2:ANSWERS]-(answer2:Answer)-[:IS_ANSWER_OF]-(question)');
+        }
+
+        $qb->returns('count(distinct question) as total');
+
+        $qb->setParameters($params);
+
         try {
-            $result = $contentQuery->getResultSet();
+            $result = $qb->getQuery()->getResultSet();
 
             foreach ($result as $row) {
                 $count = $row['total'];
