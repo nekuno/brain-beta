@@ -2,6 +2,7 @@
 
 namespace Model\User\Question;
 
+use Everyman\Neo4j\Query\ResultSet;
 use Model\Neo4j\GraphManager;
 use Paginator\PaginatedInterface;
 
@@ -89,6 +90,7 @@ class QuestionComparePaginatedModel implements PaginatedInterface
                 answer: answer,
                 userAnswer: ua,
                 rates: rate,
+                isCommon: rate2 IS NOT NULL,
                 answers: collect(distinct possible_answers),
                 acceptedAnswers: collect(distinct acceptedAnswers)
             } as other_questions',
@@ -116,27 +118,34 @@ class QuestionComparePaginatedModel implements PaginatedInterface
 
         $result = $qb->getQuery()->getResultSet();
 
-        $own_questions_results = array();
-        $other_questions_results = array();
-        /* @var $row Row */
-        foreach ($result as $row) {
-            if ($row->offsetGet('own_questions')->offsetExists('userAnswer')) {
-                $own_question = $row->offsetGet('own_questions');
-                $questionId = $own_question->offsetGet('question')->getId();
-                $own_questions_results['questions'][$questionId] = $this->am->build($own_question, $locale);
-            }
-            if ($row->offsetGet('other_questions')->offsetExists('userAnswer')) {
-                $other_question = $row->offsetGet('other_questions');
-                $questionId = $other_question->offsetGet('question')->getId();
-                $other_questions_results['questions'][$questionId] = $this->am->build($other_question, $locale);
-            }
-        }
+        $own_questions_results = $this->buildQuestionResults($result, 'own_questions', $locale);
         $own_questions_results['userId'] = $id2;
+
+        $other_questions_results = $this->buildQuestionResults($result, 'other_questions', $locale);
         $other_questions_results['userId'] = $id;
 
         $resultArray = array($other_questions_results, $own_questions_results);
 
         return $resultArray;
+    }
+
+    private function buildQuestionResults(ResultSet $result, $questionsKey, $locale)
+    {
+        $questions_results = array();
+        /* @var $row Row */
+        foreach ($result as $row) {
+            if ($row->offsetGet($questionsKey)->offsetExists('userAnswer')) {
+                $questions = $row->offsetGet($questionsKey);
+                $questionId = $questions->offsetGet('question')->getId();
+                $questions_results['questions'][$questionId] = $this->am->build($questions, $locale);
+
+                if ($questions->offsetExists('isCommon')){
+                    $questions_results['questions'][$questionId]['question']['isCommon'] = $questions->offsetGet('isCommon');
+                }
+            }
+        }
+
+        return $questions_results;
     }
 
     /**
