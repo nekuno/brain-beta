@@ -68,10 +68,16 @@ class DeviceService
             $registrationIds[] = $device->getRegistrationId();
         }
 
+        $payloadData = $this->getPayloadData($category, $data);
+
         $payload = array(
-            "data" => $this->getPayloadData($category, $data),
-            "collapse_key" => $this->getCollapseKey($category, $data),
-            "registration_ids" => $registrationIds
+            'notification' => array(
+                'title' => $payloadData['title'],
+                'body' => $payloadData['body'],
+            ),
+            'data' => $payloadData,
+            'collapse_key' => $this->getCollapseKey($category, $data),
+            'registration_ids' => $registrationIds,
         );
 
         return $this->client->post($this->fireBaseUrl, array(
