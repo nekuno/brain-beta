@@ -8,6 +8,7 @@ use Model\Exception\ValidationException;
 use Model\GroupPhoto;
 use Model\Neo4j\GraphManager;
 use Model\GalleryPhoto;
+use Model\Photo;
 use Model\ProfilePhoto;
 use Model\User;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -130,7 +131,7 @@ class PhotoManager
         $qb->match('(u:User {qnoow_id: { id }})')
             ->with('u')
             ->create('(u)<-[:PHOTO_OF]-(i:Photo)')
-            ->set('i.createdAt = { createdAt }', 'i.path = { path }')
+            ->set('i.createdAt = { createdAt }', 'i.path = { path }', 'i.isProfilePhoto = false')
             ->setParameters(
                 array(
                     'id' => (int)$user->getId(),
@@ -150,6 +151,43 @@ class PhotoManager
 
         return $this->build($row);
 
+    }
+
+    public function setAsProfilePhoto(Photo $photo, User $user, $xPercent = 0, $yPercent = 0, $widthPercent = 100, $heightPercent = 100)
+    {
+        $extension = $photo->getExtension();
+        $path = 'uploads/user/' . $user->getUsernameCanonical() . '_' . time() . $extension;
+
+        if (!is_readable($photo->getFullPath())) {
+            throw new \RuntimeException(sprintf('Source image "%s" does not exists', $photo->getFullPath()));
+        }
+
+        $this->cropAndSave($photo->getFullPath(), $path, $xPercent, $yPercent, $widthPercent, $heightPercent);
+
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match('(u:User {qnoow_id: { userId }})<-[r:PHOTO_OF]-(i:Photo)')
+            ->set('i.isProfilePhoto = false')
+            ->with('u', 'i')
+            ->match('(i)')
+            ->where('id(i) = { id }')
+            ->set('i.isProfilePhoto = true')
+            ->set('u.photo = { path }')
+            ->setParameters(array(
+                'id' => $photo->getId(),
+                'userId' => $user->getId(),
+                'path' => $path,
+            ))
+            ->returns('u', 'i');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        if (count($result) < 1) {
+            throw new \Exception('Could not create Photo');
+        }
+
+        $row = $result->current();
+
+        return $this->build($row);
     }
 
     public function remove($id)
@@ -221,10 +259,43 @@ class PhotoManager
         $photo = $this->createGalleryPhoto();
         $photo->setId($node->getId());
         $photo->setCreatedAt(new \DateTime($node->getProperty('createdAt')));
+        $photo->setIsProfilePhoto($node->getProperty('isProfilePhoto'));
         $photo->setPath($node->getProperty('path'));
         $photo->setUserId($userNode->getProperty('qnoow_id'));
 
         return $photo;
+    }
+
+    public function cropAndSave($url, $path, $xPercent = 0, $yPercent = 0, $widthPercent = 100, $heightPercent = 100)
+    {
+        $fullPath = $this->base . $path;
+        $file = file_get_contents($url);
+        $size = getimagesizefromstring($file);
+        $width = $size[0];
+        $height = $size[1];
+        $x = $width * $xPercent / 100;
+        $y = $height * $yPercent / 100;
+        $widthCrop = $width * $widthPercent / 100;
+        $heightCrop = $height * $heightPercent / 100;
+        $image = imagecreatefromstring($file);
+        $crop = imagecrop($image, array('x' => $x, 'y' => $y, 'width' => $widthCrop, 'height' => $heightCrop));
+
+        switch ($size['mime']) {
+            case 'image/png':
+                imagepng($crop, $fullPath);
+                break;
+            case 'image/jpeg':
+                imagejpeg($crop, $fullPath);
+                break;
+            case 'image/gif':
+                imagegif($crop, $fullPath);
+                break;
+            default:
+                throw new ValidationException(array('photo' => array('Invalid mimetype')));
+                break;
+        }
+
+        return $fullPath;
     }
 
 }
