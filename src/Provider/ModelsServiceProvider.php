@@ -172,7 +172,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.questions.compare.model'] = $app->share(
             function ($app) {
 
-                return new QuestionComparePaginatedModel($app['neo4j.client'], $app['users.answers.model']);
+                return new QuestionComparePaginatedModel($app['neo4j.graph_manager'], $app['users.answers.model']);
             }
         );
 
@@ -375,7 +375,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.groups.model'] = $app->share(
             function ($app) {
 
-                return new GroupModel($app['neo4j.graph_manager'], $app['dispatcher'], $app['users.manager'], $app['users.filterusers.manager'], $app['validator.service'], $app['admin_domain_plus_post']);
+                return new GroupModel($app['neo4j.graph_manager'], $app['dispatcher'], $app['users.manager'], $app['users.photo.manager'], $app['users.filterusers.manager'], $app['validator.service'], $app['admin_domain_plus_post']);
             }
         );
 
