@@ -27,6 +27,7 @@ class AuthController
         $username = $request->request->get('username');
         $password = $request->request->get('password');
 	    $oauth = $request->request->get('oauth');
+	    $locale = $request->query->get('locale');
 
 	    /* @var $authService AuthService */
 	    $authService = $app['auth.service'];
@@ -40,6 +41,13 @@ class AuthController
 		    throw new BadRequestHttpException('Los datos introducidos no coinciden con nuestros registros.');
 	    }
 
-        return $app->json(array('jwt' => $jwt));
+	    $user = $authService->getUser($jwt);
+
+	    $profile = $app['users.profile.model']->getById($user->getId(), $locale);
+
+	    $questionsFilters = array('id' => $user->getId(), 'locale' => $locale);
+	    $countQuestions = $app['users.questions.model']->countTotal($questionsFilters);
+
+        return $app->json(array('jwt' => $jwt, 'profile' => $profile, 'questionsTotal' => $countQuestions));
     }
 }
