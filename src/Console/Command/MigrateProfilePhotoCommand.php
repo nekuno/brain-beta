@@ -26,7 +26,7 @@ class MigrateProfilePhotoCommand extends ApplicationAwareCommand
         /* @var $photoManager PhotoManager */
         $photoManager = $this->app['users.photo.manager'];
 
-        $users = $usersManager->getAll(true);
+        $users = $usersManager->getAll();
 
         /** @var User $user */
         foreach($users as $user) {
