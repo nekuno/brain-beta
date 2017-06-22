@@ -273,12 +273,14 @@ class PhotoManager
         $size = getimagesizefromstring($file);
         $width = $size[0];
         $height = $size[1];
-        if ($width > $height) {
-            $x = $y = $height * $yPercent / 100;
-            $widthCrop = $heightCrop = $height * $heightPercent / 100;
-        } else {
-            $x = $y = $width * $xPercent / 100;
-            $widthCrop = $heightCrop = $width * $widthPercent / 100;
+        $x = $width * $xPercent / 100;
+        $y = $height * $yPercent / 100;
+        $widthCrop = $width * $widthPercent / 100;
+        $heightCrop = $height * $heightPercent / 100;
+        if ($widthCrop > $heightCrop) {
+            $widthCrop = $heightCrop;
+        } else if ($heightCrop > $widthCrop) {
+            $heightCrop = $widthCrop;
         }
         $image = imagecreatefromstring($file);
         $crop = imagecrop($image, array('x' => $x, 'y' => $y, 'width' => $widthCrop, 'height' => $heightCrop));
