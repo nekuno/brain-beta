@@ -46,7 +46,11 @@ class MigrateProfilePhotoCommand extends ApplicationAwareCommand
             if ($lastPhoto) {
                 // Set last photo as profile photo (old profile photo will be overwritten)
                 $output->writeln($username . ': Set last photo ' . $lastPhoto->getFullPath() . ' as profile photo (old profile photo will be overwritten)');
+                $oldPhoto = $user->getPhoto();
                 $photoManager->setAsProfilePhoto($lastPhoto, $user, 5, 5, 90, 90);
+                if ($oldPhoto) {
+                    $oldPhoto->delete();
+                }
 
             } else if ($user->getPhoto()) {
                 // Save old profile photo in gallery and save as profile photo
