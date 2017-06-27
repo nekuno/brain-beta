@@ -111,6 +111,28 @@ class TokensModel
     }
 
     /**
+     * @param int $resourceId
+     * @param string $resourceOwner
+     * @return boolean
+     */
+    public function exists($resourceId, $resourceOwner)
+    {
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match('(token:Token)')
+            ->where('token.resourceId = { resourceId }', 'token.resourceOwner = { resourceOwner }')
+            ->setParameter('resourceId', $resourceId)
+            ->setParameter('resourceOwner', $resourceOwner)
+            ->returns('token')
+            ->limit(1);
+
+        $query = $qb->getQuery();
+
+        $result = $query->getResultSet();
+
+        return count($result) > 0;
+    }
+
+    /**
      * @param int $userId
      * @param string $resourceOwner
      * @param array $data
@@ -119,6 +141,9 @@ class TokensModel
      */
     public function create($userId, $resourceOwner, array $data)
     {
+        if (isset($data['resourceId']) && $this->exists($data['resourceId'], $resourceOwner)) {
+            throw new ValidationException(array('token' => array('Token already exists')));
+        }
         list($userNode, $tokenNode) = $this->getUserAndTokenNodesById($userId, $resourceOwner);
 
         if (!($userNode instanceof Node)) {
