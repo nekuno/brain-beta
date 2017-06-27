@@ -141,7 +141,7 @@ class TokensModel
      */
     public function create($userId, $resourceOwner, array $data)
     {
-        if (isset($data['resourceId']) && isset($data['resource']) && $this->exists($data['resourceId'], $data['resource'])) {
+        if (isset($data['resourceId']) && $this->exists($data['resourceId'], $resourceOwner)) {
             throw new ValidationException(array('token' => array('Token already exists')));
         }
         list($userNode, $tokenNode) = $this->getUserAndTokenNodesById($userId, $resourceOwner);
