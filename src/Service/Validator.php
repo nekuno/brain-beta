@@ -210,7 +210,7 @@ class Validator
         $result = $query->getResultSet();
 
         if ($result->count() > 0) {
-            $errors = array('groupId' => array('There is other user with the same resourceId already registered'));
+            $errors = array('resourceId' => array('There is other user with the same resourceId already registered'));
         }
 
         $this->throwException($errors);
