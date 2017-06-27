@@ -75,6 +75,8 @@ class GhostUserManager
     public function saveAsUser($id)
     {
         $ghostUser = $this->getById($id);
+        $this->userManager->setEnabled($id, true);
+
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(u:'.$this::LABEL_GHOST_USER.')')
             ->where('u.qnoow_id={id}')
