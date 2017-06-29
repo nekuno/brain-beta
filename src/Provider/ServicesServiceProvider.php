@@ -11,6 +11,7 @@ use Service\DeviceService;
 use Service\EmailNotifications;
 use Service\EventDispatcher;
 use Service\ImageTransformations;
+use Service\Links\EnqueueLinksService;
 use Service\NotificationManager;
 use Service\Recommendator;
 use Service\RegisterService;
@@ -135,6 +136,12 @@ class ServicesServiceProvider implements ServiceProviderInterface
         $app['notificationManager.service'] = $app->share(
             function (Application $app) {
                 return new NotificationManager($app['neo4j.graph_manager']);
+            }
+        );
+
+        $app['enqueueLinks.service'] = $app->share(
+            function (Application $app) {
+                return new EnqueueLinksService($app['links.model'], $app['amqpManager.service']);
             }
         );
 

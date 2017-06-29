@@ -3,7 +3,7 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
-use Service\AMQPManager;
+use Service\Links\EnqueueLinksService;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -17,19 +17,9 @@ class RabbitMQEnqueueLinksCheckCommand extends ApplicationAwareCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        /* @var $amqpManager AMQPManager */
-        $amqpManager = $this->app['amqpManager.service'];
-        $linksModel = $this->app['links.model'];
-        $links = $linksModel->getLinks(array('link.processed = 1'), 0 , 100000000);
-
-        $output->writeln(count($links) . ' links');
-
-        foreach ($links as $link) {
-            $output->writeln('Link ' . $link['url'] . ' will be checked');
-            $output->writeln(sprintf('Enqueuing url check for "%s"', $link['url']));
-            $amqpManager->enqueueLinkCheck(array('link' => $link));
-        }
-
+        /** @var EnqueueLinksService $enqueueLinksService */
+        $enqueueLinksService = $this->app['enqueueLinks.service'];
+        $enqueueLinksService->enqueueLinksCheck($output);
         $output->writeln('Done!');
     }
 }
