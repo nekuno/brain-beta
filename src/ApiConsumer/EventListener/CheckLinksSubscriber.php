@@ -34,17 +34,20 @@ class CheckLinksSubscriber implements EventSubscriberInterface
 
     public function onCheckStart(CheckEvent $event)
     {
-        $this->output->writeln(sprintf('[%s] Checking link "%s"', date('Y-m-d H:i:s'), $event->getUrl()));
+        // Disabled for avoiding too much logs in log file
+        //$this->output->writeln(sprintf('[%s] Checking link "%s"', date('Y-m-d H:i:s'), $event->getUrl()));
     }
 
     public function onCheckResponse(CheckEvent $event)
     {
-        $this->output->writeln(sprintf('[%s] Received response "%s" from checking link "%s"', date('Y-m-d H:i:s'), $event->getResponse(), $event->getUrl()));
+        // Disabled for avoiding too much logs in log file
+        //$this->output->writeln(sprintf('[%s] Received response "%s" from checking link "%s"', date('Y-m-d H:i:s'), $event->getResponse(), $event->getUrl()));
     }
 
     public function onCheckSuccess(CheckEvent $event)
     {
-        $this->output->writeln(sprintf('[%s] Link "%s" successfully checked', date('Y-m-d H:i:s'), $event->getUrl()));
+        // Disabled for avoiding too much logs in log file
+        //$this->output->writeln(sprintf('[%s] Link "%s" successfully checked', date('Y-m-d H:i:s'), $event->getUrl()));
     }
 
     public function onCheckError(CheckEvent $event)

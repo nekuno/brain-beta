@@ -33,17 +33,19 @@ class ReprocessLinksSubscriber implements EventSubscriberInterface
 
     public function onReprocessStart(ReprocessEvent $event)
     {
-        $this->output->writeln(sprintf('[%s] Reprocessing link "%s"', date('Y-m-d H:i:s'), $event->getUrl()));
+        // Disabled for avoiding too much logs in log file
+        //$this->output->writeln(sprintf('[%s] Reprocessing link "%s"', date('Y-m-d H:i:s'), $event->getUrl()));
     }
 
     public function onReprocessFinish(ReprocessEvent $event)
     {
-        $this->output->writeln(sprintf('[%s] Reprocessed links from url "%s"', date('Y-m-d H:i:s'), $event->getUrl()));
+        // Disabled for avoiding too much logs in log file
+        /*$this->output->writeln(sprintf('[%s] Reprocessed links from url "%s"', date('Y-m-d H:i:s'), $event->getUrl()));
         $linksCount = 0;
         foreach ($event->getLinks() as $link) {
             $link['processed'] ? $linksCount++ : null;
         }
-        $this->output->writeln(sprintf('%s links found', $linksCount));
+        $this->output->writeln(sprintf('%s links found', $linksCount));*/
     }
 
     public function onReprocessError(ReprocessEvent $event)
