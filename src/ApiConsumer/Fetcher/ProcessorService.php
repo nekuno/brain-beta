@@ -474,6 +474,8 @@ class ProcessorService implements LoggerAwareInterface
             if (!$link->isComplete()) {
                 //log
                 $this->getUnprocessedLinks($preprocessedLink);
+            } else {
+                $link->setProcessed(true);
             }
         }
 
