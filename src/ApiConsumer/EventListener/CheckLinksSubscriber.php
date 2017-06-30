@@ -4,21 +4,27 @@
 namespace ApiConsumer\EventListener;
 
 use Event\CheckEvent;
+use Model\Link\LinkModel;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 
 class CheckLinksSubscriber implements EventSubscriberInterface
 {
-
     /**
      * @var OutputInterface
      */
     protected $output;
 
-    public function __construct(OutputInterface $output)
+    /**
+     * @var LinkModel
+     */
+    protected $linkModel;
+
+    public function __construct(OutputInterface $output, LinkModel $linkModel)
     {
         $this->output = $output;
+        $this->linkModel = $linkModel;
     }
 
     public static function getSubscribedEvents()
@@ -34,25 +40,31 @@ class CheckLinksSubscriber implements EventSubscriberInterface
 
     public function onCheckStart(CheckEvent $event)
     {
-        // Disabled for avoiding too much logs in log file
-        //$this->output->writeln(sprintf('[%s] Checking link "%s"', date('Y-m-d H:i:s'), $event->getUrl()));
+        $this->linkModel->setLastChecked($event->getUrl());
+
+        $this->writeMessageIfVerbose(sprintf('[%s] Checking link "%s"', date('Y-m-d H:i:s'), $event->getUrl()));
     }
 
     public function onCheckResponse(CheckEvent $event)
     {
-        // Disabled for avoiding too much logs in log file
-        //$this->output->writeln(sprintf('[%s] Received response "%s" from checking link "%s"', date('Y-m-d H:i:s'), $event->getResponse(), $event->getUrl()));
+        $this->writeMessageIfVerbose(sprintf('[%s] Received response "%s" from checking link "%s"', date('Y-m-d H:i:s'), $event->getResponse(), $event->getUrl()));
     }
 
     public function onCheckSuccess(CheckEvent $event)
     {
-        // Disabled for avoiding too much logs in log file
-        //$this->output->writeln(sprintf('[%s] Link "%s" successfully checked', date('Y-m-d H:i:s'), $event->getUrl()));
+        $this->writeMessageIfVerbose(sprintf('[%s] Link "%s" successfully checked', date('Y-m-d H:i:s'), $event->getUrl()));
     }
 
     public function onCheckError(CheckEvent $event)
     {
         $this->output->writeln(sprintf('[%s] Link "%s" NOT successfully checked', date('Y-m-d H:i:s'), $event->getUrl()));
         $this->output->writeln(sprintf('Problem is: "%s"', $event->getError()));
+    }
+
+    private function writeMessageIfVerbose($message)
+    {
+        if ($this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
+            $this->output->writeln($message);
+        }
     }
 }

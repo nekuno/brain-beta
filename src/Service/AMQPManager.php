@@ -89,6 +89,14 @@ class AMQPManager
         $channel->basic_publish($message, $exchangeName, $routingKey);
     }
 
+    public function getMessagesCount($queue)
+    {
+        $queueName = $this->queueManager->buildQueueName($queue);
+        $channel = $this->getChannel($queueName);
+
+        return $this->queueManager->getEnqueuedCount($channel, $queueName);
+    }
+
     public function getChannel($queueName)
     {
         if (isset($this->publishingChannels[$queueName])){

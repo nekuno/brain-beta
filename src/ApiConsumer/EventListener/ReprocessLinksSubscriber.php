@@ -4,6 +4,7 @@
 namespace ApiConsumer\EventListener;
 
 use Event\ReprocessEvent;
+use Model\Link\LinkModel;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -16,9 +17,15 @@ class ReprocessLinksSubscriber implements EventSubscriberInterface
      */
     protected $output;
 
-    public function __construct(OutputInterface $output)
+    /**
+     * @var LinkModel
+     */
+    protected $linkModel;
+
+    public function __construct(OutputInterface $output, LinkModel $linkModel)
     {
         $this->output = $output;
+        $this->linkModel = $linkModel;
     }
 
     public static function getSubscribedEvents()
@@ -33,24 +40,41 @@ class ReprocessLinksSubscriber implements EventSubscriberInterface
 
     public function onReprocessStart(ReprocessEvent $event)
     {
-        // Disabled for avoiding too much logs in log file
-        //$this->output->writeln(sprintf('[%s] Reprocessing link "%s"', date('Y-m-d H:i:s'), $event->getUrl()));
+        $this->linkModel->setLastReprocessed($event->getUrl());
+
+        $this->writeMessageIfVerbose(sprintf('[%s] Reprocessing link "%s"', date('Y-m-d H:i:s'), $event->getUrl()));
     }
 
     public function onReprocessFinish(ReprocessEvent $event)
     {
-        // Disabled for avoiding too much logs in log file
-        /*$this->output->writeln(sprintf('[%s] Reprocessed links from url "%s"', date('Y-m-d H:i:s'), $event->getUrl()));
-        $linksCount = 0;
+        $this->writeMessageIfVerbose(sprintf('[%s] Reprocessed links from url "%s"', date('Y-m-d H:i:s'), $event->getUrl()));
+
+        $linksProcessedCount = 0;
         foreach ($event->getLinks() as $link) {
-            $link['processed'] ? $linksCount++ : null;
+            $link['processed'] ? $linksProcessedCount++ : null;
         }
-        $this->output->writeln(sprintf('%s links found', $linksCount));*/
+
+        if ($linksProcessedCount > 0) {
+            $this->linkModel->initializeReprocessed($event->getUrl());
+        } else {
+            $this->linkModel->increaseReprocessed($event->getUrl());
+        }
+
+        $this->writeMessageIfVerbose(sprintf('%s links processed found', $linksProcessedCount));
     }
 
     public function onReprocessError(ReprocessEvent $event)
     {
+        $this->linkModel->increaseReprocessed($event->getUrl());
+
         $this->output->writeln(sprintf('[%s] Error reprocessing link "%s"', date('Y-m-d H:i:s'), $event->getUrl()));
         $this->output->writeln(sprintf('Problem is: "%s"', $event->getError()));
+    }
+
+    private function writeMessageIfVerbose($message)
+    {
+        if ($this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
+            $this->output->writeln($message);
+        }
     }
 }
