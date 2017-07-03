@@ -211,10 +211,17 @@ class ProcessorService implements LoggerAwareInterface
 
     /**
      * @param PreprocessedLink[] $preprocessedLinks
+     * @throws \Exception
      * @return array[]
      */
     public function reprocess(array $preprocessedLinks)
     {
+        if (isset($preprocessedLinks[0]['url'])) {
+            if (!$this->linkModel->findLinkByUrl($preprocessedLinks[0]['url'])) {
+                throw new \Exception(sprintf('Url %s not found in database', $preprocessedLinks[0]['url']));
+            }
+        }
+
         $links = array();
         $this->preProcess($preprocessedLinks);
 
