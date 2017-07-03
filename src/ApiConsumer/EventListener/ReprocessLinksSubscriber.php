@@ -51,7 +51,7 @@ class ReprocessLinksSubscriber implements EventSubscriberInterface
 
         $linksProcessedCount = 0;
         foreach ($event->getLinks() as $link) {
-            $link['processed'] ? $linksProcessedCount++ : null;
+            isset($link['processed']) && $link['processed'] ? $linksProcessedCount++ : null;
         }
 
         if ($linksProcessedCount > 0) {
