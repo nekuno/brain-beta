@@ -117,7 +117,7 @@ class ProcessorService implements LoggerAwareInterface
             }
 
             // Create new PreprocessedLinks if needed
-            if (count($urls) > 1 || $url !== $urls[0]) {
+            if (count($urls) > 1 || isset($urls[0]) && $url !== $urls[0]) {
                 $this->logNotice(sprintf('Preprocessed link %s differs from original %s, or more urls can be extracted', $urls[0], $url));
                 foreach ($urls as $singleUrl) {
                     $newPreprocessedLink = clone $preprocessedLink;
@@ -215,8 +215,6 @@ class ProcessorService implements LoggerAwareInterface
      */
     public function reprocess(array $preprocessedLinks)
     {
-        $source = $this->getCommonSource($preprocessedLinks);
-
         $links = array();
         $this->preProcess($preprocessedLinks);
 
@@ -237,8 +235,6 @@ class ProcessorService implements LoggerAwareInterface
             }
         }
 
-        $links = array_merge($links, $this->reprocessLastLinks($source));
-
         return $links;
     }
 
@@ -250,23 +246,6 @@ class ProcessorService implements LoggerAwareInterface
         foreach ($preprocessedLinks as $preprocessedLink) {
             $preprocessedLink->setToken(null);
         }
-    }
-
-    private function reprocessLastLinks($source)
-    {
-        $processedLinks = $this->linkProcessor->processLastLinks();
-
-        $links = array();
-        foreach ($processedLinks as $processedLink) {
-            $preprocessedLink = new PreprocessedLink($processedLink->getUrl());
-            $preprocessedLink->setFirstLink($processedLink);
-            $preprocessedLink->setSource($source);
-
-            $savedLinks = $this->save($preprocessedLink);
-            $links = array_merge($links, $savedLinks);
-        }
-
-        return $links;
     }
 
     private function fullReprocessSingle(PreprocessedLink $preprocessedLink)

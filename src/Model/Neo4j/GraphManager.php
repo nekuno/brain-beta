@@ -125,6 +125,7 @@ class GraphManager implements LoggerAwareInterface
         $qb->setParameter('id1', $id1);
         $deleted = $qb->getQuery()->getResultSet();
         $lastProps = $this->setProperties($this->lastProperties, $id2);
+        $this->lastProperties = array();
 
         return array('relationships' => $rels,
             'properties' => array_merge($props, $lastProps),
