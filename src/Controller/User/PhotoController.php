@@ -2,6 +2,7 @@
 
 namespace Controller\User;
 
+use Event\UserEvent;
 use Model\Exception\ValidationException;
 use Model\User;
 use Silex\Application;
@@ -59,8 +60,13 @@ class PhotoController
 
     public function postProfileAction(Application $app, Request $request, User $user, $photoId)
     {
+        $xPercent = $request->request->get('x', 0);
+        $yPercent = $request->request->get('y', 0);
+        $widthPercent = $request->request->get('width', 100);
+        $heightPercent = $request->request->get('height', 100);
 
-        $photo = $app['users.photo.manager']->getById($photoId);
+        $photoManager = $app['users.photo.manager'];
+        $photo = $photoManager->getById($photoId);
 
         if ($photo->getUserId() !== $user->getId()) {
             throw new AccessDeniedHttpException('Photo not allowed');
@@ -68,51 +74,8 @@ class PhotoController
 
         $oldPhoto = $user->getPhoto();
 
-        $extension = $photo->getExtension();
-        $new = 'uploads/user/' . $user->getUsernameCanonical() . '_' . time() . $extension;
-
-        if (!is_readable($photo->getFullPath())) {
-            throw new \RuntimeException(sprintf('Source image "%s" does not exists', $photo->getFullPath()));
-        }
-
-        $dest = $app['images_web_dir'] . $new;
-        $file = file_get_contents($photo->getFullPath());
-        $size = getimagesizefromstring($file);
-        $width = $size[0];
-        $height = $size[1];
-        $xPercent = $request->request->get('x', 0);
-        $yPercent = $request->request->get('y', 0);
-        $widthPercent = $request->request->get('width', 100);
-        $heightPercent = $request->request->get('height', 100);
-        $x = $width * $xPercent / 100;
-        $y = $height * $yPercent / 100;
-        $widthCrop = $width * $widthPercent / 100;
-        $heightCrop = $height * $heightPercent / 100;
-        $image = imagecreatefromstring($file);
-        $crop = imagecrop($image, array('x' => $x, 'y' => $y, 'width' => $widthCrop, 'height' => $heightCrop));
-
-        switch ($size['mime']) {
-            case 'image/png':
-                imagepng($crop, $dest);
-                break;
-            case 'image/jpeg':
-                imagejpeg($crop, $dest);
-                break;
-            case 'image/gif':
-                imagegif($crop, $dest);
-                break;
-            default:
-                throw new ValidationException(array('photo' => array('Invalid mimetype')));
-                break;
-        }
-
-        $data = array(
-            'userId' => $user->getId(),
-            'username' => $user->getUsername(),
-            'email' => $user->getEmail(),
-            'photo' => $new,
-        );
-        $user = $app['users.manager']->update($data);
+        $photoManager->setAsProfilePhoto($photo, $user, $xPercent, $yPercent, $widthPercent, $heightPercent);
+        $app['dispatcher']->dispatch(\AppEvents::USER_PHOTO_CHANGED, new UserEvent($user));
 
         $oldPhoto->delete();
 

@@ -54,13 +54,19 @@ class UserManager implements PaginatedInterface
      */
     protected $slugify;
 
-    public function __construct(EventDispatcher $dispatcher, GraphManager $gm, PasswordEncoderInterface $encoder, PhotoManager $pm, Slugify $slugify)
+    /**
+     * @var string
+     */
+    protected $imagesBaseDir;
+
+    public function __construct(EventDispatcher $dispatcher, GraphManager $gm, PasswordEncoderInterface $encoder, PhotoManager $pm, Slugify $slugify, $imagesBaseDir)
     {
         $this->dispatcher = $dispatcher;
         $this->gm = $gm;
         $this->encoder = $encoder;
         $this->pm = $pm;
         $this->slugify = $slugify;
+        $this->imagesBaseDir = $imagesBaseDir;
     }
 
     /**
@@ -520,6 +526,7 @@ class UserManager implements PaginatedInterface
 
         $this->setDefaults($data);
 
+        $this->createPhoto($data['userId'], $data);
         $user = $this->save($data);
 
         $this->dispatcher->dispatch(\AppEvents::USER_CREATED, new UserEvent($user));
@@ -534,6 +541,7 @@ class UserManager implements PaginatedInterface
     public function update(array $data)
     {
         $this->validate($data, true);
+        unset($data['photo']);
 
         if (isset($data['username'])) {
             $data['username'] = trim($data['username']);
@@ -1192,7 +1200,6 @@ class UserManager implements PaginatedInterface
 
         $this->updateCanonicalFields($data);
         $this->updatePassword($data);
-        $this->updatePhoto($data);
 
         $data['updatedAt'] = (new \DateTime())->format('Y-m-d H:i:s');
 
@@ -1550,18 +1557,22 @@ class UserManager implements PaginatedInterface
         }
     }
 
-    protected function updatePhoto(array &$user)
+    protected function createPhoto($userId, array &$data)
     {
-
-        if (isset($user['photo']) && filter_var($user['photo'], FILTER_VALIDATE_URL)) {
-            $url = $user['photo'];
-            // TODO: Validate size and set proper extension
-            $user['photo'] = 'uploads/user/' . $user['usernameCanonical'] . '_' . time() . '.jpg';
-            $success = $this->pm->saveProfilePhoto($user['photo'], @file_get_contents($url));
-            if (!$success) {
-                unset($user['photo']);
-            }
+        if (isset($data['photo']) && filter_var($data['photo'], FILTER_VALIDATE_URL)) {
+            $url = $data['photo'];
+        } else {
+            $url = $this->imagesBaseDir . 'bundles/qnoowlanding/images/user-no-img.jpg';
         }
+        $user = $this->getById($userId);
+        $photo = $this->pm->create($user, @file_get_contents($url));
+        $profilePhoto = $this->pm->setAsProfilePhoto($photo, $user);
+        $data['photo'] = $profilePhoto->getPath();
+
+        if (!$profilePhoto) {
+            unset($data['photo']);
+        }
+
     }
 
     private function getResultBySlug($slug)
