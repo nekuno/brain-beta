@@ -97,6 +97,11 @@ final class AppEvents
     const USER_STATUS_CHANGED = 'user.statusChanged';
 
     /**
+     * Fired when user profile photo changes
+     */
+    const USER_PHOTO_CHANGED = 'user.photoChanged';
+
+    /**
      * Fired when two users like each other
      */
     const USER_BOTH_LIKED = 'user.bothLiked';
