@@ -10,6 +10,7 @@ use GuzzleHttp\Exception\RequestException;
 use Model\User\Thread\ThreadManager;
 use Service\ChatMessageNotifications;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use GuzzleHttp\Client;
 
 class UserSubscriber implements EventSubscriberInterface
 {
@@ -20,10 +21,16 @@ class UserSubscriber implements EventSubscriberInterface
 
     protected $chat;
 
-    public function __construct(ThreadManager $threadManager, ChatMessageNotifications $chat)
+    /**
+     * @var Client
+     */
+    protected $client;
+
+    public function __construct(ThreadManager $threadManager, ChatMessageNotifications $chat, Client $client)
     {
         $this->threadManager = $threadManager;
         $this->chat = $chat;
+        $this->client = $client;
     }
 
     public static function getSubscribedEvents()
@@ -34,6 +41,7 @@ class UserSubscriber implements EventSubscriberInterface
             \AppEvents::GROUP_REMOVED => array('onGroupRemoved'),
             \AppEvents::PROFILE_CREATED => array('onProfileCreated'),
             \AppEvents::USER_REGISTERED => array('onUserRegistered'),
+            \AppEvents::USER_PHOTO_CHANGED => array('onUserPhotoChanged'),
         );
     }
 
@@ -82,5 +90,16 @@ class UserSubscriber implements EventSubscriberInterface
         $user = $event->getUser();
         $threads = $this->threadManager->getDefaultThreads($user, ThreadManager::SCENARIO_DEFAULT_LITE);
         $this->threadManager->createBatchForUser($user->getId(), $threads);
+    }
+
+    public function onUserPhotoChanged(UserEvent $event)
+    {
+        $user = $event->getUser();
+        $json = array('userId' => $user->getId());
+        try {
+            $this->client->post('api/user/clear', array('json' => $json));
+        } catch (RequestException $e) {
+
+        }
     }
 }

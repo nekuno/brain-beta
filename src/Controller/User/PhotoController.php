@@ -2,6 +2,7 @@
 
 namespace Controller\User;
 
+use Event\UserEvent;
 use Model\Exception\ValidationException;
 use Model\User;
 use Silex\Application;
@@ -74,6 +75,7 @@ class PhotoController
         $oldPhoto = $user->getPhoto();
 
         $photoManager->setAsProfilePhoto($photo, $user, $xPercent, $yPercent, $widthPercent, $heightPercent);
+        $app['dispatcher']->dispatch(\AppEvents::USER_PHOTO_CHANGED, new UserEvent($user));
 
         $oldPhoto->delete();
 
