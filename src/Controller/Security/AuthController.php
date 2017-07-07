@@ -26,15 +26,17 @@ class AuthController
 
         $username = $request->request->get('username');
         $password = $request->request->get('password');
-	    $oauth = $request->request->get('oauth');
+	    $resourceOwner = $request->request->get('resourceOwner');
+	    $oauthToken = $request->request->get('oauthToken');
+	    $refreshToken = $request->request->get('refreshToken');
 
 	    /* @var $authService AuthService */
 	    $authService = $app['auth.service'];
 	    if ($username && $password) {
 	        $jwt = $authService->login($username, $password);
 	    }
-	    elseif ($oauth) {
-		    $jwt = $authService->loginByResourceOwner($oauth);
+	    elseif ($resourceOwner && $oauthToken) {
+		    $jwt = $authService->loginByResourceOwner($resourceOwner, $oauthToken, $refreshToken);
 	    }
 	    else {
 		    throw new BadRequestHttpException('Los datos introducidos no coinciden con nuestros registros.');
