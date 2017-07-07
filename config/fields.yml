@@ -608,7 +608,7 @@ tokens:
         required: false
         type: string
     resourceId:
-        required: true
+        required: false
         type: string
     createdTime:
         required: false
