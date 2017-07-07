@@ -106,8 +106,13 @@ class AuthService
 
         $user = $this->updateLastLogin($newToken->getUser());
 
+        $data = array('oauthToken' => $accessToken);
+        if ($refreshToken) {
+            $data['refreshToken'] = $refreshToken;
+        }
+
         try {
-            $this->tokensModel->update($user->getId(), $resourceOwner, array('oauthToken' => $accessToken, 'refreshToken' => $refreshToken));
+            $this->tokensModel->update($user->getId(), $resourceOwner, $data);
         } catch (\Exception $e) {
 
         }
