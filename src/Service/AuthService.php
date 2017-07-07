@@ -82,14 +82,13 @@ class AuthService
     }
 
     /**
-     * @param $oauthData
+     * @param $resourceOwner
+     * @param $accessToken
+     * @param $refreshToken
      * @return string
      */
-    public function loginByResourceOwner($oauthData)
+    public function loginByResourceOwner($resourceOwner, $accessToken, $refreshToken = null)
     {
-        $resourceOwner = $oauthData['resourceOwner'];
-        $accessToken = $oauthData['oauthToken'];
-
         $accessToken = $this->tokensModel->getOauth1Token($resourceOwner, $accessToken) ?: $accessToken;
 
         $token = new OAuthToken($accessToken);
@@ -106,8 +105,17 @@ class AuthService
         }
 
         $user = $this->updateLastLogin($newToken->getUser());
-        $this->tokensModel->update($user->getId(), $resourceOwner, $oauthData);
 
+        $data = array('oauthToken' => $accessToken);
+        if ($refreshToken) {
+            $data['refreshToken'] = $refreshToken;
+        }
+
+        try {
+            $this->tokensModel->update($user->getId(), $resourceOwner, $data);
+        } catch (\Exception $e) {
+
+        }
         return $this->buildToken($user);
     }
 
