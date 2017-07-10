@@ -183,7 +183,7 @@ class GraphManager implements LoggerAwareInterface
     private function copyProperties($id1, $id2)
     {
         //TODO: Improve code placement of unique node properties
-        $unique = array('qnoow_id', 'usernameCanonical', 'emailCanonical');
+        $unique = array('qnoow_id', 'usernameCanonical', 'emailCanonical', 'slug');
 
         //get properties
         $qb = $this->createQueryBuilder();
@@ -222,10 +222,8 @@ class GraphManager implements LoggerAwareInterface
         $sets = array();
 
         foreach ($properties as $key => $value) {
-
-            $value = $this->manageAttribute($value);
-
-            $sets[] = 'n.' . $key . ' = ' . $value;
+            $sets[] = 'n.' . $key . " = { $key }";
+            $qb->setParameter($key, $value);
         }
         $qb->set($sets);
 
@@ -280,7 +278,7 @@ class GraphManager implements LoggerAwareInterface
 
         } else if (empty($value) && $value !== 0) {
             $value = 0;
-        };
+        }
 
         return $value;
     }

@@ -22,7 +22,7 @@ class RelationsController
         /* @var $model RelationsModel */
         $model = $app['users.relations.model'];
 
-        $result = $model->getAll($user->getId(), $relation);
+        $result = $model->getAll($relation, $user->getId());
 
         return $app->json($result);
     }

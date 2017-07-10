@@ -359,7 +359,7 @@ class QuestionModel
 
     /**
      * @param $id
-     * @return \Everyman\Neo4j\Query\ResultSet
+     * @return array
      */
     public function getQuestionStats($id)
     {
@@ -372,9 +372,11 @@ class QuestionModel
             ->optionalMatch('(:Gender {id: "male"})-[:OPTION_OF]->(:Profile)-[:PROFILE_OF]->(:User)-[maleAnswers:ANSWERS]->(a)')
             ->with('q', 'a', 'COUNT(maleAnswers) AS maleAnswersCount')
             ->optionalMatch('(:Gender {id: "female"})-[:OPTION_OF]->(:Profile)-[:PROFILE_OF]->(:User)-[femaleAnswers:ANSWERS]->(a)')
-            ->with('id(a) AS answer', 'maleAnswersCount', 'COUNT(femaleAnswers) AS femaleAnswersCount')
-            ->orderBy('id(a)')
-            ->returns('answer', 'maleAnswersCount', 'femaleAnswersCount');
+            ->with('a, id(a) AS answer', 'maleAnswersCount', 'COUNT(femaleAnswers) AS femaleAnswersCount')
+            ->optionalMatch('(profile:Profile)-[:PROFILE_OF]->(:User)-[:ANSWERS]->(a)')
+            ->with('answer', 'maleAnswersCount', 'femaleAnswersCount, profile')
+            ->orderBy('answer')
+            ->returns('answer', 'maleAnswersCount', 'femaleAnswersCount', 'collect(profile) as profiles');
 
         $query = $qb->getQuery();
 
@@ -382,14 +384,30 @@ class QuestionModel
 
         $stats = array();
         foreach ($result as $row) {
+            $profiles = $row['profiles'];
+            $oldAnswersCount = 0;
+            $youngAnswersCount = 0;
+            /** @var Node $profile */
+            foreach ($profiles as $profile) {
+                $birthday = $profile->getProperty('birthday');
+                if ($this->isOlderThanThirty($birthday)) {
+                    $oldAnswersCount++;
+                } else {
+                    $youngAnswersCount++;
+                }
+            }
             $stats['answers'][] = array(
                 'answerId' => $row['answer'],
                 'maleAnswersCount' => $row['maleAnswersCount'],
                 'femaleAnswersCount' => $row['femaleAnswersCount'],
+                'youngAnswersCount' => $youngAnswersCount,
+                'oldAnswersCount' => $oldAnswersCount,
             );
 
             $stats['maleAnswersCount'] = isset($stats['maleAnswersCount']) ? $stats['maleAnswersCount'] + $row['maleAnswersCount'] : $row['maleAnswersCount'];
             $stats['femaleAnswersCount'] = isset($stats['femaleAnswersCount']) ? $stats['femaleAnswersCount'] + $row['femaleAnswersCount'] : $row['femaleAnswersCount'];
+            $stats['youngAnswersCount'] = isset($stats['youngAnswersCount']) ? $stats['youngAnswersCount'] + $youngAnswersCount : $youngAnswersCount;
+            $stats['oldAnswersCount'] = isset($stats['oldAnswersCount']) ? $stats['oldAnswersCount'] + $oldAnswersCount : $oldAnswersCount;
         }
 
         return $stats;
@@ -499,9 +517,13 @@ class QuestionModel
         $stats = $this->getQuestionStats($question->getId());
         $maleAnswersStats = array();
         $femaleAnswersStats = array();
+        $youngAnswersStats = array();
+        $oldAnswersStats = array();
         foreach ($stats['answers'] as $answer) {
             $maleAnswersStats[$answer['answerId']] = $answer['maleAnswersCount'];
             $femaleAnswersStats[$answer['answerId']] = $answer['femaleAnswersCount'];
+            $youngAnswersStats[$answer['answerId']] = $answer['youngAnswersCount'];
+            $oldAnswersStats[$answer['answerId']] = $answer['oldAnswersCount'];
         }
 
         $return = array(
@@ -509,6 +531,8 @@ class QuestionModel
             'text' => $question->getProperty('text_' . $locale),
             'maleAnswersCount' => $stats['maleAnswersCount'],
             'femaleAnswersCount' => $stats['femaleAnswersCount'],
+            'youngAnswersCount' => $stats['youngAnswersCount'],
+            'oldAnswersCount' => $stats['oldAnswersCount'],
             'answers' => array(),
             'isRegisterQuestion' => $isRegisterQuestion,
         );
@@ -521,6 +545,8 @@ class QuestionModel
                 'text' => $answer->getProperty('text_' . $locale),
                 'maleAnswersCount' => $maleAnswersStats[$answer->getId()],
                 'femaleAnswersCount' => $femaleAnswersStats[$answer->getId()],
+                'youngAnswersCount' => $youngAnswersStats[$answer->getId()],
+                'oldAnswersCount' => $oldAnswersStats[$answer->getId()],
             );
         }
 
@@ -724,5 +750,19 @@ class QuestionModel
         }
 
         return false;
+    }
+
+    private function isOlderThanThirty($birthday)
+    {
+        if ($birthday) {
+            $birthdayTimeStamp = strtotime($birthday);
+            $thirtyYearsAgo = time() - 30 * 365 * 24 * 3600;
+            if ($birthdayTimeStamp > $thirtyYearsAgo) {
+                return false;
+            }
+
+        }
+
+        return true;
     }
 }

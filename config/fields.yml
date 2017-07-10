@@ -606,7 +606,7 @@ tokens:
         required: false
         type: string
     resourceId:
-        required: true
+        required: false
         type: string
     createdTime:
         required: false
@@ -791,3 +791,17 @@ answers:
     userId:
         required: false
         type: integer
+
+device:
+    registrationId:
+        required: true
+        type: string
+    userId:
+        required: true
+        type: integer
+    token:
+        required: false
+        type: string
+    platform:
+        required: true
+        type: string

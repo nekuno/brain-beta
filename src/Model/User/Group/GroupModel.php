@@ -5,6 +5,7 @@ namespace Model\User\Group;
 use Event\GroupEvent;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
+use Manager\PhotoManager;
 use Model\Neo4j\GraphManager;
 use Model\User\Filters\FilterUsersManager;
 use Manager\UserManager;
@@ -24,6 +25,11 @@ class GroupModel
      * @var UserManager
      */
     protected $um;
+
+    /**
+     * @var PhotoManager
+     */
+    protected $pm;
 
     /**
      * @var FilterUsersManager
@@ -49,13 +55,15 @@ class GroupModel
      * @param GraphManager $gm
      * @param EventDispatcher $dispatcher
      * @param UserManager $um
+     * @param PhotoManager $pm
      * @param FilterUsersManager $filterUsersManager
      * @param Validator $validator
      */
-    public function __construct(GraphManager $gm, EventDispatcher $dispatcher, UserManager $um, FilterUsersManager $filterUsersManager, Validator $validator, $invitationImagesRoot)
+    public function __construct(GraphManager $gm, EventDispatcher $dispatcher, UserManager $um, PhotoManager $pm, FilterUsersManager $filterUsersManager, Validator $validator, $invitationImagesRoot)
     {
         $this->gm = $gm;
         $this->um = $um;
+        $this->pm = $pm;
         $this->dispatcher = $dispatcher;
         $this->filterUsersManager = $filterUsersManager;
         $this->validator = $validator;
@@ -96,7 +104,8 @@ class GroupModel
             ->optionalMatch('(g)-[:LOCATION]->(l:Location)')
             ->optionalMatch('(g)-[:HAS_FILTER]->(f:FilterUsers)')
             ->optionalMatch('(g)-[b:BELONGS_TO]-(:User)')
-            ->returns('g', 'l', 'f', 'count(b) AS usersCount');
+            ->optionalMatch('(g)<-[:HAS_GROUP]-(i:Invitation)')
+            ->returns('g', 'l', 'f', 'collect(i) AS invitations', 'count(b) AS usersCount');
 
         $query = $qb->getQuery();
 
@@ -236,6 +245,12 @@ class GroupModel
                 ->setParameter('date', (int)$data['date']);
         }
 
+        if (isset($data['image_path'])){
+            $qb->set('g.image_path = { image_path }')
+                ->with('g')
+                ->setParameter('image_path', $data['image_path']);
+        }
+
         if (isset($data['location']))
         {
             $qb->merge('(l:Location)<-[:LOCATION]-(g)');
@@ -275,6 +290,7 @@ class GroupModel
             ->where('id(g) = { id }')
             ->set('g.name = { name }')
             ->set('g.html = { html }')
+            ->set('g.image_path = { image_path }')
             ->set('g.date = { date }')
             ->with('g')
             ->merge('(l:Location)<-[:LOCATION]-(g)')
@@ -286,6 +302,7 @@ class GroupModel
                     'id' => (integer)$id,
                     'name' => $data['name'],
                     'html' => $data['html'],
+                    'image_path' => $data['image_path'],
                     'date' => $data['date'] ? (int)$data['date'] : null,
                     'address' => $data['location']['address'],
                     'latitude' => $data['location']['latitude'],
@@ -628,18 +645,52 @@ class GroupModel
         $invitation = array();
         if ($row->offsetExists('i')) {
             $invitationNode = $row->offsetGet('i');
+            $invitation = $this->buildInvitationFromNode($invitationNode);
+        } else if ($row->offsetExists('invitations')){
+            $invitationNodes = $row->offsetGet('invitations');
+            $invitation = $this->buildInvitationFromNodes($invitationNodes);
+        }
 
-            if ($invitationNode instanceof Node) {
-                $invitation = array(
-                    'invitation_id' => $invitationNode->getId(),
-                    'invitation_token' => $invitationNode->getProperty('token'),
-                    'invitation_image_path' => $invitationNode->getProperty('image_path'),
-                    'invitation_image_url' => $this->invitationImagesRoot . $invitationNode->getProperty('image_path'),
-                );
+        return $invitation;
+    }
+
+    private function buildInvitationFromNode($invitationNode) {
+        $invitation = array();
+        if ($invitationNode instanceof Node) {
+            $invitation = array(
+                'invitation_id' => $invitationNode->getId(),
+                'invitation_token' => $invitationNode->getProperty('token'),
+                'invitation_image_path' => $invitationNode->getProperty('image_path'),
+                'invitation_image_url' => $this->invitationImagesRoot . $invitationNode->getProperty('image_path'),
+            );
+        }
+
+        return $invitation;
+    }
+
+    /**
+     * @param Node[] $invitationNodes
+     * @return array
+     */
+    private function buildInvitationFromNodes($invitationNodes)
+    {
+        $invitation = array();
+        foreach ($invitationNodes as $invitationNode){
+            $currentInvitation = $this->buildInvitationFromNode($invitationNode);
+            if ($this->isBetterInvitation($invitation, $currentInvitation)){
+                $invitation = $currentInvitation;
             }
         }
 
         return $invitation;
+    }
+
+    private function isBetterInvitation($oldInvitation, $newInvitation)
+    {
+        $wasEmpty = empty($oldInvitation);
+        $newHasImage = !isset($oldInvitation['invitation_image_url']) && isset($newInvitation['invitation_image_url']);
+
+        return $wasEmpty || $newHasImage;
     }
 
     private function buildGroup(Node $groupNode, Node $locationNode = null, $usersCount = 0)
@@ -647,6 +698,12 @@ class GroupModel
         $group = Group::createFromNode($groupNode);
         $group->setLocation($this->buildLocation($locationNode));
         $group->setDate($groupNode->getProperty('date'));
+        $photo = $this->pm->createGroupPhoto();
+        if ($groupNode->getProperty('image_path')) {
+            $photo->setPath($groupNode->getProperty('image_path'));
+            $group->setPhoto($photo);
+            $group->setImagePath($groupNode->getProperty('image_path'));
+        }
         $group->setUsersCount($usersCount);
 
 //        $additionalLabels = $this->getAdditionalGroupLabels($groupNode);

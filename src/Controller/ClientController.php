@@ -18,4 +18,9 @@ class ClientController
 
         return $blogFeed->getBody();
     }
+
+    public function getStatusAction(Application $app)
+    {
+        return $app->json();
+    }
 }

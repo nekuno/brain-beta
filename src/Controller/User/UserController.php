@@ -6,6 +6,7 @@ use Model\Exception\ValidationException;
 use Model\User\Content\ContentPaginatedModel;
 use Model\Metadata\ProfileFilterMetadataManager;
 use Model\User\RateModel;
+use Model\User\Content\ContentReportModel;
 use Model\User\UserStatsManager;
 use Manager\UserManager;
 use Model\User;
@@ -164,6 +165,7 @@ class UserController
             }
             $user = $app['register.service']->register($data['user'], $data['profile'], $data['token'], $data['oauth'], $data['trackingData']);
         } catch (\Exception $e) {
+            $errorMessage = $this->exceptionMessagesToString($e);
             $message = \Swift_Message::newInstance()
                 ->setSubject('Nekuno registration error')
                 ->setFrom('enredos@nekuno.com', 'Nekuno')
@@ -171,6 +173,7 @@ class UserController
                 ->setContentType('text/html')
                 ->setBody($app['twig']->render('email-notifications/registration-error-notification.html.twig', array(
                     'e' => $e,
+                    'errorMessage' => $errorMessage,
                     'data' => json_encode($request->request->all()),
                 )));
 
@@ -442,6 +445,27 @@ class UserController
         return $app->json($result, !empty($result) ? 201 : 200);
     }
 
+    public function reportContentAction(Request $request, Application $app, User $user)
+    {
+        $reason = $request->request->get('reason');
+        $reasonText = $request->request->get('reasonText');
+        $contentId = $request->request->get('contentId');
+
+        try {
+            /* @var ContentReportModel $model */
+            $model = $app['users.content.report.model'];
+            $result = $model->report($user->getId(), $contentId, $reason, $reasonText);
+        } catch (\Exception $e) {
+            if ($app['env'] == 'dev') {
+                throw $e;
+            }
+
+            return $app->json(array(), 500);
+        }
+
+        return $app->json($result, 201);
+    }
+
     /**
      * @param Request $request
      * @param Application $app
@@ -687,5 +711,21 @@ class UserController
         $stats = $model->getComparedStats($user->getId(), $otherUserId);
 
         return $app->json($stats->toArray());
+    }
+
+    private function exceptionMessagesToString(\Exception $e)
+    {
+        $errorMessage = $e->getMessage();
+        if ($e instanceof ValidationException) {
+            foreach ($e->getErrors() as $errors) {
+                if (is_array($errors)) {
+                    $errorMessage .= "\n" . implode("\n", $errors);
+                } elseif (is_string($errors)) {
+                    $errorMessage .= "\n" . $errors . "\n";
+                }
+            }
+        }
+
+        return $errorMessage;
     }
 }

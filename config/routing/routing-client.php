@@ -75,6 +75,7 @@ $app->get('content', 'users.controller:getUserContentAction');
 $app->get('/content/compare/{userId}', 'users.controller:getUserContentCompareAction');
 $app->get('/content/tags', 'users.controller:getUserContentTagsAction');
 $app->post('/content/rate', 'users.controller:rateContentAction');
+$app->post('/content/report', 'users.controller:reportContentAction');
 $app->get('/filters', 'users.controller:getAllFiltersAction');
 $app->get('/threads', 'users.threads.controller:getByUserAction');
 $app->post('/threads', 'users.threads.controller:postAction');
@@ -156,6 +157,7 @@ $app->put('/tokens/{resourceOwner}', 'users.tokens.controller:putAction');
 /**
  * Client routes
  */
+$app->get('/client/status', 'client.controller:getStatusAction');
 $app->get('/client/blog-feed', 'client.controller:getBlogFeedAction');
 
 /** Photo routes */
@@ -164,3 +166,7 @@ $app->get('/photos/{userId}', 'users.photos.controller:getAction');
 $app->post('/photos', 'users.photos.controller:postAction');
 $app->post('/photos/{photoId}/profile', 'users.photos.controller:postProfileAction');
 $app->delete('/photos/{photoId}', 'users.photos.controller:deleteAction');
+
+/** Push notifications routes */
+$app->post('/notifications/subscribe', 'users.devices.controller:subscribeAction');
+$app->post('/notifications/unsubscribe', 'users.devices.controller:unSubscribeAction');

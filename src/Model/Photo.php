@@ -26,6 +26,11 @@ abstract class Photo implements \JsonSerializable
     protected $userId;
 
     /**
+     * @var boolean
+     */
+    protected $isProfilePhoto;
+
+    /**
      * @var string
      */
     protected $base;
@@ -132,6 +137,16 @@ abstract class Photo implements \JsonSerializable
         return $this;
     }
 
+    public function getIsProfilePhoto()
+    {
+        return $this->isProfilePhoto;
+    }
+
+    public function setIsProfilePhoto($isProfilePhoto)
+    {
+        $this->isProfilePhoto = $isProfilePhoto;
+    }
+
     public function getFullPath()
     {
         return $this->base . $this->getPath();
@@ -179,6 +194,7 @@ abstract class Photo implements \JsonSerializable
             'createdAt' => $this->getCreatedAt(),
             'url' => $this->getUrl(),
             'thumbnail' => $thumbnail,
+            'isProfilePhoto' => $this->getIsProfilePhoto(),
         );
     }
 

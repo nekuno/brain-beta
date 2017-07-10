@@ -210,7 +210,7 @@ class Validator
         $result = $query->getResultSet();
 
         if ($result->count() > 0) {
-            $errors = array('groupId' => array('There is other user with the same resourceId already registered'));
+            $errors = array('resourceId' => array('There is other user with the same resourceId already registered'));
         }
 
         $this->throwException($errors);
@@ -283,6 +283,11 @@ class Validator
     public function validateRecommendateContent($data, $choices = array())
     {
         return $this->validate($data, $this->contentFilterModel->getFilters(), $choices);
+    }
+
+    public function validateDevice($data)
+    {
+        $this->validate($data, $this->metadata['device'], array());
     }
 
     protected function validate($data, $metadata, $dataChoices = array())

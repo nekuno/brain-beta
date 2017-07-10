@@ -85,7 +85,7 @@ class GroupController
      */
     public function addUserAction(Application $app, User $user, $groupId)
     {
-        $group = $app['users.groups.model']->addUser($groupId, $user->getId());
+        $group = $app['users.groups.model']->addUser((int)$groupId, $user->getId());
 
         return $app->json($group);
     }

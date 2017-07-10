@@ -54,13 +54,19 @@ class UserManager implements PaginatedInterface
      */
     protected $slugify;
 
-    public function __construct(EventDispatcher $dispatcher, GraphManager $gm, PasswordEncoderInterface $encoder, PhotoManager $pm, Slugify $slugify)
+    /**
+     * @var string
+     */
+    protected $imagesBaseDir;
+
+    public function __construct(EventDispatcher $dispatcher, GraphManager $gm, PasswordEncoderInterface $encoder, PhotoManager $pm, Slugify $slugify, $imagesBaseDir)
     {
         $this->dispatcher = $dispatcher;
         $this->gm = $gm;
         $this->encoder = $encoder;
         $this->pm = $pm;
         $this->slugify = $slugify;
+        $this->imagesBaseDir = $imagesBaseDir;
     }
 
     /**
@@ -520,6 +526,7 @@ class UserManager implements PaginatedInterface
 
         $this->setDefaults($data);
 
+        $this->createPhoto($data['userId'], $data);
         $user = $this->save($data);
 
         $this->dispatcher->dispatch(\AppEvents::USER_CREATED, new UserEvent($user));
@@ -534,6 +541,7 @@ class UserManager implements PaginatedInterface
     public function update(array $data)
     {
         $this->validate($data, true);
+        unset($data['photo']);
 
         if (isset($data['username'])) {
             $data['username'] = trim($data['username']);
@@ -547,11 +555,16 @@ class UserManager implements PaginatedInterface
         return $user;
     }
 
-    public function setEnabled($userId, $enabled)
+    public function setEnabled($userId, $enabled, $fromAdmin = false)
     {
+        $conditions = array('u.qnoow_id = { qnoow_id }');
+        if (!$fromAdmin){
+            $conditions[] = 'NOT u.canReenable = false';
+        }
+
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(u:User)')
-            ->where('u.qnoow_id = { qnoow_id }')
+            ->where($conditions)
             ->with('u')
             ->limit(1)
             ->setParameter('qnoow_id', (integer)$userId);
@@ -576,6 +589,29 @@ class UserManager implements PaginatedInterface
         $user = $this->getById($userId);
 
         return $user->isEnabled();
+    }
+
+    public function setCanReenable($userId, $canReenable)
+    {
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match('(u:User)')
+            ->where('u.qnoow_id = { qnoow_id }')
+            ->with('u')
+            ->limit(1)
+            ->setParameter('qnoow_id', (integer)$userId);
+
+        $qb->set('u.canReenable = { canReenable }')
+            ->setParameter('canReenable', (Boolean)$canReenable);
+
+        $qb->returns('u');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() == 0) {
+            throw new NotFoundHttpException(sprintf('User "%d" not found', $userId));
+        }
+
+        return true;
     }
 
     /**
@@ -621,7 +657,6 @@ class UserManager implements PaginatedInterface
      */
     public function getByCommonLinksWithUser($id, $limit = 100)
     {
-
         $qb = $this->gm->createQueryBuilder();
 
         $qb->setParameters(array('limit' => (integer)$limit));
@@ -638,8 +673,7 @@ class UserManager implements PaginatedInterface
         $query = $qb->getQuery();
         $result = $query->getResultSet();
 
-        return $this->parseResultSet($result);
-
+        return $this->buildMany($result);
     }
 
     /**
@@ -661,7 +695,7 @@ class UserManager implements PaginatedInterface
         $query = $qb->getQuery();
         $result = $query->getResultSet();
 
-        return $this->parseResultSet($result);
+        return $this->buildMany($result);
 
     }
 
@@ -686,7 +720,7 @@ class UserManager implements PaginatedInterface
         $query = $qb->getQuery();
         $result = $query->getResultSet();
 
-        return $this->parseResultSet($result);
+        return $this->buildMany($result);
 
     }
 
@@ -719,7 +753,7 @@ class UserManager implements PaginatedInterface
 
         $query = $qb->getQuery();
 
-        return $this->parseResultSet($query->getResultSet());
+        return $this->buildMany($query->getResultSet());
     }
 
     public function getByCreatedGroup($groupId)
@@ -1166,7 +1200,6 @@ class UserManager implements PaginatedInterface
 
         $this->updateCanonicalFields($data);
         $this->updatePassword($data);
-        $this->updatePhoto($data);
 
         $data['updatedAt'] = (new \DateTime())->format('Y-m-d H:i:s');
 
@@ -1243,6 +1276,20 @@ class UserManager implements PaginatedInterface
         $user->setEnabled($this->isNodeEnabled($node));
 
         return $user;
+    }
+
+    /**
+     * @param ResultSet $resultSet
+     * @return User[]
+     */
+    public function buildMany(ResultSet $resultSet)
+    {
+        $users = array();
+        foreach ($resultSet as $row) {
+            $users[] = $this->build($row);
+        }
+
+        return $users;
     }
 
     protected function buildNodeProperties(User $user, Node $node)
@@ -1478,21 +1525,6 @@ class UserManager implements PaginatedInterface
         return $this->build($rs->current());
     }
 
-    /**
-     * @param $resultSet
-     * @return User[]
-     */
-    protected function parseResultSet($resultSet)
-    {
-        $users = array();
-        foreach ($resultSet as $row) {
-            $users[] = $this->build($row);
-        }
-
-        return $users;
-
-    }
-
     protected function setDefaults(array &$user)
     {
         foreach ($this->getMetadata() as $fieldName => $fieldData) {
@@ -1525,18 +1557,22 @@ class UserManager implements PaginatedInterface
         }
     }
 
-    protected function updatePhoto(array &$user)
+    protected function createPhoto($userId, array &$data)
     {
-
-        if (isset($user['photo']) && filter_var($user['photo'], FILTER_VALIDATE_URL)) {
-            $url = $user['photo'];
-            // TODO: Validate size and set proper extension
-            $user['photo'] = 'uploads/user/' . $user['usernameCanonical'] . '_' . time() . '.jpg';
-            $success = $this->pm->saveProfilePhoto($user['photo'], @file_get_contents($url));
-            if (!$success) {
-                unset($user['photo']);
-            }
+        if (isset($data['photo']) && filter_var($data['photo'], FILTER_VALIDATE_URL)) {
+            $url = $data['photo'];
+        } else {
+            $url = $this->imagesBaseDir . 'bundles/qnoowlanding/images/user-no-img.jpg';
         }
+        $user = $this->getById($userId);
+        $photo = $this->pm->create($user, @file_get_contents($url));
+        $profilePhoto = $this->pm->setAsProfilePhoto($photo, $user);
+        $data['photo'] = $profilePhoto->getPath();
+
+        if (!$profilePhoto) {
+            unset($data['photo']);
+        }
+
     }
 
     private function getResultBySlug($slug)

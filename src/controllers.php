@@ -107,6 +107,12 @@ $app['users.photos.controller'] = $app->share(
     }
 );
 
+$app['users.devices.controller'] = $app->share(
+    function() {
+        return new \Controller\User\DeviceController;
+    }
+);
+
 $app['client.controller'] = $app->share(
     function() {
         return new Controller\ClientController;
@@ -225,6 +231,26 @@ $app['admin.userTracking.controller'] = $app->share(
     }
 );
 
+$app['admin.userReport.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Admin\UserReportController;
+    }
+);
+
+$app['admin.content.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Admin\ContentController;
+    }
+);
+
+$app['admin.developers.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Admin\DevelopersController;
+    }
+);
 
 
 $app['instant.users.controller'] = $app->share(
@@ -238,6 +264,13 @@ $app['instant.relations.controller'] = $app->share(
     function () {
 
         return new \Controller\Instant\RelationsController;
+    }
+);
+
+$app['instant.pushNotifications.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Instant\PushNotificationsController;
     }
 );
 
