@@ -476,7 +476,7 @@ class LinkModel
             ->limit(1)
             ->setParameter('url', $url);
 
-        $qb->set("l.$key = l.$key + { value }")
+        $qb->set("l.$key = COALESCE(l.$key, 0) + { value }")
             ->setParameter('value', $value);
 
         $qb->returns('l');

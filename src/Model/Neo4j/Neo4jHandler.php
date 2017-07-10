@@ -43,7 +43,8 @@ class Neo4jHandler extends AbstractHandler
             return false;
         }
 
-        $datetime = isset($record['datetime'])? $record['datetime'] : new \DateTime();
+        // Commented to avoid errors in workers execution (too many files opened)
+        /*$datetime = isset($record['datetime'])? $record['datetime'] : new \DateTime();
 
         if (isset($record['level']) && $record['level'] == Logger::WARNING){
             $level = 'WARNING';
@@ -67,7 +68,7 @@ class Neo4jHandler extends AbstractHandler
         
         if (isset($record['context']['query']) && $record['context']['query'] instanceof Query) {
             /** @var Query $query */
-            $query = $record['context']['query'];
+            /*$query = $record['context']['query'];
             $string .= PHP_EOL . 'Query:' . $query->getExecutableQuery();
         }
 
@@ -81,7 +82,7 @@ class Neo4jHandler extends AbstractHandler
             //couldn´t block the file
             fclose($fp);
             return false;
-        };
+        };*/
         return true;
     }
 
