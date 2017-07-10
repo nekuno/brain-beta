@@ -77,7 +77,9 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
             }
             $id = $item['id'];
 
-            $parsed[] = $this->build($url, $id, $item);
+            $parsedLink = $this->build($url, $id, $item);
+            $this->addAdditionalType($parsedLink, $item);
+            $parsed[] = $parsedLink;
 
             //if it's a like with website outside facebook
             if (isset($item['website'])) {
@@ -129,8 +131,6 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
         $parsedLink->setResourceItemId($id);
         $parsedLink->setFirstLink($link);
         $parsedLink->setSource($this->resourceOwner->getName());
-
-        $this->addAdditionalType($parsedLink, $item);
 
         return $parsedLink;
     }
