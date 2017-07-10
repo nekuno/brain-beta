@@ -1,15 +1,13 @@
 <?php
-/**
- * @author Roberto Martinez <@yawmoght>
- */
+
 namespace Console\Command;
 
+use ApiConsumer\ResourceOwner\FacebookResourceOwner;
 use Console\BaseCommand;
-use Http\OAuth\ResourceOwner\AbstractResourceOwner;
+use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\AbstractResourceOwner;
 use Model\Exception\ValidationException;
 use Model\User;
-use Model\User\TokensModel;
-use Silex\Application;
+use Model\User\Token\TokensModel;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -43,8 +41,8 @@ class UsersSocialMediaRefreshCommand extends BaseCommand
         /* @var $resourceOwner AbstractResourceOwner */
         $resourceOwner = $this->app['api_consumer.resource_owner.' . $input->getArgument('resource')];
 
-        /* @var $tm TokensModel */
-        $tm = $this->app['users.tokens.model'];
+        /* @var $tokensModel TokensModel */
+        $tokensModel = $this->app['users.tokens.model'];
 
         foreach ($users as $user) {
 
@@ -52,13 +50,14 @@ class UsersSocialMediaRefreshCommand extends BaseCommand
             if ($user->getId()) {
 
                 try {
-                    $tokens = $tm->getByUserOrResource($user->getId(), $input->getArgument('resource'));
-                    if (!$tokens) {
-                        continue;
+                    $token = $tokensModel->getById($user->getId(), $input->getArgument('resource'));
+
+                    if ($resourceOwner instanceof FacebookResourceOwner){
+                        $resourceOwner->forceRefreshAccessToken($token);
                     } else {
-                        $token = current($tokens);
+                        $resourceOwner->refreshAccessToken($token);
                     }
-                    $resourceOwner->forceRefreshAccessToken($token);
+
                     $this->displayMessage('Refreshed ' . $input->getArgument('resource') . ' token for user ' . $user->getId());
 
                 } catch (\Exception $e) {

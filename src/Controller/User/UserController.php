@@ -2,23 +2,22 @@
 
 namespace Controller\User;
 
-use Model\User\ContentPaginatedModel;
-use Model\User\GroupModel;
+use Model\Exception\ValidationException;
+use Model\User\Content\ContentPaginatedModel;
 use Model\User\ProfileFilterModel;
 use Model\User\RateModel;
+use Model\User\Content\ContentReportModel;
 use Model\User\UserStatsManager;
 use Manager\UserManager;
 use Model\User;
+use Service\AuthService;
 use Service\Recommendator;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-/**
- * Class UserController
- * @package Controller
- */
+
 class UserController
 {
     /**
@@ -60,30 +59,44 @@ class UserController
         /* @var $model UserManager */
         $model = $app['users.manager'];
         $userArray = $model->getById($user->getId())->jsonSerialize();
-        /* @var $groupModel GroupModel */
-        $groupModel = $app['users.groups.model'];
-        $userArray['groups'] = $groupModel->getByUser($user->getId());
 
         return $app->json($userArray);
     }
 
     /**
      * @param Application $app
-     * @param int $id
+     * @param string $slug
      * @return JsonResponse
      */
-    public function getOtherAction(Application $app, $id)
+    public function getOtherAction(Application $app, $slug)
     {
         /* @var $model UserManager */
         $model = $app['users.manager'];
-        $userArray = $model->getById($id)->jsonSerialize();
+        $userArray = $model->getBySlug($slug)->jsonSerialize();
+        $userArray = $model->deleteOtherUserFields($userArray);
 
         if (empty($userArray)) {
             return $app->json([], 404);
         }
 
-        unset($userArray['password']);
-        unset($userArray['salt']);
+        return $app->json($userArray);
+    }
+
+    /**
+     * @param Application $app
+     * @param string $slug
+     * @return JsonResponse
+     */
+    public function getPublicAction(Application $app, $slug)
+    {
+        /* @var $model UserManager */
+        $model = $app['users.manager'];
+        $userArray = $model->getPublicBySlug($slug)->jsonSerialize();
+        $userArray = $model->deleteOtherUserFields($userArray);
+
+        if (empty($userArray)) {
+            return $app->json([], 404);
+        }
 
         return $app->json($userArray);
     }
@@ -96,15 +109,16 @@ class UserController
      */
     public function availableAction(Application $app, $username)
     {
-        /* @var $model UserManager */
-        $model = $app['users.manager'];
-        try {
-            $model->findUserBy(array('usernameCanonical' => mb_strtolower($username)));
-        } catch (NotFoundHttpException $e) {
+        /* @var $user User */
+        $user = $app['user'];
+        if ($user && mb_strtolower($username) === $user->getUsernameCanonical()) {
             return $app->json();
         }
+        /* @var $model UserManager */
+        $model = $app['users.manager'];
+        $model->validateUsername(0, $username);
 
-        throw new NotFoundHttpException('Username not available');
+        return $app->json();
     }
 
     /**
@@ -121,16 +135,52 @@ class UserController
         return $app->json();
     }
 
+    public function setEnableAction(Request $request, Application $app, User $user)
+    {
+        $enabled = $request->request->get('enabled');
+        /* @var $model UserManager */
+        $model = $app['users.manager'];
+        try{
+            $model->setEnabled($user->getId(), $enabled);
+        } catch (NotFoundHttpException $e)
+        {
+            return $app->json($e->getMessage(), 404);
+        }
+
+        return $app->json();
+    }
+
     /**
      * @param Application $app
      * @param Request $request
      * @return JsonResponse
+     * @throws ValidationException
      */
-    public function postAction(Application $app, Request $request)
+    public function registerAction(Application $app, Request $request)
     {
-        /* @var $model UserManager */
-        $model = $app['users.manager'];
-        $user = $model->create($request->request->all());
+        try {
+            $data = $request->request->all();
+            if (!isset($data['user']) || !isset($data['profile']) || !isset($data['token']) || !isset($data['oauth']) || !isset($data['trackingData'])) {
+                throw new ValidationException(array('registration' => 'Bad format'));
+            }
+            $user = $app['register.service']->register($data['user'], $data['profile'], $data['token'], $data['oauth'], $data['trackingData']);
+        } catch (\Exception $e) {
+            $errorMessage = $this->exceptionMessagesToString($e);
+            $message = \Swift_Message::newInstance()
+                ->setSubject('Nekuno registration error')
+                ->setFrom('enredos@nekuno.com', 'Nekuno')
+                ->setTo($app['support_emails'])
+                ->setContentType('text/html')
+                ->setBody($app['twig']->render('email-notifications/registration-error-notification.html.twig', array(
+                    'e' => $e,
+                    'errorMessage' => $errorMessage,
+                    'data' => json_encode($request->request->all()),
+                )));
+
+            $app['mailer']->send($message);
+
+            throw new ValidationException(array('registration' => "Error registering user"));
+        }
 
         return $app->json($user, 201);
     }
@@ -149,7 +199,17 @@ class UserController
         $model = $app['users.manager'];
         $user = $model->update($data);
 
-        return $app->json($user);
+        /* @var $authService AuthService */
+        $authService = $app['auth.service'];
+        $jwt = $authService->getToken($data['userId']);
+
+        return $app->json(
+            array(
+                'user' => $user,
+                'jwt' => $jwt,
+            ),
+            200
+        );
     }
 
     /**
@@ -161,7 +221,7 @@ class UserController
      */
     public function getMatchingAction(Request $request, Application $app, User $user)
     {
-        $otherUserId = $request->get('id');
+        $otherUserId = $request->get('userId');
 
         if (null === $otherUserId) {
             return $app->json(array(), 400);
@@ -191,7 +251,7 @@ class UserController
      */
     public function getSimilarityAction(Request $request, Application $app, User $user)
     {
-        $otherUserId = $request->get('id');
+        $otherUserId = $request->get('userId');
 
         if (null === $otherUserId) {
             return $app->json(array(), 400);
@@ -253,6 +313,7 @@ class UserController
 
         try {
             $result = $paginator->paginate($filters, $model, $request);
+            $result['totals'] = $model->countAll($user->getId());
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
                 throw $e;
@@ -273,7 +334,7 @@ class UserController
      */
     public function getUserContentCompareAction(Request $request, Application $app, User $user)
     {
-        $otherUserId = $request->get('id');
+        $otherUserId = $request->get('userId');
         $tag = $request->get('tag', array());
         $type = $request->get('type', array());
         $showOnlyCommon = $request->get('showOnlyCommon', 0);
@@ -299,11 +360,12 @@ class UserController
             }
         }
 
-        /* @var $model \Model\User\ContentComparePaginatedModel */
+        /* @var $model \Model\User\Content\ContentComparePaginatedModel */
         $model = $app['users.content.compare.model'];
 
         try {
             $result = $paginator->paginate($filters, $model, $request);
+            $result['totals'] = $model->countAll($otherUserId, $user->getId(), $showOnlyCommon);
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
                 throw $e;
@@ -331,7 +393,7 @@ class UserController
             $search = urldecode($search);
         }
 
-        /* @var $model \Model\User\ContentTagModel */
+        /* @var $model \Model\User\Content\ContentTagModel */
         $model = $app['users.content.tag.model'];
 
         try {
@@ -366,10 +428,12 @@ class UserController
             return $app->json(array('text' => 'Link Not Found', 'id' => $user->getId(), 'linkId' => $data['linkId']), 400);
         }
 
+        $originContext = isset($data['originContext']) ? $data['originContext'] : null;
+        $originName = isset($data['originName']) ? $data['originName'] : null;
         try {
             /* @var RateModel $model */
             $model = $app['users.rate.model'];
-            $result = $model->userRateLink($user->getId(), $data, $rate);
+            $result = $model->userRateLink($user->getId(), $data['id'], 'nekuno', null, $rate, true, $originContext, $originName);
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
                 throw $e;
@@ -379,6 +443,27 @@ class UserController
         }
 
         return $app->json($result, !empty($result) ? 201 : 200);
+    }
+
+    public function reportContentAction(Request $request, Application $app, User $user)
+    {
+        $reason = $request->request->get('reason');
+        $reasonText = $request->request->get('reasonText');
+        $contentId = $request->request->get('contentId');
+
+        try {
+            /* @var ContentReportModel $model */
+            $model = $app['users.content.report.model'];
+            $result = $model->report($user->getId(), $contentId, $reason, $reasonText);
+        } catch (\Exception $e) {
+            if ($app['env'] == 'dev') {
+                throw $e;
+            }
+
+            return $app->json(array(), 500);
+        }
+
+        return $app->json($result, 201);
     }
 
     /**
@@ -498,6 +583,37 @@ class UserController
     /**
      * @param Request $request
      * @param Application $app
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     * @throws \Exception
+     */
+    public function getContentAllTagsAction(Request $request, Application $app)
+    {
+        $search = $request->get('search', '');
+        $limit = $request->get('limit', 0);
+
+        if ($search) {
+            $search = urldecode($search);
+        }
+
+        /* @var $model \Model\User\Recommendation\ContentRecommendationTagModel */
+        $model = $app['users.recommendation.content.tag.model'];
+
+        try {
+            $result = $model->getAllTags($search, $limit);
+        } catch (\Exception $e) {
+            if ($app['env'] == 'dev') {
+                throw $e;
+            }
+
+            return $app->json(array(), 500);
+        }
+
+        return $app->json($result, !empty($result) ? 201 : 200);
+    }
+
+    /**
+     * @param Request $request
+     * @param Application $app
      * @param User $user
      * @return JsonResponse
      */
@@ -517,13 +633,13 @@ class UserController
         $userFilters = $userFilterModel->getFilters($locale);
 
         //TODO: Move this logic to userFilter during/after QS-982 (remove filter logic from GroupModel)
-        /* @var $groupModel User\GroupModel */
+        /* @var $groupModel \Model\User\Group\GroupModel */
         $groupModel = $app['users.groups.model'];
         $groups = $groupModel->getByUser($user->getId());
 
         $userFilters['groups']['choices'] = array();
         foreach ($groups as $group) {
-            $userFilters['groups']['choices'][$group['id']] = $group['name'];
+            $userFilters['groups']['choices'][$group->getId()] = $group->getName();
         }
 
         if ($groups = null || $groups == array()) {
@@ -582,7 +698,7 @@ class UserController
      */
     public function statsCompareAction(Request $request, Application $app, User $user)
     {
-        $otherUserId = $request->get('id');
+        $otherUserId = $request->get('userId');
         if (null === $otherUserId) {
             throw new NotFoundHttpException('User not found');
         }
@@ -595,5 +711,21 @@ class UserController
         $stats = $model->getComparedStats($user->getId(), $otherUserId);
 
         return $app->json($stats->toArray());
+    }
+
+    private function exceptionMessagesToString(\Exception $e)
+    {
+        $errorMessage = $e->getMessage();
+        if ($e instanceof ValidationException) {
+            foreach ($e->getErrors() as $errors) {
+                if (is_array($errors)) {
+                    $errorMessage .= "\n" . implode("\n", $errors);
+                } elseif (is_string($errors)) {
+                    $errorMessage .= "\n" . $errors . "\n";
+                }
+            }
+        }
+
+        return $errorMessage;
     }
 }

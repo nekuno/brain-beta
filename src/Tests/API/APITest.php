@@ -1,14 +1,11 @@
 <?php
-/**
- * @author Manolo Salsas <manolez@gmail.com>
- */
+
 namespace Tests\API;
 
 use Console\Command\Neo4jProfileOptionsCommand;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\Tools\SchemaTool;
 use Everyman\Neo4j\Cypher\Query;
-use Model\User;
 use Silex\Application;
 use Silex\WebTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -38,19 +35,22 @@ abstract class APITest extends WebTestCase
         /* @var $app Application */
         $app = $this->app;
         // Clean the database
-        $query = new Query($app['neo4j.client'], 'MATCH (n) OPTIONAL MATCH n-[r]-m DELETE r, n, m;');
+        $query = new Query($app['neo4j.client'], 'MATCH (n) OPTIONAL MATCH (n)-[r]-(m) DELETE r, n, m');
         $query->getResultSet();
-
+        // Create default invitation
+        $query = new Query($app['neo4j.client'], 'CREATE (i:Invitation) SET i.token = "join", i.consumed = 0, i.available = 1000, i.expiresAt = 9999999999999999, i.createdAt = 11111111');
+        $query->getResultSet();
+        // Create brain DB
         $em = $app['orm.ems']['mysql_brain'];
         $schemaTool = new SchemaTool($em);
         $schemaTool->dropDatabase();
         $metadatas = $em->getMetadataFactory()->getAllMetadata();
         $schemaTool->createSchema($metadatas);
 
-        /* @var $sm Connection */
-        $sm = $app['dbs']['mysql_social'];
-        $sm->executeQuery('DROP TABLE IF EXISTS chat_message');
-        $sm->executeQuery('CREATE TABLE chat_message (id INTEGER PRIMARY KEY NOT NULL, text VARCHAR(255) NOT NULL, createdAt DATETIME NOT NULL, readed TINYINT(1) NOT NULL, user_from INT DEFAULT NULL, user_to INT DEFAULT NULL)');
+        /* @var $bm Connection */
+        $bm = $app['dbs']['mysql_brain'];
+        $bm->executeQuery('DROP TABLE IF EXISTS chat_message');
+        $bm->executeQuery('CREATE TABLE chat_message (id INTEGER PRIMARY KEY NOT NULL, text VARCHAR(255) NOT NULL, createdAt DATETIME NOT NULL, readed TINYINT(1) NOT NULL, user_from INT DEFAULT NULL, user_to INT DEFAULT NULL)');
     }
 
     protected function getResponseByRoute($route, $method = 'GET', $data = array(), $userId = null)
@@ -115,19 +115,19 @@ abstract class APITest extends WebTestCase
 
     protected function createUser($userData)
     {
-        return $this->getResponseByRoute('/users', 'POST', $userData);
+        return $this->getResponseByRoute('/register', 'POST', $userData);
     }
 
     protected function createAndLoginUserA()
     {
-        $userData = $this->getUserAFixtures();
+        $userData = $this->getUserARegisterFixtures();
         $this->createUser($userData);
         $this->loginUser($userData);
     }
 
     protected function createAndLoginUserB()
     {
-        $userData = $this->getUserBFixtures();
+        $userData = $this->getUserBRegisterFixtures();
         $this->createUser($userData);
         $this->loginUser($userData);
     }
@@ -135,18 +135,120 @@ abstract class APITest extends WebTestCase
     protected function getUserAFixtures()
     {
         return array(
-            'username' => 'JohnDoe',
-            'email' => 'nekuno-johndoe@gmail.com',
-            'plainPassword' => 'test'
+            'resourceOwner' => 'facebook',
+            'accessToken' => $this->app['userA.access_token'],
         );
     }
 
     protected function getUserBFixtures()
     {
         return array(
-            'username' => 'JaneDoe',
-            'email' => 'nekuno-janedoe@gmail.com',
-            'plainPassword' => 'test'
+            'resourceOwner' => 'facebook',
+            'accessToken' => $this->app['userB.access_token'],
+        );
+    }
+
+    protected function getUserARegisterFixtures()
+    {
+        return array(
+            'user' => array(
+                'username' => 'JohnDoe',
+                'email' => 'nekuno-johndoe@gmail.com',
+            ),
+            'profile' => array(),
+            'token' => 'join',
+            'oauth' => array(
+                'resourceOwner' => $this->app['userA.resource'],
+                'oauthToken' => $this->app['userA.access_token'],
+                'resourceId' => $this->app['userA.resource_id'],
+                'expireTime' => strtotime("+1 week"),
+                'refreshToken' => null
+            ),
+            'trackingData' => '',
+        );
+    }
+
+    protected function getUserBRegisterFixtures()
+    {
+        return array(
+            'user' => array(
+                'username' => 'JaneDoe',
+                'email' => 'nekuno-janedoe@gmail.com',
+            ),
+            'profile' => array(),
+            'token' => 'join',
+            'oauth' => array(
+                'resourceOwner' => $this->app['userB.resource'],
+                'oauthToken' => $this->app['userB.access_token'],
+                'resourceId' => $this->app['userB.resource_id'],
+                'expireTime' => strtotime("+1 week"),
+                'refreshToken' => null
+            ),
+            'trackingData' => '',
+        );
+    }
+
+    protected function getBadTokenUserRegisterFixtures()
+    {
+        $user = $this->getUserARegisterFixtures();
+        $user['token'] = 'nonExistantToken';
+
+        return $user;
+    }
+
+    protected function getNotProfileUserRegisterFixtures()
+    {
+        $user = $this->getUserARegisterFixtures();
+        unset($user['profile']);
+
+        return $user;
+    }
+
+    protected function getIncompleteOAuthUserRegisterFixtures()
+    {
+        $fixtures = array();
+        foreach (array('resourceOwner', 'oauthToken', 'resourceId') as $field) {
+            $user = $this->getUserARegisterFixtures();
+            unset($user['oauth'][$field]);
+
+            $fixtures[] = $user;
+        }
+
+        return $fixtures;
+    }
+
+    protected function getBadProfileUserRegisterFixtures()
+    {
+        $fixtures = array();
+        $wrongData = array(
+            array('birthday' => '20-01-2015'),
+            array('birthday' => '01-01-2017'),
+            array('birthday' => '01-01-2099'),
+            array('height' => '100'),
+            array('height' => 20),
+            array('height' => 500),
+            array('gender' => 'nonExistantGender'),
+            array('descriptiveGender' => 'nonExistantGender'),
+            array('religion' => array('choice' => 'agnosticism')),
+            array('religion' => array('detail' => 'important')),
+            array('religion' => array('choice' => 'agnosticism', 'detail' => 'wrongDetail')),
+            array('religion' => array('choice' => 'wrongReligion', 'detail' => 'important'))
+        );
+
+        foreach ($wrongData as $wrongField) {
+            $user = $this->getUserARegisterFixtures();
+            $user['profile'] += $wrongField;
+            $fixtures[] = $user;
+        }
+
+        return $fixtures;
+    }
+
+    protected function getUserAEditionFixtures()
+    {
+        return array(
+            'username' => 'JohnDoe',
+            'email' => 'nekuno-johndoe@gmail.com',
         );
     }
 
@@ -156,6 +258,7 @@ abstract class APITest extends WebTestCase
             /** @var AuthService $authService */
             $authService = $this->app['auth.service'];
             $jwt = $authService->getToken($userId);
+
             return array('HTTP_PHP_AUTH_DIGEST' => 'Bearer ' . $jwt);
         } catch (\Exception $e) {
             return array();

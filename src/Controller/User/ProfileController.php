@@ -11,10 +11,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-/**
- * Class ProfileController
- * @package Controller
- */
 class ProfileController
 {
     /**
@@ -42,29 +38,13 @@ class ProfileController
     public function getOtherAction(Request $request, Application $app)
     {
         $locale = $request->query->get('locale');
-        $id = $request->get('id');
+        $id = $request->get('userId');
         /* @var $model ProfileModel */
         $model = $app['users.profile.model'];
 
         $profile = $model->getById($id, $locale);
 
         return $app->json($profile);
-    }
-
-    /**
-     * @param Request $request
-     * @param Application $app
-     * @param User $user
-     * @return JsonResponse
-     */
-    public function postAction(Request $request, Application $app, User $user)
-    {
-        /* @var $model ProfileModel */
-        $model = $app['users.profile.model'];
-
-        $profile = $model->create($user->getId(), $request->request->all());
-
-        return $app->json($profile, 201);
     }
 
     /**
@@ -100,8 +80,8 @@ class ProfileController
     }
 
     /**
-     * @param Application $app
      * @param Request $request
+     * @param Application $app
      * @return JsonResponse
      */
     public function getMetadataAction(Request $request, Application $app)
@@ -113,6 +93,22 @@ class ProfileController
         $metadata = $model->getProfileMetadata($locale);
 
         return $app->json($metadata);
+    }
+
+    /**
+     * @param Request $request
+     * @param Application $app
+     * @return JsonResponse
+     */
+    public function getCategoriesAction(Request $request, Application $app)
+    {
+        $locale = $request->query->get('locale');
+
+        /* @var $model ProfileFilterModel */
+        $model = $app['users.profileFilter.model'];
+        $categories = $model->getProfileCategories($locale);
+
+        return $app->json($categories);
     }
 
     /**

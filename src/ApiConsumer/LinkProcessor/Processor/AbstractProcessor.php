@@ -2,50 +2,76 @@
 
 namespace ApiConsumer\LinkProcessor\Processor;
 
-
-use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
-use Http\OAuth\ResourceOwner\ResourceOwnerInterface;
-use Service\UserAggregator;
+use ApiConsumer\Exception\CannotProcessException;
+use ApiConsumer\Exception\UrlNotValidException;
+use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\UrlParser\UrlParserInterface;
+use ApiConsumer\ResourceOwner\AbstractResourceOwnerTrait;
+use HWI\Bundle\OAuthBundle\OAuth\ResourceOwnerInterface;
 
 abstract class AbstractProcessor implements ProcessorInterface
 {
-
-    protected $userAggregator;
-
-    /** @var  ResourceOwnerInterface */
+    /** @var  ResourceOwnerInterface | AbstractResourceOwnerTrait */
     protected $resourceOwner;
-
-    /** @var  $parser UrlParser */
     protected $parser;
+    protected $brainBaseUrl;
 
-    protected $scraperProcessor;
-
-    public function __construct(UserAggregator $userAggregator, ScraperProcessor $scraperProcessor)
+    public function __construct(ResourceOwnerInterface $resourceOwner, UrlParserInterface $urlParser, $brainBaseUrl)
     {
-        $this->userAggregator = $userAggregator;
-        $this->scraperProcessor = $scraperProcessor;
+        $this->resourceOwner = $resourceOwner;
+        $this->parser = $urlParser;
+        $this->brainBaseUrl = $brainBaseUrl;
     }
 
-    protected function addCreator($username)
+    public function getResourceOwner()
     {
-        $this->userAggregator->addUser($username, $this->resourceOwner->getName());
+        return $this->resourceOwner;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function getParser()
+    public function getResponse(PreprocessedLink $preprocessedLink)
     {
-        return $this->parser;
-    }
+        $response = $this->requestItem($preprocessedLink);
 
-    public function isCorrectResponse($url)
-    {
-        $response = $this->resourceOwner->getClient()->head($url);
-        if (200 <= $response->getStatusCode() && $response->getStatusCode() < 300 && strpos($response->getHeader('Content-Type'), 'image') !== false ){
-            return true;
+        if (!$this->isValidResponse($response)){
+            throw new CannotProcessException($preprocessedLink->getUrl(), sprintf('Response for url %s is not valid', $preprocessedLink->getUrl()));
         }
 
-        return false;
+        return $response;
     }
+
+    abstract protected function requestItem(PreprocessedLink $preprocessedLink);
+
+    protected function isValidResponse(array $response){
+        return !empty($response);
+    }
+
+    public function addTags(PreprocessedLink $preprocessedLink, array $data)
+    {
+    }
+
+    public function getSynonymousParameters(PreprocessedLink $preprocessedLink, array $data)
+    {
+    }
+
+    public function getImages(PreprocessedLink $preprocessedLink, array $data)
+    {
+        return array();
+    }
+
+    protected function getItemId($url)
+    {
+        try {
+            $id = $this->getItemIdFromParser($url);
+        } catch (UrlNotValidException $e) {
+            throw new CannotProcessException($url);
+        }
+
+        return $id;
+    }
+
+    protected function getItemIdFromParser($url)
+    {
+        return $url;
+    }
+
 }

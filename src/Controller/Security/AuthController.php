@@ -8,9 +8,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
-/**
- * @author Juan Luis Martínez <juanlu@comakai.com>
- */
+
 class AuthController
 {
 
@@ -28,17 +26,30 @@ class AuthController
 
         $username = $request->request->get('username');
         $password = $request->request->get('password');
+	    $resourceOwner = $request->request->get('resourceOwner');
+	    $oauthToken = $request->request->get('oauthToken');
+	    $refreshToken = $request->request->get('refreshToken');
 
-        if (!$username || !$password) {
-            throw new BadRequestHttpException('El nombre de usuario y la contraseña que ingresaste no coinciden con nuestros registros.');
+	    /* @var $authService AuthService */
+	    $authService = $app['auth.service'];
+	    if ($username && $password) {
+	        $jwt = $authService->login($username, $password);
+	    }
+	    elseif ($resourceOwner && $oauthToken) {
+		    $jwt = $authService->loginByResourceOwner($resourceOwner, $oauthToken, $refreshToken);
+	    }
+
+
+	    //TODO: Remove once app store is updated (07/07/2017)
+        elseif ($oauth = $request->request->get('oauth')) {
+            $jwt = $authService->loginByResourceOwner($oauth['resourceOwner'], $oauth['oauthToken'], $oauth['refreshToken']);
         }
 
-        /* @var $authService AuthService */
-        $authService = $app['auth.service'];
-        $jwt = $authService->login($username, $password);
+
+	    else {
+		    throw new BadRequestHttpException('Los datos introducidos no coinciden con nuestros registros.');
+	    }
 
         return $app->json(array('jwt' => $jwt));
-
     }
-
 }

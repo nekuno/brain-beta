@@ -29,6 +29,11 @@ class User implements UserInterface, \JsonSerializable
     /**
      * @var string
      */
+    protected $slug;
+
+    /**
+     * @var string
+     */
     protected $email;
 
     /**
@@ -40,6 +45,11 @@ class User implements UserInterface, \JsonSerializable
      * @var boolean
      */
     protected $enabled;
+
+    /**
+     * @var boolean
+     */
+    protected $canReenable;
 
     /**
      * The salt to use for hashing
@@ -110,26 +120,6 @@ class User implements UserInterface, \JsonSerializable
     protected $credentialsExpireAt;
 
     /**
-     * @var string
-     */
-    protected $facebookID;
-
-    /**
-     * @var string
-     */
-    protected $googleID;
-
-    /**
-     * @var string
-     */
-    protected $twitterID;
-
-    /**
-     * @var string
-     */
-    protected $spotifyID;
-
-    /**
      * @var boolean
      */
     protected $confirmed;
@@ -150,19 +140,26 @@ class User implements UserInterface, \JsonSerializable
     protected $updatedAt;
 
     /**
-     * @var string
+     * @var ProfilePhoto
      */
-    protected $picture;
+    protected $photo;
+
+    /**
+     * @var array
+     */
+    protected $tutorials;
 
     public function __construct()
     {
         $this->salt = base_convert(sha1(uniqid(mt_rand(), true)), 16, 36);
         $this->enabled = false;
+        $this->canReenable = true;
         $this->locked = false;
         $this->expired = false;
         $this->roles = array();
         $this->credentialsExpired = false;
         $this->confirmed = false;
+        $this->tutorials = array();
     }
 
     public function addRole($role)
@@ -193,11 +190,13 @@ class User implements UserInterface, \JsonSerializable
                 $this->password,
                 $this->salt,
                 $this->usernameCanonical,
+                $this->slug,
                 $this->username,
                 $this->expired,
                 $this->locked,
                 $this->credentialsExpired,
                 $this->enabled,
+                $this->canReenable,
                 $this->id,
             )
         );
@@ -219,11 +218,13 @@ class User implements UserInterface, \JsonSerializable
             $this->password,
             $this->salt,
             $this->usernameCanonical,
+            $this->slug,
             $this->username,
             $this->expired,
             $this->locked,
             $this->credentialsExpired,
             $this->enabled,
+            $this->canReenable,
             $this->id
             ) = $data;
     }
@@ -239,7 +240,7 @@ class User implements UserInterface, \JsonSerializable
     /**
      * Returns the user unique id.
      *
-     * @return mixed
+     * @return integer
      */
     public function getId()
     {
@@ -254,6 +255,11 @@ class User implements UserInterface, \JsonSerializable
     public function getUsernameCanonical()
     {
         return $this->usernameCanonical;
+    }
+
+    public function getSlug()
+    {
+        return $this->slug;
     }
 
     public function isGuest()
@@ -379,6 +385,16 @@ class User implements UserInterface, \JsonSerializable
         return $this->enabled;
     }
 
+    public function canReenable()
+    {
+        return $this->canReenable;
+    }
+
+    public function setCanReenable($canReenable)
+    {
+        $this->canReenable = $canReenable;
+    }
+
     public function isExpired()
     {
         return !$this->isAccountNonExpired();
@@ -419,6 +435,13 @@ class User implements UserInterface, \JsonSerializable
     public function setUsernameCanonical($usernameCanonical)
     {
         $this->usernameCanonical = $usernameCanonical;
+
+        return $this;
+    }
+
+    public function setSlug($slug)
+    {
+        $this->slug = $slug;
 
         return $this;
     }
@@ -582,122 +605,24 @@ class User implements UserInterface, \JsonSerializable
     }
 
     /**
-     * Get picture
+     * Get photo
      *
-     * @return string
+     * @return ProfilePhoto
      */
-    public function getPicture()
+    public function getPhoto()
     {
-        return $this->picture;
+        return $this->photo;
     }
 
     /**
-     * Set picture
+     * Set photo
      *
-     * @param string $picture
+     * @param ProfilePhoto $photo
      * @return $this
      */
-    public function setPicture($picture)
+    public function setPhoto(ProfilePhoto $photo)
     {
-        $this->picture = $picture;
-
-        return $this;
-    }
-
-    /**
-     * Get facebookID
-     *
-     * @return string
-     */
-    public function getFacebookID()
-    {
-
-        return $this->facebookID;
-    }
-
-    /**
-     * Set facebookID
-     *
-     * @param string $facebookID
-     * @return $this
-     */
-    public function setFacebookID($facebookID)
-    {
-
-        $this->facebookID = $facebookID;
-
-        return $this;
-    }
-
-    /**
-     * Get googleID
-     *
-     * @return string
-     */
-    public function getGoogleID()
-    {
-
-        return $this->googleID;
-    }
-
-    /**
-     * Set googleID
-     *
-     * @param string $googleID
-     * @return $this
-     */
-    public function setGoogleID($googleID)
-    {
-
-        $this->googleID = $googleID;
-
-        return $this;
-    }
-
-    /**
-     * Get twitterID
-     *
-     * @return string
-     */
-    public function getTwitterID()
-    {
-
-        return $this->twitterID;
-    }
-
-    /**
-     * Set twitterID
-     *
-     * @param string $twitterID
-     * @return $this
-     */
-    public function setTwitterID($twitterID)
-    {
-
-        $this->twitterID = $twitterID;
-
-        return $this;
-    }
-
-    /**
-     * Get spotifyID
-     *
-     * @return string
-     */
-    public function getSpotifyID()
-    {
-        return $this->spotifyID;
-    }
-
-    /**
-     * Set spotifyID
-     *
-     * @param string $spotifyID
-     * @return $this
-     */
-    public function setSpotifyID($spotifyID)
-    {
-        $this->spotifyID = $spotifyID;
+        $this->photo = $photo;
 
         return $this;
     }
@@ -821,13 +746,38 @@ class User implements UserInterface, \JsonSerializable
     /**
      * Set updatedAt
      *
-     * @param \DateTime $createdAt
+     * @param \DateTime $updatedAt
      * @return $this
      */
     public function setUpdatedAt(\DateTime $updatedAt = null)
     {
 
         $this->updatedAt = $updatedAt;
+
+        return $this;
+    }
+
+    /**
+     * Returns the user tutorials
+     *
+     * @return array The tutorials
+     */
+    public function getTutorials()
+    {
+
+        return $this->tutorials;
+    }
+
+    /**
+     * Set the user tutorials
+     *
+     * @param array $tutorials
+     *
+     * @return $this
+     */
+    public function setTutorials($tutorials)
+    {
+        $this->tutorials = $tutorials;
 
         return $this;
     }
@@ -848,6 +798,9 @@ class User implements UserInterface, \JsonSerializable
             if ($value instanceof \DateTime) {
                 $vars[$key] = $value->format('Y-m-d H:i:s');
             }
+        }
+        if ($vars['enabled']){
+            unset($vars['canReenable']);
         }
 
         return $vars;

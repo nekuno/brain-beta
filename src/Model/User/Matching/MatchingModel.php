@@ -5,8 +5,7 @@ namespace Model\User\Matching;
 use Event\MatchingEvent;
 use Event\MatchingExpiredEvent;
 use Model\Neo4j\GraphManager;
-use Model\User\AnswerModel;
-use Model\User\ContentPaginatedModel;
+use Model\User\Content\ContentPaginatedModel;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class MatchingModel
@@ -26,32 +25,16 @@ class MatchingModel
     protected $graphManager;
 
     /**
-     * @var \Model\User\ContentPaginatedModel
-     */
-    protected $contentPaginatedModel;
-
-    /**
-     * @var \Model\User\AnswerModel
-     */
-    protected $answerModel;
-
-    /**
      * @param EventDispatcher $dispatcher
      * @param GraphManager $graphManager
-     * @param \Model\User\ContentPaginatedModel $contentPaginatedModel
-     * @param \Model\User\AnswerModel $answerModel
      */
     public function __construct(
         EventDispatcher $dispatcher,
-        GraphManager $graphManager,
-        ContentPaginatedModel $contentPaginatedModel,
-        AnswerModel $answerModel
+        GraphManager $graphManager
     ) {
 
         $this->dispatcher = $dispatcher;
         $this->graphManager = $graphManager;
-        $this->contentPaginatedModel = $contentPaginatedModel;
-        $this->answerModel = $answerModel;
     }
 
     /**
@@ -194,11 +177,7 @@ class MatchingModel
             )
             //'error' == max matching depending on common questions
             ->with(
-                'CASE
-                    WHEN numOfCommonQuestions > 0 THEN
-                        1 - (1 / numOfCommonQuestions)
-                    ELSE tofloat(0)
-                END AS error',
+                'numOfCommonQuestions',
                 $this->rawMatching(
                     'totalRatingCommonAnswersU1',
                     'totalRatingAcceptedAnswersU1',
@@ -211,13 +190,19 @@ class MatchingModel
                 )
             )
             ->with(
-                'error',
+                'numOfCommonQuestions',
                 'tofloat( sqrt(rawMatchingU1 * rawMatchingU2)) AS rawMatching'
             )
             ->with(
                 'CASE
-		        WHEN error < rawMatching THEN error
+		        WHEN numOfCommonQuestions > 0 THEN rawMatching - (1/numOfCommonQuestions)
 		        ELSE rawMatching
+                END AS rawMatching'
+            )
+            ->with(
+                'CASE 
+                WHEN rawMatching > 0 THEN rawMatching
+                ELSE 0
                 END AS matching'
             )
             ->returns('matching');

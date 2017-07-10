@@ -7,7 +7,7 @@ use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
-use Model\Questionnaire\QuestionModel;
+use Model\User\Question\QuestionModel;
 use Manager\UserManager;
 use Model\User;
 use Silex\Application;
@@ -15,9 +15,6 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-/**
- * @author Juan Luis Martínez <juanlu@comakai.com>
- */
 class Neo4jLoadQuestionsCommand extends ApplicationAwareCommand
 {
 

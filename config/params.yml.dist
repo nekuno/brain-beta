@@ -2,6 +2,13 @@ params:
 
     ## Secret jwt key
     secret: my secret key
+    instant_api_secret: cliweodwfqpokfrfkcporfkpoqefrefqefbgw
+
+    ## Push notifications
+    push_public_key: BMmrzjBJXzPb5WQPGuRGtatke1L86LPAauy_qRUNH_xJy7ZYeVgubWElNZedo_V28ngsRc0j8HlNukqKEP6ujmY
+    push_private_key: 5loWitrVUXEg1kTksWbLAh-5pJddBrWBe2MKRjKnIiI
+    firebase_url: https://fcm.googleapis.com/fcm/send
+    firebase_api_key: AIzaSyBz5bncIhjgUKrqv1oyOSnWd-f52KKGYyg
 
     ## Valid IPs
     dev_custom_ip_1:
@@ -9,20 +16,33 @@ params:
     dev_custom_ip_3:
     dev_custom_ip_4:
 
+    ## Emails to report errors
+    support_email_1: 'juanlu@comakai.com'
+    support_email_2: 'manolez@gmail.com'
+    support_email_3: 'yawmoght@gmail.com'
+
+    ## Testing users
+    userA.resource: ''
+    userA.access_token: ''
+    userA.resource_id: ''
+    userB.resource: ''
+    userB.access_token: ''
+    userB.resource_id: ''
+
     ## Locale
     locale.default: en
+
+    ## Images directory
+    images_relative_dir: '/../../landing/web/'
+
+    ## Base url
+    brain_base_url: 'http://brain.local.nekuno.com/'
 
     ## Instant
     instant.host: https://local.nekuno.com:8008/
     guzzle.verify: null
 
     ## Doctrine
-    dbs.mysql_social.driver: pdo_mysql
-    dbs.mysql_social.host: localhost
-    dbs.mysql_social.dbname: nekuno
-    dbs.mysql_social.user: root
-    dbs.mysql_social.pass: root
-
     dbs.mysql_brain.driver: pdo_mysql
     dbs.mysql_brain.host: localhost
     dbs.mysql_brain.dbname: nekuno_brain
@@ -53,29 +73,29 @@ params:
     ## RabbitMQ
     rabbitmq.host: 127.0.0.1
     rabbitmq.port: 5672
-    rabbitmq.user: guest
-    rabbitmq.pass: guest
+    rabbitmq.user: nekuno
+    rabbitmq.pass: nekuno
 
     ## Twitter
-    twitter.consumer_key: m9NY9ZghlVeYFVk8fbPp8pp1g
-    twitter.consumer_secret: yQ5XBabTj1vzCCBVeJoqX9Bli4zcjVWsF6FxHvPtZwkAJseu1l
-    twitter.application_token: AAAAAAAAAAAAAAAAAAAAAFbcXgAAAAAAU6MCuXOOVmSchRXGdTt7O1V1a%2FI%3DT15dTKA8Bdejw65X3C3f73j8yBdrrNtEOYKRCPTpeWANjRZjPb
+    twitter.consumer_key: ~
+    twitter.consumer_secret: ~
+    twitter.application_token: ~
 
     ## Spotify
-    spotify.consumer_key: e8c3557e29ad4974a1f41e93aeaf6e79
-    spotify.consumer_secret: 4f2d9cf19b8549adab69f68dfd0df29a
+    spotify.consumer_key: ~
+    spotify.consumer_secret: ~
 
     ## Google
-    google.consumer_key: 351352065100-hjnd2afbiirca4nihu9ck461nv14b5l1.apps.googleusercontent.com
-    google.consumer_secret: r8SI-iK6eAYO7trO3zAEpbO4
-    google.service_account_email: 556826433000-0b3i84k7li492e1t9rvat650cb8v00dg@developer.gserviceaccount.com
-    google.key_file: /root/.ssh/OauthTest-d90f7483fcf1.p12
-    google.key_password: notasecret
-    google.application_token: AIzaSyDe0_GEgJX6yMmwkYobif6cX2zVYkp37dc
+    google.consumer_key: ~
+    google.consumer_secret: ~
+    google.service_account_email: ~
+    google.key_file: ~
+    google.key_password: ~
+    google.application_token: ~
 
     ## Facebook App
-    facebook.consumer_key: 525923770862645
-    facebook.consumer_secret: 1b5ed9309224e67f698848d85f7660a5
+    facebook.consumer_key: ~
+    facebook.consumer_secret: ~
     facebook.redirect_uri: https://local.nekuno.com/login/check-facebook
 
     ## Invitations migration
@@ -86,8 +106,8 @@ params:
 
     ## FullContact API key
     fullContact.url: https://api.fullcontact.com/v2/person.json
-    fullContact.consumer_key: 2745053af3e27da4
+    fullContact.consumer_key: ~
 
     ## PeopleGraph API key
     peopleGraph.url: https://api.peoplegraph.io/v2/lookup
-    peopleGraph.consumer_key: yj0Ak28hFCugzlT6L8PrhneGT0VaQtY8
+    peopleGraph.consumer_key: ~

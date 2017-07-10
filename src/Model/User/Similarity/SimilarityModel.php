@@ -3,20 +3,17 @@
 namespace Model\User\Similarity;
 
 use Event\SimilarityEvent;
-use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
 use Model\Popularity\PopularityManager;
-use Model\User\ContentPaginatedModel;
-use Model\User\GroupModel;
+use Model\User\Content\ContentPaginatedModel;
+use Model\User\Group\GroupModel;
 use Model\User\ProfileModel;
-use Model\User\QuestionPaginatedModel;
+use Model\User\Question\QuestionPaginatedModel;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
-/**
- * @author Juan Luis Martínez <juanlu@comakai.com>
- */
+
 class SimilarityModel
 {
     const numberOfSecondsToCache = 3;
@@ -24,6 +21,7 @@ class SimilarityModel
     const INTERESTS = 2;
     const QUESTIONS = 3;
     const SKILLS = 4;
+    const MAX_SIMILARITIES = 1000;
 
     /**
      * @var EventDispatcher
@@ -65,7 +63,8 @@ class SimilarityModel
         ContentPaginatedModel $contentPaginatedModel,
         ProfileModel $profileModel,
         GroupModel $groupModel
-    ) {
+    )
+    {
         $this->dispatcher = $dispatcher;
         $this->gm = $gm;
         $this->popularityManager = $popularityManager;
@@ -118,8 +117,9 @@ class SimilarityModel
      * @param $idB
      * @return array
      */
-    public function getSimilarityBy($category, $idA, $idB){
-        switch($category){
+    public function getSimilarityBy($category, $idA, $idB)
+    {
+        switch ($category) {
             case static::ALL:
                 $this->calculateSimilarityByInterests($idA, $idB);
                 $this->calculateSimilarityByQuestions($idA, $idB);
@@ -184,18 +184,176 @@ class SimilarityModel
         if ($result->count() > 0) {
             /* @var $row Row */
             $row = $result->current();
-            /* @var $node Node */
-            $similarity['questions'] = $row->offsetExists('questions') ? $row->offsetGet('questions') : 0;
-            $similarity['interests'] = $row->offsetExists('interests') ? $row->offsetGet('interests') : 0;
-            $similarity['skills'] = $row->offsetExists('skills') ? $row->offsetGet('skills') : 0;
-            $similarity['similarity'] = $row->offsetExists('similarity') ? $row->offsetGet('similarity') : 0;
-            $similarity['questionsUpdated'] = $row->offsetExists('questionsUpdated') ? $row->offsetGet('questionsUpdated') : 0;
-            $similarity['interestsUpdated'] = $row->offsetExists('interestsUpdated') ? $row->offsetGet('interestsUpdated') : 0;
-            $similarity['skillsUpdated'] = $row->offsetExists('skillsUpdated') ? $row->offsetGet('skillsUpdated') : 0;
-            $similarity['similarityUpdated'] = $row->offsetExists('similarityUpdated') ? $row->offsetGet('similarityUpdated') : 0;
+            $similarity = $this->buildSimilarity($row);
+
         }
 
         return $similarity;
+    }
+
+    /**
+     * @param $id
+     * @param bool $includeGhost
+     * @return \array[]
+     * @throws \Model\Neo4j\Neo4jException
+     */
+    public function getAllCurrentByUser($id, $includeGhost = true)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(u:User{qnoow_id: {id} })')
+            ->with('u')
+            ->limit(1);
+        $qb->setParameter('id', (integer)$id);
+
+        //Only with interests for analyzing purposes. May be refactored into different methods for different similarities.
+        $qb->match('(u)-[s:SIMILARITY]->(u2:User)')
+            ->where('s.interests > 0');
+        $qb->with('u', 'u2', 's');
+        if (!$includeGhost) {
+            $qb->where('NOT (u2:GhostUser)');
+        };
+        $qb->with('u', 'u2', 's');
+
+        $qb->optionalMatch('(u)-[:LIKES]->(l:Link)')
+            ->optionalMatch('(l)-[:HAS_POPULARITY]-(popularity)')
+            ->with('u', 'u2', 's', 'count(l) AS countA, sum(popularity.popularity) AS popularityA');
+        $qb->optionalMatch('(u2)-[:LIKES]->(l:Link)')
+            ->optionalMatch('(l)-[:HAS_POPULARITY]-(popularity)')
+            ->with('u', 'u2', 's', 'countA', 'popularityA', 'count(l) as countB', 'sum(popularity.popularity) AS popularityB');
+
+        $qb->optionalMatch('(u)-[:LIKES]->(l:Link)<-[:LIKES]-(u2)')
+            ->optionalMatch('(l)-[:HAS_POPULARITY]-(popularity:Popularity)')
+            ->with('u', 'u2', 's', 'countA, popularityA, countB, popularityB', 'count(l) AS countCommon', 'sum(popularity.unpopularity) AS unpopularityCommon', 'sum(popularity.popularity) AS popularityCommon');
+        $qb->with('countCommon', 'unpopularityCommon',
+            'countA - countCommon AS countOnlyA', 'countB - countCommon AS countOnlyB',
+            'popularityA - popularityCommon AS popularityOnlyA', 'popularityB - popularityCommon AS popularityOnlyB',
+            's.questions AS questions',
+            's.interests AS interests',
+            's.skills AS skills',
+            's.similarity AS similarity',
+            'CASE WHEN EXISTS(s.questionsUpdated) THEN s.questionsUpdated ELSE 0 END AS questionsUpdated',
+            'CASE WHEN EXISTS(s.interestsUpdated) THEN s.interestsUpdated ELSE 0 END AS interestsUpdated',
+            'CASE WHEN EXISTS(s.skillsUpdated) THEN s.skillsUpdated ELSE 0 END AS skillsUpdated',
+            'CASE WHEN EXISTS(s.similarityUpdated) THEN s.similarityUpdated ELSE 0 END AS similarityUpdated'
+        )
+            ->returns('questions, interests, skills, similarity, questionsUpdated, interestsUpdated, skillsUpdated, similarityUpdated, 
+                        countCommon, unpopularityCommon, countOnlyA, countOnlyB, popularityOnlyA, popularityOnlyB');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        $similarities = array();
+        $popularityData = array();
+        foreach ($result as $row) {
+            $similarities[] = $this->buildSimilarity($row);
+            $popularityData[] = array(
+                'countCommon' => $row->offsetGet('countCommon'),
+                'unpopularityCommon' => $row->offsetGet('unpopularityCommon'),
+                'countOnlyA' => $row->offsetGet('countOnlyA'),
+                'countOnlyB' => $row->offsetGet('countOnlyB'),
+                'popularityOnlyA' => $row->offsetGet('popularityOnlyA'),
+                'popularityOnlyB' => $row->offsetGet('popularityOnlyB'),
+            );
+        }
+
+        return array(
+            'similarities' => $similarities,
+            'popularityData' => $popularityData,
+        );
+    }
+
+    public function recalculateSimilaritiesByQuestions($userId, $limit = 800)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(u:User{qnoow_id: {userId}})')
+            ->setParameter('userId', (integer)$userId)
+            ->with('u')
+            ->limit(1);
+
+        $qb->match('(u)-[:ANSWERS]->(a:Answer)-[:IS_ANSWER_OF]->(q:Question)')
+            ->with('u', 'collect(a) AS answers', 'collect(q) AS questions');
+        $qb->match('(u)-[s:SIMILARITY]-(u2)')
+            ->where('EXISTS(s.questionsUpdated)','s.questionsUpdated < timestamp() - {updateLimit}')
+            ->setParameter('updateLimit', 1000*self::numberOfSecondsToCache)
+            ->with('u', 'answers','questions','u2')
+            ->orderBy('1-s.questions ASC') // s.questions DESC would put NULL values first
+            ->limit('{limit}')
+            ->setParameter('limit', $limit);
+
+        $qb->match('(u2)-[:ANSWERS]-(a2)-[:IS_ANSWER_OF]->(q2:Question)')
+            ->with('u', 'u2', 'a2', 'q2')
+            ->where('a2 IN answers', 'q2 IN questions')
+            ->with('u', 'u2', 'collect(a2) AS answers2', 'collect(q2) AS questions2')
+            ->with('u', 'u2', 'size(answers2) AS RI', 'size(questions2) AS PC')
+            //Same as $this->calculateSimilarityByQuestions from here
+            ->with('u', 'u2', 'toFloat(RI) AS RI', 'toFloat(PC) AS PC')
+            ->with('u, u2, CASE WHEN PC <= 0 THEN toFloat(0) ELSE RI/PC - 1/PC END AS similarity')
+            ->with('u, u2, CASE WHEN similarity < 0 THEN toFloat(0) ELSE similarity END AS similarity');
+
+        $qb
+            ->merge('(u)-[s:SIMILARITY]-(u2)')
+            ->set(
+                's.questions = similarity',
+                's.interests = CASE WHEN EXISTS(s.interests) THEN s.interests ELSE 0 END',
+                's.skills = CASE WHEN EXISTS(s.skills) THEN s.skills ELSE 0 END',
+                's.questionsUpdated = timestamp()',
+                's.similarityUpdated = timestamp()'
+            )
+            ->returns('similarity');
+
+        $qb->getQuery()->getResultSet();
+    }
+
+    public function recalculateSimilaritiesByInterests($userId, $limit = 800)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(u:User{qnoow_id: {userId}})')
+            ->setParameter('userId', (integer)$userId)
+            ->with('u')
+            ->limit(1);
+
+        $qb->match('(u)-[:LIKES]->(l:Link)-[:HAS_POPULARITY]->(p:Popularity)')
+            ->with('u', 'sum(p.popularity) AS popularity');
+
+        $qb->match('(u)-[s:SIMILARITY]->(u2:User)')
+            ->where('EXISTS(s.interestsUpdated)','s.interestsUpdated < timestamp() - {updateLimit}')
+            ->setParameter('updateLimit', 1000*self::numberOfSecondsToCache)
+            ->with('u', 'popularity', 'u2')
+            ->orderBy('1-s.interests ASC')
+            ->limit('{limit}')
+            ->setParameter('limit', (integer)$limit);
+
+        $qb->match('(u2)-[:LIKES]->(:Link)-[:HAS_POPULARITY]->(p:Popularity)')
+            ->with('u', 'popularity', 'u2', 'sum(p.popularity) AS popularity2');
+
+        $qb->match('(u2)-[:LIKES]->(l:Link)<-[:LIKES]-(u)')
+            ->match('(l)-[:HAS_POPULARITY]->(p:Popularity)')
+            ->with('u', 'popularity', 'u2', 'popularity2',
+                'CASE WHEN count(l) > 4 THEN true ELSE false END AS valid',
+                'sum(p.popularity) AS popularityCommon',
+                'sum(p.unpopularity) AS unpopularityCommon');
+
+        $qb->with('u', 'u2', 'valid', 'unpopularityCommon', 'popularity - popularityCommon AS popularity1', 'popularity2 - popularityCommon AS popularity2' )
+            ->with(' u, u2, valid, unpopularityCommon, popularity1, popularity2');
+
+        $qb
+            ->with('u, u2, valid, sqrt( unpopularityCommon / (popularity1 + unpopularityCommon)) * sqrt( unpopularityCommon / (popularity2 + unpopularityCommon)) AS similarity')
+            ->with('u', 'u2', 'CASE WHEN valid THEN similarity ELSE 0 END AS similarity');
+
+        $qb
+            ->merge('(u)-[s:SIMILARITY]-(u2)')
+            ->set(
+                's.interests = similarity',
+                's.questions = CASE WHEN EXISTS(s.questions) THEN s.questions ELSE 0 END',
+                's.skills = CASE WHEN EXISTS(s.skills) THEN s.skills ELSE 0 END',
+                's.interestsUpdated = timestamp()',
+                's.similarityUpdated = timestamp()'
+            )
+            ->returns('similarity');
+
+        $result = $qb->getQuery()->getResultSet();
     }
 
     /**
@@ -209,7 +367,6 @@ class SimilarityModel
      */
     private function calculateSimilarityByQuestions($idA, $idB)
     {
-
         $qb = $this->gm->createQueryBuilder();
         $qb
             ->match('(userA:User {qnoow_id: { idA } }), (userB:User {qnoow_id: { idB } })')
@@ -271,7 +428,7 @@ class SimilarityModel
             ->where('EXISTS(l.unpopularity) OR EXISTS(popularity.unpopularity)')
             ->with('userA, userB, COUNT(DISTINCT l) AS numberCommonContent, SUM(l.unpopularity) + SUM(popularity.unpopularity) AS common')
             ->with('userA', 'userB', 'CASE WHEN numberCommonContent > 4 THEN true ELSE false END AS valid', 'common')
-            ->with('userA', 'userB', 'valid', 'CASE WHEN valid THEN common ELSE 1 END AS common') //prevents divide by zero
+            ->with('userA', 'userB', 'valid', 'CASE WHEN valid THEN common ELSE 1 END AS common')//prevents divide by zero
             ->with('userA', 'userB', 'valid', 'common');
 
         $qb
@@ -440,42 +597,40 @@ class SimilarityModel
 
 
         //"Do not use questions if and only if any user has no questions and has more than 100 links"
-        $questionsFactor = ( (($userALinks || $userASkills) && !$userAQuestions) || ( ($userBLinks || $userBSkills) && !$userBQuestions)) ? 0 : 1;
+        $questionsFactor = ((($userALinks || $userASkills) && !$userAQuestions) || (($userBLinks || $userBSkills) && !$userBQuestions)) ? 0 : 1;
         $contentsFactor = ($userALinks || $userAQuestions) && ($userBLinks || $userBQuestions) ? 1 : 0; //include questions to be consistent with previous behaviour
 //        $skillsFactor = $userASkills & $userBSkills ? 1 : 0;
         $skillsFactor = $similarity['skills'] > 0 ? 1 : 0;
 
         $denominator = $questionsFactor + $contentsFactor + $skillsFactor;
 
-        //TODO: Check why this is necessary NOW
-        ////// PATCH TO FIX SIMILARITIES OF INVESTOR GROUPS //////////////////
-        //0-------------------limitSimilarity-------1
-        // TO
-        //0---------newLimitSimilarity--------------1
-        //Contracts/expands intervals to fix similarities
-        $limitSimilarity = 0.85;
-        $newLimitSimilarity = 0.4;
-        $investorGroupIds = array(9507567);
+        $this->specialCases($similarity, $idA, $idB);
 
-        foreach ($investorGroupIds as $investorGroupId){
-            if ($this->groupModel->isUserFromGroup($investorGroupId, $idA) && $this->groupModel->isUserFromGroup($investorGroupId, $idB)){
-                if ($similarity['interests'] > $limitSimilarity ){
-                    $similarity['interests'] = (($similarity['interests']-$limitSimilarity)/(1-$limitSimilarity) )*(1-$newLimitSimilarity) + $newLimitSimilarity;
-                } else {
-                    $similarity['interests'] = (($similarity['interests'])/$limitSimilarity) * $newLimitSimilarity;
-                }
-            }
-        }
-        /////////////////////////////////////////////////////////////////////
-        
         $similarity['similarity'] = $denominator == 0 ? 0 :
-                                        ( ($similarity['interests'] * $contentsFactor + $similarity['questions'] * $questionsFactor + $similarity['skills'] * $skillsFactor)
-                                        / ($denominator)
-        );
+            (($similarity['interests'] * $contentsFactor + $similarity['questions'] * $questionsFactor + $similarity['skills'] * $skillsFactor)
+                / ($denominator)
+            );
 
         $this->setSimilarity($idA, $idB, $similarity['similarity']);
 
         return $similarity;
+    }
+
+    private function specialCases(&$similarity, $idA, $idB)
+    {
+        $limitSimilarity = 0.85;
+        $newLimitSimilarity = 0.4;
+        $groupIds = array(9507567);
+
+        foreach ($groupIds as $groupId) {
+            if ($this->groupModel->isUserFromGroup($groupId, $idA) && $this->groupModel->isUserFromGroup($groupId, $idB)) {
+                if ($similarity['interests'] > $limitSimilarity) {
+                    $similarity['interests'] = (($similarity['interests'] - $limitSimilarity) / (1 - $limitSimilarity)) * (1 - $newLimitSimilarity) + $newLimitSimilarity;
+                } else {
+                    $similarity['interests'] = (($similarity['interests']) / $limitSimilarity) * $newLimitSimilarity;
+                }
+            }
+        }
     }
 
     private function setSimilarity($idA, $idB, $similarity)
@@ -494,5 +649,20 @@ class SimilarityModel
             ->set('s.similarity = {similarity}');
 
         $qb->getQuery()->getResultSet();
+    }
+
+    private function buildSimilarity(Row $row)
+    {
+        $similarity = array();
+        $similarity['questions'] = $row->offsetExists('questions') ? $row->offsetGet('questions') : 0;
+        $similarity['interests'] = $row->offsetExists('interests') ? $row->offsetGet('interests') : 0;
+        $similarity['skills'] = $row->offsetExists('skills') ? $row->offsetGet('skills') : 0;
+        $similarity['similarity'] = $row->offsetExists('similarity') ? $row->offsetGet('similarity') : 0;
+        $similarity['questionsUpdated'] = $row->offsetExists('questionsUpdated') ? $row->offsetGet('questionsUpdated') : 0;
+        $similarity['interestsUpdated'] = $row->offsetExists('interestsUpdated') ? $row->offsetGet('interestsUpdated') : 0;
+        $similarity['skillsUpdated'] = $row->offsetExists('skillsUpdated') ? $row->offsetGet('skillsUpdated') : 0;
+        $similarity['similarityUpdated'] = $row->offsetExists('similarityUpdated') ? $row->offsetGet('similarityUpdated') : 0;
+
+        return $similarity;
     }
 }

@@ -1,12 +1,9 @@
 <?php
-/**
- * @author yawmoght <yawmoght@gmail.com>
- */
 
 namespace Model\User;
 
 
-use Model\LinkModel;
+use Model\Link\LinkModel;
 use Model\Neo4j\GraphManager;
 
 class ContentFilterModel extends FilterModel

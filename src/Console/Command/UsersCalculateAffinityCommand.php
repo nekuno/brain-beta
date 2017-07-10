@@ -5,7 +5,7 @@ namespace Console\Command;
 use Console\ApplicationAwareCommand;
 use Model\User;
 use Model\User\Affinity\AffinityModel;
-use Model\LinkModel;
+use Model\Link\LinkModel;
 use Manager\UserManager;
 use Silex\Application;
 use Symfony\Component\Console\Input\InputInterface;

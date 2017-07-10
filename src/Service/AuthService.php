@@ -2,15 +2,15 @@
 
 namespace Service;
 
+use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Provider\OAuthProvider;
+use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
 use Manager\UserManager;
 use Model\User;
+use Model\User\Token\TokensModel;
 use Silex\Component\Security\Core\Encoder\JWTEncoder;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface;
 
-/**
- * @author Juan Luis Martínez <juanlu@comakai.com>
- */
 class AuthService
 {
 
@@ -29,25 +29,43 @@ class AuthService
      */
     protected $jwtEncoder;
 
-    public function __construct(UserManager $um, PasswordEncoderInterface $encoder, JWTEncoder $jwtEncoder)
+    /**
+     * @var OAuthProvider
+     */
+    protected $oAuthProvider;
+
+    /**
+     * @var EventDispatcher
+     */
+    protected $dispatcher;
+
+    /**
+     * @var TokensModel
+     */
+    protected $tokensModel;
+
+    public function __construct(UserManager $um, PasswordEncoderInterface $encoder, JWTEncoder $jwtEncoder, OAuthProvider $oAuthProvider, EventDispatcher $dispatcher, TokensModel $tokensModel)
     {
         $this->um = $um;
         $this->encoder = $encoder;
         $this->jwtEncoder = $jwtEncoder;
+        $this->oAuthProvider = $oAuthProvider;
+        $this->dispatcher = $dispatcher;
+        $this->tokensModel = $tokensModel;
     }
 
     /**
      * @param $username
      * @param $password
      * @return string
+     * @throws UnauthorizedHttpException
      */
     public function login($username, $password)
     {
-
         try {
             $user = $this->um->findUserBy(array('usernameCanonical' => $this->um->canonicalize($username)));
         } catch (\Exception $e) {
-            throw new UnauthorizedHttpException('', 'El nombre de usuario y la contraseña que ingresaste no coinciden con nuestros registros.');
+            throw new UnauthorizedHttpException('', 'Los datos introducidos no coinciden con nuestros registros.');
         }
 
         $encodedPassword = $user->getPassword();
@@ -55,9 +73,49 @@ class AuthService
         $valid = $this->encoder->isPasswordValid($encodedPassword, $password, $salt);
 
         if (!$valid) {
-            throw new UnauthorizedHttpException('', 'El nombre de usuario y la contraseña que ingresaste no coinciden con nuestros registros.');
+            throw new UnauthorizedHttpException('', 'Los datos introducidos no coinciden con nuestros registros.');
         }
 
+        $user = $this->updateLastLogin($user);
+
+        return $this->buildToken($user);
+    }
+
+    /**
+     * @param $resourceOwner
+     * @param $accessToken
+     * @param $refreshToken
+     * @return string
+     */
+    public function loginByResourceOwner($resourceOwner, $accessToken, $refreshToken = null)
+    {
+        $accessToken = $this->tokensModel->getOauth1Token($resourceOwner, $accessToken) ?: $accessToken;
+
+        $token = new OAuthToken($accessToken);
+        $token->setResourceOwnerName($resourceOwner);
+
+        try {
+            $newToken = $this->oAuthProvider->authenticate($token);
+        } catch (\Exception $e) {
+            throw new UnauthorizedHttpException('', 'Los datos introducidos no coinciden con nuestros registros.');
+        }
+
+        if (!$newToken) {
+            throw new UnauthorizedHttpException('', 'Los datos introducidos no coinciden con nuestros registros.');
+        }
+
+        $user = $this->updateLastLogin($newToken->getUser());
+
+        $data = array('oauthToken' => $accessToken);
+        if ($refreshToken) {
+            $data['refreshToken'] = $refreshToken;
+        }
+
+        try {
+            $this->tokensModel->update($user->getId(), $resourceOwner, $data);
+        } catch (\Exception $e) {
+
+        }
         return $this->buildToken($user);
     }
 
@@ -88,4 +146,18 @@ class AuthService
 
         return $jwt;
     }
+
+    protected function updateLastLogin(User $user)
+    {
+
+        $data = array(
+            'userId' => $user->getId(),
+            'username' => $user->getUsername(),
+            'email' => $user->getEmail(),
+            'lastLogin' => (new \DateTime())->format('Y-m-d H:i:s'),
+        );
+
+        return $this->um->update($data);
+    }
+
 }

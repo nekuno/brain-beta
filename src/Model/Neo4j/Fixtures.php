@@ -2,15 +2,15 @@
 
 namespace Model\Neo4j;
 
-use Model\LinkModel;
-use Model\Questionnaire\QuestionModel;
+use Model\Link\LinkModel;
+use Model\User\Question\QuestionModel;
 use Model\User;
-use Model\User\AnswerModel;
+use Model\User\Question\AnswerManager;
 use Model\User\ProfileModel;
 use Model\User\RateModel;
 use Manager\UserManager;
 use Model\EnterpriseUser\EnterpriseUserModel;
-use Model\User\GroupModel;
+use Model\User\Group\GroupModel;
 use Model\User\InvitationModel;
 use Model\User\PrivacyModel;
 use Psr\Log\LoggerInterface;
@@ -57,7 +57,7 @@ class Fixtures
     protected $qm;
 
     /**
-     * @var AnswerModel
+     * @var AnswerManager
      */
     protected $am;
 
@@ -135,6 +135,7 @@ class Fixtures
         $this->loadPrivacyOptions();
         $this->loadUsers();
         $this->loadEnterpriseUsers();
+        $this->loadInvitations();
         $this->loadGroups();
         $createdLinks = $this->loadLinks();
         $this->loadTags();
@@ -212,6 +213,20 @@ class Fixtures
         }
     }
 
+    protected function loadInvitations()
+    {
+        $this->logger->notice('Loading generic invitation');
+
+        $invitationData = array(
+            'orientationRequired' => false,
+            'available' => 10000,
+            'token' => 'join',
+        );
+
+        $this->im->create($invitationData);
+
+    }
+
     protected function loadGroups()
     {
         $this->logger->notice(sprintf('Loading %d enterprise groups and invitations', self::NUM_OF_ENTERPRISE_USERS));
@@ -232,10 +247,10 @@ class Fixtures
                     )
                 )
             );
-            $this->gpm->setCreatedByEnterpriseUser($group['id'], $i);
+            $this->gpm->setCreatedByEnterpriseUser($group->getId(), $i);
 
             $invitationData = array(
-                'groupId' => $group['id'],
+                'groupId' => $group->getId(),
                 'orientationRequired' => false,
                 'available' => 100,
             );
@@ -247,7 +262,7 @@ class Fixtures
                     break;
                 }
                 $this->im->consume($invitation['invitation']['token'], $user->getId());
-                $this->gpm->addUser($group['id'], $user->getId());
+                $this->gpm->addUser($group->getId(), $user->getId());
             }
         }
 
@@ -415,12 +430,12 @@ class Fixtures
         $likes = $this->scenario['likes'];
 
         foreach ($createdLinks as $link) {
-            $this->rm->userRateLink(1, $link, RateModel::LIKE);
+            $this->rm->userRateLink(1, $link['id']);
         }
 
         foreach ($likes as $like) {
             foreach (range($like['linkFrom'], $like['linkTo']) as $i) {
-                $this->rm->userRateLink($like['user'], $createdLinks[$i], RateModel::LIKE);
+                $this->rm->userRateLink($like['user'], $createdLinks[$i]['id']);
             }
         }
     }

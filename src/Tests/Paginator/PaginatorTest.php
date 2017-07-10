@@ -2,6 +2,7 @@
 
 namespace Tests\Paginator;
 
+use Model\Exception\ValidationException;
 use Paginator\Paginator;
 
 class PaginatorTest extends \PHPUnit_Framework_TestCase {
@@ -27,8 +28,8 @@ class PaginatorTest extends \PHPUnit_Framework_TestCase {
 
         $paginatedMock = $this->getPaginatedMock(false);
 
-        $result = $paginator->paginate(array(), $paginatedMock, $requestMock);
-        $this->assertEmpty($result);
+        $this->setExpectedException(ValidationException::class);
+        $paginator->paginate(array(), $paginatedMock, $requestMock);
     }
 
     public function testGetLimitAndOffsetFromRequest()

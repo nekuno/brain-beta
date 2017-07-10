@@ -1,42 +1,28 @@
 <?php
 
-
 namespace EventListener;
 
-use Doctrine\ORM\EntityManager;
 use Event\FetchEvent;
 use Event\MatchingExpiredEvent;
 use Event\ProcessLinksEvent;
 use Event\ContentRatedEvent;
-use Model\Entity\DataStatus;
+use Model\User\Token\TokenStatus\TokenStatusManager;
 use Service\AMQPManager;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Worker\MatchingCalculatorWorker;
 
-/**
- * Class UserDataStatusSubscriber
- * @package EventListener
- */
 class UserDataStatusSubscriber implements EventSubscriberInterface
 {
-
-    /**
-     * @var EntityManager
-     */
-    protected $entityManager;
-
-    /**
-     * @var AMQPManager
-     */
+    protected $tokenStatusManager;
     protected $amqpManager;
 
     /**
-     * @param EntityManager $entityManager
+     * @param TokenStatusManager $tokenStatusManager
      * @param AMQPManager $amqpManager
      */
-    public function __construct(EntityManager $entityManager, AMQPManager $amqpManager)
+    public function __construct(TokenStatusManager $tokenStatusManager, AMQPManager $amqpManager)
     {
-
-        $this->entityManager = $entityManager;
+        $this->tokenStatusManager = $tokenStatusManager;
         $this->amqpManager = $amqpManager;
     }
 
@@ -45,7 +31,6 @@ class UserDataStatusSubscriber implements EventSubscriberInterface
      */
     public static function getSubscribedEvents()
     {
-
         return array(
             \AppEvents::FETCH_START => array('onFetchStart'),
             \AppEvents::FETCH_FINISH => array('onFetchFinish'),
@@ -58,86 +43,41 @@ class UserDataStatusSubscriber implements EventSubscriberInterface
 
     public function onFetchStart(FetchEvent $event)
     {
-
-        $status = $this->getCurrentDataStatus($event);
-
-        $status->setFetched(false);
-
-        $this->saveStatus($status);
-    }
-
-    public function getCurrentDataStatus(FetchEvent $event)
-    {
-
-        $user = $event->getUser();
+        $userId = $event->getUser();
         $resourceOwner = $event->getResourceOwner();
 
-        if ($this->entityManager->getConnection()->ping() === false) {
-            $this->entityManager->getConnection()->close();
-            $this->entityManager->getConnection()->connect();
-        }
-
-        $repository = $this->entityManager->getRepository('\Model\Entity\DataStatus');
-        $dataStatus = $repository->findOneBy(array('userId' => $user, 'resourceOwner' => $resourceOwner));
-
-        if (null === $dataStatus) {
-            $dataStatus = new DataStatus();
-            $dataStatus->setUserId($user);
-            $dataStatus->setResourceOwner($resourceOwner);
-        }
-
-        return $dataStatus;
-    }
-
-    /**
-     * @param $status
-     */
-    public function saveStatus($status)
-    {
-
-        $this->entityManager->persist($status);
-        $this->entityManager->flush();
+        $this->tokenStatusManager->setFetched($userId, $resourceOwner, 0);
     }
 
     public function onFetchFinish(FetchEvent $event)
     {
+        $userId = $event->getUser();
+        $resourceOwner = $event->getResourceOwner();
 
-        $dataStatus = $this->getCurrentDataStatus($event);
-
-        $dataStatus->setFetched(true);
-
-        $this->saveStatus($dataStatus);
-
+        $this->tokenStatusManager->setFetched($userId, $resourceOwner, 1);
     }
 
     public function onProcessStart(ProcessLinksEvent $event)
     {
+        $userId = $event->getUser();
+        $resourceOwner = $event->getResourceOwner();
 
-        $status = $this->getCurrentDataStatus($event);
-
-        $status->setProcessed(false);
-
-        $this->saveStatus($status);
+        $this->tokenStatusManager->setProcessed($userId, $resourceOwner, 0);
     }
 
     public function onProcessFinish(ProcessLinksEvent $event)
     {
-
-        $status = $this->getCurrentDataStatus($event);
-
-        $status->setProcessed(true);
-
-        $this->saveStatus($status);
-
-        $user = $event->getUser();
+        $userId = $event->getUser();
         $resourceOwner = $event->getResourceOwner();
 
+        $this->tokenStatusManager->setProcessed($userId, $resourceOwner, 1);
+
         $data = array(
-            'userId' => $user,
+            'userId' => $userId,
             'resourceOwner' => $resourceOwner,
         );
 
-        $this->amqpManager->enqueueMessage($data, 'brain.matching.process_finished');
+        $this->amqpManager->enqueueMatching($data, MatchingCalculatorWorker::TRIGGER_PROCESS_FINISHED);
     }
 
     public function onMatchingExpired(MatchingExpiredEvent $event)
@@ -149,7 +89,7 @@ class UserDataStatusSubscriber implements EventSubscriberInterface
             'matching_type' => $event->getType(),
         );
 
-        $this->amqpManager->enqueueMessage($data, 'brain.matching.matching_expired');
+        $this->amqpManager->enqueueMatching($data, MatchingCalculatorWorker::TRIGGER_MATCHING_EXPIRED);
 
     }
 
@@ -160,7 +100,7 @@ class UserDataStatusSubscriber implements EventSubscriberInterface
             'userId' => $event->getUser(),
         );
 
-        $this->amqpManager->enqueueMessage($data, 'brain.matching.content_rated');
+        $this->amqpManager->enqueueMatching($data, MatchingCalculatorWorker::TRIGGER_CONTENT_RATED);
     }
 
 }

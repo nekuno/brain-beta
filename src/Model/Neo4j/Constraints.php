@@ -2,11 +2,7 @@
 
 namespace Model\Neo4j;
 
-/**
- * Class Constraints
- *
- * @package Model\Neo4j
- */
+
 class Constraints
 {
 
@@ -24,6 +20,7 @@ class Constraints
         $this->gm = $gm;
     }
 
+    //TODO: Update to add indexes
     /**
      * Load the constraints
      *
@@ -34,10 +31,15 @@ class Constraints
 
         $constraints = array(
             'CREATE INDEX ON :Link(url)',
+            'CREATE INDEX ON :Link(popularity)',
+            'CREATE INDEX ON :Popularity(popularity)',
+            'CREATE INDEX ON :Tag(name)',
+            'CREATE CONSTRAINT ON (ans:Answer) ASSERT ans.qnoow_id IS UNIQUE',
+            'CREATE CONSTRAINT ON (que:Question) ASSERT que.qnoow_id IS UNIQUE',
             'CREATE CONSTRAINT ON (inv:Invitation) ASSERT inv.token IS UNIQUE',
         );
 
-        $fields = array('qnoow_id', 'usernameCanonical', 'facebookID', 'googleID', 'twitterID', 'spotifyID');
+        $fields = array('qnoow_id', 'usernameCanonical', 'slug');
         foreach ($fields as $field) {
             $constraints[] = "CREATE CONSTRAINT ON (u:User) ASSERT u.$field IS UNIQUE";
         }

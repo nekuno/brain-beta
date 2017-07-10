@@ -3,19 +3,14 @@
 namespace ApiConsumer\Fetcher;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use Http\OAuth\ResourceOwner\TwitterResourceOwner;
+use Model\Link\Link;
 
-abstract class AbstractTweetsFetcher extends BasicPaginationFetcher
+abstract class AbstractTweetsFetcher extends AbstractTwitterFetcher
 {
 
     protected $paginationField = 'max_id';
 
     protected $pageLength = 200;
-
-    /**
-     * @var TwitterResourceOwner
-     */
-    protected $resourceOwner;
 
     protected $lastPaginationId = "";
 
@@ -26,22 +21,19 @@ abstract class AbstractTweetsFetcher extends BasicPaginationFetcher
 
     protected function getPaginationIdFromResponse($response)
     {
+        if (!is_array($response) || empty($response)) {
+            return null;
+        }
 
-        $paginationId = null;
+        $lastItem = end($response);
+        $paginationId = isset($lastItem['id_str']) ? $lastItem['id_str'] : null;
 
-        $itemsCount = count($response);
-        if ($itemsCount > 0 ) {
-            $lastItem = $response[count($response) - 1];
-            $paginationId = $lastItem['id_str'];
-
-            if ($paginationId == $this->lastPaginationId){
-                return null;
-            }
-        } else {
+        if ($paginationId == $this->lastPaginationId) {
             return null;
         }
 
         $this->lastPaginationId = $paginationId;
+
         return $paginationId;
     }
 
@@ -54,13 +46,13 @@ abstract class AbstractTweetsFetcher extends BasicPaginationFetcher
         $formatted = array();
 
         foreach ($rawFeed as $item) {
-            if (empty($item['entities']) || empty($item['entities']['urls'][0])) {
-                continue;
-            }
+            $urls  =$this->getUrlsFromResponse($item);
 
-            $url = $item['entities']['urls'][0]['expanded_url']
-                ? $item['entities']['urls'][0]['expanded_url']
-                : $item['entities']['urls'][0]['url'];
+            if (empty($urls)){
+                continue;
+            } else {
+                $url = $urls[0];
+            }
 
             $timestamp = null;
             if (array_key_exists('created_at', $item)) {
@@ -68,20 +60,43 @@ abstract class AbstractTweetsFetcher extends BasicPaginationFetcher
                 $timestamp = ($date->getTimestamp()) * 1000;
             }
 
-            $link = array();
-            $link['url'] = $url;
-            $link['title'] = array_key_exists('text', $item) ? $item['text'] : null;
-            $link['description'] = null;
-            $link['resourceItemId'] = array_key_exists('id', $item) ? $item['id'] : null;
-            $link['timestamp'] = $timestamp;
-            $link['resource'] = $this->resourceOwner->getName();
+            $preprocessedLink = new PreprocessedLink($url);
+            $preprocessedLink->setResourceItemId(array_key_exists('id', $item) ? $item['id'] : null); //For intent urls
+            $preprocessedLink->setSource($this->resourceOwner->getName());
 
-            $preprocessedLink = new PreprocessedLink($link['url']);
-            $preprocessedLink->setLink($link);
+            $link = new Link();
+            $link->setUrl($url);
+            $link->setTitle(array_key_exists('text', $item) ? $item['text'] : null);
+            $link->setDescription(null);
+            $link->setCreated($timestamp);
+
+            $preprocessedLink = new PreprocessedLink($url);
+            $preprocessedLink->setFirstLink($link);
 
             $formatted[] = $preprocessedLink;
         }
 
         return $formatted;
+    }
+
+    protected function getUrlsFromResponse($item){
+        $urls = array();
+        if (isset($item['entities']) && !empty($item['entities']['urls'])){
+            $urls = array_merge($urls, $this->getExpandedUrl($item['entities']['urls']));
+        }
+
+        if (isset($item['extended_entities']) && !empty($item['extended_entities']['media'])){
+            $urls = array_merge($urls, $this->getExpandedUrl($item['extended_entities']['media']));
+        }
+        return $urls;
+    }
+
+    protected function getExpandedUrl(array $entity)
+    {
+        $urls = array();
+        foreach ($entity as $url){
+            $urls[] = $url['expanded_url'];
+        }
+        return $urls;
     }
 }

@@ -8,9 +8,7 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Everyman\Neo4j\Exception;
 
-/**
- * @author Juan Luis Martínez <juanlu@comakai.com>
- */
+
 class Query extends \Everyman\Neo4j\Cypher\Query implements LoggerAwareInterface
 {
 
@@ -41,7 +39,7 @@ class Query extends \Everyman\Neo4j\Cypher\Query implements LoggerAwareInterface
 
             $data = $e->getData();
 
-            if (isset($data['cause']['exception']) && $data['cause']['exception'] === 'UniqueConstraintViolationKernelException') {
+            if (isset($data['cause']['exception']) && $data['cause']['exception'] === 'UniquePropertyConstraintViolationKernelException') {
 
                 $errors = $data;
                 if (isset($data['message']) && preg_match('/^.* property "(.*)".*/', $data['message'], $matches)) {

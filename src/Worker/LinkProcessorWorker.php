@@ -1,167 +1,57 @@
 <?php
 
-
 namespace Worker;
 
 use ApiConsumer\Fetcher\FetcherService;
-use Doctrine\DBAL\Connection;
-use Http\OAuth\Factory\ResourceOwnerFactory;
-use Http\OAuth\ResourceOwner\TwitterResourceOwner;
+use ApiConsumer\Fetcher\ProcessorService;
+use Event\ProcessLinksEvent;
 use Model\Neo4j\Neo4jException;
-use Model\User\LookUpModel;
-use Model\User\SocialNetwork\SocialProfileManager;
-use Model\User\TokensModel;
 use PhpAmqpLib\Channel\AMQPChannel;
-use PhpAmqpLib\Message\AMQPMessage;
-use Symfony\Component\EventDispatcher\EventDispatcher;
+use Psr\Log\LoggerInterface;
+use Service\AMQPManager;
+use Service\EventDispatcher;
 
-/**
- * Class LinkProcessorWorker
- * @package Worker
- */
 class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerInterface
 {
-
-    /**
-     * @var AMQPChannel
-     */
-    protected $channel;
-
-    /**
-     * @var TokensModel
-     */
-    protected $tm;
-
-    /**
-     * @var LookupModel
-     */
-    protected $lookupModel;
+    protected $queue = AMQPManager::FETCHING;
 
     /**
      * @var FetcherService
      */
     protected $fetcherService;
 
-    /**
-     * @var Connection
-     */
-    protected $connectionSocial;
+    protected $processorService;
 
-    /**
-     * @var Connection
-     */
-    protected $connectionBrain;
-
-    /**
-     * @var SocialProfileManager
-     */
-    protected $socialProfileManager;
-
-    /**
-     * @var ResourceOwnerFactory
-     */
-    protected $resourceOwnerFactory;
-
-    public function __construct(AMQPChannel $channel,
-                                EventDispatcher $dispatcher,
-                                FetcherService $fetcherService,
-                                ResourceOwnerFactory $resourceOwnerFactory,
-                                TokensModel $tm,
-                                LookUpModel $lm,
-                                SocialProfileManager $socialProfileManager,
-                                Connection $connectionSocial,
-                                Connection $connectionBrain)
+    public function __construct(AMQPChannel $channel, EventDispatcher $dispatcher, FetcherService $fetcherService, ProcessorService $processorService)
     {
-
-        $this->channel = $channel;
+        parent::__construct($dispatcher, $channel);
         $this->fetcherService = $fetcherService;
-        $this->resourceOwnerFactory = $resourceOwnerFactory;
-        $this->tm = $tm;
-        $this->lookupModel = $lm;
-        $this->socialProfileManager = $socialProfileManager;
-        $this->connectionSocial = $connectionSocial;
-        $this->connectionBrain = $connectionBrain;
+        $this->processorService = $processorService;
+    }
+
+    public function setLogger(LoggerInterface $logger)
+    {
+        parent::setLogger($logger);
+        $this->fetcherService->setLogger($logger);
+        $this->processorService->setLogger($logger);
     }
 
     /**
      * { @inheritdoc }
      */
-    public function consume()
+    public function callback(array $data, $trigger)
     {
-
-        $exchangeName = 'brain.topic';
-        $exchangeType = 'topic';
-        $topic = 'brain.fetching.*';
-        $queueName = 'brain.fetching';
-
-        $this->channel->exchange_declare($exchangeName, $exchangeType, false, true, false);
-        $this->channel->queue_declare($queueName, false, true, false, false);
-        $this->channel->queue_bind($queueName, $exchangeName, $topic);
-        $this->channel->basic_qos(null, 1, null);
-        $this->channel->basic_consume($queueName, '', false, false, false, false, array($this, 'callback'));
-
-        while (count($this->channel->callbacks)) {
-            $this->channel->wait();
-        }
-
-    }
-
-    /**
-     * { @inheritdoc }
-     */
-    public function callback(AMQPMessage $message)
-    {
-
-        // Verify mysql connections are alive
-        if ($this->connectionSocial->ping() === false) {
-            $this->connectionSocial->close();
-            $this->connectionSocial->connect();
-        }
-
-        if ($this->connectionBrain->ping() === false) {
-            $this->connectionBrain->close();
-            $this->connectionBrain->connect();
-        }
-
-        $data = json_decode($message->body, true);
         $resourceOwner = $data['resourceOwner'];
         $userId = $data['userId'];
-        $public = array_key_exists('public', $data) ? $data['public'] : false;
         $exclude = array_key_exists('exclude', $data) ? $data['exclude'] : array();
+        $public = isset($data['public']) ? $data['public'] : false;
 
         try {
+            $links = $public ? $this->fetcherService->fetchAsClient($userId, $resourceOwner, $exclude) : $this->fetcherService->fetchUser($userId, $resourceOwner, $exclude);
 
-            if (!$public) {
-                $tokens = $this->tm->getByUserOrResource($userId, $resourceOwner);
-            } else {
-                $profiles = $this->socialProfileManager->getSocialProfiles($userId, $resourceOwner, false);
-                $tokens = array();
-                foreach ($profiles as $profile) {
-                    $tokens[] = $this->tm->buildFromSocialProfile($profile);
-                }
-            }
-
-            foreach ($tokens as $token) {
-
-                $token['public'] = $public;
-                $this->fetcherService->fetch($token, $exclude);
-
-                if ($resourceOwner === TokensModel::TWITTER) {
-
-                    $profiles = $this->socialProfileManager->getSocialProfiles($userId, $resourceOwner, true);
-                    foreach ($profiles as $profile) {
-
-                        /** @var TwitterResourceOwner $twitterResourceOwner */
-                        $twitterResourceOwner = $this->resourceOwnerFactory->build($resourceOwner);
-                        $username = $twitterResourceOwner->getUsername(array('url' => $profile->getUrl()));
-                        $twitterResourceOwner->dispatchChannel(array(
-                            'url' => $profile->getUrl(),
-                            'username' => $username,
-                        ));
-                        $this->logger->info(sprintf('Enqueued fetching old tweets for username %s', $username));
-                    };
-                }
-            }
+            $this->dispatcher->dispatch(\AppEvents::PROCESS_START, new ProcessLinksEvent($userId, $resourceOwner, $links));
+            $this->processorService->process($links, $userId);
+            $this->dispatcher->dispatch(\AppEvents::PROCESS_FINISH, new ProcessLinksEvent($userId, $resourceOwner, $links));
 
         } catch (\Exception $e) {
             $this->logger->error(sprintf('Worker: Error fetching for user %d with message %s on file %s, line %d', $userId, $e->getMessage(), $e->getFile(), $e->getLine()));
@@ -170,10 +60,5 @@ class LinkProcessorWorker extends LoggerAwareWorker implements RabbitMQConsumerI
             }
             $this->dispatchError($e, 'Fetching');
         }
-
-        $message->delivery_info['channel']->basic_ack($message->delivery_info['delivery_tag']);
-
-        $this->memory();
     }
-
 }

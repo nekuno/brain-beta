@@ -2,74 +2,78 @@
 
 namespace ApiConsumer\LinkProcessor\UrlParser;
 
+use ApiConsumer\Exception\UrlNotValidException;
+
 class SpotifyUrlParser extends UrlParser
 {
-    const TRACK_URL = 'track';
-    const ALBUM_URL = 'album';
-    const ALBUM_TRACK_URL = 'album_track';
-    const ARTIST_URL = 'artist';
+    const TRACK_URL = 'spotify_track';
+    const ALBUM_URL = 'spotify_album';
+    const ALBUM_TRACK_URL = 'spotify_album_track';
+    const ARTIST_URL = 'spotify_artist';
 
     public function getUrlType($url)
     {
-
-        if (!$this->isUrlValid($url)) {
-            return false;
-        }
-
         $parsedUrl = parse_url($url);
 
         if (isset($parsedUrl['path'])) {
             $path = explode('/', trim($parsedUrl['path'], '/'));
 
             if (count($path) > 1) {
-                if ($path[0] === self::TRACK_URL || $path[0] === self::ALBUM_URL || $path[0] === self::ARTIST_URL) {
-                    if ($path[0] === self::ALBUM_URL && count($path) == 3) {
-                        return self::ALBUM_TRACK_URL;
-                    }
-                    return $path[0];
+                switch ($path[0]) {
+                    case 'track':
+                        return self::TRACK_URL;
+                    case 'artist':
+                        return self::ARTIST_URL;
+                    case 'album':
+                        if (count($path) === 3) {
+                            return self::ALBUM_TRACK_URL;
+                        } else {
+                            return self::ALBUM_URL;
+                        }
+
                 }
             }
         }
 
-        return false;
+        throw new UrlNotValidException($url);
     }
 
     /**
      * Get Spotify ID from URL
      *
      * @param string $url
-     * @return mixed spotify ID or FALSE if not found
+     * @return string spotifyId
+     * @throws UrlNotValidException
      */
-    public function getSpotifyIdFromUrl($url)
+    public function getSpotifyId($url)
     {
-
-        if (!$this->isUrlValid($url)) {
-            return false;
-        }
-        
         $parsedUrl = parse_url($url);
 
         if (isset($parsedUrl['path'])) {
             $path = explode('/', trim($parsedUrl['path'], '/'));
 
-            if (count($path) > 1) {
-                if ($path[0] === self::ALBUM_URL && count($path) == 3) {
+            if (count($path) <= 1) {
+                throw new UrlNotValidException($url);
+            }
+
+            switch ($this->getUrlType($url)) {
+                case self::ALBUM_TRACK_URL:
                     return $path[2];
-                }
-                return $path[1];
+                default:
+                    return $path[1];
             }
         }
 
-        return false;
+        throw new UrlNotValidException($url);
     }
 
     public function cleanURL($url)
     {
-        $url =  parent::cleanURL($url);
+        $url = parent::cleanURL($url);
 
         $type = $this->getUrlType($url);
 
-        switch($type){
+        switch ($type) {
             case $this::TRACK_URL:
             case $this::ALBUM_TRACK_URL:
                 $url = $this->buildTrackURL($url);
@@ -82,7 +86,7 @@ class SpotifyUrlParser extends UrlParser
     private function buildTrackURL($url)
     {
         $parts = parse_url($url);
-        if (!isset($parts['path'])){
+        if (!isset($parts['path'])) {
             return false;
         }
 

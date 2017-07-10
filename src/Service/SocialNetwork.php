@@ -1,12 +1,10 @@
 <?php
-/**
- * @author Manolo Salsas <manolez@gmail.com>
- */
+
 namespace Service;
 
 use ApiConsumer\Factory\FetcherFactory;
-use ApiConsumer\Fetcher\GoogleProfileFetcher;
 use ApiConsumer\LinkProcessor\LinkAnalyzer;
+use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
 use Model\User\LookUpModel;
 use Model\User\SocialNetwork\LinkedinSocialNetworkModel;
 use Psr\Log\LoggerInterface;
@@ -31,10 +29,11 @@ class SocialNetwork
      */
     protected $fetcherFactory;
 
-    function __construct(LinkedinSocialNetworkModel $linkedinSocialNetworkModel,
-                         LookUpModel $lookupModel,
-                         FetcherFactory $fetcherFactory)
-    {
+    function __construct(
+        LinkedinSocialNetworkModel $linkedinSocialNetworkModel,
+        LookUpModel $lookupModel,
+        FetcherFactory $fetcherFactory
+    ) {
         $this->linkedinSocialNetworkModel = $linkedinSocialNetworkModel;
         $this->lookupModel = $lookupModel;
         $this->fetcherFactory = $fetcherFactory;
@@ -61,29 +60,28 @@ class SocialNetwork
                     break;
                 }
 
-                if ($logger){
+                if ($logger) {
                     $logger->info('Analyzing google plus profile for getting youtube profile');
                 }
 
-                /** @var GoogleProfileFetcher $googleProfileFetcher */
+                $googleId = LinkAnalyzer::getUsername($profileUrl);
+
                 $googleProfileFetcher = $this->fetcherFactory->build('google_profile');
-                $googleId = $googleProfileFetcher->getResourceOwner()->getUsername(array('url' => $profileUrl));
-                $profiles = $googleProfileFetcher->fetchLinksFromUserFeed(array('googleID' => $googleId), true);
+                $profiles = $googleProfileFetcher->fetchAsClient($googleId);
 
                 if (count($profiles) !== 1) {
                     $logger->info('Youtube profile not found.');
                     break;
                 }
 
-                $urls = isset($profiles[0]['urls'])? $profiles[0]['urls'] : array();
-                foreach ($urls as $url) {
-                    $url = $url['value'];
+                foreach ($profiles as $profile) {
+                    $url = $profile->getUrl();
                     if (strpos($url, 'youtube.com')) {
-                        $socialProfile = array(LinkAnalyzer::YOUTUBE => $url);
+                        $socialProfile = array(YoutubeUrlParser::GENERAL_URL => $url);
                         $this->lookupModel->setSocialProfiles($socialProfile, $userId);
                         $this->lookupModel->dispatchSocialNetworksAddedEvent($userId, $socialProfile);
-                        if ($logger){
-                            $logger->info('Youtube url '.$url. ' found and joined to user '.$userId.'.');
+                        if ($logger) {
+                            $logger->info('Youtube url ' . $url . ' found and joined to user ' . $userId . '.');
                         }
                     }
                 }

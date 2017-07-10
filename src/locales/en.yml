@@ -1,13 +1,18 @@
 notifications:
+  an_internet_for_you: 'AN INTERNET FOR YOU'
+  unsubscribe: 'Unsubscribe'
+  about_us: 'About us'
+  all_rights_reserved: 'All rights reserved'
   header: 'Hello %name%'
   messages:
     unread:
       subject: 'You have unread messages'
       body:
-        title: 'You have %count% unread message.|You have %count% unread messages.'
+        title: ' you have %count% message.|you have %count% messages.'
+        unread: ' you have %count% unread message.|you have %count% unread messages.'
         latest: 'Latest %count% unread message:|Latest %count% unread messages:'
         message: 'Unread message from user %user% at %datetime%:'
-        linkAnchor: 'See all your messages'
+        linkAnchor: 'Read more'
     exceptional_links:
       subject: 'We found content you want to see'
       body:
@@ -27,17 +32,28 @@ notifications:
       body:
         message: "¡Acabamos de descubrir que <a href=\"%urlOther%\">%usernameOther%</a> es un follower con un %value%% de %filter% contigo!"
   footer: 'Regards from Nekuno team'
+push_notifications:
+    message:
+        title: 'New message from %username%'
+    process_finish:
+        title: 'Process finished'
+        body: 'We have finished to process your network %resource%.'
+    both_user_liked:
+        title: 'Mutual like'
+        body: '%username% and you have mutual like.'
 followers:
   invitation_slogan: 'Find out if you are %compatible_or_similar% with %username%!'
   group_name: 'Followers of %username%'
 messages:
   register: 'Welcome! You can start exploring the web using the yarns we have created for you. If you want to improve them, you can always connect more social media to let us know what you like!'
 types:
-  audio: 'Audio'
-  video: 'Video'
-  image: 'Image'
-  creator: 'Channel'
-  link: 'Link'
+  audio: 'Music'
+  video: 'Videos'
+  image: 'Images & Gifs'
+  creator: 'Channels of Twitter'
+  creatorFacebook: 'Channels of Facebook'
+  creatorTwitter: 'Channels of Twitter'
+  link: 'Web & links'
 threads:
   default:
     twitter_channels: 'Amazing Twitter channels'

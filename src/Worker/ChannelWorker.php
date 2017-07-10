@@ -1,151 +1,86 @@
 <?php
 
-
 namespace Worker;
 
 use ApiConsumer\Fetcher\FetcherService;
-use ApiConsumer\Fetcher\GetOldTweets\GetOldTweets;
-use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\Fetcher\ProcessorService;
 use Doctrine\DBAL\Connection;
+use Event\ProcessLinksEvent;
 use Model\Neo4j\Neo4jException;
-use Model\User\SocialNetwork\SocialProfileManager;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 use PhpAmqpLib\Channel\AMQPChannel;
-use PhpAmqpLib\Message\AMQPMessage;
-use Symfony\Component\EventDispatcher\EventDispatcher;
+use Psr\Log\LoggerInterface;
+use Service\AMQPManager;
+use Service\EventDispatcher;
 
-/**
- * Class LinkProcessorWorker
- * @package Worker
- */
 class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterface
 {
-
-    /**
-     * @var AMQPChannel
-     */
-    protected $channel;
-
+    protected $queue = AMQPManager::CHANNEL;
     /**
      * @var FetcherService
      */
     protected $fetcherService;
 
     /**
+     * @var ProcessorService
+     */
+    protected $processorService;
+
+    /**
      * @var Connection
      */
     protected $connectionBrain;
 
-    /**
-     * @var GetOldTweets
-     */
-    protected $getOldTweets;
-    protected $socialProfileManager;
-    protected $tokensModel;
-
-    public function __construct(AMQPChannel $channel,
-                                EventDispatcher $dispatcher,
-                                FetcherService $fetcherService,
-                                GetOldTweets $getOldTweets,
-                                SocialProfileManager $socialProfileManager,
-                                TokensModel $tokensModel,
-                                Connection $connectionBrain)
-    {
-
-        $this->channel = $channel;
-        $this->dispatcher = $dispatcher;
+    public function __construct(
+        AMQPChannel $channel,
+        EventDispatcher $dispatcher,
+        FetcherService $fetcherService,
+        ProcessorService $processorService,
+        Connection $connectionBrain
+    ) {
+        parent::__construct($dispatcher, $channel);
         $this->fetcherService = $fetcherService;
-        $this->getOldTweets = $getOldTweets;
-        $this->socialProfileManager = $socialProfileManager;
-        $this->tokensModel = $tokensModel;
+        $this->processorService = $processorService;
         $this->connectionBrain = $connectionBrain;
     }
 
-    /**
-     * { @inheritdoc }
-     */
-    public function consume()
+    public function setLogger(LoggerInterface $logger)
     {
-
-        $exchangeName = 'brain.topic';
-        $exchangeType = 'topic';
-        $topic = 'brain.channel.*';
-        $queueName = 'brain.channel';
-
-        $this->channel->exchange_declare($exchangeName, $exchangeType, false, true, false);
-        $this->channel->queue_declare($queueName, false, true, false, false);
-        $this->channel->queue_bind($queueName, $exchangeName, $topic);
-        $this->channel->basic_qos(null, 1, null);
-        $this->channel->basic_consume($queueName, '', false, false, false, false, array($this, 'callback'));
-
-        while (count($this->channel->callbacks)) {
-            $this->channel->wait();
-        }
-
+        parent::setLogger($logger);
+        $this->fetcherService->setLogger($logger);
+        $this->processorService->setLogger($logger);
     }
 
     /**
      * { @inheritdoc }
      */
-    public function callback(AMQPMessage $message)
+    public function callback(array $data, $trigger)
     {
-
         if ($this->connectionBrain->ping() === false) {
             $this->connectionBrain->close();
             $this->connectionBrain->connect();
         }
 
+        try {
 
-        try{
-            $data = json_decode($message->body, true);
-
-            if (!isset($data['userId'])){
-                throw new \Exception('Enqueued message does not include userId parameter');
-            }
-            $userId = $data['userId'];
-
-            if (!isset($data['resourceOwner'])){
+            if (!isset($data['resourceOwner'])) {
                 throw new \Exception('Enqueued message does not include resourceOwner parameter');
             }
             $resourceOwner = $data['resourceOwner'];
 
-            switch($resourceOwner){
+            switch ($resourceOwner) {
                 case TokensModel::TWITTER:
 
-//                    if (!isset($data['username'])){
-//                        throw new \Exception('Enqueued message does not include  username parameter');
-//                    }
-//                    $username = $data['username'];
-//                    $this->logger->info(sprintf('Using GetOldTweets to fetch from %s', $username));
-                    $exclude = array('twitter_following', 'twitter_favorites');
-                    $socialProfiles = $this->socialProfileManager->getSocialProfiles($userId, $resourceOwner);
-                    foreach ($socialProfiles as $socialProfile){
-                        $this->logger->info(sprintf('Fetching from user %d', $socialProfile->getUserId()));
-                        $token = $this->tokensModel->buildFromSocialProfile($socialProfile);
-                        $token['public'] = true;
-                        $this->fetcherService->fetch($token, $exclude);
-                    }
+                    $userId = $this->getUserId($data);
+                    $links = $this->fetchChannelTwitter($data);
+                    $this->dispatcher->dispatch(\AppEvents::PROCESS_START, new ProcessLinksEvent($userId, $resourceOwner, $links));
+                    $this->processorService->process($links, $userId);
+                    $this->dispatcher->dispatch(\AppEvents::PROCESS_FINISH, new ProcessLinksEvent($userId, $resourceOwner, $links));
 
-//                    $links = $this->getOldTweets->fetchFromUser($username);
-//                    $this->logger->info(sprintf('Total %d links fetched from tweets from %s',count($links), $username));
                     break;
                 default:
                     throw new \Exception('Resource %s not supported in this queue', $resourceOwner);
             }
-//            $this->logger->info(sprintf('Start processing %d links for user %d', count($links), $userId));
-
-//            $preprocessedLinks = array();
-//            foreach ($links as $link)
-//            {
-//                $preprocessedLink = new PreprocessedLink($link['url']);
-//                $preprocessedLink->setLink($link);
-//                $preprocessedLink->setSource($resourceOwner);
-//                $preprocessedLinks[] = $preprocessedLink;
-//            }
-//
-//            $processedLinks = $this->fetcherService->processLinks($preprocessedLinks, $userId);
-//
-//            $this->logger->info(sprintf('Processed %d links for user %d', count($processedLinks), $userId));
 
         } catch (\Exception $e) {
             $this->logger->error(sprintf('Worker: Error fetching for channel with message %s on file %s, line %d', $e->getMessage(), $e->getFile(), $e->getLine()));
@@ -154,12 +89,33 @@ class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterfa
             }
             $this->dispatchError($e, 'Channel fetching');
         }
-
-        /** @var AMQPChannel $channel */
-        $channel = $message->delivery_info['channel'];
-        $channel->basic_ack($message->delivery_info['delivery_tag']);
-
-        $this->memory();
     }
 
+    private function getUserId($data)
+    {
+        if (!isset($data['userId'])) {
+            throw new \Exception('Enqueued message does not include userId parameter');
+        }
+
+        return $data['userId'];
+    }
+
+    private function fetchChannelTwitter(array $data)
+    {
+        $userId = $this->getUserId($data);
+        $this->logger->info(sprintf('Fetching from user %d', $userId));
+
+        $links = $this->fetchTwitterAPI($userId);
+
+        return $links;
+    }
+
+    private function fetchTwitterAPI($userId)
+    {
+        $resourceOwner = TokensModel::TWITTER;
+
+        $exclude = array('twitter_following', 'twitter_favorites');
+
+        return $this->fetcherService->fetchAsClient($userId, $resourceOwner, $exclude);
+    }
 }

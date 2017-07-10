@@ -2,17 +2,13 @@
 
 namespace Controller;
 
-use Model\LinkModel;
+use Model\Link\LinkModel;
 use Model\User\RateModel;
 use Manager\UserManager;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 
-/**
- * Class FetchController
- *
- * @package Controller
- */
+
 class FetchController
 {
 
@@ -36,13 +32,10 @@ class FetchController
                 $link = $linkModel->findLinkByUrl($data['url']);
             }
 
-            $link['resource'] = $data['resource'];
-            $link['timestamp'] = $data['timestamp'];
-
             if (isset($data['userId'])) {
                 /* @var $rateModel RateModel */
                 $rateModel = $app['users.rate.model'];
-                $rateModel->userRateLink($data['userId'], $link, RateModel::LIKE);
+                $rateModel->userRateLink($data['userId'], $link['id'], $data['resource'], $data['timestamp'], RateModel::LIKE);
             }
 
         } catch (\Exception $e) {

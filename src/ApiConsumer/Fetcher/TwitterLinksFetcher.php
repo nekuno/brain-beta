@@ -6,14 +6,16 @@ class TwitterLinksFetcher extends AbstractTweetsFetcher
 {
     protected $url = 'statuses/user_timeline.json';
 
-    protected function getQuery()
+    protected function getQuery($paginationId = null)
     {
-        return array(
-            'count' => $this->pageLength,
-            'trim_user' => 'true',
-            'exclude_replies' => 'false',
-            'contributor_details' => 'false',
-            'include_rts' => 'true',
+        return array_merge(
+            parent::getQuery($paginationId),
+            array(
+                'count' => $this->pageLength,
+                'exclude_replies' => 'false',
+                'contributor_details' => 'false',
+                'include_rts' => 'true',
+            )
         );
     }
 }

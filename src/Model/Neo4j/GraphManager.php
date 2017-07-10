@@ -8,9 +8,7 @@ use Everyman\Neo4j\Node;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 
-/**
- * @author Juan Luis Martínez <juanlu@comakai.com>
- */
+
 class GraphManager implements LoggerAwareInterface
 {
     /**
@@ -83,7 +81,18 @@ class GraphManager implements LoggerAwareInterface
         }
 
         return $return;
+    }
 
+    public function hasLabelName(Node $node, $name)
+    {
+        /** @var Label[] $labels */
+        $labels = $node->getLabels();
+        $labels = array_filter($labels, function($label) use ($name) {
+            /** @var $label Label */
+            return $label->getName() == $name;
+        });
+
+        return !empty($labels);
     }
 
     /** Copies every relationship and property from node 1 to node 2 and deletes node 1
@@ -94,7 +103,6 @@ class GraphManager implements LoggerAwareInterface
      */
     public function fuseNodes($id1, $id2)
     {
-
         $id1 = (integer)$id1;
         $id2 = (integer)$id2;
 
@@ -109,7 +117,9 @@ class GraphManager implements LoggerAwareInterface
         $qb->match(('(n1)'))
             ->where('id(n1)={id1}')
             ->optionalMatch('(n1)-[r1]->()')
+            ->with('n1', 'r1')
             ->optionalMatch(('(n1)<-[r2]-()'))
+            ->with('n1', 'r1', 'r2')
             ->delete('r1,r2,n1')
             ->returns('count(r1)+count(r2) as amount');
         $qb->setParameter('id1', $id1);
@@ -124,7 +134,6 @@ class GraphManager implements LoggerAwareInterface
 
     protected function copyRelationships($id1, $id2, $mode = 'outgoing')
     {
-
         //get relationships
         $qb = $this->createQueryBuilder();
         if ($mode == 'outgoing') {
@@ -174,7 +183,7 @@ class GraphManager implements LoggerAwareInterface
     private function copyProperties($id1, $id2)
     {
         //TODO: Improve code placement of unique node properties
-        $unique = array('qnoow_id', 'twitterID', 'googleID', 'facebookID', 'spotifyID', 'usernameCanonical', 'emailCanonical');
+        $unique = array('qnoow_id', 'usernameCanonical', 'emailCanonical', 'slug');
 
         //get properties
         $qb = $this->createQueryBuilder();
@@ -213,10 +222,8 @@ class GraphManager implements LoggerAwareInterface
         $sets = array();
 
         foreach ($properties as $key => $value) {
-
-            $value = $this->manageAttribute($value);
-
-            $sets[] = 'n.' . $key . ' = ' . $value;
+            $sets[] = 'n.' . $key . " = { $key }";
+            $qb->setParameter($key, $value);
         }
         $qb->set($sets);
 
@@ -265,14 +272,13 @@ class GraphManager implements LoggerAwareInterface
 
     private function manageAttribute($value = null)
     {
-
         if (is_string($value)) {
             $value = '"' . addslashes($value) . '"';
         } else if ($value == true || is_int($value)) {
 
         } else if (empty($value) && $value !== 0) {
             $value = 0;
-        };
+        }
 
         return $value;
     }

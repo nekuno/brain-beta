@@ -1,22 +1,37 @@
 <?php
 
 namespace ApiConsumer\LinkProcessor\Processor;
-use ApiConsumer\LinkProcessor\PreprocessedLink;
-use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
 
-/**
- * @author Juan Luis Martínez <juanlu@comakai.com>
- */
+use ApiConsumer\Exception\CannotProcessException;
+use ApiConsumer\Exception\UrlChangedException;
+use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\SynonymousParameters;
+use ApiConsumer\ResourceOwner\AbstractResourceOwnerTrait;
+use Symfony\Component\DomCrawler\Crawler;
+
 interface ProcessorInterface
 {
-    /**
-     * @param $link PreprocessedLink
-     * @return array|false Returns the processed link as array or false if the processor can not process the link
-     */
-    public function process(PreprocessedLink $link);
+    /** @return AbstractResourceOwnerTrait */
+    public function getResourceOwner();
 
     /**
-     * @return UrlParser
+     * @param PreprocessedLink $preprocessedLink
+     * @return array|Crawler
+     * @throws CannotProcessException|UrlChangedException
      */
-    public function getParser();
+    public function getResponse(PreprocessedLink $preprocessedLink);
+
+    public function hydrateLink(PreprocessedLink $preprocessedLink, array $data);
+
+    public function addTags(PreprocessedLink $preprocessedLink, array $data);
+
+    public function getSynonymousParameters(PreprocessedLink $preprocessedLink, array $data);
+
+    /**
+     * @param PreprocessedLink $preprocessedLink
+     * @param array $data
+     * @return array of image urls
+     */
+    public function getImages(PreprocessedLink $preprocessedLink, array $data);
+
 } 

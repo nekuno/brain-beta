@@ -3,6 +3,8 @@
 namespace ApiConsumer\Fetcher;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use Model\Link\Link;
+use Model\User\Token\Token;
 
 class SpotifyFetcher extends BasicPaginationFetcher
 {
@@ -25,27 +27,28 @@ class SpotifyFetcher extends BasicPaginationFetcher
     /**
      * { @inheritdoc }
      */
-    public function fetchLinksFromUserFeed($user, $public)
+    public function fetchLinksFromUserFeed(Token $token)
     {
-        $this->user = $user;
-        $this->rawFeed = array();
+        $this->setUpToken($token);
 
-        $this->url .= 'users/' . $user['spotifyID'] . '/playlists/';
+        $spotifyId = $token->getResourceId();
+
+        $this->url .= 'users/' . $spotifyId . '/playlists/';
 
         try {
             $this->setQuery(array('limit' => $this::MAX_PLAYLISTS_PER_USER));
-            $playlists = $this->getLinksByPage($public);
+            $playlists = $this->getLinksByPage();
             $this->rawFeed = array();
 
             if (isset($playlists)) {
                 foreach ($playlists as $playlist) {
-                    if ($playlist['owner']['id'] == $user['spotifyID']) {
+                    if ($playlist['owner']['id'] == $spotifyId) {
 
-                        $this->url = 'users/' . $user['spotifyID'] . '/playlists/' . $playlist['id'] . '/tracks';
+                        $this->url = 'users/' . $spotifyId . '/playlists/' . $playlist['id'] . '/tracks';
 
                         try {
                             $this->setQuery(array('limit' => $this::MAX_TRACKS_PER_PLAYLIST));
-                            $this->getLinksByPage($public);
+                            $this->getLinksByPage();
 
                         } catch (\Exception $e) {
                             continue;
@@ -54,15 +57,15 @@ class SpotifyFetcher extends BasicPaginationFetcher
                 }
             }
 
-            $this->url = 'users/' . $user['spotifyID'] . '/starred/tracks';
+            $this->url = 'users/' . $spotifyId . '/starred/tracks';
             $this->setQuery(array('limit' => $this::MAX_TRACKS_PER_PLAYLIST));
-            $this->getLinksByPage($public);
+            $this->getLinksByPage();
 
             $parsed = $this->parseLinks($this->rawFeed);
 
             $links = array();
             foreach ($parsed as $parsedLink){
-                $links[$parsedLink->getFetched()] = $parsedLink;
+                $links[$parsedLink->getUrl()] = $parsedLink;
             }
 
         } catch (\Exception $e) {
@@ -81,6 +84,7 @@ class SpotifyFetcher extends BasicPaginationFetcher
 
         foreach ($response as $item) {
             if (isset($item['track']) && null !== $item['track']['id']) {
+                $link = array();
                 $link['url'] = $item['track']['external_urls']['spotify'];
                 $link['title'] = $item['track']['name'];
 
@@ -98,12 +102,11 @@ class SpotifyFetcher extends BasicPaginationFetcher
                 $preprocessedLink = new PreprocessedLink($link['url']);
 
                 $link['description'] = $item['track']['album']['name'] . ' : ' . implode(', ', $artistList);
-                $link['resourceItemId'] = $item['track']['id'];
                 $link['timestamp'] = $timestamp;
 
-                $link['resource'] = $this->resourceOwner->getName();
-
-                $preprocessedLink->setLink($link);
+                $preprocessedLink->setFirstLink(Link::buildFromArray($link));
+                $preprocessedLink->setResourceItemId($item['track']['id']);
+                $preprocessedLink->setSource($this->resourceOwner->getName());
 
                 $parsed[] = $preprocessedLink;
             }
@@ -112,12 +115,10 @@ class SpotifyFetcher extends BasicPaginationFetcher
         return $parsed;
     }
 
-    /**
-     * @return array
-     */
-    public function getQuery()
+    public function getQuery($paginationId = null)
     {
-        return $this->query;
+        $parentQuery = parent::getQuery($paginationId);
+        return array_merge($parentQuery, $this->query);
     }
 
     /**

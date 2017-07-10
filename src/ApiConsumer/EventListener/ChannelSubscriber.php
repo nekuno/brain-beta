@@ -5,20 +5,11 @@ namespace ApiConsumer\EventListener;
 
 use ApiConsumer\Event\ChannelEvent;
 use Service\UserAggregator;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-/**
- * Class ChannelSubscriber
- * @package ApiConsumer\EventListener
- */
+
 class ChannelSubscriber implements EventSubscriberInterface
 {
-
-    /**
-     * @var OutputInterface
-     */
-    protected $output;
 
     protected $userAggregator;
 
@@ -39,7 +30,6 @@ class ChannelSubscriber implements EventSubscriberInterface
 
     public function onChannelAdded(ChannelEvent $event)
     {
-
         $resourceOwner = $event->getResourceOwner();
         $username = $event->getUsername();
 

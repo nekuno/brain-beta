@@ -4,13 +4,12 @@ namespace Console\Command;
 
 use ApiConsumer\EventListener\FetchLinksInstantSubscriber;
 use ApiConsumer\EventListener\FetchLinksSubscriber;
+use ApiConsumer\EventListener\OAuthTokenSubscriber;
 use ApiConsumer\Fetcher\FetcherService;
+use ApiConsumer\Fetcher\ProcessorService;
 use Console\ApplicationAwareCommand;
-use Model\User\LookUpModel;
-use Model\User\SocialNetwork\SocialProfileManager;
-use Model\User\TokensModel;
+use Event\ProcessLinksEvent;
 use Psr\Log\LogLevel;
-use Silex\Application;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Logger\ConsoleLogger;
@@ -40,12 +39,6 @@ class LinksFetchCommand extends ApplicationAwareCommand
                         InputOption::VALUE_OPTIONAL,
                         'ID of the user to fetch links from'
                     ),
-                    new InputOption(
-                        'public',
-                        null,
-                        InputOption::VALUE_NONE,
-                        'Fetch as Nekuno instead of as the user'
-                    ),
                 )
             );
     }
@@ -55,7 +48,6 @@ class LinksFetchCommand extends ApplicationAwareCommand
 
         $resource = $input->getOption('resource');
         $userId = $input->getOption('user');
-        $public = $input->getOption('public');
 
         if (null === $resource && null === $userId) {
             throw new MissingOptionsException ("You must provide the user or the resource to fetch links from", array("resource", "user"));
@@ -72,54 +64,47 @@ class LinksFetchCommand extends ApplicationAwareCommand
             }
         }
 
-        /* @var $tokensModel TokensModel */
-        $tokensModel = $this->app['users.tokens.model'];
-
-        if (!$public) {
-
-            $tokens = $tokensModel->getByUserOrResource($userId, $resource);
-        } else {
-            /* @var $socialProfileManager SocialProfileManager */
-            $socialProfileManager = $this->app['users.socialprofile.manager'];
-
-            $profiles = $socialProfileManager->getSocialProfiles($userId, $resource, false);
-            $tokens = array();
-            foreach ($profiles as $profile)
-            {
-                $tokens[] = $tokensModel->buildFromSocialProfile($profile);
-            }
-        }
-
-        /* @var FetcherService $fetcher */
-        $fetcher = $this->app['api_consumer.fetcher'];
+        /* @var FetcherService $fetcherService */
+        $fetcherService = $this->app['api_consumer.fetcher'];
+        /* @var ProcessorService $processorService */
+        $processorService = $this->app['api_consumer.processor'];
 
         $logger = new ConsoleLogger($output, array(LogLevel::NOTICE => OutputInterface::VERBOSITY_NORMAL));
-        $fetcher->setLogger($logger);
+        $fetcherService->setLogger($logger);
+        $processorService->setLogger($logger);
 
-        $fetchLinksSubscriber = new FetchLinksSubscriber($output);
-        $fetchLinksInstantSubscriber = new FetchLinksInstantSubscriber($this->app['guzzle.client'], $this->app['instant.host']);
-        $dispatcher = $this->app['dispatcher'];
-        /* @var $dispatcher EventDispatcher */
-        $dispatcher->addSubscriber($fetchLinksSubscriber);
-        $dispatcher->addSubscriber($fetchLinksInstantSubscriber);
+        $dispatcher = $this->setUpSubscribers($output);
 
-        foreach ($tokens as $token) {
             try {
-                $token['public'] = $public;
-                $fetcher->fetch( $token);
+                $links = $fetcherService->fetchUser($userId, $resource);
+                $dispatcher->dispatch(\AppEvents::PROCESS_START, new ProcessLinksEvent($userId, $resource, $links));
+                $processorService->process($links, $userId);
+                $dispatcher->dispatch(\AppEvents::PROCESS_FINISH, new ProcessLinksEvent($userId, $resource, $links));
 
             } catch (\Exception $e) {
                 $output->writeln(
                     sprintf(
                         'Error fetching links for user %d with message: %s',
-                        $token['id'],
+                        $userId,
                         $e->getMessage()
                     )
                 );
-                continue;
             }
-        }
 
         $output->writeln('Success!');
+    }
+
+    private function setUpSubscribers(OutputInterface $output)
+    {
+        $fetchLinksSubscriber = new FetchLinksSubscriber($output);
+        $fetchLinksInstantSubscriber = new FetchLinksInstantSubscriber($this->app['instant.client'], $this->app['device.service']);
+        $oauthTokenSubscriber = new OAuthTokenSubscriber($this->app['users.tokens.model'], $this->app['mailer'], $this->app['logger'], $this->app['amqp']);
+        $dispatcher = $this->app['dispatcher.service'];
+        /* @var $dispatcher EventDispatcher */
+        $dispatcher->addSubscriber($fetchLinksSubscriber);
+        $dispatcher->addSubscriber($fetchLinksInstantSubscriber);
+        $dispatcher->addSubscriber($oauthTokenSubscriber);
+
+        return $dispatcher;
     }
 }

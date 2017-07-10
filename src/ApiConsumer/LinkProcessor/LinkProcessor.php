@@ -2,275 +2,173 @@
 
 namespace ApiConsumer\LinkProcessor;
 
-use ApiConsumer\LinkProcessor\Processor\FacebookProcessor;
+use ApiConsumer\Factory\ProcessorFactory;
+use ApiConsumer\Images\ImageAnalyzer;
+use ApiConsumer\LinkProcessor\Processor\BatchProcessorInterface;
 use ApiConsumer\LinkProcessor\Processor\ProcessorInterface;
-use ApiConsumer\LinkProcessor\Processor\ScraperProcessor;
-use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor;
-use ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
-use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor;
-use GuzzleHttp\Exception\RequestException;
-use Model\LinkModel;
+use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
+use Model\Link\Link;
+use Model\User\Token\Token;
+use Model\User\Token\TokensModel;
 
 class LinkProcessor
 {
+    private $processorFactory;
+    private $imageAnalyzer;
+    private $tokensModel;
+    private $batch = array();
 
-    /**
-     * @var LinkResolver
-     */
-    protected $resolver;
-
-    /**
-     * @var LinkAnalyzer
-     */
-    protected $analyzer;
-
-    /**
-     * @var LinkModel
-     */
-    protected $linkModel;
-
-    /**
-     * @var ScraperProcessor
-     */
-    protected $scrapperProcessor;
-
-    /**
-     * @var YoutubeProcessor
-     */
-    protected $youtubeProcessor;
-
-    /**
-     * @var SpotifyProcessor
-     */
-    protected $spotifyProcessor;
-
-    /**
-     * @var FacebookProcessor
-     */
-    protected $facebookProcessor;
-
-    /**
-     * @var TwitterProcessor
-     */
-    protected $twitterProcessor;
-
-    public function __construct(
-        LinkResolver $linkResolver,
-        LinkAnalyzer $linkAnalyzer,
-        LinkModel $linkModel,
-        ScraperProcessor $scrapperProcessor,
-        YoutubeProcessor $youtubeProcessor,
-        SpotifyProcessor $spotifyProcessor,
-        FacebookProcessor $facebookProcessor,
-        TwitterProcessor $twitterProcessor
-    )
+    public function __construct(ProcessorFactory $processorFactory, ImageAnalyzer $imageAnalyzer, TokensModel $tokensModel)
     {
-
-        $this->resolver = $linkResolver;
-        $this->analyzer = $linkAnalyzer;
-        $this->linkModel = $linkModel;
-        $this->scrapperProcessor = $scrapperProcessor;
-        $this->youtubeProcessor = $youtubeProcessor;
-        $this->spotifyProcessor = $spotifyProcessor;
-        $this->facebookProcessor = $facebookProcessor;
-        $this->twitterProcessor = $twitterProcessor;
+        $this->processorFactory = $processorFactory;
+        $this->imageAnalyzer = $imageAnalyzer;
+        $this->tokensModel = $tokensModel;
     }
 
-    /**
-     * @param PreprocessedLink $preprocessedLink
-     * @param bool $reprocess
-     * @return array
-     */
-    public function process($preprocessedLink, $reprocess = false)
+    public function scrape(PreprocessedLink $preprocessedLink)
     {
-        $processings = 0;
+        $scrapper = $this->processorFactory->getScrapperProcessor();
 
-        do {
-            $preprocessedLink->setCanonical(null);
+        $this->executeProcessing($preprocessedLink, $scrapper);
 
-            if (!$reprocess && $this->isLinkProcessed($preprocessedLink)) {
-                $link = $preprocessedLink->getLink();
-                $link['url'] = $preprocessedLink->getFetched();
-                return $link;
-            }
+        $this->checkSecureSites($preprocessedLink);
 
-            //sets canonical url
-            if ($this->mustResolve($preprocessedLink)) {
-                $preprocessedLink = $this->resolver->resolve($preprocessedLink);
-            } else {
-                $preprocessedLink->setCanonical($preprocessedLink->getFetched());
-            }
-
-            if (!$this->isProcessable($preprocessedLink)) {
-                $link = $preprocessedLink->getLink();
-                $link['processed'] = 0;
-                $link['url'] = $this->cleanURL($preprocessedLink->getFetched());
-                return $link;
-            }
-
-            $cleanURL = $this->cleanURL($preprocessedLink->getCanonical());
-            $preprocessedLink->setCanonical($cleanURL);
-
-            if (!$reprocess && $this->isLinkProcessed($preprocessedLink)) {
-                $link = $preprocessedLink->getLink();
-                $link['url'] = $preprocessedLink->getCanonical();
-                return $link;
-            }
-
-            try {
-
-                $processor = $this->selectProcessor($preprocessedLink->getCanonical());
-                $link = $processor->process($preprocessedLink);
-                $processings++;
-
-            } catch (RequestException $e) {
-
-                $link = $preprocessedLink->getLink();
-                $link['processed'] = 0;
-                return $link;
-            }
-
-            $preprocessedLink->setFetched($preprocessedLink->getCanonical());
-
-        } while ($preprocessedLink->getCanonical() !== $cleanURL && $processings < 10);
-
-        if (!isset($link['url'])) {
-            $link = $this->scrapperProcessor->process($preprocessedLink);
-            $link['url'] = $preprocessedLink->getCanonical();
-        }
-
-        if (isset($link['thumbnail'])){
-            $link['thumbnail'] = $this->sanitizeImage($link['thumbnail']);
-        }
-
-        return $link;
+        return $preprocessedLink->getLinks();
     }
 
-    /**
-     * @param $link PreprocessedLink
-     * @return bool
-     */
-    private function isLinkProcessed(PreprocessedLink $link)
+    private function checkSecureSites(PreprocessedLink $preprocessedLink)
     {
+        $fb_security_titles = array('Vérification de sécurité', 'Security Check', 'Security Check Required', 'Control de seguridad');
+        $fb_types = array(FacebookUrlParser::FACEBOOK_PAGE, FacebookUrlParser::FACEBOOK_PROFILE);
+        foreach ($preprocessedLink->getLinks() as $link) {
+            if (in_array($preprocessedLink->getType(), $fb_types) && in_array($link->getTitle(), $fb_security_titles)) {
+                $link->setProcessed(false);
+            }
+        }
+    }
 
-        $linkArray = $link->getLink();
+    public function process(PreprocessedLink $preprocessedLink)
+    {
+        $processor = $this->selectProcessor($preprocessedLink);
 
-        if (isset($linkArray['processed']) && $linkArray['processed'] == 1) {
+        if (null != $processor->getResourceOwner() && !$processor->getResourceOwner()->canRequestAsClient()){
+            $this->fixToken($preprocessedLink);
+        }
+
+        if ($processor instanceof BatchProcessorInterface) {
+            $links = $this->executeBatchProcessing($preprocessedLink, $processor);
+        } else {
+            $this->executeProcessing($preprocessedLink, $processor);
+
+            if (!$preprocessedLink->getFirstLink()->isComplete()) {
+                $this->scrape($preprocessedLink);
+            }
+            $links = $preprocessedLink->getLinks();
+        }
+
+        return $links;
+    }
+
+    protected function fixToken(PreprocessedLink $preprocessedLink)
+    {
+        if (!$this->needsToken($preprocessedLink)) {
+            return;
+        }
+
+        $bestToken = $this->findBestToken($preprocessedLink);
+
+        if (!empty($bestToken)) {
+            $preprocessedLink->setToken($bestToken);
+        }
+    }
+
+    protected function needsToken(PreprocessedLink $preprocessedLink)
+    {
+        $hasToken = null != $preprocessedLink->getToken() && $preprocessedLink->getToken() instanceof Token;
+
+        if (!$hasToken) {
             return true;
         }
 
-        try {
-            $toAnalyze = $link->getCanonical() ?: $link->getFetched();
-            $storedLink = $this->linkModel->findLinkByUrl($toAnalyze);
-            if ($storedLink && isset($storedLink['processed']) && $storedLink['processed'] == '1') {
-                return true;
-            }
+        $resource = LinkAnalyzer::getResource($preprocessedLink->getUrl());
+        $isCorrectToken = $preprocessedLink->getToken()->getResourceOwner() == $resource;
 
-        } catch (\Exception $e) {
-            return false;
-        }
-
-        return false;
+        return !$isCorrectToken;
     }
 
-    private function isProcessable(PreprocessedLink $link)
+    protected function findBestToken(PreprocessedLink $preprocessedLink)
     {
-        if (count($link->getExceptions()) > 0) {
-            //TODO: Log exceptions
-            return false;
+        $resource = LinkAnalyzer::getResource($preprocessedLink->getUrl());
+
+        $token = $this->tokensModel->getByLikedUrl($preprocessedLink->getUrl(), $resource);
+
+        if (null !== $token) {
+            return $token;
         }
 
-        if (null != $link->getStatusCode() && ($link->getStatusCode() > 400)) {
-            return false;
-        }
+        $token = $this->tokensModel->getOneByResource($resource);
 
-        if (null == $link->getCanonical()) {
-            return false;
-        }
-
-        return true;
+        return $token;
     }
 
     /**
-     *
-     * @param PreprocessedLink $preprocessedLink
-     * @return bool
+     * @return Link[]
      */
-    private function mustResolve(PreprocessedLink $preprocessedLink)
+    public function processLastLinks()
     {
-        $processorName = $this->analyzer->getProcessorName($preprocessedLink->getFetched());
-        if ($processorName == LinkAnalyzer::SPOTIFY){
-            return false;
+        $links = array();
+        foreach ($this->batch as $name => $batch) {
+            /** @var BatchProcessorInterface $processor */
+            $processor = $this->processorFactory->build($name);
+            $links = array_merge($links, $processor->requestBatchLinks($batch));
         }
 
-        return true;
+        return $links;
     }
 
-    public function cleanURL($url)
+    protected function selectProcessor(PreprocessedLink $preprocessedLink)
     {
-        $processor = $this->selectProcessor($url);
+        $processorName = LinkAnalyzer::getProcessorName($preprocessedLink);
 
-        return $processor->getParser()->cleanURL($url);
+        return $this->processorFactory->build($processorName);
     }
 
-    /**
-     * @param $url string
-     * @return ProcessorInterface
-     */
-    private function selectProcessor($url)
+    protected function getThumbnail(PreprocessedLink $preprocessedLink, ProcessorInterface $processor, array $response)
     {
-        $processorName = $this->analyzer->getProcessorName($url);
+        $images = $processor->getImages($preprocessedLink, $response);
 
-        switch ($processorName) {
-            case LinkAnalyzer::YOUTUBE:
-                $processor = $this->youtubeProcessor;
-                break;
-            case LinkAnalyzer::SPOTIFY:
-                $processor = $this->spotifyProcessor;
-                break;
-            case LinkAnalyzer::FACEBOOK:
-                $processor = $this->facebookProcessor;
-                break;
-            case LinkAnalyzer::TWITTER:
-                $processor = $this->twitterProcessor;
-                break;
-            case LinkAnalyzer::SCRAPPER:
-            default:
-                $processor = $this->scrapperProcessor;
-                break;
+        return $this->imageAnalyzer->selectImage($images);
+    }
+
+    protected function executeProcessing(PreprocessedLink $preprocessedLink, ProcessorInterface $processor)
+    {
+        $preprocessedLink->getFirstLink()->setUrl($preprocessedLink->getUrl());
+
+        $response = $processor->getResponse($preprocessedLink);
+
+        $processor->hydrateLink($preprocessedLink, $response);
+        $processor->addTags($preprocessedLink, $response);
+        $processor->getSynonymousParameters($preprocessedLink, $response);
+
+        if (!$preprocessedLink->getFirstLink()->getThumbnail()) {
+            $image = $this->getThumbnail($preprocessedLink, $processor, $response);
+            $preprocessedLink->getFirstLink()->setThumbnail($image);
+        }
+    }
+
+    protected function executeBatchProcessing(PreprocessedLink $preprocessedLink, BatchProcessorInterface $processor)
+    {
+        $processorName = LinkAnalyzer::getProcessorName($preprocessedLink);
+
+        $this->batch[$processorName] = isset($this->batch[$processorName]) ? $this->batch[$processorName] : array();
+        $this->batch[$processorName][] = $preprocessedLink;
+
+        $links = array();
+        if ($processor->needToRequest($this->batch[$processorName])) {
+            $links = $processor->requestBatchLinks($this->batch[$processorName]);
+            $this->batch[$processorName] = array();
         }
 
-        return $processor;
+        return $links;
     }
-
-    private function sanitizeImage($url)
-    {
-        $url = $this->cleanURL($url);
-        $processorName = $this->analyzer->getProcessorName($url);
-        try{
-            switch ($processorName) {
-                case LinkAnalyzer::YOUTUBE:
-                    $isCorrectResponse = $this->youtubeProcessor->isCorrectResponse($url);
-                    break;
-                case LinkAnalyzer::SPOTIFY:
-                    $isCorrectResponse = $this->spotifyProcessor->isCorrectResponse($url);
-                    break;
-                case LinkAnalyzer::FACEBOOK:
-                    $isCorrectResponse = $this->facebookProcessor->isCorrectResponse($url);
-                    break;
-                case LinkAnalyzer::TWITTER:
-                    $isCorrectResponse = $this->twitterProcessor->isCorrectResponse($url);
-                    break;
-                case LinkAnalyzer::SCRAPPER:
-                default:
-                    $isCorrectResponse = $this->scrapperProcessor->isCorrectResponse($url);
-                    break;
-            }
-        } catch (\Exception $e) {
-            $isCorrectResponse = false;
-        }
-
-        return $isCorrectResponse ? $url : null;
-    }
-
 }

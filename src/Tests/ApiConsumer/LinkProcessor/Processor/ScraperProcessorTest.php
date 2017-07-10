@@ -1,153 +1,122 @@
 <?php
-/**
- * @author adrian.web.dev@gmail.com
- */
 
 namespace Tests\ApiConsumer\LinkProcessor\Processor;
 
-use ApiConsumer\LinkProcessor\Processor\ScraperProcessor;
+use ApiConsumer\Exception\UrlNotValidException;
+use ApiConsumer\Factory\GoutteClientFactory;
+use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\ScraperProcessor\ScraperProcessor;
+use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
 
-/**
- * Class ScraperProcessorTest
- * @package Tests\ApiConsumer\LinkProcessor\Processor
- */
-class ScraperProcessorTest extends \PHPUnit_Framework_TestCase
+
+class ScraperProcessorTest extends AbstractProcessorTest
 {
+    /**
+     * @var UrlParser
+     */
+    protected $parser;
 
     /**
-     * @dataProvider getProcessData
+     * @var ScraperProcessor
      */
-    public function testProcess($expected, $metadata, $tags, $link)
+    protected $processor;
+
+    public function setUp()
     {
+        $this->parser = new UrlParser();
 
-        $crawler = $this->getMockBuilder('\Symfony\Component\DomCrawler\Crawler')->getMock();
-
-        $crawler->expects($this->any())
-            ->method('filterXPath')
-            ->will($this->returnSelf());
-        $crawler->expects($this->any())
-            ->method('text');
-        $crawler->expects($this->any())
-            ->method('attr');
-        $crawler->expects($this->any())
-            ->method('each');
-
-        $response = $this->getMockBuilder('\Symfony\Component\BrowserKit\Response')->getMock();
-
-        $client = $this->getMockBuilder('\Goutte\Client')->getMock();
-        $client
-            ->expects($this->once())
-            ->method('request')
-            ->will($this->returnValue($crawler));
-        $client
-            ->expects($this->any())
-            ->method('getResponse')
-            ->will($this->returnValue($response));
-
-        $basicMetadataParser = $this->getMockBuilder(
-            '\ApiConsumer\LinkProcessor\MetadataParser\BasicMetadataParser'
-        )->getMock();
-
-        $basicMetadataParser
-            ->expects($this->once())
-            ->method('extractMetadata')
-            ->with($crawler)
-            ->will($this->returnValue($metadata));
-        $basicMetadataParser
-            ->expects($this->once())
-            ->method('extractTags')
-            ->with($crawler)
-            ->will($this->returnValue($tags));
-
-        $fbMetadataParser = $this->getMockBuilder(
-            '\ApiConsumer\LinkProcessor\MetadataParser\FacebookMetadataParser'
-        )->getMock();
-
-        $fbMetadataParser
-            ->expects($this->once())
-            ->method('extractMetadata')
-            ->with($crawler)
-            ->will($this->returnValue($metadata));
-        $fbMetadataParser
-            ->expects($this->once())
-            ->method('extractTags')
-            ->with($crawler)
-            ->will($this->returnValue($tags));
-
-        $scraper = new ScraperProcessor($client, $basicMetadataParser, $fbMetadataParser);
-
-        $actual = $scraper->process($link);
-
-        $this->assertEquals($expected, $actual);
-
+        $goutteClientFactory = new GoutteClientFactory();
+        $this->processor = new ScraperProcessor($goutteClientFactory);
     }
 
-    public function getProcessData()
+    /**
+     * @dataProvider getBadUrls
+     */
+    public function testBadUrlRequestItem($url)
     {
+        $this->setExpectedException(UrlNotValidException::class);
 
+        $this->parser->cleanURL($url);
+    }
+
+    /**
+     * @dataProvider getResponseHydration
+     */
+    public function testHydrateLink($url, $expectedArray)
+    {
+        $url = $this->parser->cleanURL($url);
+        $link = new PreprocessedLink($url);
+        $link->getFirstLink()->setUrl($link->getUrl());
+        $response = $this->processor->getResponse($link);
+        $this->processor->hydrateLink($link, $response);
+        $this->assertEquals($expectedArray, $link->getFirstLink()->toArray(), 'Asserting correct hydrated link for ' . $url);
+    }
+
+    /**
+     * @dataProvider getResponseTags
+     */
+    public function testAddTags($url, $expectedTags)
+    {
+        $link = new PreprocessedLink($url);
+        $response = $this->processor->getResponse($link);
+        $this->processor->addTags($link, $response);
+
+        $tags = $expectedTags;
+        sort($tags);
+        $resultTags = $link->getFirstLink()->getTags();
+        sort($resultTags);
+        $this->assertEquals($tags, $resultTags);
+    }
+
+    public function getBadUrls()
+    {
+        return array(
+            array('this is not an url')
+        );
+    }
+
+    public function getResponseHydration()
+    {
         return array(
             array(
+                $this->getUrl(),
                 array(
-                    'url' => 'http://fake.com',
-                    'title' => 'My title',
-                    'description' => 'My description',
-                    'tags' => array(
-                        array('name' => 'tag1'),
-                        array('name' => 'tag2'),
-                    ),
-                ),
-                array(
-                    'url' => 'http://fake.com',
-                    'title' => '',
-                    'description' => 'My description',
-                ),
-                array(
-                    array('name' => 'tag1'),
-                    array('name' => 'tag2'),
-                ),
-                array(
-                    'url' => 'http://fake.com',
-                    'title' => 'My title',
-                ),
-            ),
-            array(
-                array(
-                    'url' => 'http://fake.com',
-                    'title' => 'My title',
-                    'description' => 'My description',
+                    'title' => '¿De dónde proceden los pelirrojos? - ¡No sabes nada!',
+                    'description' => 'El gen responsable del color rojizo del cabello ya se encontraba en los emigrantes africanos que decidieron explorar el resto del mundo hace 50.000 años.',
+                    'thumbnail' => 'http://d2ruuu7iu87htj.cloudfront.net/uploads/2017/03/02204111/portada-pelirrojos-curiosidades-beqbe.jpg',
+                    'url' => 'http://www.nosabesnada.com/otras-curiosidades/85357/de-donde-proceden-los-pelirrojos',
+                    'id' => null,
                     'tags' => array(),
+                    'created' => null,
+                    'processed' => true,
+                    'language' => 'es',
+                    'synonymous' => array(),
+                    'imageProcessed' => null,
                 ),
-                array(
-                    'url' => 'http://fake.com',
-                    'title' => 'My title',
-                    'description' => 'My description',
-                ),
-                array(),
-                array(
-                    'url' => 'http://fake.com',
-                    'title' => 'My title',
-                    'description' => 'Before description',
-                ),
-            ),
+            )
+        );
+    }
+
+    public function getResponseTags()
+    {
+        return array(
             array(
-                array(
-                    'url' => 'http://fake.com',
-                    'title' => 'Before title',
-                    'description' => 'Before description',
-                    'tags' => array(),
-                ),
-                array(
-                    'url' => null,
-                    'title' => null,
-                    'description' => null,
-                ),
-                array(),
-                array(
-                    'url' => 'http://fake.com',
-                    'title' => 'Before title',
-                    'description' => 'Before description',
-                ),
-            ),
+                $this->getUrl(),
+                $this->getTags(),
+            )
+        );
+    }
+
+    public function getUrl()
+    {
+        return 'http://www.nosabesnada.com/otras-curiosidades/85357/de-donde-proceden-los-pelirrojos/';
+    }
+
+    public function getTags()
+    {
+        return array(
+            array('name' => 'cabello'),
+            array('name' => 'pelirrojos')
         );
     }
 

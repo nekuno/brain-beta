@@ -2,6 +2,8 @@
 
 namespace Model\User\Recommendation;
 
+use Everyman\Neo4j\Query\ResultSet;
+
 class ContentPopularRecommendationPaginatedModel extends AbstractContentPaginatedModel
 {
     /**
@@ -17,62 +19,22 @@ class ContentPopularRecommendationPaginatedModel extends AbstractContentPaginate
         if ((integer)$limit == 0) {
             return array();
         }
-        $return = array('items' => array());
-
-        $types = isset($filters['type']) ? $filters['type'] : array();
-
-        $params = array(
-            'offset' => (integer)$offset,
-            'limit' => (integer)$limit
-        );
-
-        $qb = $this->gm->createQueryBuilder();
-
-        $qb->matchContentByType($types, 'content')
-            ->where('content.processed = 1');
-
-        if (isset($filters['tag'])) {
-            $qb->match('(content)-[:TAGGED]->(filterTag:Tag)')
-                ->where('filterTag.name IN { filterTags } ');
-
-            $params['filterTags'] = $filters['tag'];
-        }
-
-        $qb->optionalMatch("(content)-[:SYNONYMOUS]->(synonymousLink:Link)")
-            ->optionalMatch('(content)-[:TAGGED]->(tag:Tag)')
-            ->returns(
-                'id(content) as id',
-                'content',
-                'collect(distinct tag.name) as tags',
-                'labels(content) as types',
-                'COLLECT (DISTINCT synonymousLink) AS synonymous'
-            )
-            ->orderBy('content.unpopularity ASC')
-            ->skip('{ offset }')
-            ->limit('{ limit }');
-
-        $qb->setParameters($params);
-
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
-
-        $response = $this->buildResponseFromResult($result);
-        $return['items'] = array_merge($return['items'], $response['items']);
-
-        //Works with ContentPaginator (accepts $result), not Paginator (accepts $result['items'])
-        return $response['items'];
+        return array('items' => $this->getContentsByPopularity($filters, $offset, $limit));
     }
 
     /**
      * Popularity = (likes / max_likes)^3 . We reverse that exponent for a sensible output to the user.
      * {@inheritDoc}
      */
-    public function buildResponseFromResult($result, $id = null)
+    public function buildResponseFromResult(ResultSet $result, $id = null, $offset = null)
     {
-        $response = parent::buildResponseFromResult($result, $id);
+        $response = parent::buildResponseFromResult($result, $id, $offset);
 
-        foreach ($response['items'] as &$item){
-            $item['match'] = isset($item['content']) && isset($item['content']['popularity']) ? pow(floatval($item['content']['popularity']), 1/3) : 0;
+        /** @var ContentRecommendation $item */
+        foreach ($response['items'] as $item) {
+            $content = $item->getContent();
+            $match = isset($content['popularity']) ? pow(floatval($content['popularity']), 1 / 3) : 0;
+            $item->setMatch($match);
         }
         return $response;
     }

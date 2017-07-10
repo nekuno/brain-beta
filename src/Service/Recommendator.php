@@ -1,13 +1,9 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: yawmoght
- */
 
 namespace Service;
 
 
-use Model\User\GroupModel;
+use Model\User\Group\GroupModel;
 use Model\User\Recommendation\ContentPopularRecommendationPaginatedModel;
 use Model\User\Recommendation\ContentRecommendationPaginatedModel;
 use Model\User\Recommendation\SocialUserRecommendationPaginatedModel;
@@ -155,9 +151,12 @@ class Recommendator
                     $filters['type'][] = urldecode($type);
                 }
 
-
                 if ($request->get('foreign')) {
                     $filters['foreign'] = urldecode($request->get('foreign'));
+                }
+
+                if ($request->get('ignored')) {
+                    $filters['ignored'] = urldecode($request->get('ignored'));
                 }
 
                 if ($user->isGuest())
@@ -184,6 +183,14 @@ class Recommendator
                     $filters['order'] = $order;
                 }
 
+                if ($request->get('foreign')) {
+                    $filters['foreign'] = urldecode($request->get('foreign'));
+                }
+
+                if ($request->get('ignored')) {
+                    $filters['ignored'] = urldecode($request->get('ignored'));
+                }
+
                 if ($user->isGuest())
                 {
                     return $this->getPopularUserRecommendation($filters, $request);
@@ -208,11 +215,13 @@ class Recommendator
      * @param bool $social Whether the Request comes from Social
      * @return array
      */
-    public function getUserRecommendationFromRequest(Request $request, $id, $social =false)
+    public function getUserRecommendationFromRequest(Request $request, $id, $social = false)
     {
 
         //TODO: Validate
         $order = $request->get('order', false);
+        $ignored = $request->get('ignored', null);
+        $foreign = $request->get('foreign', null);
 
         $filters = array(
             'id' => $id,
@@ -222,6 +231,14 @@ class Recommendator
 
         if ($order) {
             $filters['order'] = $order;
+        }
+
+        if ($foreign) {
+            $filters['foreign'] = urldecode($foreign);
+        }
+
+        if ($ignored) {
+            $filters['ignored'] = urldecode($ignored);
         }
 
         if (!$social && $this->userManager->getById($id)->isGuest()) {
@@ -239,6 +256,7 @@ class Recommendator
         $tag = $request->get('tag', array());
         $type = $request->get('type', array());
         $foreign = $request->get('foreign', null);
+        $ignored = $request->get('ignored', null);
 
         $filters = array('id' => $id);
 
@@ -252,6 +270,10 @@ class Recommendator
 
         if ($foreign) {
             $filters['foreign'] = urldecode($foreign);
+        }
+
+        if ($ignored) {
+            $filters['ignored'] = urldecode($ignored);
         }
 
         return $this->getContentRecommendation($filters, $request);
@@ -277,8 +299,9 @@ class Recommendator
         }
 
         $model = $social ? $this->socialUserRecommendationPaginatedModel : $this->userRecommendationPaginatedModel;
+        $paginator = $social ? $this->paginator : $this->contentPaginator;
 
-        $result = $this->paginator->paginate($filters, $model, $request);
+        $result = $paginator->paginate($filters, $model, $request);
         return $result;
     }
 

@@ -42,6 +42,11 @@ final class AppEvents
     const PROCESS_FINISH = 'process.finish';
 
     /**
+     * Fired when user is registered
+     */
+    const USER_REGISTERED = 'user.registered';
+
+    /**
      * Fired when user created
      */
     const USER_CREATED = 'user.created';
@@ -57,9 +62,24 @@ final class AppEvents
     const USER_STATUS_CHANGED = 'user.statusChanged';
 
     /**
+     * Fired when user profile photo changes
+     */
+    const USER_PHOTO_CHANGED = 'user.photoChanged';
+
+    /**
+     * Fired when two users like each other
+     */
+    const USER_BOTH_LIKED = 'user.bothLiked';
+
+    /**
      * Fired when an account is connected
      */
     const ACCOUNT_CONNECTED = 'account.connected';
+
+    /**
+     * Fired when oauth access information is being saved
+     */
+    const TOKEN_PRE_SAVE = 'token.save';
 
     /**
      * Fired when matching is outdated
@@ -119,7 +139,78 @@ final class AppEvents
     const GROUP_ADDED = 'group.added';
 
     /**
+     * Fired when a user is removed from a group
+     */
+    const GROUP_REMOVED = 'group.removed';
+
+    /**
      * Fired when a profile is created
      */
     const PROFILE_CREATED = 'profile.created';
+
+	/**
+	 * Fired when a similarity process starts
+	 */
+	const SIMILARITY_PROCESS_START = 'similarity.start';
+
+	/**
+	 * Fired for each similarity process step
+	 */
+	const SIMILARITY_PROCESS_STEP = 'similarity.step';
+
+	/**
+	 * Fired when a similarity process finishes
+	 */
+	const SIMILARITY_PROCESS_FINISH = 'similarity.finish';
+
+	/**
+	 * Fired when a matching process starts
+	 */
+	const MATCHING_PROCESS_START = 'matching.start';
+
+	/**
+	 * Fired for each matching process step
+	 */
+	const MATCHING_PROCESS_STEP = 'matching.step';
+
+	/**
+	 * Fired when a matching process finishes
+	 */
+	const MATCHING_PROCESS_FINISH = 'matching.finish';
+
+	/**
+	 * Fired when a affinity process starts
+	 */
+	const AFFINITY_PROCESS_START = 'affinity.start';
+
+	/**
+	 * Fired for each affinity process step
+	 */
+	const AFFINITY_PROCESS_STEP = 'affinity.step';
+
+	/**
+	 * Fired when a affinity process finishes
+	 */
+	const AFFINITY_PROCESS_FINISH = 'affinity.finish';
+
+    /**
+     * Fired when a neo4j consistency error is detected
+     */
+    const CONSISTENCY_ERROR = 'consistency.error';
+
+    /**
+     * Fired when a neo4j consistency check starts or finish
+     */
+    const CONSISTENCY_START = 'consistency.start';
+    const CONSISTENCY_END = 'consistency.end';
+
+    /**
+     * Fired when a Link needs consistency checked and fixed if necessary
+     */
+    const CONSISTENCY_LINK = 'consistency.link';
+
+    /**
+     * Fired when processing of an url fails
+     */
+    const URL_UNPROCESSED = 'url.unprocessed';
 }

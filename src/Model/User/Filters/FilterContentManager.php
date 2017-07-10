@@ -1,12 +1,10 @@
 <?php
-/**
- * @author yawmoght <yawmoght@gmail.com>
- */
 
 namespace Model\User\Filters;
 
 
 use Everyman\Neo4j\Node;
+use Model\Link\LinkModel;
 use Model\Neo4j\GraphManager;
 use Model\User\ContentFilterModel;
 use Service\Validator;
@@ -66,7 +64,7 @@ class FilterContentManager
     public function updateFilterContentByThreadId($id, $filtersArray)
     {
         $contentFilters = isset($filtersArray['contentFilters']) ? $filtersArray['contentFilters'] : array();
-        $this->validator->validateEditFilterContent($contentFilters, $this->getChoices());
+        $this->validator->validateEditFilterContent($contentFilters, LinkModel::getValidTypes());
 
         $filters = $this->buildFiltersContent();
 
@@ -99,16 +97,6 @@ class FilterContentManager
         $this->saveType($filters->getId(), $type);
 
         return true;
-    }
-
-    //TODO: LinkModel->getValidTypes() is the same
-    protected function getChoices()
-    {
-        return array(
-            'type' => array(
-                'Link', 'Audio', 'Video', 'Image', 'Creator'
-            )
-        );
     }
 
     /**

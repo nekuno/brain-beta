@@ -3,22 +3,13 @@
 
 namespace Provider;
 
+use ApiConsumer\Factory\GoutteClientFactory;
+use ApiConsumer\Images\ImageAnalyzer;
 use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\LinkProcessor;
 use ApiConsumer\LinkProcessor\LinkResolver;
-use ApiConsumer\LinkProcessor\MetadataParser\BasicMetadataParser;
-use ApiConsumer\LinkProcessor\MetadataParser\FacebookMetadataParser;
-use ApiConsumer\LinkProcessor\Processor\FacebookProcessor;
-use ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
-use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
-use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
-use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
-use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
-use ApiConsumer\LinkProcessor\Processor\ScraperProcessor;
-use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor;
-use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor;
-use Goutte\Client;
+use ApiConsumer\LinkProcessor\Processor\ScraperProcessor\ScraperProcessor;
 use Silex\Application;
 use Silex\ServiceProviderInterface;
 
@@ -31,45 +22,9 @@ class LinkProcessorServiceProvider implements ServiceProviderInterface
     public function register(Application $app)
     {
 
-        $app['api_consumer.link_processor.goutte'] = $app->share(
-            function () {
-                $client = new Client();
-                $client->setMaxRedirects(10);
-
-                return $client;
-            }
-        );
-
         $app['api_consumer.link_processor.processor.scrapper'] = $app->share(
             function ($app) {
-                $basicMetadataParser = new BasicMetadataParser();
-                $fbMetadataParser = new FacebookMetadataParser();
-
-                return new ScraperProcessor($app['api_consumer.link_processor.url_parser.parser'], $app['api_consumer.link_processor.goutte'], $basicMetadataParser, $fbMetadataParser);
-            }
-        );
-
-        $app['api_consumer.link_processor.processor.youtube'] = $app->share(
-            function ($app) {
-                return new YoutubeProcessor($app['userAggregator.service'], $app['api_consumer.link_processor.processor.scrapper'], $app['api_consumer.resource_owner.google'], new YoutubeUrlParser());
-            }
-        );
-
-        $app['api_consumer.link_processor.processor.spotify'] = $app->share(
-            function ($app) {
-                return new SpotifyProcessor($app['userAggregator.service'], $app['api_consumer.link_processor.processor.scrapper'], $app['api_consumer.resource_owner.spotify'], new SpotifyUrlParser(), $app['api_consumer.resource_owner.google'], new YoutubeUrlParser());
-            }
-        );
-
-        $app['api_consumer.link_processor.processor.facebook'] = $app->share(
-            function ($app) {
-                return new FacebookProcessor($app['userAggregator.service'], $app['api_consumer.link_processor.processor.scrapper'], $app['api_consumer.resource_owner.facebook'], new FacebookUrlParser());
-            }
-        );
-
-        $app['api_consumer.link_processor.processor.twitter'] = $app->share(
-            function ($app) {
-                return new TwitterProcessor($app['userAggregator.service'], $app['api_consumer.link_processor.processor.scrapper'], $app['api_consumer.resource_owner.twitter'], new TwitterUrlParser());
+                return new ScraperProcessor($app['api_consumer.link_processor.goutte_factory']);
             }
         );
 
@@ -79,13 +34,19 @@ class LinkProcessorServiceProvider implements ServiceProviderInterface
             }
         );
 
-        $app['api_consumer.link_processor.link_resolver'] = $app->share(
+        $app['api_consumer.link_processor.image_analyzer'] = $app->share(
             function ($app) {
-
-                return new LinkResolver($app['api_consumer.link_processor.goutte']);
+                return new ImageAnalyzer($app['guzzle.client']);
             }
         );
 
+        $app['api_consumer.link_processor.link_resolver'] = $app->share(
+            function ($app) {
+
+                return new LinkResolver($app['api_consumer.link_processor.goutte_factory']);
+            }
+        );
+        //TODO: Only dependency to ScrapperProcessor
         $app['api_consumer.link_processor.url_parser.parser'] = $app->share(
             function ($app) {
 
@@ -96,15 +57,14 @@ class LinkProcessorServiceProvider implements ServiceProviderInterface
         $app['api_consumer.link_processor'] = $app->share(
             function ($app) {
                 return new LinkProcessor(
-                    $app['api_consumer.link_processor.link_resolver'],
-                    $app['api_consumer.link_processor.link_analyzer'],
-                    $app['links.model'],
-                    $app['api_consumer.link_processor.processor.scrapper'],
-                    $app['api_consumer.link_processor.processor.youtube'],
-                    $app['api_consumer.link_processor.processor.spotify'],
-                    $app['api_consumer.link_processor.processor.facebook'],
-                    $app['api_consumer.link_processor.processor.twitter']
+                    $app['api_consumer.processor_factory'], $app['api_consumer.link_processor.image_analyzer'], $app['users.tokens.model']
                 );
+            }
+        );
+
+        $app['api_consumer.link_processor.goutte_factory'] = $app->share(
+            function () {
+                return new GoutteClientFactory();
             }
         );
 

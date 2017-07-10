@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: yawmoght
- * Date: 30/10/15
- * Time: 12:36
- */
 
 namespace Model\User\GhostUser;
 
@@ -81,16 +75,43 @@ class GhostUserManager
     public function saveAsUser($id)
     {
         $ghostUser = $this->getById($id);
+
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(u:'.$this::LABEL_GHOST_USER.')')
             ->where('u.qnoow_id={id}')
             ->setParameter('id', (integer)$id)
+            ->set('u.canReenable = true')
             ->remove('u:'.$this::LABEL_GHOST_USER)
             ->returns('u');
 
         $rs = $qb->getQuery()->getResultSet();
+        $this->userManager->setEnabled($id, true);
+
         return $ghostUser;
     }
+
+    public function saveAsGhost($id)
+    {
+
+        $qb = $this->graphManager->createQueryBuilder();
+        $qb->match('(u:User)')
+            ->where('u.qnoow_id = { id }')
+            ->setParameter('id', (integer)$id)
+            ->set('u:' . $this::LABEL_GHOST_USER)
+            ->returns('u, u.qnoow_id as id');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() < 1) {
+            throw new NotFoundHttpException(sprintf('User "%d" not found', $id));
+        }
+
+        /* @var $row Row */
+        $row = $result->current();
+
+        return $this->buildOneGhostUser($row);
+    }
+
 
     /**
      * @param ResultSet $result
@@ -133,5 +154,41 @@ class GhostUserManager
         }
 
         return null;
+    }
+
+    public function getMostSimilarIds($userId, $userLimit)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(u:User{qnoow_id:{userId}})')
+            ->setParameter('userId', $userId);
+        $qb->with('u')
+            ->limit(1);
+
+        $qb->match('(u)-[s:SIMILARITY]-(u2:GhostUser)')
+            ->with('s.similarity AS similarity', 'u2.qnoow_id AS id')
+            ->orderBy(' 1 - similarity ASC')// similarity DESC starts with NULL values
+            ->limit('{limit}')
+            ->setParameter('limit', $userLimit)
+            ->returns('id');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        return $this->userManager->buildIdsArray($result);
+    }
+
+    /**
+     * @return array
+     */
+    public function getAllIds()
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+        $qb->match('(u:GhostUser)');
+        $qb->returns('u.qnoow_id AS id');
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        return $this->userManager->buildIdsArray($result);
     }
 }

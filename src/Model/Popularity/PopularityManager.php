@@ -1,7 +1,4 @@
 <?php
-/**
- * @author yawmoght <yawmoght@gmail.com>
- */
 
 namespace Model\Popularity;
 
@@ -21,6 +18,55 @@ class PopularityManager
     public function __construct(GraphManager $gm)
     {
         $this->gm = $gm;
+    }
+
+    public function updatePopularity($linkId) {
+        $max_popularity = $this->getMaxPopularity();
+
+        if (null === $max_popularity) {
+            return true;
+        }
+
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(l:Link)')
+            ->where('id(l) = {nodeId}')
+            ->setParameter('nodeId', (integer)$linkId);
+
+        $qb->merge('(l)-[:HAS_POPULARITY]-(popularity:Popularity)')
+            ->with('l', 'popularity')
+            ->optionalMatch('(l)<-[likes:LIKES]-(:User)')
+            ->with('popularity', 'count(likes) AS total');
+
+        $qb->setParameter('max', floatval($max_popularity->getAmount()));
+        $qb->set(
+            'popularity.popularity = (total/{max})^3',
+            'popularity.unpopularity = (1-(total/{max}))^3',
+            'popularity.timestamp = timestamp()'
+        );
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        if ($result->count() == 0) {
+            return false;
+        }
+
+        return $this->buildOne($result->current());
+    }
+
+    public function deleteOneByLink($linkId)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(l:Link)')
+            ->where('id(l) = {nodeId}')
+            ->setParameter('nodeId', (integer)$linkId);
+
+        $qb->match('(l)-[rel:HAS_POPULARITY]-(popularity:Popularity)')
+            ->delete('rel', 'popularity');
+
+        $qb->getQuery()->getResultSet();
     }
 
     public function updatePopularityByUser($userId)
@@ -103,9 +149,69 @@ class PopularityManager
     }
 
     /**
+     * @param $userId
+     * @param bool $countGhost
+     * @return Popularity[]
+     * @throws \Model\Neo4j\Neo4jException
+     */
+    public function getPopularitiesByUser($userId, $countGhost = true)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(u:User {qnoow_id: { id } })-[:LIKES]->(link:Link)<-[likes:LIKES]-(u2:User)')
+            ->setParameter('id', (integer)$userId);
+        if (!$countGhost) {
+            $qb->where('NOT (u2:GhostUser)');
+        }
+        $qb->with('link, count(likes) AS amount');
+
+        $qb->match('(link)-[:HAS_POPULARITY]-(popularity:Popularity)');
+        $qb->returns('   id(popularity) AS id',
+            'popularity.popularity AS popularity',
+            'popularity.unpopularity AS unpopularity',
+            'popularity.timestamp AS timestamp',
+            'amount',
+            'true AS new');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        return $this->build($result);
+    }
+
+    /**
+     * @param ResultSet $result
+     * @return Popularity[]
+     */
+    public function build(ResultSet $result)
+    {
+        $popularities = array();
+        /** @var Row $row */
+        foreach ($result as $row) {
+
+            $popularities[] = $this->buildOne($row);
+        }
+
+        return $popularities;
+    }
+
+    private function buildOne(Row $row)
+    {
+        $popularity = new Popularity();
+
+        $popularity->setId($row->offsetGet('id'));
+        $popularity->setPopularity($row->offsetGet('popularity'));
+        $popularity->setUnpopularity($row->offsetGet('unpopularity'));
+        $popularity->setTimestamp($row->offsetGet('timestamp'));
+        $popularity->setAmount($row->offsetGet('amount'));
+        $popularity->setNew($row->offsetGet('new'));
+
+        return $popularity;
+    }
+
+    /**
      * Looks for :Link(popularity) and :Popularity(popularity) for now
      */
-    private function getMaxPopularity()
+    public function getMaxPopularity()
     {
         $qb = $this->gm->createQueryBuilder();
 
@@ -149,7 +255,8 @@ class PopularityManager
         return null;
     }
 
-    private function getMaxPopularityByUser($userId){
+    private function getMaxPopularityByUser($userId)
+    {
         $qb = $this->gm->createQueryBuilder();
 
         $qb->match('(u:User {qnoow_id: { id } })')
@@ -232,6 +339,27 @@ class PopularityManager
         return $this->build($result);
     }
 
+    /**
+     * @param $likes
+     * @param $maxAmount
+     * @return Popularity
+     */
+    public function calculatePopularity($likes, $maxAmount = null)
+    {
+        if (null == $maxAmount) {
+            $maxPopularity = $this->getMaxPopularity();
+            $maxAmount = $maxPopularity->getAmount();
+        }
+
+        $popularity = new Popularity(true);
+        $popularity->setAmount($likes);
+        $popularity->setPopularity(pow(floatval($likes) / floatval($maxAmount), 3));
+        $popularity->setUnpopularity(1 - pow(floatval($likes) / floatval($maxAmount), 3));
+
+        return $popularity;
+
+    }
+
     private function migrateMaxPopularity()
     {
         $qb = $this->gm->createQueryBuilder();
@@ -246,30 +374,5 @@ class PopularityManager
             ->with('l')
             ->remove('l.popularity', 'l.unpopularity', 'l.popularity_timestamp');
         $qb->getQuery()->getResultSet();
-    }
-
-    /**
-     * @param ResultSet $result
-     * @return Popularity[]
-     */
-    private function build(ResultSet $result)
-    {
-        $popularities = array();
-        /** @var Row $row */
-        foreach ($result as $row) {
-
-            $popularity = new Popularity();
-
-            $popularity->setId($row->offsetGet('id'));
-            $popularity->setPopularity($row->offsetGet('popularity'));
-            $popularity->setUnpopularity($row->offsetGet('unpopularity'));
-            $popularity->setTimestamp($row->offsetGet('timestamp'));
-            $popularity->setAmount($row->offsetGet('amount'));
-            $popularity->setNew($row->offsetGet('new'));
-
-            $popularities[] = $popularity;
-        }
-
-        return $popularities;
     }
 }

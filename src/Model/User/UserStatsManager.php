@@ -1,32 +1,14 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: yawmoght
- * Date: 22/10/15
- * Time: 14:44
- */
 
 namespace Model\User;
 
-
-use Doctrine\ORM\EntityManager;
-use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
+use Model\User\Group\GroupModel;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class UserStatsManager
 {
-    /**
-     * @var EntityManager
-     */
-    protected $entityManagerBrain;
-
-    /**
-     * @var TokensModel
-     */
-    protected $tokensModel;
-
     /**
      * @var GraphManager
      */
@@ -43,13 +25,9 @@ class UserStatsManager
     protected $groupModel;
 
     function __construct(GraphManager $graphManager,
-                         EntityManager $entityManagerBrain,
-                         TokensModel $tokensModel,
                          GroupModel $groupModel,
                          RelationsModel $relationsModel)
     {
-        $this->entityManagerBrain = $entityManagerBrain;
-        $this->tokensModel = $tokensModel;
         $this->graphManager = $graphManager;
         $this->groupModel = $groupModel;
         $this->relationsModel = $relationsModel;
@@ -88,15 +66,6 @@ class UserStatsManager
         $numberOfReceivedLikes = $this->relationsModel->countTo($id, RelationsModel::LIKES);
         $numberOfUserLikes = $this->relationsModel->countFrom($id, RelationsModel::LIKES);
 
-        $dataStatusRepository = $this->entityManagerBrain->getRepository('\Model\Entity\DataStatus');
-
-        $twitterStatus = $dataStatusRepository->findOneBy(array('userId' => (int)$id, 'resourceOwner' => 'twitter'));
-        $facebookStatus = $dataStatusRepository->findOneBy(array('userId' => (int)$id, 'resourceOwner' => 'facebook'));
-        $googleStatus = $dataStatusRepository->findOneBy(array('userId' => (int)$id, 'resourceOwner' => 'google'));
-        $spotifyStatus = $dataStatusRepository->findOneBy(array('userId' => (int)$id, 'resourceOwner' => 'spotify'));
-
-        $networks = $this->tokensModel->getConnectedNetworks($id);
-
         $groups = $this->groupModel->getAllByUserId($id);
 
         $userStats = new UserStatsModel(
@@ -108,14 +77,6 @@ class UserStatsManager
             (integer)$numberOfUserLikes,
             $groups,
             $row->offsetGet('questionsAnswered'),
-            !empty($twitterStatus) ? (boolean)$twitterStatus->getFetched() && in_array(TokensModel::TWITTER, $networks) : false,
-            !empty($twitterStatus) ? (boolean)$twitterStatus->getProcessed() && in_array(TokensModel::TWITTER, $networks) : false,
-            !empty($facebookStatus) ? (boolean)$facebookStatus->getFetched() && in_array(TokensModel::FACEBOOK, $networks) : false,
-            !empty($facebookStatus) ? (boolean)$facebookStatus->getProcessed() && in_array(TokensModel::FACEBOOK, $networks) : false,
-            !empty($googleStatus) ? (boolean)$googleStatus->getFetched() && in_array(TokensModel::GOOGLE, $networks) : false,
-            !empty($googleStatus) ? (boolean)$googleStatus->getProcessed() && in_array(TokensModel::GOOGLE, $networks) : false,
-            !empty($spotifyStatus) ? (boolean)$spotifyStatus->getFetched() && in_array(TokensModel::SPOTIFY, $networks) : false,
-            !empty($spotifyStatus) ? (boolean)$spotifyStatus->getProcessed() && in_array(TokensModel::SPOTIFY, $networks) : false,
             $row->offsetGet('available_invitations')
         );
 

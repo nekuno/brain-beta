@@ -1,13 +1,12 @@
 <?php
-/**
- * @author Manolo Salsas <manolez@gmail.com>
- */
+
 namespace Model\User;
 
 use Doctrine\ORM\EntityManager;
 use Event\LookUpSocialNetworksEvent;
 use Model\Neo4j\GraphManager;
 use Model\Entity\LookUpData;
+use Model\User\Token\TokensModel;
 use Service\LookUp\LookUp;
 use Service\LookUp\LookUpFullContact;
 use Service\LookUp\LookUpPeopleGraph;
@@ -15,11 +14,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 
-/**
- * Class LookUpModel
- *
- * @package Model
- */
+
 class LookUpModel
 {
     /**

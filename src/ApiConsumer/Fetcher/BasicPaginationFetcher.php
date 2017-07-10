@@ -4,6 +4,7 @@ namespace ApiConsumer\Fetcher;
 
 use ApiConsumer\Exception\PaginatedFetchingException;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use Model\User\Token\Token;
 
 abstract class BasicPaginationFetcher extends AbstractFetcher
 {
@@ -22,6 +23,7 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
      */
     protected $rawFeed = array();
 
+    protected $username;
 
     /**
      * Get pagination field
@@ -33,32 +35,26 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
         return $this->paginationField;
     }
 
+    protected function getQuery($paginationId = null)
+    {
+        $query = null == $paginationId ? array() : array($this->getPaginationField() => $paginationId);
+
+        return $query;
+    }
+
     /**
-     * @param bool $public
      * @return array
      * @throws PaginatedFetchingException
      */
-    protected function getLinksByPage($public = false)
+    protected function getLinksByPage()
     {
-
         $nextPaginationId = null;
 
         do {
-            $query = $this->getQuery();
+            $url = $this->getUrl();
+            $query = $this->getQuery($nextPaginationId);
 
-            if ($nextPaginationId) {
-                $query = array_merge($query, array($this->getPaginationField() => $nextPaginationId));
-            }
-
-            try{
-                if (!$public) {
-                    $response = $this->resourceOwner->authorizedHttpRequest($this->getUrl(), $query, $this->user);
-                } else {
-                    $response = $this->resourceOwner->authorizedApiRequest($this->getUrl(), $query, $this->user);
-                }
-            } catch (\Exception $e) {
-                throw new PaginatedFetchingException($this->rawFeed, $e);
-            }
+            $response = $this->request($url, $query);
 
             $this->rawFeed = array_merge($this->rawFeed, $this->getItemsFromResponse($response));
 
@@ -69,16 +65,26 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
         return $this->rawFeed;
     }
 
+    protected function request($url, $query)
+    {
+        try {
+            $response = $this->resourceOwner->request($url, $query, $this->token);
+        } catch (\Exception $e) {
+            throw new PaginatedFetchingException($this->rawFeed, $e);
+        }
+
+        return $response;
+    }
+
     /**
      * { @inheritdoc }
      */
-    public function fetchLinksFromUserFeed($user, $public)
+    public function fetchLinksFromUserFeed(Token $token)
     {
-        $this->setUser($user);
-        $this->rawFeed = array();
+        $this->setUpToken($token);
 
-        try{
-            $rawFeed = $this->getLinksByPage($public);
+        try {
+            $rawFeed = $this->getLinksByPage();
         } catch (PaginatedFetchingException $e) {
             $newLinks = $this->parseLinks($e->getLinks());
             $e->setLinks($newLinks);
@@ -87,7 +93,53 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
 
         $links = $this->parseLinks($rawFeed);
 
+        $this->addSourceAndToken($links, $token);
+
         return $links;
+    }
+
+    protected function setUpToken(Token $token)
+    {
+        $this->setToken($token);
+        $this->rawFeed = array();
+    }
+
+    public function fetchAsClient($username)
+    {
+        $this->setUpUsername($username);
+
+        try {
+            $rawFeed = $this->getLinksByPage();
+        } catch (PaginatedFetchingException $e) {
+            $newLinks = $this->parseLinks($e->getLinks());
+            $e->setLinks($newLinks);
+            throw $e;
+        }
+
+        $links = $this->parseLinks($rawFeed);
+
+        $this->addSourceAndToken($links);
+
+        return $links;
+    }
+
+    protected function setUpUsername($username)
+    {
+        $this->username = $username;
+        $this->rawFeed = array();
+    }
+
+    /**
+     * @param $links PreprocessedLink[]
+     * @param null $token
+     */
+    protected function addSourceAndToken($links, $token = null)
+    {
+        foreach ($links as $link) {
+            $source = $link->getSource() ?: $this->resourceOwner->getName();
+            $link->setSource($source);
+            $link->setToken($token);
+        }
     }
 
     abstract protected function getItemsFromResponse($response);

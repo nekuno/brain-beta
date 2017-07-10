@@ -3,7 +3,7 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 use Service\UserAggregator;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -60,6 +60,13 @@ class UsersSocialMediaAddCommand extends ApplicationAwareCommand
             /** @var UserAggregator $userAggregator */
             $userAggregator = $this->app['userAggregator.service'];
 
+            switch($resource){
+                case TokensModel::TWITTER:
+                    $username = array('screenName' => $username);
+                    break;
+                default:
+                    break;
+            }
             $socialProfiles = $userAggregator->addUser($username, $resource, $id, $url);
 
             if (!$socialProfiles){
@@ -84,7 +91,7 @@ class UsersSocialMediaAddCommand extends ApplicationAwareCommand
                         'public' => true,
                         'exclude' => array('twitter_links', 'twitter_favorites'),
                     );
-                    $amqpManager->enqueueMessage($data, 'brain.fetching.links');
+                    $amqpManager->enqueueFetching($data);
                 }
 	            $id = $socialProfile->getUserId();
             }

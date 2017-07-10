@@ -2,7 +2,10 @@
 
 namespace ApiConsumer\Fetcher;
 
+use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use Model\Link\Link;
+use Model\User\Token\Token;
 
 class GoogleFetcher extends BasicPaginationFetcher
 {
@@ -12,35 +15,32 @@ class GoogleFetcher extends BasicPaginationFetcher
 
     protected $paginationId = null;
 
-    public function setUser($user){
-        parent::setUser($user);
-        if (!array_key_exists('googleID', $this->user)){
-            $this->user['googleID'] = $this->resourceOwner->getUsername($this->user);
-        }
-    }
-
     /**
      * {@inheritDoc}
      */
     public function getUrl()
     {
-        return 'plus/v1/people/' . $this->user['googleID'] . '/activities/public';
+        $googleId = $this->username ?: ($this->token instanceof Token ? $this->token->getResourceId() : null);
+        return 'plus/v1/people/' . $googleId . '/activities/public';
     }
 
     /**
      * {@inheritDoc}
      */
-    protected function getQuery()
+    protected function getQuery($paginationId = null)
     {
-        return array(
-            'maxResults' => $this->pageLength,
-            'fields' => 'items(object(attachments(content,displayName,id,objectType,url)),title,published,updated),nextPageToken'
+        return array_merge(
+            parent::getQuery($paginationId),
+            array(
+                'maxResults' => $this->pageLength,
+                'fields' => 'items(object(attachments(content,displayName,id,objectType,url)),title,published,updated),nextPageToken'
+            )
         );
     }
 
     protected function getItemsFromResponse($response)
     {
-        return $response['items'] ?: array();
+        return isset($response['items']) && $response['items'] ? $response['items'] : array();
     }
 
     /**
@@ -91,13 +91,12 @@ class GoogleFetcher extends BasicPaginationFetcher
             $link['url'] = $item['url'];
             $link['title'] = array_key_exists('displayName', $item) ? $item['displayName'] : null;
             $link['description'] = array_key_exists('content', $item) ? $item['content'] : null;
-            $link['resourceItemId'] = array_key_exists('id', $item) ? $item['id'] : null;
             $link['timestamp'] = $timestamp;
-            $link['resource'] = $this->resourceOwner->getName();
 
             $preprocessedLink = new PreprocessedLink($link['url']);
-            $preprocessedLink->setLink($link);
-
+            $preprocessedLink->setFirstLink(Link::buildFromArray($link));
+            $preprocessedLink->setResourceItemId(array_key_exists('id', $item) ? $item['id'] : null);
+            $preprocessedLink->setSource($this->resourceOwner->getName());
             $parsed[] = $preprocessedLink;
         }
 

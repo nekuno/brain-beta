@@ -2,7 +2,7 @@
 
 namespace Controller\Questionnaire;
 
-use Model\Questionnaire\QuestionModel;
+use Model\User\Question\QuestionModel;
 use Model\User;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -47,13 +47,32 @@ class QuestionController
     }
 
     /**
+     * Returns an unanswered question for given user
+     * @param Request $request
+     * @param Application $app
+     * @param User $user
+     * @return JsonResponse
+     */
+    public function getNextOtherQuestionAction(Request $request, Application $app, User $user)
+    {
+        $otherUserId = $request->get('userId');
+        $locale = $this->getLocale($request, $app['locale.options']['default']);
+        /* @var QuestionModel $model */
+        $model = $app['questionnaire.questions.model'];
+
+        $question = $model->getNextByOtherUser($user->getId(), $otherUserId, $locale);
+
+        return $app->json($question);
+    }
+
+    /**
      * @param Request $request
      * @param Application $app
      * @return JsonResponse
      */
     public function getQuestionAction(Request $request, Application $app)
     {
-        $id = $request->get('id');
+        $id = $request->get('questionId');
         $locale = $this->getLocale($request, $app['locale.options']['default']);
         /* @var $model QuestionModel */
         $model = $app['questionnaire.questions.model'];
@@ -110,7 +129,7 @@ class QuestionController
      */
     public function skipAction(Request $request, Application $app, User $user)
     {
-        $id = $request->attributes->get('id');
+        $id = $request->attributes->get('questionId');
         $locale = $this->getLocale($request, $app['locale.options']['default']);
         /* @var QuestionModel $model */
         $model = $app['questionnaire.questions.model'];
@@ -131,7 +150,7 @@ class QuestionController
      */
     public function reportAction(Request $request, Application $app, User $user)
     {
-        $id = $request->attributes->get('id');
+        $id = $request->attributes->get('questionId');
         $reason = $request->request->get('reason');
 
         $locale = $this->getLocale($request, $app['locale.options']['default']);

@@ -2,9 +2,13 @@
 
 namespace Model\User\Recommendation;
 
+use Everyman\Neo4j\Query\ResultSet;
+use Everyman\Neo4j\Query\Row;
+use Manager\PhotoManager;
 use Model\Neo4j\GraphManager;
-use Model\User\GhostUser\GhostUserManager;
 use Model\User\ProfileFilterModel;
+use Model\User\ProfileModel;
+use Model\User\UserFilterModel;
 use Paginator\PaginatedInterface;
 
 abstract class AbstractUserPaginatedModel implements PaginatedInterface
@@ -19,10 +23,28 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
      */
     protected $profileFilterModel;
 
-    public function __construct(GraphManager $gm, ProfileFilterModel $profileFilterModel)
+    /**
+     * @var UserFilterModel
+     */
+    protected $userFilterModel;
+
+    /**
+     * @var PhotoManager
+     */
+    protected $pm;
+
+    /**
+     * @var ProfileModel
+     */
+    protected $profileModel;
+
+    public function __construct(GraphManager $gm, ProfileFilterModel $profileFilterModel, UserFilterModel $userFilterModel, PhotoManager $pm, ProfileModel $profileModel)
     {
         $this->gm = $gm;
         $this->profileFilterModel = $profileFilterModel;
+        $this->userFilterModel = $userFilterModel;
+        $this->pm = $pm;
+        $this->profileModel = $profileModel;
     }
 
     /**
@@ -38,18 +60,9 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
         return $hasId && $hasProfileFilters;
     }
 
-    /**
-     * Slices the query according to $offset, and $limit.
-     * @param array $filters
-     * @param int $offset
-     * @param int $limit
-     * @throws \Exception
-     * @return array
-     */
-    public function slice(array $filters, $offset, $limit)
+    public function getUsersByPopularity($filters, $offset, $limit, $additionalCondition = null)
     {
         $id = $filters['id'];
-        $response = array();
 
         $parameters = array(
             'offset' => (integer)$offset,
@@ -57,89 +70,73 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
             'userId' => (integer)$id
         );
 
-        $orderQuery = '  similarity DESC, matching_questions DESC ';
-        if (isset($filters['order']) && $filters['order'] == 'questions') {
-            $orderQuery = ' matching_questions DESC, similarity DESC ';
-        }
-
         $filters = $this->profileFilterModel->splitFilters($filters);
 
         $profileFilters = $this->getProfileFilters($filters['profileFilters']);
-
+        $userFilters = $this->getUserFilters($filters['userFilters']);
         $qb = $this->gm->createQueryBuilder();
 
         $qb->setParameters($parameters);
 
-        $qb->match('(u:User {qnoow_id: {userId}})-[:MATCHES|SIMILARITY]-(anyUser:User)')
-            ->where('u <> anyUser', 'NOT (anyUser:' . GhostUserManager::LABEL_GHOST_USER . ')')
-            ->optionalMatch('(u)-[like:LIKES]-(anyUser)')
-            ->optionalMatch('(u)-[m:MATCHES]-(anyUser)')
-            ->optionalMatch('(u)-[s:SIMILARITY]-(anyUser)')
+        $qb->match('(anyUser:UserEnabled)')
+            ->where('{userId} <> anyUser.qnoow_id');
+
+        if (null !== $additionalCondition) {
+            $qb->add('', $additionalCondition);
+        }
+
+        $qb->optionalMatch('(:User {qnoow_id: { userId }})-[m:MATCHES]-(anyUser)')
+            ->optionalMatch('(:User {qnoow_id: { userId }})-[s:SIMILARITY]-(anyUser)')
             ->with(
-                'u, anyUser,
-                (CASE WHEN like IS NOT NULL THEN 1 ELSE 0 END) AS like,
-                (CASE WHEN EXISTS(m.matching_questions) THEN m.matching_questions ELSE 0 END) AS matching_questions,
-                (CASE WHEN EXISTS(s.similarity) THEN s.similarity ELSE 0 END) AS similarity'
+                'distinct anyUser,
+                (CASE WHEN EXISTS(m.matching_questions) THEN m.matching_questions ELSE 0.01 END) AS matching_questions,
+                (CASE WHEN EXISTS(s.similarity) THEN s.similarity ELSE 0.01 END) AS similarity'
             )
+            ->where($userFilters['conditions'])
             ->match('(anyUser)<-[:PROFILE_OF]-(p:Profile)');
 
         $qb->optionalMatch('(p)-[:LOCATION]->(l:Location)');
 
-        $qb->with('u, anyUser, like, matching_questions, similarity, p, l');
-        $qb->where(
-            array_merge(
-                array('(matching_questions > 0 OR similarity > 0)'),
-                $profileFilters['conditions']
-            )
-        )
-            ->with('u', 'anyUser', 'like', 'matching_questions', 'similarity', 'p', 'l');
+        $qb->with('anyUser, p, l, matching_questions', 'similarity');
+        $qb->where($profileFilters['conditions'])
+            ->with('anyUser', 'p', 'l', 'matching_questions', 'similarity');
 
         foreach ($profileFilters['matches'] as $match) {
             $qb->match($match);
         }
+        foreach ($userFilters['matches'] as $match) {
+            $qb->match($match);
+        }
+
+        $qb->with('anyUser, p, l, matching_questions', 'similarity')
+            ->optionalMatch('(p)<-[optionOf:OPTION_OF]-(option:ProfileOption)')
+            ->optionalMatch('(p)-[tagged:TAGGED]-(tag:ProfileTag)')
+            ->optionalMatch('(anyUser)<-[likes:LIKES]-(:User)')
+            ->with('anyUser', 'collect(distinct {option: option, detail: (CASE WHEN EXISTS(optionOf.detail) THEN optionOf.detail ELSE null END)}) AS options', 'collect(distinct {tag: tag, tagged: tagged}) AS tags', 'count(likes) as popularity', 'p', 'l', 'matching_questions', 'similarity');
 
         $qb->returns(
-            'DISTINCT anyUser.qnoow_id AS id,
-                    anyUser.username AS username,
-                    anyUser.picture AS picture,
-                    p.birthday AS birthday,
-                    l.locality + ", " + l.country AS location,
-                    matching_questions,
-                    similarity,
-                    like'
+            'anyUser.qnoow_id AS id',
+            'anyUser.username AS username',
+            'anyUser.slug AS slug',
+            'anyUser.photo AS photo',
+            'p.birthday AS birthday',
+            'p AS profile',
+            'l AS location',
+            'options',
+            'tags',
+            'matching_questions',
+            'similarity',
+            '0 AS like',
+            'popularity'
         )
-            ->orderBy($orderQuery)
+            ->orderBy('popularity DESC')
             ->skip('{ offset }')
             ->limit('{ limit }');
 
         $query = $qb->getQuery();
         $result = $query->getResultSet();
 
-        foreach ($result as $row) {
-
-            $age = null;
-            if ($row['birthday']) {
-                $date = new \DateTime($row['birthday']);
-                $now = new \DateTime();
-                $interval = $now->diff($date);
-                $age = $interval->y;
-            }
-
-            $user = array(
-                'id' => $row['id'],
-                'username' => $row['username'],
-                'picture' => $row['picture'],
-                'matching' => $row['matching_questions'],
-                'similarity' => $row['similarity'],
-                'age' => $age,
-                'location' => $row['location'],
-                'like' => $row['like'],
-            );
-
-            $response[] = $user;
-        }
-
-        return $response;
+        return $this->buildUserRecommendations($result);
     }
 
     /**
@@ -161,9 +158,14 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
                         $conditions[] = "p.$name =~ '(?i).*$value.*'";
                         break;
                     case 'integer_range':
-                        $min = (integer)$value['min'];
-                        $max = (integer)$value['max'];
-                        $conditions[] = "($min <= p.$name AND p.$name <= $max)";
+                        $min = isset($value['min']) ? (integer)$value['min'] : isset($filter['min']) ? $filter['min'] : null;
+                        $max = isset($value['max']) ? (integer)$value['min'] : isset($filter['max']) ? $filter['max'] : null;
+                        if ($min) {
+                            $conditions[] = "($min <= p.$name)";
+                        }
+                        if ($max) {
+                            $conditions[] = "(p.$name <= $max)";
+                        }
                         break;
                     case 'date':
 
@@ -175,10 +177,17 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
                         $conditions[] = "('$min' <= p.$name AND p.$name <= '$max')";
                         break;
                     case 'birthday_range':
-                        $birthdayRange = $this->profileFilterModel->getBirthdayRangeFromAgeRange($value['min'], $value['max']);
+                        $age_min = isset($value['min']) ? $value['min'] : null;
+                        $age_max = isset($value['max']) ? $value['max'] : null;
+                        $birthdayRange = $this->profileFilterModel->getBirthdayRangeFromAgeRange($age_min, $age_max);
                         $min = $birthdayRange['min'];
                         $max = $birthdayRange['max'];
-                        $conditions[] = "('$min' <= p.$name AND p.$name <= '$max')";
+                        if ($min) {
+                            $conditions[] = "('$min' <= p.$name)";
+                        }
+                        if ($max) {
+                            $conditions[] = "(p.$name <= '$max')";
+                        }
                         break;
                     case 'location_distance':
                     case 'location':
@@ -206,13 +215,19 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
                         $profileLabelName = $this->profileFilterModel->typeToLabel($name);
                         $matchQuery = "(p)<-[rel$name:OPTION_OF]-(option$name:$profileLabelName)";
                         $whereQueries = array();
-                        foreach ($value as $dataValue){
+                        foreach ($value as $dataValue) {
                             $choice = $dataValue['choice'];
-                            $detail = $dataValue['detail'];
-                            $whereQueries[] = "( option$name.id = '$choice' AND rel$name.detail = '$detail')";
+                            $detail = isset($dataValue['detail']) ? $dataValue['detail'] : null;
+
+                            $whereQuery = " option$name.id = '$choice'";
+                            if (!(null == $detail)) {
+                                $whereQuery .= " AND rel$name.detail = '$detail'";
+                            }
+
+                            $whereQueries[] = $whereQuery;
                         }
 
-                        $matches[] = $matchQuery.' WHERE ' . implode('OR', $whereQueries);
+                        $matches[] = $matchQuery . ' WHERE (' . implode('OR', $whereQueries) . ')';
                         break;
                     case 'tags':
                         $tagLabelName = $this->profileFilterModel->typeToLabel($name);
@@ -226,11 +241,15 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
                             $tagValue = $name === 'language' ?
                                 $this->profileFilterModel->getLanguageFromTag($dataValue['tag']) :
                                 $dataValue['tag'];
-                            $choice = !is_null($dataValue['choice']) ? $dataValue['choice'] : '';
+                            $choice = isset($dataValue['choices']) ? $dataValue['choices'] : null;
+                            $whereQuery = " tag$name.name = '$tagValue'";
+                            if (!null == $choice) {
+                                $whereQuery .= " AND rel$name.detail = '$choice'";
+                            }
 
-                            $whereQueries[] = "( tag$name.name = '$tagValue' AND rel$name.detail = '$choice')";
+                            $whereQueries[] = $whereQuery;
                         }
-                        $matches[] = $matchQuery.' WHERE ' . implode('OR', $whereQueries);
+                        $matches[] = $matchQuery . ' WHERE (' . implode('OR', $whereQueries . ')');
                         break;
                     case 'tags_and_multiple_choices':
                         $tagLabelName = $this->profileFilterModel->typeToLabel($name);
@@ -240,11 +259,16 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
                             $tagValue = $name === 'language' ?
                                 $this->profileFilterModel->getLanguageFromTag($dataValue['tag']) :
                                 $dataValue['tag'];
-                            $choices = !is_null($dataValue['choices']) ? json_encode($dataValue['choices']) : json_encode(array());
+                            $choices = isset($dataValue['choices']) ? $dataValue['choices'] : array();
 
-                            $whereQueries[] = "( tag$name.name = '$tagValue' AND rel$name.detail IN $choices )";
+                            $whereQuery = " tag$name.name = '$tagValue'";
+                            if (!empty($choices)) {
+                                $choices = json_encode($choices);
+                                $whereQuery .= " AND rel$name.detail IN $choices ";
+                            }
+                            $whereQueries[] = $whereQuery;
                         }
-                        $matches[] = $matchQuery.' WHERE ' . implode('OR', $whereQueries);
+                        $matches[] = $matchQuery . ' WHERE (' . implode('OR', $whereQueries) . ')';
                         break;
                     default:
                         break;
@@ -258,7 +282,143 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
         );
     }
 
-    protected function getProfileFilterMetadata(){
+    protected function getProfileFilterMetadata()
+    {
         return $this->profileFilterModel->getFilters();
+    }
+
+    /**
+     * @param array $filters
+     * @return array
+     */
+    protected function getUserFilters(array $filters)
+    {
+        $conditions = array();
+        $matches = array();
+
+        $userFilterMetadata = $this->getUserFilterMetadata();
+        foreach ($userFilterMetadata as $name => $filter) {
+            if (isset($filters[$name]) && !empty($filters[$name])) {
+                $value = $filters[$name];
+                switch ($name) {
+                    case 'groups':
+                        $matches[] = $this->buildGroupMatch($value);
+                        break;
+                    case 'compatibility':
+                        $conditions[] = $this->buildMatchingCondition($value);
+                        break;
+                    case 'similarity':
+                        $conditions[] = $this->buildSimilarityCondition($value);
+                        break;
+                }
+            }
+        }
+
+        return array(
+            'conditions' => $conditions,
+            'matches' => $matches
+        );
+    }
+
+    /**
+     * @param array $filters
+     * @return array
+     */
+    protected function getPopularUserFilters(array $filters)
+    {
+        $conditions = array();
+        $matches = array();
+
+        $userFilterMetadata = $this->getUserFilterMetadata();
+        foreach ($userFilterMetadata as $name => $filter) {
+            if (isset($filters[$name]) && !empty($filters[$name])) {
+                $value = $filters[$name];
+                switch ($name) {
+                    case 'groups':
+                        $matches[] = $this->buildGroupMatch($value);
+                        break;
+                    case 'compatibility':
+                        $conditions[] = 'false';
+                        break;
+                    case 'similarity':
+                        $conditions[] = 'false';
+                        break;
+                }
+            }
+        }
+
+        return array(
+            'conditions' => $conditions,
+            'matches' => $matches
+        );
+    }
+
+    protected function getUserFilterMetadata()
+    {
+        return $this->userFilterModel->getFilters();
+    }
+
+    /**
+     * @param ResultSet $result
+     * @return UserRecommendation[]
+     */
+    public function buildUserRecommendations(ResultSet $result)
+    {
+        $response = array();
+        /** @var Row $row */
+        foreach ($result as $row) {
+
+            $age = null;
+            if ($row['birthday']) {
+                $date = new \DateTime($row['birthday']);
+                $now = new \DateTime();
+                $interval = $now->diff($date);
+                $age = $interval->y;
+            }
+
+            $photo = $this->pm->createProfilePhoto();
+            $photo->setPath($row->offsetGet('photo'));
+            $photo->setUserId($row->offsetGet('id'));
+
+            $user = new UserRecommendation();
+            $user->setId($row->offsetGet('id'));
+            $user->setUsername($row->offsetGet('username'));
+            $user->setSlug($row->offsetGet('slug'));
+            $user->setPhoto($photo);
+            $user->setMatching($row->offsetGet('matching_questions'));
+            $user->setSimilarity($row->offsetGet('similarity'));
+            $user->setAge($age);
+            $user->setLocation($row->offsetGet('location'));
+            $user->setLike($row->offsetGet('like'));
+            $user->setProfile($this->profileModel->build($row));
+
+            $response[] = $user;
+        }
+
+        return $response;
+    }
+
+    protected function buildGroupMatch($value)
+    {
+        foreach ($value as $index => $groupId) {
+            $value[$index] = (int)$groupId;
+        }
+        $jsonValues = json_encode($value);
+
+        return "(anyUser)-[:BELONGS_TO]->(group:Group) WHERE id(group) IN $jsonValues";
+    }
+
+    protected function buildMatchingCondition($value)
+    {
+        $valuePerOne = intval($value) / 100;
+
+        return "($valuePerOne <= matching_questions)";
+    }
+
+    protected function buildSimilarityCondition($value)
+    {
+        $valuePerOne = intval($value) / 100;
+
+        return "($valuePerOne <= similarity)";
     }
 }

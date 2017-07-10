@@ -1,13 +1,18 @@
 notifications:
+  an_internet_for_you: 'AN INTERNET FOR YOU'
+  unsubscribe: 'Cancelar suscripción'
+  about_us: 'Sobre nosotros'
+  all_rights_reserved: 'Todos los derechos reservados'
   header: 'Hola %name%'
   messages:
     unread:
       subject: 'Tienes mensajes sin leer'
       body:
-        title: 'Tienes %count% mensaje sin leer.|Tienes %count% mensajes sin leer.'
+        title: ' tienes %count% mensaje.|tienes %count% mensajes.'
+        unread: ' tienes %count% mensaje sin leer.|Tienes %count% mensajes sin leer.'
         latest: 'Último mensaje sin leer:|Últimos %count% mensajes sin leer:'
         message: 'Mensaje sin leer del usuario %user% en %datetime%:'
-        linkAnchor: 'Mira todos tus mensages'
+        linkAnchor: 'Leer más'
     exceptional_links:
       subject: 'Hemos encontrado contenido que querrás ver'
       body:
@@ -27,17 +32,29 @@ notifications:
       body:
         message: "¡Acabamos de descubrir que <a href=\"%urlOther%\">%usernameOther%</a> es un follower con un %value%% de %filter% contigo!"
   footer: 'Saludos del equipo de Nekuno'
+push_notifications:
+    message:
+        title: 'Nuevo mensaje de %username%'
+    process_finish:
+        title: 'Proceso finalizado'
+        body: 'Hemos acabado de procesar tu red de %resource%.'
+    both_user_liked:
+        title: '"Like" mutuo'
+        body: '%username% y tú os habéis hecho "like" mutuamente.'
 followers:
   invitation_slogan: '¡Descubre si eres %compatible_or_similar% con %username%!'
   group_name: 'Seguidores de %username%'
 messages:
-  register: '¡Bienvenido! Puedes empezar a explorar la red a través de los hilos que hemos creado para ti. Si quieres mejorarlos, puedes añadir más redes sociales para dejarnos saber lo que te gusta.'
+  register: '¡Hola! Soy Uriel, el CEO de Nekuno. Como estamos en beta, te invito a que me preguntes directamente lo que desees; cualquier error, sugerencia o duda que tengas, simplemente escríbemela por aquí y trataré de contestarte lo antes posible :smiley: ¡Espero que disfrutes de esta pequeña versión de Nekuno! ¡Dentro de poco desbloquearemos las recomendaciones de contenidos! ^^'
 types:
-  audio: 'Audio'
-  video: 'Video'
-  image: 'Imagen'
-  creator: 'Canal'
-  link: 'Enlace'
+  audio: 'Música'
+  video: 'Vídeos'
+  image: 'Imagenes & Gifs'
+  creator: 'Canales de Twitter'
+  creatorFacebook: 'Canales de Facebook'
+  creatorTwitter: 'Canales de Twitter'
+  creator: 'Canales de Twitter'
+  link: 'Webs & enlaces'
 threads:
   default:
     twitter_channels: 'Canales de Twitter Increíbles'

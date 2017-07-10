@@ -2,8 +2,9 @@
 
 namespace ApiConsumer\Fetcher;
 
-use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
+use Model\Link\Link;
 
 abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
 {
@@ -16,18 +17,21 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
     /**
      * @inheritdoc
      */
-    public function getUrl()
+    public function getUrl($userId = null)
     {
-        return $this->user['facebookID'];
+        return $userId ?: $this->token->getResourceId();
     }
 
     /**
      * @inheritdoc
      */
-    protected function getQuery()
+    protected function getQuery($paginationId = null)
     {
-        return array(
-            'limit' => $this->pageLength,
+        $query = parent::getQuery($paginationId);
+
+        return array_merge(
+            $query,
+            array('limit' => $this->pageLength)
         );
     }
 
@@ -36,7 +40,7 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
      */
     protected function getItemsFromResponse($response)
     {
-        return $response['data'] ?: array();
+        return isset($response['data']) ? $response['data'] : array();
     }
 
     /**
@@ -72,10 +76,9 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
                 continue;
             }
             $id = $item['id'];
-            $link = $this->getLinkArrayFromUrl($url, $id, $item);
 
-            $parsedLink = new PreprocessedLink($link['url']);
-            $parsedLink->setLink($link);
+            $parsedLink = $this->build($url, $id, $item);
+            $this->addAdditionalType($parsedLink, $item);
             $parsed[] = $parsedLink;
 
             //if it's a like with website outside facebook
@@ -84,21 +87,17 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
 
                 $website = str_replace('\n', ' ', $website);
                 $website = str_replace(', ', ' ', $website);
-
-                $websiteUrlsArray = $this->resourceOwner->getParser()->extractURLsFromText($website);
+                $websiteUrlsArray = (new FacebookUrlParser())->extractURLsFromText($website);
 
                 $counter = 1;
                 foreach ($websiteUrlsArray as $websiteUrl) {
                     if (substr($websiteUrl, 0, 3) == 'www') {
                         $websiteUrl = 'http://' . $websiteUrl;
                     }
-                    $link = $this->getLinkArrayFromUrl(trim($websiteUrl), $id . '-' . $counter, $item);
 
-                    //TODO: Use PreprocessedLink->additional logic
+                    $thisId = $id . '-' . $counter;
 
-                    $parsedLink = new PreprocessedLink($link['url']);
-                    $parsedLink->setLink($link);
-                    $parsed[] = $parsedLink;
+                    $parsed[] = $this->build(trim($websiteUrl), $thisId, $item);
 
                     $counter++;
                 }
@@ -112,34 +111,41 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
      * @param $url
      * @param $id
      * @param $item
-     * @return array
+     * @return PreprocessedLink
      */
-    private function getLinkArrayFromUrl($url, $id, $item)
+    private function build($url, $id, $item)
     {
-        $link = array();
+        $link = new Link();
 
         $parts = parse_url($url);
-        $link['url'] = !isset($parts['host']) && isset($parts['path']) ? 'https://www.facebook.com' . $parts['path'] : $url;
-        $link['title'] = null;
-        $link['description'] = null;
-        $link['resourceItemId'] = $id;
-
-        $link['types'] = array();
-        if (array_key_exists('attachments', $item)) {
-            foreach ($item['attachments']['data'] as $attachment) {
-                    $link['types'][]=$attachment['type'];
-            }
-        }
+        $link->setUrl(!isset($parts['host']) && isset($parts['path']) ? 'https://www.facebook.com' . $parts['path'] : $url);
 
         $timestamp = null;
         if (array_key_exists('created_time', $item)) {
             $date = new \DateTime($item['created_time']);
             $timestamp = ($date->getTimestamp()) * 1000;
         }
-        $link['timestamp'] = $timestamp;
+        $link->setCreated($timestamp);
 
-        $link['resource'] = $this->resourceOwner->getName();
+        $parsedLink = new PreprocessedLink($link->getUrl());
+        $parsedLink->setResourceItemId($id);
+        $parsedLink->setFirstLink($link);
+        $parsedLink->setSource($this->resourceOwner->getName());
 
-        return $link;
+        return $parsedLink;
+    }
+
+    protected function addAdditionalType(PreprocessedLink $link, $item)
+    {
+        if (array_key_exists('attachments', $item)) {
+            foreach ($item['attachments']['data'] as $attachment) {
+                if (in_array($attachment['type'], FacebookUrlParser::FACEBOOK_VIDEO_TYPES())) {
+                    $link->setType(FacebookUrlParser::FACEBOOK_VIDEO);
+                }
+                if (in_array($attachment['type'], FacebookUrlParser::FACEBOOK_PAGE_TYPES())) {
+                    $link->setType(FacebookUrlParser::FACEBOOK_PAGE);
+                }
+            }
+        }
     }
 }

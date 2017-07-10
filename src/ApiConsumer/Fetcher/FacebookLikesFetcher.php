@@ -4,19 +4,20 @@ namespace ApiConsumer\Fetcher;
 
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 
 class FacebookLikesFetcher extends AbstractFacebookFetcher
 {
-    public function getUrl()
+    public function getUrl($userId = null)
     {
-        return parent::getUrl() . '/likes';
+        return parent::getUrl($userId) . '/likes';
     }
 
-    protected function getQuery()
+    protected function getQuery($paginationId = null)
     {
         return array_merge(
             array('fields' => 'id,link,website,created_time'),
-            parent::getQuery()
+            parent::getQuery($paginationId)
         );
     }
 
@@ -29,8 +30,9 @@ class FacebookLikesFetcher extends AbstractFacebookFetcher
         /** @var PreprocessedLink[] $parsed */
         $parsed = parent::parseLinks($rawFeed);
 
+        // this endpoint only gives back Facebook Page likes
         foreach ($parsed as $preprocessedLink) {
-            $preprocessedLink->addToLink(array('pageId' => $preprocessedLink->getLink()['resourceItemId']));
+            $preprocessedLink->setType(FacebookUrlParser::FACEBOOK_PAGE);
         }
 
         return $parsed;

@@ -3,8 +3,8 @@
 namespace Controller\User;
 
 use Event\AnswerEvent;
-use Model\Questionnaire\QuestionModel;
-use Model\User\QuestionPaginatedModel;
+use Model\User\Question\QuestionModel;
+use Model\User\Question\QuestionPaginatedModel;
 use Model\User;
 use Silex\Application;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -224,7 +224,7 @@ class AnswerController
 
         $filters = array('id' => $otherUserId, 'id2' => $user->getId(), 'locale' => $locale, 'showOnlyCommon' => $showOnlyCommon);
 
-        /* @var $model \Model\User\OldQuestionComparePaginatedModel */
+        /* @var $model \Model\User\Question\OldQuestionComparePaginatedModel */
         $model = $app['old.users.questions.compare.model'];
 
         try {
@@ -249,7 +249,7 @@ class AnswerController
      */
     public function getUserAnswersCompareAction(Request $request, Application $app, User $user)
     {
-        $otherUserId = $request->attributes->get('id');
+        $otherUserId = $request->attributes->get('userId');
         $locale = $request->query->get('locale');
         $showOnlyCommon = $request->query->get('showOnlyCommon', 0);
 
@@ -262,7 +262,7 @@ class AnswerController
 
         $filters = array('id' => $otherUserId, 'id2' => $user->getId(), 'locale' => $locale, 'showOnlyCommon' => $showOnlyCommon);
 
-        /* @var $model \Model\User\QuestionComparePaginatedModel */
+        /* @var $model \Model\User\Question\QuestionComparePaginatedModel */
         $model = $app['users.questions.compare.model'];
 
         try {

@@ -47,6 +47,12 @@ $app['users.data.controller'] = $app->share(
     }
 );
 
+$app['links.controller'] = $app->share(
+    function () {
+        return new \Controller\LinkController;
+    }
+);
+
 $app['questionnaire.questions.controller'] = $app->share(
     function () {
 
@@ -92,6 +98,18 @@ $app['users.relations.controller'] = $app->share(
 $app['users.tokens.controller'] = $app->share(
     function() {
         return new \Controller\User\TokensController;
+    }
+);
+
+$app['users.photos.controller'] = $app->share(
+    function() {
+        return new \Controller\User\PhotoController();
+    }
+);
+
+$app['users.devices.controller'] = $app->share(
+    function() {
+        return new \Controller\User\DeviceController;
     }
 );
 
@@ -206,6 +224,34 @@ $app['admin.enterpriseUsers.invitations.controller'] = $app->share(
     }
 );
 
+$app['admin.userTracking.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Admin\UserTrackingController;
+    }
+);
+
+$app['admin.userReport.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Admin\UserReportController;
+    }
+);
+
+$app['admin.content.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Admin\ContentController;
+    }
+);
+
+$app['admin.developers.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Admin\DevelopersController;
+    }
+);
+
 
 $app['instant.users.controller'] = $app->share(
     function () {
@@ -218,6 +264,13 @@ $app['instant.relations.controller'] = $app->share(
     function () {
 
         return new \Controller\Instant\RelationsController;
+    }
+);
+
+$app['instant.pushNotifications.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Instant\PushNotificationsController;
     }
 );
 
@@ -285,7 +338,7 @@ $app->error(
             $response['debug'] = array(
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
-                'trace' => $e->getTrace(),
+                'trace' => explode("\n", $e->getTraceAsString())
             );
         }
 
