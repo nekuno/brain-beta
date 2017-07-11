@@ -193,7 +193,8 @@ class UserController
 
             $app['mailer']->send($message);
 
-            throw new ValidationException(array('registration' => "Error registering user"));
+            $exceptionMessage = $app['env'] === 'dev' ? $errorMessage . ' ' . $e->getFile() . ' ' . $e->getLine() : "Error registering user";
+            throw new ValidationException(array('registration' => $exceptionMessage));
         }
 
         return $app->json($user, 201);
