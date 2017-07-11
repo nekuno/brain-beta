@@ -101,6 +101,20 @@ class UserController
         return $app->json($userArray);
     }
 
+    public function autologinAction(Application $app, Request $request, User $user)
+    {
+        $profile = $app['users.profile.model']->getById($user->getId());
+
+        $locale = $request->query->get('locale');
+        $questionFilters = array('id' => $user->getId(), 'locale' => $locale);
+        $questionsTotal = $app['users.questions.model']->countTotal($questionFilters);
+
+        $returnData = array('user' => $user, 'profile' => $profile, 'questionsTotal' => $questionsTotal);
+
+        return $app->json($returnData);
+    }
+
+
     /**
      * @param Application $app
      * @param string $username
