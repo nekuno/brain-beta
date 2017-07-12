@@ -2,8 +2,10 @@
 
 namespace Console\Command;
 
+use ApiConsumer\EventListener\CheckLinksSubscriber;
 use ApiConsumer\EventListener\FetchLinksInstantSubscriber;
 use ApiConsumer\EventListener\FetchLinksSubscriber;
+use ApiConsumer\EventListener\ReprocessLinksSubscriber;
 use Console\ApplicationAwareCommand;
 use EventListener\ExceptionLoggerSubscriber;
 use EventListener\SimilarityMatchingProcessSubscriber;
@@ -20,6 +22,8 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Worker\ChannelWorker;
 use Worker\DatabaseReprocessorWorker;
 use Worker\LinkProcessorWorker;
+use Worker\LinksCheckWorker;
+use Worker\LinksReprocessWorker;
 use Worker\LoggerAwareWorker;
 use Worker\MatchingCalculatorWorker;
 use Worker\PredictionWorker;
@@ -33,19 +37,10 @@ class RabbitMQConsumeCommand extends ApplicationAwareCommand
      */
     protected $logger;
 
-    protected $validConsumers = array(
-        AMQPManager::FETCHING,
-        AMQPManager::REFETCHING,
-        AMQPManager::MATCHING,
-        AMQPManager::PREDICTION,
-        AMQPManager::SOCIAL_NETWORK,
-        AMQPManager::CHANNEL,
-    );
-
     protected function configure()
     {
         $this->setName('rabbitmq:consume')
-            ->setDescription(sprintf('Starts a RabbitMQ consumer by name ("%s")', implode('", "', $this->validConsumers)))
+            ->setDescription(sprintf('Starts a RabbitMQ consumer by name ("%s")', implode('", "', AMQPManager::getValidConsumers())))
             ->addArgument('consumer', InputArgument::OPTIONAL, 'Consumer to start up', 'fetching');
     }
 
@@ -53,8 +48,8 @@ class RabbitMQConsumeCommand extends ApplicationAwareCommand
     {
         $consumer = $input->getArgument('consumer');
 
-        if (!in_array($consumer, $this->validConsumers)) {
-            throw new \Exception(sprintf('Invalid "%s" consumer name, valid consumers "%s".', $consumer, implode('", "', $this->validConsumers)));
+        if (!in_array($consumer, AMQPManager::getValidConsumers())) {
+            throw new \Exception(sprintf('Invalid "%s" consumer name, valid consumers "%s".', $consumer, implode('", "', AMQPManager::getValidConsumers())));
         }
 
         $this->setLogger($output);
@@ -92,6 +87,17 @@ class RabbitMQConsumeCommand extends ApplicationAwareCommand
 
                 $worker = $this->buildChannel($output, $channel);
                 break;
+
+            case AMQPManager::LINKS_CHECK:
+
+                $worker = $this->buildLinksCheck($output, $channel);
+                break;
+
+            case AMQPManager::LINKS_REPROCESS:
+
+                $worker = $this->buildLinksReprocess($output, $channel);
+                break;
+
             default:
                 throw new \Exception('Invalid consumer name');
         }
@@ -248,6 +254,46 @@ class RabbitMQConsumeCommand extends ApplicationAwareCommand
         $dispatcher = $this->getDispatcher($subscribers);
 
         $worker = new ChannelWorker($channel, $dispatcher, $this->app['api_consumer.fetcher'], $this->app['api_consumer.processor'], $this->app['dbs']['mysql_brain']);
+        $worker->setLogger($this->logger);
+        $this->noticeStart($worker);
+
+        return $worker;
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param $channel
+     * @return LinksCheckWorker
+     */
+    protected function buildLinksCheck(OutputInterface $output, AMQPChannel $channel)
+    {
+        $subscribers = array(
+            new ExceptionLoggerSubscriber($this->app['monolog']),
+            new CheckLinksSubscriber($output, $this->app['links.model'])
+        );
+        $dispatcher = $this->getDispatcher($subscribers);
+
+        $worker = new LinksCheckWorker($channel, $dispatcher, $this->app['links.model']);
+        $worker->setLogger($this->logger);
+        $this->noticeStart($worker);
+
+        return $worker;
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param $channel
+     * @return LinksReprocessWorker
+     */
+    protected function buildLinksReprocess(OutputInterface $output, AMQPChannel $channel)
+    {
+        $subscribers = array(
+            new ExceptionLoggerSubscriber($this->app['monolog']),
+            new ReprocessLinksSubscriber($output, $this->app['links.model'])
+        );
+        $dispatcher = $this->getDispatcher($subscribers);
+
+        $worker = new LinksReprocessWorker($channel, $dispatcher, $this->app['links.model'], $this->app['api_consumer.processor']);
         $worker->setLogger($this->logger);
         $this->noticeStart($worker);
 

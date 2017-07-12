@@ -15,6 +15,8 @@ class AMQPManager
     const SOCIAL_NETWORK = 'socialNetwork';
     const CHANNEL = 'channel';
     const REFETCHING = 'refetching';
+    const LINKS_CHECK = 'linksCheck';
+    const LINKS_REPROCESS = 'linksReprocess';
 
     protected $connection;
 
@@ -37,6 +39,16 @@ class AMQPManager
     public function enqueueRefetching($messageData)
     {
         $this->enqueueMessage($messageData, self::REFETCHING, 'command');
+    }
+
+    public function enqueueLinkCheck($messageData)
+    {
+        $this->enqueueMessage($messageData, self::LINKS_CHECK, 'periodic');
+    }
+
+    public function enqueueLinkReprocess($messageData)
+    {
+        $this->enqueueMessage($messageData, self::LINKS_REPROCESS, 'periodic');
     }
 
     public function enqueueMatching($messageData, $trigger)
@@ -77,6 +89,14 @@ class AMQPManager
         $channel->basic_publish($message, $exchangeName, $routingKey);
     }
 
+    public function getMessagesCount($queue)
+    {
+        $queueName = $this->queueManager->buildQueueName($queue);
+        $channel = $this->getChannel($queueName);
+
+        return $this->queueManager->getEnqueuedCount($channel, $queueName);
+    }
+
     public function getChannel($queueName)
     {
         if (isset($this->publishingChannels[$queueName])){
@@ -87,5 +107,19 @@ class AMQPManager
         }
 
         return $channel;
+    }
+
+    public static function getValidConsumers()
+    {
+        return array(
+            self::MATCHING,
+            self::FETCHING,
+            self::PREDICTION,
+            self::SOCIAL_NETWORK,
+            self::CHANNEL,
+            self::REFETCHING,
+            self::LINKS_CHECK,
+            self::LINKS_REPROCESS,
+        );
     }
 }

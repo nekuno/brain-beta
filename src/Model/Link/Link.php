@@ -13,6 +13,9 @@ class Link implements \JsonSerializable
     protected $tags = array();
     protected $created;
     protected $processed = true;
+    protected $lastChecked;
+    protected $lastReprocessed;
+    protected $reprocessedCount;
     protected $imageProcessed;
     protected $language;
     /** @var Link[] */
@@ -193,6 +196,54 @@ class Link implements \JsonSerializable
     public function setProcessed($processed)
     {
         $this->processed = $processed;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getLastChecked()
+    {
+        return $this->lastChecked;
+    }
+
+    /**
+     * @param mixed $lastChecked
+     */
+    public function setLastChecked($lastChecked)
+    {
+        $this->lastChecked = $lastChecked;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getLastReprocessed()
+    {
+        return $this->lastReprocessed;
+    }
+
+    /**
+     * @param mixed $lastReprocessed
+     */
+    public function setLastReprocessed($lastReprocessed)
+    {
+        $this->lastReprocessed = $lastReprocessed;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getReprocessedCount()
+    {
+        return $this->reprocessedCount;
+    }
+
+    /**
+     * @param mixed $reprocessedCount
+     */
+    public function setReprocessedCount($reprocessedCount)
+    {
+        $this->reprocessedCount = $reprocessedCount;
     }
 
     /**
