@@ -101,6 +101,20 @@ class UserController
         return $app->json($userArray);
     }
 
+    public function autologinAction(Application $app, Request $request, User $user)
+    {
+        $profile = $app['users.profile.model']->getById($user->getId());
+
+        $locale = $request->query->get('locale');
+        $questionFilters = array('id' => $user->getId(), 'locale' => $locale);
+        $questionsTotal = $app['users.questions.model']->countTotal($questionFilters);
+
+        $returnData = array('user' => $user, 'profile' => $profile, 'questionsTotal' => $questionsTotal);
+
+        return $app->json($returnData);
+    }
+
+
     /**
      * @param Application $app
      * @param string $username
@@ -179,7 +193,8 @@ class UserController
 
             $app['mailer']->send($message);
 
-            throw new ValidationException(array('registration' => "Error registering user"));
+            $exceptionMessage = $app['env'] === 'dev' ? $errorMessage . ' ' . $e->getFile() . ' ' . $e->getLine() : "Error registering user";
+            throw new ValidationException(array('registration' => $exceptionMessage));
         }
 
         return $app->json($user, 201);

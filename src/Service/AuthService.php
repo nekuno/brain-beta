@@ -8,6 +8,7 @@ use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
 use Manager\UserManager;
 use Model\User;
 use Model\User\Token\TokensModel;
+use ReflectionObject;
 use Silex\Component\Security\Core\Encoder\JWTEncoder;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface;
@@ -167,6 +168,40 @@ class AuthService
         $jwt = $this->jwtEncoder->encode($token);
 
         return $jwt;
+    }
+
+    public function getUser($token)
+    {
+        /** @var \stdClass $data */
+        $data = $this->jwtEncoder->decode($token);
+
+        $user = new User();
+        $this->cast($user, $data->user);
+
+        return $user;
+    }
+
+    protected function cast($destination, $sourceObject)
+    {
+        if (is_string($destination)) {
+            $destination = new $destination();
+        }
+        $sourceReflection = new ReflectionObject($sourceObject);
+        $destinationReflection = new ReflectionObject($destination);
+        $sourceProperties = $sourceReflection->getProperties();
+        foreach ($sourceProperties as $sourceProperty) {
+            $sourceProperty->setAccessible(true);
+            $name = $sourceProperty->getName();
+            $value = $sourceProperty->getValue($sourceObject);
+            if ($destinationReflection->hasProperty($name)) {
+                $propDest = $destinationReflection->getProperty($name);
+                $propDest->setAccessible(true);
+                $propDest->setValue($destination,$value);
+            } else {
+                $destination->$name = $value;
+            }
+        }
+        return $destination;
     }
 
     protected function updateLastLogin(User $user)

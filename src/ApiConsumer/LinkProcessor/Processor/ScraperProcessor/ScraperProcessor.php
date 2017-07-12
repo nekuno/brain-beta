@@ -97,7 +97,7 @@ class ScraperProcessor extends AbstractScraperProcessor
 
         foreach ($images as &$imageUrl) {
             if ($this->isRelativeUrl($imageUrl)) {
-                $imageUrl = $prefix . $imageUrl;
+                $imageUrl = $prefix . trim($imageUrl, '/');
             }
         }
     }

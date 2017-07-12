@@ -2,6 +2,7 @@
 
 namespace Service;
 
+use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Message\AMQPMessage;
 
 class AMQPQueueManager
@@ -27,5 +28,12 @@ class AMQPQueueManager
         $parts = explode('.',$routingKey);
 
         return $parts[2];
+    }
+
+    public function getEnqueuedCount(AMQPChannel $channel, $queue)
+    {
+        $response = $channel->queue_declare($queue, true, true, false, false);
+
+        return is_int($response[1]) ? $response[1] : 0;
     }
 }

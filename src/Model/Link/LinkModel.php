@@ -449,11 +449,68 @@ class LinkModel
         return $result->count() > 0 && $result->current()->offsetExists('l');
     }
 
+    private function setLinkPropertyTimestamp($url, $key)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(l:Link{url: {url}})')
+            ->with('l')
+            ->limit(1)
+            ->setParameter('url', $url);
+
+        $qb->set("l.$key = timestamp()");
+
+        $qb->returns('l');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        return $result->count() > 0 && $result->current()->offsetExists('l');
+    }
+
+    private function sumLinkProperty($url, $key, $value)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(l:Link{url: {url}})')
+            ->with('l')
+            ->limit(1)
+            ->setParameter('url', $url);
+
+        $qb->set("l.$key = COALESCE(l.$key, 0) + { value }")
+            ->setParameter('value', $value);
+
+        $qb->returns('l');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        return $result->count() > 0 && $result->current()->offsetExists('l');
+    }
+
     public function setProcessed($url, $processed = true)
     {
         $processedParameter = $processed ? 1 : 0;
 
         return $this->setLinkProperty($url, 'processed', $processedParameter);
+    }
+
+    public function setLastChecked($url)
+    {
+        return $this->setLinkPropertyTimestamp($url, 'lastChecked');
+    }
+
+    public function setLastReprocessed($url)
+    {
+        return $this->setLinkPropertyTimestamp($url, 'lastReprocessed');
+    }
+
+    public function initializeReprocessed($url)
+    {
+        return $this->setLinkProperty($url, 'reprocessedCount', 0);
+    }
+
+    public function increaseReprocessed($url)
+    {
+        return $this->sumLinkProperty($url, 'reprocessedCount', 1);
     }
 
     public function changeUrl($oldUrl, $newUrl)
