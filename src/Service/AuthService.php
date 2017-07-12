@@ -2,6 +2,7 @@
 
 namespace Service;
 
+use HWI\Bundle\OAuthBundle\OAuth\Exception\HttpTransportException;
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Provider\OAuthProvider;
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
 use Manager\UserManager;
@@ -95,7 +96,7 @@ class AuthService
         $token->setResourceOwnerName($resourceOwner);
 
         try {
-            $newToken = $this->oAuthProvider->authenticate($token);
+            $newToken = $this->getNewToken($token);
         } catch (\Exception $e) {
             throw new UnauthorizedHttpException('', 'Los datos introducidos no coinciden con nuestros registros.');
         }
@@ -117,6 +118,27 @@ class AuthService
 
         }
         return $this->buildToken($user);
+    }
+
+    protected function getNewToken($token, $counter = 0) {
+        $newToken = null;
+        if ($counter >= 5) {
+            return $newToken;
+        }
+
+        try {
+            $newToken = $this->oAuthProvider->authenticate($token);
+        }
+        catch (HttpTransportException $e) {
+            sleep(1);
+            $counter++;
+            $newToken = $this->getNewToken($token, $counter);
+        }
+        catch (\Exception $e) {
+            throw new UnauthorizedHttpException('', 'Los datos introducidos no coinciden con nuestros registros.', $e);
+        }
+
+        return $newToken;
     }
 
     /**
