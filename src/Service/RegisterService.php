@@ -83,8 +83,8 @@ class RegisterService
         $token = $this->tm->create($user->getId(), $oauth['resourceOwner'], $oauth);
         $profile = $this->pm->create($user->getId(), $profileData);
         $invitation = $this->im->consume($invitationToken, $user->getId());
-        if (isset($invitation['invitation']['group']['id'])) {
-            $this->gm->addUser($invitation['invitation']['group']['id'], $user->getId());
+        if (isset($invitation['invitation']['group'])) {
+            $this->gm->addUser($invitation['invitation']['group']->getId(), $user->getId());
         }
         $this->dispatcher->dispatch(\AppEvents::USER_REGISTERED, new UserRegisteredEvent($user, $profile, $invitation, $token, $trackingData));
 
