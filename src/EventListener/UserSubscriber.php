@@ -89,6 +89,14 @@ class UserSubscriber implements EventSubscriberInterface
     {
         $user = $event->getUser();
         $threads = $this->threadManager->getDefaultThreads($user, ThreadManager::SCENARIO_DEFAULT_LITE);
+        $invitation = $event->getInvitation();
+
+        $groupId = isset($invitation['invitation']['group']) ? $invitation['invitation']['group']->getId() : null;
+
+        if ($groupId) {
+            $threads[0]['filters']['userFilters']['groups'] = array($groupId);
+        }
+
         $this->threadManager->createBatchForUser($user->getId(), $threads);
     }
 
