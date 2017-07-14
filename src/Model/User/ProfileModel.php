@@ -393,7 +393,7 @@ class ProfileModel
             $currentResult = is_array($optionsResult[$typeName]) ? $optionsResult[$typeName] : array($optionsResult[$typeName]);
             $currentResult[] = $optionId;
         } else {
-            $currentResult = $optionId;
+            $currentResult = array($optionId);
         }
 
         return $currentResult;
