@@ -1559,13 +1559,19 @@ class UserManager implements PaginatedInterface
 
     protected function createPhoto($userId, array &$data)
     {
+        $defaultImageUrl = $this->imagesBaseDir . 'bundles/qnoowlanding/images/user-no-img.jpg';
         if (isset($data['photo']) && filter_var($data['photo'], FILTER_VALIDATE_URL)) {
             $url = $data['photo'];
         } else {
-            $url = $this->imagesBaseDir . 'bundles/qnoowlanding/images/user-no-img.jpg';
+            $url = $defaultImageUrl;
         }
         $user = $this->getById($userId);
-        $photo = $this->pm->create($user, @file_get_contents($url));
+
+        try {
+            $photo = $this->pm->create($user, @file_get_contents($url));
+        } catch (\Exception $e) {
+            $photo = $this->pm->create($user, @file_get_contents($defaultImageUrl));
+        }
         $profilePhoto = $this->pm->setAsProfilePhoto($photo, $user);
         $data['photo'] = $profilePhoto->getPath();
 
