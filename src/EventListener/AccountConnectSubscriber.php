@@ -102,13 +102,20 @@ class AccountConnectSubscriber implements EventSubscriberInterface
         }
     }
 
-    private function extendFacebook(Token $token)
+    private function extendFacebook(Token $token, $attempts = 0)
     {
         /* @var $facebookResourceOwner FacebookResourceOwner */
         $facebookResourceOwner = $this->resourceOwnerFactory->build(TokensModel::FACEBOOK);
-        $facebookResourceOwner->extend($token);
-        if ($token->getRefreshToken()) {
-            $facebookResourceOwner->forceRefreshAccessToken($token);
+
+        try {
+            $facebookResourceOwner->extend($token);
+            if ($token->getRefreshToken()) {
+                $facebookResourceOwner->forceRefreshAccessToken($token);
+            }
+        } catch (\Exception $e) {
+            if ($attempts < 5) {
+                $this->extendFacebook($token, ++$attempts);
+            }
         }
     }
 
