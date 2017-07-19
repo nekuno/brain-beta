@@ -250,8 +250,8 @@ profile:
     gender:
         type: choice
         label: &genderLabel
-            en: 'Gender'
-            es: 'Género'
+            en: 'Descriptive gender'
+            es: 'Género descriptivo'
         labelEdit:
             en: 'Want to be found in searches by gender'
             es: 'Quiero salir en búsquedas por género'
@@ -259,8 +259,8 @@ profile:
     descriptiveGender:
         type: multiple_choices
         label: &descriptiveGenderLabel
-            en: 'Descriptive gender'
-            es: 'Género descriptivo'
+            en: 'Gender'
+            es: 'Género'
         labelEdit: *descriptiveGenderLabel
         max_choices: 5
     hairColor:
