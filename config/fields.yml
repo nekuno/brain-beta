@@ -253,8 +253,8 @@ profile:
             en: 'Descriptive gender'
             es: 'Género descriptivo'
         labelEdit:
-            en: 'Want to be found in searches by gender'
-            es: 'Quiero salir en búsquedas por género'
+            en: 'Descriptive gender'
+            es: 'Género descriptivo'
         notErasable: true
     descriptiveGender:
         type: multiple_choices
