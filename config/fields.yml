@@ -688,9 +688,9 @@ filters:
             label: *languageLabel
             choiceLabel: *languageChoiceLabel
             choices: *languageChoices
-        gender:
-            type: multiple_choices
-            label: *genderLabel
+#        gender:
+#            type: multiple_choices
+#            label: *genderLabel
         descriptiveGender:
             type: multiple_choices
             label: *descriptiveGenderLabel

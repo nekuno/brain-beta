@@ -2,7 +2,7 @@
 
 namespace Model\User\Recommendation;
 
-class UserPopularRecommendationPaginatedModel extends AbstractUserPaginatedModel
+class UserPopularRecommendationPaginatedModel extends AbstractUserRecommendationPaginatedModel
 {
 
     /**
