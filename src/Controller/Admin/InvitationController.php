@@ -73,7 +73,7 @@ class InvitationController
 
         /* @var $model InvitationModel */
         $model = $app['users.invitations.model'];
-        $model->validate($data, false);
+        $model->validateCreate($data);
 
         return $app->json(array(), 200);
     }

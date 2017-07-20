@@ -241,6 +241,9 @@ class InvitationModel
                     } while ($exists);
                     $qb->set('inv.token = "' . $token . '"');
                     continue;
+                } else if ($data['token']) {
+                    $qb->set('inv.token = toLower("' . $data['token'] . '")');
+                    continue;
                 }
             }
             if ($index === 'orientationRequired') {
@@ -455,7 +458,7 @@ class InvitationModel
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(inv:Invitation)', '(u:User)')
-            ->where('inv.token = { token } AND coalesce(inv.available, 0) > 0 AND u.qnoow_id = { userId }')
+            ->where('toLower(inv.token) = toLower({ token }) AND coalesce(inv.available, 0) > 0 AND u.qnoow_id = { userId }')
             ->optionalMatch('(inv)-[:HAS_GROUP]->(g:Group)')
             ->createUnique('(u)-[r:CONSUMED_INVITATION]->(inv)')
             ->set('inv.available = inv.available - 1', 'inv.consumed = inv.consumed + 1')
@@ -595,7 +598,7 @@ class InvitationModel
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(invitation:Invitation)')
-            ->where('invitation.token = { token }')
+            ->where('toLower(invitation.token) = toLower({ token })')
             ->setParameter('token', (string)$token)
             ->returns('invitation');
 
@@ -625,7 +628,7 @@ class InvitationModel
 
         $result = $query->getResultSet();
 
-        return $result->current()->offsetGet('token') === $token;
+        return strtolower($result->current()->offsetGet('token')) === strtolower($token);
     }
 
     public function validateToken($token)
@@ -633,7 +636,7 @@ class InvitationModel
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(inv:Invitation)')
-            ->where('inv.token = { token } AND coalesce(inv.available, 0) > 0')
+            ->where('toLower(inv.token) = toLower({ token }) AND coalesce(inv.available, 0) > 0')
             ->optionalMatch('(inv)-[:HAS_GROUP]->(g:Group)')
             ->returns('inv AS invitation', 'g AS group')
             ->setParameters(

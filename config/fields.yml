@@ -556,8 +556,10 @@ groups:
 invitations:
     invitationId:
         required: false
+        type: integer
     token:
         required: false
+        type: string
         type: string
     available:
         required: true
@@ -565,13 +567,16 @@ invitations:
         min: 1
     consumed:
         required: false
+        type: boolean
     email:
         required: false
         type: email
     expiresAt:
         required: false
+        type: integer
     createdAt:
         required: false
+        type: integer
     userId:
         required: false
         type: integer
