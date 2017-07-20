@@ -154,7 +154,7 @@ class Validator
         if (isset($data['groupId'])) {
             $groupId = $data['groupId'];
             if (!(is_int($groupId) || is_double($groupId))) {
-                $fieldErrors[] = 'groupId must be an integer';
+                throw new ValidationException(array('groupId' => array('GroupId must be an integer')));
             }
             $this->validateGroupId($groupId);
         }
