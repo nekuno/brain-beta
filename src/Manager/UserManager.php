@@ -83,10 +83,11 @@ class UserManager implements PaginatedInterface
 
     /**
      * @param bool $includeGhosts
+     * @param integer $limit
      * @return User[]
      * @throws Neo4jException
      */
-    public function getAll($includeGhosts = false)
+    public function getAll($includeGhosts = false, $limit = null)
     {
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(u:User)');
@@ -95,6 +96,9 @@ class UserManager implements PaginatedInterface
         }
         $qb->returns('u')
             ->orderBy('u.qnoow_id');
+        if ($limit) {
+            $qb->limit((int)$limit);
+        }
 
         $query = $qb->getQuery();
         $result = $query->getResultSet();
