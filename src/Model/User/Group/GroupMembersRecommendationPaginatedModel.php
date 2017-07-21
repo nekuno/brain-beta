@@ -2,9 +2,9 @@
 
 namespace Model\User\Group;
 
-use Model\User\Recommendation\AbstractUserPaginatedModel;
+use Model\User\Recommendation\AbstractUserRecommendationPaginatedModel;
 
-class GroupMembersPaginatedModel extends AbstractUserPaginatedModel
+class GroupMembersRecommendationPaginatedModel extends AbstractUserRecommendationPaginatedModel
 {
     public function slice(array $filters, $offset, $limit)
     {

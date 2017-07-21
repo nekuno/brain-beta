@@ -241,6 +241,9 @@ class InvitationModel
                     } while ($exists);
                     $qb->set('inv.token = "' . $token . '"');
                     continue;
+                } else if ($data['token']) {
+                    $qb->set('inv.token = toLower("' . $data['token'] . '")');
+                    continue;
                 }
             }
             if ($index === 'orientationRequired') {
@@ -455,7 +458,7 @@ class InvitationModel
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(inv:Invitation)', '(u:User)')
-            ->where('inv.token = { token } AND coalesce(inv.available, 0) > 0 AND u.qnoow_id = { userId }')
+            ->where('toLower(inv.token) = toLower({ token }) AND coalesce(inv.available, 0) > 0 AND u.qnoow_id = { userId }')
             ->optionalMatch('(inv)-[:HAS_GROUP]->(g:Group)')
             ->createUnique('(u)-[r:CONSUMED_INVITATION]->(inv)')
             ->set('inv.available = inv.available - 1', 'inv.consumed = inv.consumed + 1')
@@ -587,16 +590,18 @@ class InvitationModel
 
     /**
      * @param $token
+     * @param $excludedId
      * @return bool
      * @throws \Model\Neo4j\Neo4jException
      */
-    public function existsToken($token)
+    public function existsToken($token, $excludedId = null)
     {
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(invitation:Invitation)')
-            ->where('invitation.token = { token }')
+            ->where('toLower(invitation.token) = toLower({ token }) AND NOT id(invitation) = { excludedId }')
             ->setParameter('token', (string)$token)
+            ->setParameter('excludedId', (int)$excludedId)
             ->returns('invitation');
 
         $query = $qb->getQuery();
@@ -625,7 +630,7 @@ class InvitationModel
 
         $result = $query->getResultSet();
 
-        return $result->current()->offsetGet('token') === $token;
+        return strtolower($result->current()->offsetGet('token')) === strtolower($token);
     }
 
     public function validateToken($token)
@@ -633,7 +638,7 @@ class InvitationModel
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(inv:Invitation)')
-            ->where('inv.token = { token } AND coalesce(inv.available, 0) > 0')
+            ->where('toLower(inv.token) = toLower({ token }) AND coalesce(inv.available, 0) > 0')
             ->optionalMatch('(inv)-[:HAS_GROUP]->(g:Group)')
             ->returns('inv AS invitation', 'g AS group')
             ->setParameters(
@@ -661,8 +666,11 @@ class InvitationModel
 
     public function validateUpdate(array $data)
     {
-        if ( isset($data['invitationId']) && !$this->existsInvitation($data['invitationId'])) {
-                throw new ValidationException(array('invitatonId' => 'Invalid invitation ID'));
+        if (isset($data['invitationId']) && !$this->existsInvitation($data['invitationId'])) {
+                throw new ValidationException(array('invitatonId' => array('Invalid invitation ID')));
+        }
+        if (isset($data['token']) && $this->existsToken($data['token'], $data['invitationId'])) {
+            throw new ValidationException(array('token' => array('Token already exists')));
         }
 
         $this->validator->validateInvitation($data, true);
@@ -677,11 +685,11 @@ class InvitationModel
         if (isset($data['token'])){
             $token = $data['token'];
             if (!is_string($token) && !is_numeric($token)) {
-                $fieldErrors[] = 'token must be a string or a numeric';
+                throw new ValidationException(array('token' => array('Token must be a string or a numeric')));
             }
 
-            if (isset($data['invitationId']) && $this->existsToken($token) && !$this->isTokenFromInvitationId($token, $data['invitationId'])) {
-                    $fieldErrors[] = 'token already exists';
+            if ($this->existsToken($token)) {
+                throw new ValidationException(array('token' => array('Token already exists')));
             }
         }
 

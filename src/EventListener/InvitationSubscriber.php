@@ -34,7 +34,8 @@ class InvitationSubscriber implements EventSubscriberInterface
 
     public function onAnswerAdded(AnswerEvent $event)
     {
-        $userId = $event->getUser();
+        /** Uncomment to enable auto generated invitations */
+        /*$userId = $event->getUser();
 
         $userAnswersCount = $this->getNumberOfUserAnswers($userId);
 
@@ -46,7 +47,7 @@ class InvitationSubscriber implements EventSubscriberInterface
 			        'available' => 1,
 		        ));
 	        }
-        }
+        }*/
     }
 
     private function addUserAvailable($userId, $nOfAvailable)
