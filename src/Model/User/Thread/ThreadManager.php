@@ -334,14 +334,14 @@ class ThreadManager
             return array();
         }
 
-        $this->fixGenderFilter($threads[$scenario]);
+        $this->fixDescriptiveGenderFilter($threads[$scenario]);
         return $threads[$scenario];
     }
 
-    private function fixGenderFilter(&$threads) {
+    private function fixDescriptiveGenderFilter(&$threads) {
         foreach ($threads as &$thread) {
-            if (isset($thread['filters']['userFilters']) && isset($thread['filters']['userFilters']['gender']) && $thread['filters']['userFilters']['gender'] == array(null)) {
-                unset($thread['filters']['userFilters']['gender']);
+            if (isset($thread['filters']['userFilters']) && isset($thread['filters']['userFilters']['descriptiveGender']) && $thread['filters']['userFilters']['descriptiveGender'] == array(null)) {
+                unset($thread['filters']['userFilters']['descriptiveGender']);
             }
         }
     }
