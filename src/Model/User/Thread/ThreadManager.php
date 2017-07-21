@@ -297,7 +297,7 @@ class ThreadManager
                                 'distance' => 50,
                                 'location' => $location
                             ),
-                            'gender' => array($genderDesired !== 'people' ? $genderDesired : null),
+                            'descriptiveGender' => array($genderDesired !== 'people' ? $genderDesired : null),
                         ),
                         'order' => 'content',
                     ),
@@ -318,7 +318,7 @@ class ThreadManager
                                 'min' => 18,
                                 'max' => 80,
                             ),
-                            'gender' => array($genderDesired !== 'people' ? $genderDesired : null),
+                            'descriptiveGender' => array($genderDesired !== 'people' ? $genderDesired : null),
                         ),
                         'order' => 'content',
                     ),
