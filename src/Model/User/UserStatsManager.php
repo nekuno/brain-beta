@@ -4,6 +4,7 @@ namespace Model\User;
 
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
+use Model\User\Content\ContentPaginatedModel;
 use Model\User\Group\GroupModel;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -24,33 +25,29 @@ class UserStatsManager
      */
     protected $groupModel;
 
+    protected $contentPaginatedModel;
+
     function __construct(GraphManager $graphManager,
                          GroupModel $groupModel,
-                         RelationsModel $relationsModel)
+                         RelationsModel $relationsModel,
+                         ContentPaginatedModel $contentPaginatedModel)
     {
         $this->graphManager = $graphManager;
         $this->groupModel = $groupModel;
         $this->relationsModel = $relationsModel;
+        $this->contentPaginatedModel = $contentPaginatedModel;
     }
 
+    //TODO: If we can get this from respective managers, and not be slower, this would be UserStatsService
     public function getStats($id)
     {
-
         $qb = $this->graphManager->createQueryBuilder();
 
         $qb->match('(u:User {qnoow_id: { id }})')
             ->setParameter('id', (integer)$id)
             ->with('u')
-            ->optionalMatch('(u)-[r:LIKES]->(:Link)')
-            ->with('u,count(r) AS contentLikes')
-            ->optionalMatch('(u)-[r:LIKES]->(:Video)')
-            ->with('u,contentLikes,count(r) AS videoLikes')
-            ->optionalMatch('(u)-[r:LIKES]->(:Audio)')
-            ->with('u,contentLikes,videoLikes,count(r) AS audioLikes')
-            ->optionalMatch('(u)-[r:LIKES]->(:Image)')
-            ->with('u, contentLikes, videoLikes, audioLikes, count(r) AS imageLikes')
             ->optionalMatch('(u)-[r:ANSWERS]->(:Answer)')
-            ->returns('contentLikes', 'videoLikes', 'audioLikes', 'imageLikes', 'count(r) AS questionsAnswered', 'u.available_invitations AS available_invitations');
+            ->returns('count(r) AS questionsAnswered', 'u.available_invitations AS available_invitations');
 
         $query = $qb->getQuery();
 
@@ -68,11 +65,13 @@ class UserStatsManager
 
         $groups = $this->groupModel->getAllByUserId($id);
 
+        $contentLikes = $this->contentPaginatedModel->countAll($id);
+
         $userStats = new UserStatsModel(
-            $row->offsetGet('contentLikes'),
-            $row->offsetGet('videoLikes'),
-            $row->offsetGet('audioLikes'),
-            $row->offsetGet('imageLikes'),
+            $contentLikes['Link'],
+            $contentLikes['Video'],
+            $contentLikes['Audio'],
+            $contentLikes['Image'],
             (integer)$numberOfReceivedLikes,
             (integer)$numberOfUserLikes,
             $groups,
