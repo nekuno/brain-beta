@@ -931,7 +931,7 @@ class UserManager implements PaginatedInterface
             ->optionalMatch('(u2)-[:TOKEN_OF]-(token2:Token)');
         $qb->with('u, u2', 'groupsBelonged', 'resourceOwners', 'collect(distinct token2.resourceOwner) as resourceOwners2')
             ->optionalMatch('(u)-[:LIKES]->(link:Link)')
-            ->where('(u2)-[:LIKES]->(link)')
+            ->where('(u2)-[:LIKES]->(link)', 'link.processed = 1', 'NOT link:LinkDisabled')
             ->with('u', 'u2', 'groupsBelonged', 'resourceOwners', 'resourceOwners2', 'count(distinct(link)) AS commonContent')
             ->optionalMatch('(u)-[:ANSWERS]->(answer:Answer)')
             ->where('(u2)-[:ANSWERS]->(answer)')
