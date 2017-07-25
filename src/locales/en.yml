@@ -45,7 +45,7 @@ followers:
   invitation_slogan: 'Find out if you are %compatible_or_similar% with %username%!'
   group_name: 'Followers of %username%'
 messages:
-  register: 'Welcome! You can start exploring the web using the yarns we have created for you. If you want to improve them, you can always connect more social media to let us know what you like!'
+  register: 'Only when you are more yourself than ever, everyone who really loves you as you are, can notice your existence. For that reason, enjoy being yourself at Nekuno, because this is the place where all that people can find you. Count on me if you need advice. nemo ♥'
 types:
   audio: 'Music'
   video: 'Videos'

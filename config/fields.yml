@@ -249,8 +249,8 @@ profile:
     gender:
         type: choice
         label: &genderLabel
-            en: 'Gender'
-            es: 'Género'
+            en: 'Want to be found in searches by gender'
+            es: 'Quiero salir en búsquedas por género'
         labelEdit:
             en: 'Want to be found in searches by gender'
             es: 'Quiero salir en búsquedas por género'
@@ -258,8 +258,8 @@ profile:
     descriptiveGender:
         type: multiple_choices
         label: &descriptiveGenderLabel
-            en: 'Descriptive gender'
-            es: 'Género descriptivo'
+            en: 'Gender'
+            es: 'Género'
         labelEdit: *descriptiveGenderLabel
         max_choices: 5
     hairColor:
@@ -554,8 +554,10 @@ groups:
 invitations:
     invitationId:
         required: false
+        type: integer
     token:
         required: false
+        type: string
         type: string
     available:
         required: true
@@ -563,13 +565,16 @@ invitations:
         min: 1
     consumed:
         required: false
+        type: boolean
     email:
         required: false
         type: email
     expiresAt:
         required: false
+        type: integer
     createdAt:
         required: false
+        type: integer
     userId:
         required: false
         type: integer
@@ -683,9 +688,9 @@ filters:
             label: *languageLabel
             choiceLabel: *languageChoiceLabel
             choices: *languageChoices
-        gender:
-            type: multiple_choices
-            label: *genderLabel
+#        gender:
+#            type: multiple_choices
+#            label: *genderLabel
         descriptiveGender:
             type: multiple_choices
             label: *descriptiveGenderLabel

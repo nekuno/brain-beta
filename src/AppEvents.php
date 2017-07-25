@@ -42,6 +42,41 @@ final class AppEvents
     const PROCESS_FINISH = 'process.finish';
 
     /**
+     * Fired when a link is going to be checked
+     */
+    const CHECK_START = 'check.start';
+
+    /**
+     * Fired when receiving a checking link response
+     */
+    const CHECK_RESPONSE = 'check.response';
+
+    /**
+     * Fired when a link is successfully checked
+     */
+    const CHECK_SUCCESS = 'check.success';
+
+    /**
+     * Fired when a link is NOT successfully checked
+     */
+    const CHECK_ERROR = 'check.error';
+
+    /**
+     * Fired when a link is going to be reprocessed
+     */
+    const REPROCESS_START = 'reprocess.start';
+
+    /**
+     * Fired when a link has been reprocessed
+     */
+    const REPROCESS_FINISH = 'reprocess.finish';
+
+    /**
+     * Fired when an error occurs reprocessing a link
+     */
+    const REPROCESS_ERROR = 'reprocess.error';
+
+    /**
      * Fired when user is registered
      */
     const USER_REGISTERED = 'user.registered';

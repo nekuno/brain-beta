@@ -83,10 +83,11 @@ class UserManager implements PaginatedInterface
 
     /**
      * @param bool $includeGhosts
+     * @param integer $limit
      * @return User[]
      * @throws Neo4jException
      */
-    public function getAll($includeGhosts = false)
+    public function getAll($includeGhosts = false, $limit = null)
     {
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(u:User)');
@@ -95,6 +96,9 @@ class UserManager implements PaginatedInterface
         }
         $qb->returns('u')
             ->orderBy('u.qnoow_id');
+        if ($limit) {
+            $qb->limit((int)$limit);
+        }
 
         $query = $qb->getQuery();
         $result = $query->getResultSet();
@@ -927,7 +931,7 @@ class UserManager implements PaginatedInterface
             ->optionalMatch('(u2)-[:TOKEN_OF]-(token2:Token)');
         $qb->with('u, u2', 'groupsBelonged', 'resourceOwners', 'collect(distinct token2.resourceOwner) as resourceOwners2')
             ->optionalMatch('(u)-[:LIKES]->(link:Link)')
-            ->where('(u2)-[:LIKES]->(link)')
+            ->where('(u2)-[:LIKES]->(link)', 'link.processed = 1', 'NOT link:LinkDisabled')
             ->with('u', 'u2', 'groupsBelonged', 'resourceOwners', 'resourceOwners2', 'count(distinct(link)) AS commonContent')
             ->optionalMatch('(u)-[:ANSWERS]->(answer:Answer)')
             ->where('(u2)-[:ANSWERS]->(answer)')
@@ -1559,13 +1563,19 @@ class UserManager implements PaginatedInterface
 
     protected function createPhoto($userId, array &$data)
     {
+        $defaultImageUrl = $this->imagesBaseDir . 'bundles/qnoowlanding/images/user-no-img.jpg';
         if (isset($data['photo']) && filter_var($data['photo'], FILTER_VALIDATE_URL)) {
             $url = $data['photo'];
         } else {
-            $url = $this->imagesBaseDir . 'bundles/qnoowlanding/images/user-no-img.jpg';
+            $url = $defaultImageUrl;
         }
         $user = $this->getById($userId);
-        $photo = $this->pm->create($user, @file_get_contents($url));
+
+        try {
+            $photo = $this->pm->create($user, @file_get_contents($url));
+        } catch (\Exception $e) {
+            $photo = $this->pm->create($user, @file_get_contents($defaultImageUrl));
+        }
         $profilePhoto = $this->pm->setAsProfilePhoto($photo, $user);
         $data['photo'] = $profilePhoto->getPath();
 

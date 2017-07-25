@@ -11,7 +11,7 @@ use Model\User\ProfileModel;
 use Model\Metadata\UserFilterMetadataManager;
 use Paginator\PaginatedInterface;
 
-abstract class AbstractUserPaginatedModel implements PaginatedInterface
+abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInterface
 {
     /**
      * @var GraphManager
@@ -202,9 +202,8 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
                         break;
                     case 'choice':
                     case 'multiple_choices':
-                        $profileLabelName = $this->profileFilterModel->typeToLabel($name);
-                        $value = implode("', '", $value);
-                        $matches[] = "(p)<-[:OPTION_OF]-(option$name:$profileLabelName) WHERE option$name.id IN ['$value']";
+                        $query = $this->getChoiceMatch($name, $value);
+                        $matches[] = $query;
                         break;
                     case 'double_choice':
                         $profileLabelName = $this->profileFilterModel->typeToLabel($name);
@@ -280,6 +279,30 @@ abstract class AbstractUserPaginatedModel implements PaginatedInterface
             'conditions' => $conditions,
             'matches' => $matches
         );
+    }
+
+    protected function getChoiceMatch($name, $value) {
+        $queries = array();
+
+        $profileLabelName = $this->profileFilterModel->typeToLabel($name);
+        $needsDescriptiveGenderFix = $name === 'descriptiveGender' && (in_array('man', $value) || in_array('woman', $value));
+        if ($needsDescriptiveGenderFix) {
+            $gendersArray = ['man' => 'male', 'woman' => 'female'];
+            $filteringGenders = [];
+            foreach ($gendersArray as $descriptive => $gender){
+                if (in_array($descriptive, $value)){
+                    $filteringGenders[] = $gender;
+                }
+            }
+            $queries[] = $this->getChoiceMatch('gender', $filteringGenders);
+            $value = array_diff($value, ['man', 'woman']);
+        }
+        if (!empty($value)){
+            $value = implode("', '", $value);
+            $queries[] = "(p)<-[:OPTION_OF]-(option$name:$profileLabelName) WHERE option$name.id IN ['$value']";
+        }
+
+        return implode(' MATCH ', $queries);
     }
 
     protected function getProfileFilterMetadata()

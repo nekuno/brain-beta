@@ -176,6 +176,7 @@ class DeviceModel
             ->set('d.platform = { platform }')
             ->set('d.createdAt = oldD.createdAt')
             ->set('d.updatedAt = timestamp()')
+            ->with('d', 'u', 'r', 'oldD')
             ->delete('r', 'oldD')
             ->with('d', 'u')
             ->setParameters(array(

@@ -43,9 +43,11 @@ class ProfileModel
             ->where('user.qnoow_id = { id }')
             ->setParameter('id', (integer)$id)
             ->optionalMatch('(profile)<-[optionOf:OPTION_OF]-(option:ProfileOption)')
+            ->with('profile', 'collect(distinct {option: option, detail: (CASE WHEN EXISTS(optionOf.detail) THEN optionOf.detail ELSE null END)}) AS options')
             ->optionalMatch('(profile)<-[tagged:TAGGED]-(tag:ProfileTag)')
+            ->with('profile', 'options', 'collect(distinct {tag: tag, tagged: tagged}) AS tags')
             ->optionalMatch('(profile)-[:LOCATION]->(location:Location)')
-            ->returns('collect(distinct {option: option, detail: (CASE WHEN EXISTS(optionOf.detail) THEN optionOf.detail ELSE null END)}) AS options, collect(distinct {tag: tag, tagged: tagged}) AS tags, profile, location')
+            ->returns('profile', 'options', 'tags', 'location')
             ->limit(1);
 
         $query = $qb->getQuery();
@@ -92,7 +94,8 @@ class ProfileModel
         $this->saveProfileData($id, $data);
 
         $profile = $this->getById($id);
-        $this->dispatcher->dispatch(\AppEvents::PROFILE_CREATED,(new ProfileEvent($profile, $id)));
+        $this->dispatcher->dispatch(\AppEvents::PROFILE_CREATED, (new ProfileEvent($profile, $id)));
+
         return $profile;
     }
 
@@ -173,40 +176,72 @@ class ProfileModel
     {
         $options = $row->offsetGet('options');
         $optionsResult = array();
-        $metadata = $this->profileFilterModel->getProfileFilterMetadata();
         /** @var Row $optionData */
         foreach ($options as $optionData) {
-            $option = $optionData->offsetGet('option');
-            $detail = $optionData->offsetGet('detail');
-            $labels = $option ? $option->getLabels() : array();
-            /* @var Label $label */
+
+            list($optionId, $labels, $detail) = $this->getOptionData($optionData);
+            /** @var Label[] $labels */
             foreach ($labels as $label) {
-                if ($label->getName() && $label->getName() != 'ProfileOption') {
-                    $typeName = $this->profileFilterModel->labelToType($label->getName());
-                    if (isset($optionsResult[$typeName]) && $optionsResult[$typeName]) {
-                        if (is_array($optionsResult[$typeName])) {
-                            $optionsResult[$typeName] = array_merge($optionsResult[$typeName], array($option->getProperty('id')));
-                        } else {
-                            $optionsResult[$typeName] = array($optionsResult[$typeName], $option->getProperty('id'));
-                        }
-                    } else {
-                        $optionsResult[$typeName] = $option->getProperty('id');
-                        if (!is_null($detail)) {
-                            $optionsResult[$typeName] = array();
-                            $optionsResult[$typeName]['choice'] = $option->getProperty('id');
-                            $optionsResult[$typeName]['detail'] = $detail;
-                        }
-                    }
-                    if (isset($metadata[$typeName]) && $metadata[$typeName]['type'] == 'multiple_choices'
-                        && !empty($optionsResult[$typeName]) && !is_array($optionsResult[$typeName])
-                    ) {
-                        $optionsResult[$typeName] = array($optionsResult[$typeName]);
-                    }
+
+                $typeName = $this->profileFilterModel->labelToType($label->getName());
+
+                $metadata = $this->profileFilterModel->getProfileMetadata();
+                switch ($metadata[$typeName]['type']) {
+                    case 'multiple_choices':
+                        $result = $this->getOptionArrayResult($optionsResult, $typeName, $optionId);
+                        break;
+                    case 'double_choice':
+                    case 'tags_and_choice':
+                        $result = $this->getOptionDetailResult($optionId, $detail);
+                        break;
+                    default:
+                        $result = $optionId;
+                        break;
                 }
+
+                $optionsResult[$typeName] = $result;
             }
         }
 
         return $optionsResult;
+    }
+
+    protected function getOptionData(Row $optionData = null)
+    {
+        if (!$optionData->offsetExists('option')) {
+            return array(null, array(), null);
+        }
+        $optionNode = $optionData->offsetGet('option');
+        $optionId = $optionNode->getProperty('id');
+
+        /** @var Label[] $labels */
+        $labels = $optionNode->getLabels();
+        foreach ($labels as $key => $label) {
+            if ($label->getName() === 'ProfileOption') {
+                unset($labels[$key]);
+            }
+        }
+
+        $detail = $optionData->offsetExists('detail') ? $optionData->offsetGet('detail') : '';
+
+        return array($optionId, $labels, $detail);
+    }
+
+    protected function getOptionArrayResult($optionsResult, $typeName, $optionId)
+    {
+        if (isset($optionsResult[$typeName])) {
+            $currentResult = is_array($optionsResult[$typeName]) ? $optionsResult[$typeName] : array($optionsResult[$typeName]);
+            $currentResult[] = $optionId;
+        } else {
+            $currentResult = array($optionId);
+        }
+
+        return $currentResult;
+    }
+
+    protected function getOptionDetailResult($optionId, $detail)
+    {
+        return array('choice' => $optionId, 'detail' => $detail);
     }
 
     protected function buildTags(Row $row, $locale = null)

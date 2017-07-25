@@ -2,11 +2,13 @@
 
 namespace Service;
 
+use HWI\Bundle\OAuthBundle\OAuth\Exception\HttpTransportException;
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Provider\OAuthProvider;
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
 use Manager\UserManager;
 use Model\User;
 use Model\User\Token\TokensModel;
+use ReflectionObject;
 use Silex\Component\Security\Core\Encoder\JWTEncoder;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface;
@@ -95,7 +97,7 @@ class AuthService
         $token->setResourceOwnerName($resourceOwner);
 
         try {
-            $newToken = $this->oAuthProvider->authenticate($token);
+            $newToken = $this->getNewToken($token);
         } catch (\Exception $e) {
             throw new UnauthorizedHttpException('', 'Los datos introducidos no coinciden con nuestros registros.');
         }
@@ -117,6 +119,27 @@ class AuthService
 
         }
         return $this->buildToken($user);
+    }
+
+    protected function getNewToken($token, $counter = 0) {
+        $newToken = null;
+        if ($counter >= 5) {
+            return $newToken;
+        }
+
+        try {
+            $newToken = $this->oAuthProvider->authenticate($token);
+        }
+        catch (HttpTransportException $e) {
+            sleep(1);
+            $counter++;
+            $newToken = $this->getNewToken($token, $counter);
+        }
+        catch (\Exception $e) {
+            throw new UnauthorizedHttpException('', 'Los datos introducidos no coinciden con nuestros registros.', $e);
+        }
+
+        return $newToken;
     }
 
     /**
@@ -145,6 +168,40 @@ class AuthService
         $jwt = $this->jwtEncoder->encode($token);
 
         return $jwt;
+    }
+
+    public function getUser($token)
+    {
+        /** @var \stdClass $data */
+        $data = $this->jwtEncoder->decode($token);
+
+        $user = new User();
+        $this->cast($user, $data->user);
+
+        return $user;
+    }
+
+    protected function cast($destination, $sourceObject)
+    {
+        if (is_string($destination)) {
+            $destination = new $destination();
+        }
+        $sourceReflection = new ReflectionObject($sourceObject);
+        $destinationReflection = new ReflectionObject($destination);
+        $sourceProperties = $sourceReflection->getProperties();
+        foreach ($sourceProperties as $sourceProperty) {
+            $sourceProperty->setAccessible(true);
+            $name = $sourceProperty->getName();
+            $value = $sourceProperty->getValue($sourceObject);
+            if ($destinationReflection->hasProperty($name)) {
+                $propDest = $destinationReflection->getProperty($name);
+                $propDest->setAccessible(true);
+                $propDest->setValue($destination,$value);
+            } else {
+                $destination->$name = $value;
+            }
+        }
+        return $destination;
     }
 
     protected function updateLastLogin(User $user)

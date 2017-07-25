@@ -32,6 +32,11 @@ class RabbitMQEnqueueFetchingCommand extends ApplicationAwareCommand
                 null,
                 InputOption::VALUE_NONE,
                 'Fetch as Nekuno instead of as the user'
+            )->addOption(
+                'limit',
+                null,
+                InputOption::VALUE_OPTIONAL,
+                'Users limit'
             );
     }
 
@@ -40,13 +45,14 @@ class RabbitMQEnqueueFetchingCommand extends ApplicationAwareCommand
         $userIdOption = $input->getOption('user');
         $resourceOwnerOption = $input->getOption('resource');
         $public = $input->getOption('public');
+        $limit = $input->getOption('limit');
 
         if (!$this->isValidResourceOwner($resourceOwnerOption)) {
-            $output->writeln(sprintf('%s is not an valid resource owner', $resourceOwnerOption));
+            $output->writeln(sprintf('%s is not a valid resource owner', $resourceOwnerOption));
             exit;
         }
 
-        $messages = $this->getMessages($userIdOption, $resourceOwnerOption, $public, $output);
+        $messages = $this->getMessages($userIdOption, $resourceOwnerOption, $public, $limit, $output);
         $this->enqueueMessages($messages, $output);
     }
 
@@ -57,24 +63,24 @@ class RabbitMQEnqueueFetchingCommand extends ApplicationAwareCommand
         return $resourceOwnerOption == null || in_array($resourceOwnerOption, $availableResourceOwners);
     }
 
-    private function getMessages($userIdOption, $resourceOwnerOption, $public, OutputInterface $output)
+    private function getMessages($userIdOption, $resourceOwnerOption, $public, $limit, OutputInterface $output)
     {
         if ($userIdOption && $resourceOwnerOption){
             $messages = array($this->buildMessage($userIdOption, $resourceOwnerOption, $public));
         } else {
-            $users = $this->getUsers($userIdOption, $output);
+            $users = $this->getUsers($userIdOption, $limit, $output);
             $messages = $this->buildMessages($users, $resourceOwnerOption, $public);
         }
 
         return $messages;
     }
 
-    private function getUsers($userIdOption, OutputInterface $output)
+    private function getUsers($userIdOption, $limit, OutputInterface $output)
     {
         $usersModel = $this->app['users.manager'];
 
         try {
-            return null == $userIdOption ? $usersModel->getAll() : array($usersModel->getById($userIdOption));
+            return null == $userIdOption ? $usersModel->getAll(false, $limit) : array($usersModel->getById($userIdOption));
         } catch (\Exception $e) {
             $output->writeln($e->getMessage());
             exit;

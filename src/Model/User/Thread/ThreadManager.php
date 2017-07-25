@@ -297,7 +297,7 @@ class ThreadManager
                                 'distance' => 50,
                                 'location' => $location
                             ),
-                            'gender' => array($genderDesired !== 'people' ? $genderDesired : null),
+                            'descriptiveGender' => array($genderDesired !== 'people' ? $genderDesired : null),
                         ),
                         'order' => 'content',
                     ),
@@ -318,7 +318,7 @@ class ThreadManager
                                 'min' => 18,
                                 'max' => 80,
                             ),
-                            'gender' => array($genderDesired !== 'people' ? $genderDesired : null),
+                            'descriptiveGender' => array($genderDesired !== 'people' ? $genderDesired : null),
                         ),
                         'order' => 'content',
                     ),
@@ -334,14 +334,14 @@ class ThreadManager
             return array();
         }
 
-        $this->fixGenderFilter($threads[$scenario]);
+        $this->fixDescriptiveGenderFilter($threads[$scenario]);
         return $threads[$scenario];
     }
 
-    private function fixGenderFilter(&$threads) {
+    private function fixDescriptiveGenderFilter(&$threads) {
         foreach ($threads as &$thread) {
-            if (isset($thread['filters']['userFilters']) && isset($thread['filters']['userFilters']['gender']) && $thread['filters']['userFilters']['gender'] == array(null)) {
-                unset($thread['filters']['userFilters']['gender']);
+            if (isset($thread['filters']['userFilters']) && isset($thread['filters']['userFilters']['descriptiveGender']) && $thread['filters']['userFilters']['descriptiveGender'] == array(null)) {
+                unset($thread['filters']['userFilters']['descriptiveGender']);
             }
         }
     }

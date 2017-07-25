@@ -73,7 +73,11 @@ class InvitationController
 
         /* @var $model InvitationModel */
         $model = $app['users.invitations.model'];
-        $model->validate($data, false);
+        if (isset($data['invitationId'])) {
+            $model->validateUpdate($data);
+        } else {
+            $model->validateCreate($data);
+        }
 
         return $app->json(array(), 200);
     }

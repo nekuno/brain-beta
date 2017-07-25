@@ -4,7 +4,7 @@ namespace Model\User\Recommendation;
 
 use Everyman\Neo4j\Query\ResultSet;
 
-class UserRecommendationPaginatedModel extends AbstractUserPaginatedModel
+class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginatedModel
 {
     const USER_SAFETY_LIMIT = 5000;
 
