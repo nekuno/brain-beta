@@ -1,0 +1,3 @@
+validator.config:
+    profile: Service\Validator\ProfileValidator
+    default: Service\Validator\Validator

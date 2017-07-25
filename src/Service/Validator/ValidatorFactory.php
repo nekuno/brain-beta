@@ -4,7 +4,7 @@ namespace Service\Validator;
 
 class ValidatorFactory
 {
-    protected $metadata;
+    protected $metadataManagerFactory;
 
     protected $graphManager;
 
@@ -13,22 +13,21 @@ class ValidatorFactory
     /**
      * ValidatorFactory constructor.
      * @param $graphManager
-     * @param $metadata
+     * @param $metadataManagerFactory
      * @param $config
      */
-    public function __construct($graphManager, $metadata, $config)
+    public function __construct($graphManager, $metadataManagerFactory, $config)
     {
-        $this->metadata = $metadata;
         $this->graphManager = $graphManager;
+        $this->metadataManagerFactory = $metadataManagerFactory;
         $this->config = $config;
     }
 
     public function build($name)
     {
         $class = $this->getClass($name);
-        $metadata = $this->getMetadata($name);
 
-        return new $class()
+        return new $class($this->graphManager, $this->metadataManagerFactory);
     }
 
     /**
@@ -38,22 +37,9 @@ class ValidatorFactory
     protected function getClass($name)
     {
         $config = $this->config;
-        $defaultValidator = 'Service/Validator';
-        $class = isset($config[$name]) && isset($config[$name]['class']) ? $config[$name]['class'] : $defaultValidator;
+        $defaultValidator = $config['default'];
+        $class = isset($config[$name]) ? $config[$name] : $defaultValidator;
 
         return $class;
-    }
-
-    /**
-     * @param $name
-     * @return mixed
-     */
-    protected function getMetadata($name)
-    {
-        $config = $this->config;
-        $defaultMetadata = $this->metadata;
-        $metadata = isset($config[$name]) && isset($config[$name]['metadata']) ? $this->metadata[$name] : $defaultMetadata;
-
-        return $metadata;
     }
 }

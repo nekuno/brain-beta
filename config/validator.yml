@@ -1,3 +1,0 @@
-profile:
-    class: 'Service/Validator/ProfileValidator'
-    metadata: 'profile'

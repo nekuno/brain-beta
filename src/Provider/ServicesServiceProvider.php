@@ -2,6 +2,7 @@
 
 namespace Provider;
 
+use Igorw\Silex\ConfigServiceProvider;
 use Service\AffinityRecalculations;
 use Service\AMQPManager;
 use Service\AuthService;
@@ -102,6 +103,8 @@ class ServicesServiceProvider implements ServiceProviderInterface
             }
         );
 
+        $app->register(new ConfigServiceProvider(__DIR__ . "/../Service/Validator/config.yml"));
+
         $app['validator.service'] = $app->share(
             function (Application $app) {
                 return new Validator($app['neo4j.graph_manager'], $app['users.metadataManager.factory']);
@@ -110,7 +113,7 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['validator.factory'] = $app->share(
             function (Application $app) {
-                return new ValidatorFactory($app['neo4j.graph_manager'], $app['fields'], $app['validatorConfig']);
+                return new ValidatorFactory($app['neo4j.graph_manager'], $app['users.metadataManager.factory'], $app['validator.config']);
             }
         );
 
