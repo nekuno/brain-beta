@@ -259,6 +259,9 @@ class TokensModel
      */
     public function validate(array $data, $id = null)
     {
+        if (!$id && !isset($data['resourceId'])) {
+            throw new ValidationException(array('resourceId' => array('ResourceId is required')));
+        }
         $this->validator->validateToken($data, $id, $this->getChoices());
     }
 
