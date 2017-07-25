@@ -23,27 +23,6 @@ abstract class MetadataManager
     }
 
     /**
-     * Returns the metadata for creating search filters
-     * @param null $locale
-     * @return array
-     */
-    public function getFilters($locale = null)
-    {
-        $locale = $this->getLocale($locale);
-        $metadata = $this->getMetadata($locale);
-        $labels = array();
-        foreach ($metadata as $key => &$item) {
-            $labels[] = $item['label'];
-        }
-
-        if (!empty($labels)) {
-            array_multisort($labels, SORT_ASC, $metadata);
-        }
-
-        return $metadata;
-    }
-
-    /**
      * @param null $locale Locale of the metadata
      * @return array
      */
@@ -51,17 +30,19 @@ abstract class MetadataManager
     {
         $this->setLocale($locale);
 
-        $publicMetadata = array();
+        $metadata = array();
         foreach ($this->metadata as $name => $values) {
             $publicField = $values;
             $publicField['label'] = $this->getLabel($values);
 
             $publicField = $this->modifyPublicField($publicField, $name, $values);
 
-            $publicMetadata[$name] = $publicField;
+            $metadata[$name] = $publicField;
         }
 
-        return $publicMetadata;
+        $metadata = $this->orderByLabel($metadata);
+
+        return $metadata;
     }
 
     protected function setLocale($locale)
@@ -77,11 +58,6 @@ abstract class MetadataManager
         }
 
         return $locale;
-    }
-
-    protected function modifyPublicField($publicField, $name, $values)
-    {
-        return $publicField;
     }
 
     protected function getLabel($field)
@@ -100,6 +76,30 @@ abstract class MetadataManager
         }
 
         return $labelField[$locale];
+    }
+
+    protected function orderByLabel($metadata) {
+        $labels = $this->getLabels($metadata);
+
+        if (!empty($labels)) {
+            array_multisort($labels, SORT_ASC, $metadata);
+        }
+
+        return $metadata;
+    }
+
+    protected function getLabels($metadata) {
+        $labels = array();
+        foreach ($metadata as $key => &$item) {
+            $labels[] = $item['label'];
+        }
+
+        return $labels;
+    }
+
+    protected function modifyPublicField($publicField, $name, $values)
+    {
+        return $publicField;
     }
 
 //    public function getSocialFilters($locale)

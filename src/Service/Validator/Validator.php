@@ -272,22 +272,22 @@ class Validator
 
     public function validateEditFilterContent(array $data, array $choices = array())
     {
-        return $this->validate($data, $this->contentFilterModel->getFilters(), $choices);
+        return $this->validate($data, $this->contentFilterModel->getMetadata(), $choices);
     }
 
     public function validateEditFilterUsers($data, $choices = array())
     {
-        return $this->validate($data, $this->userFilterModel->getFilters(), $choices);
+        return $this->validate($data, $this->userFilterModel->getMetadata(), $choices);
     }
 
     public function validateEditFilterProfile($data, $choices = array())
     {
-        return $this->validate($data, $this->profileFilterModel->getFilters(), $choices);
+        return $this->validate($data, $this->profileFilterModel->getMetadata(), $choices);
     }
 
     public function validateRecommendateContent($data, $choices = array())
     {
-        return $this->validate($data, $this->contentFilterModel->getFilters(), $choices);
+        return $this->validate($data, $this->contentFilterModel->getMetadata(), $choices);
     }
 
     public function validateDevice($data)

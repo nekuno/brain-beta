@@ -575,7 +575,7 @@ class FilterUsersManager
      */
     private function buildProfileOptions(\ArrayAccess $options, Node $filterNode)
     {
-        $filterMetadata = $this->profileFilterModel->getFilters();
+        $filterMetadata = $this->profileFilterModel->getMetadata();
         $optionsResult = array();
         /* @var Node $option */
         foreach ($options as $option) {

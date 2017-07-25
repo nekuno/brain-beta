@@ -639,13 +639,13 @@ class UserController
 
         /* @var $profileFilterModel ProfileFilterMetadataManager */
         $profileFilterModel = $app['users.profileFilter.model'];
-        $filters['userFilters'] = $profileFilterModel->getFilters($locale);
+        $filters['userFilters'] = $profileFilterModel->getMetadata($locale);
 
         //user-dependent filters
 
         /* @var $userFilterModel \Model\Metadata\UserFilterMetadataManager */
         $userFilterModel = $app['users.userFilter.model'];
-        $userFilters = $userFilterModel->getFilters($locale);
+        $userFilters = $userFilterModel->getMetadata($locale);
 
         //TODO: Move this logic to userFilter during/after QS-982 (remove filter logic from GroupModel)
         /* @var $groupModel \Model\User\Group\GroupModel */
@@ -667,7 +667,7 @@ class UserController
 
         /* @var $contentFilterModel \Model\Metadata\ContentFilterMetadataManager */
         $contentFilterModel = $app['users.contentFilter.model'];
-        $filters['contentFilters'] = $contentFilterModel->getFilters($locale);
+        $filters['contentFilters'] = $contentFilterModel->getMetadata($locale);
 
         return $app->json($filters, 200);
     }

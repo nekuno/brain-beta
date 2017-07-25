@@ -307,7 +307,7 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
 
     protected function getProfileFilterMetadata()
     {
-        return $this->profileFilterModel->getFilters();
+        return $this->profileFilterModel->getMetadata();
     }
 
     /**
@@ -378,7 +378,7 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
 
     protected function getUserFilterMetadata()
     {
-        return $this->userFilterModel->getFilters();
+        return $this->userFilterModel->getMetadata();
     }
 
     /**
