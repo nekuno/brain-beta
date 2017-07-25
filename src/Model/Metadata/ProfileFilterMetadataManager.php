@@ -20,9 +20,9 @@ class ProfileFilterMetadataManager extends MetadataManager
         $this->profileCategories = $profileCategories;
     }
 
-    protected function modifyPublicFieldByType($publicField, $name, $values)
+    protected function modifyPublicField($publicField, $name, $values)
     {
-        $publicField = parent::modifyPublicFieldByType($publicField, $name, $values);
+        $publicField = parent::modifyPublicField($publicField, $name, $values);
 
         $choiceOptions = $this->getChoiceOptions();
 
@@ -140,7 +140,7 @@ class ProfileFilterMetadataManager extends MetadataManager
             $publicField['required'] = isset($values['required']) ? $values['required'] : false;
             $publicField['editable'] = isset($values['editable']) ? $values['editable'] : true;
 
-            $publicField = $this->modifyPublicFieldByType($publicField, $name, $values);
+            $publicField = $this->modifyPublicField($publicField, $name, $values);
 
             $publicMetadata[$name] = $publicField;
         }
@@ -165,6 +165,8 @@ class ProfileFilterMetadataManager extends MetadataManager
 
     public function getProfileCategories($locale = null)
     {
+        $this->setLocale($locale);
+
         $publicCategories = array();
         foreach ($this->profileCategories as $type => $categories) {
             foreach ($categories as $category) {

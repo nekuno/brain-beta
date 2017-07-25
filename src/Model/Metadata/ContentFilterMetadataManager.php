@@ -8,22 +8,25 @@ use Symfony\Component\Translation\Translator;
 
 class ContentFilterMetadataManager extends MetadataManager
 {
-    protected function modifyPublicFieldByType($publicField, $name, $values)
+    protected function modifyPublicField($publicField, $name, $values)
     {
-        $publicField = parent::modifyPublicFieldByType($publicField, $name, $values);
+        $publicField = parent::modifyPublicField($publicField, $name, $values);
 
         $choiceOptions = $this->getChoiceOptions();
 
-        if ($values['type'] === 'multiple_choices') {
-            $publicField['choices'] = array();
-            if (isset($choiceOptions[$name])) {
-                $publicField['choices'] = $choiceOptions[$name];
-            }
-            if (isset($values['max_choices'])) {
-                $publicField['max_choices'] = $values['max_choices'];
-            }
-        } elseif ($values['type'] === 'tags') {
-            $publicField['top'] = $this->getTopContentTags($name);
+        switch ($values['type']) {
+            case 'multiple_choices':
+                $publicField['choices'] = array();
+                if (isset($choiceOptions[$name])) {
+                    $publicField['choices'] = $choiceOptions[$name];
+                }
+                if (isset($values['max_choices'])) {
+                    $publicField['max_choices'] = $values['max_choices'];
+                };
+                break;
+            case 'tags':
+                $publicField['top'] = $this->getTopContentTags($name);
+                break;
         }
 
         return $publicField;

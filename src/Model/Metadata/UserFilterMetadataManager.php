@@ -46,9 +46,9 @@ class UserFilterMetadataManager extends MetadataManager
     }
 
     //TODO: Move common uses to FilterModel
-    protected function modifyPublicFieldByType($publicField, $name, $values)
+    protected function modifyPublicField($publicField, $name, $values)
     {
-        $publicField = parent::modifyPublicFieldByType($publicField, $name, $values);
+        $publicField = parent::modifyPublicField($publicField, $name, $values);
         switch($values['type']) {
             default:
                 break;

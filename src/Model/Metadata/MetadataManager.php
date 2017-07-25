@@ -56,7 +56,7 @@ abstract class MetadataManager
             $publicField = $values;
             $publicField['label'] = $this->getLabel($values);
 
-            $publicField = $this->modifyPublicFieldByType($publicField, $name, $values);
+            $publicField = $this->modifyPublicField($publicField, $name, $values);
 
             $publicMetadata[$name] = $publicField;
         }
@@ -79,7 +79,7 @@ abstract class MetadataManager
         return $locale;
     }
 
-    protected function modifyPublicFieldByType($publicField, $name, $values)
+    protected function modifyPublicField($publicField, $name, $values)
     {
         return $publicField;
     }

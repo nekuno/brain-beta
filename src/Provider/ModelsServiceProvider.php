@@ -5,6 +5,7 @@ namespace Provider;
 use Manager\PhotoManager;
 use Model\EnterpriseUser\EnterpriseUserModel;
 use Model\Link\LinkModel;
+use Model\Metadata\ProfileMetadataManager;
 use Model\Popularity\PopularityManager;
 use Model\Popularity\PopularityPaginatedModel;
 use Model\User\ContactModel;
@@ -109,7 +110,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.profile.model'] = $app->share(
             function ($app) {
 
-                return new ProfileModel($app['neo4j.graph_manager'], $app['users.profileFilter.model'], $app['dispatcher'], $app['validator.service']);
+                return new ProfileModel($app['neo4j.graph_manager'], $app['users.profileFilter.model'], $app['users.profileMetadata.manager'], $app['dispatcher'], $app['validator.service']);
             }
         );
 
@@ -117,6 +118,13 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
 
                 return new UserFilterMetadataManager($app['neo4j.graph_manager'], $app['translator'], $app['fields']['filters']['user'], $app['socialFields']['user'], $app['locale.options']['default']);
+            }
+        );
+
+        $app['users.profileMetadata.manager'] = $app->share(
+            function ($app) {
+
+                return new ProfileMetadataManager($app['neo4j.graph_manager'], $app['translator'], $app['fields']['profile'], $app['socialFields']['user'], $app['locale.options']['default']);
             }
         );
 
@@ -315,7 +323,6 @@ class ModelsServiceProvider implements ServiceProviderInterface
                 return new UserStatsManager($app['neo4j.graph_manager'], $app['users.groups.model'], $app['users.relations.model'], $app['users.content.model']);
             }
         );
-
 
         $app['users.device.model'] = $app->share(
             function ($app) {

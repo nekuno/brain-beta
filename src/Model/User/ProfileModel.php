@@ -4,6 +4,7 @@ namespace Model\User;
 
 use Event\ProfileEvent;
 use Model\Metadata\ProfileFilterMetadataManager;
+use Model\Metadata\ProfileMetadataManager;
 use Model\Neo4j\GraphManager;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
@@ -19,13 +20,15 @@ class ProfileModel
     const MAX_TAGS_AND_CHOICE_LENGTH = 15;
     protected $gm;
     protected $profileFilterModel;
+    protected $profileMetadataManager;
     protected $dispatcher;
     protected $validator;
 
-    public function __construct(GraphManager $gm, ProfileFilterMetadataManager $profileFilterModel, EventDispatcher $dispatcher, Validator $validator)
+    public function __construct(GraphManager $gm, ProfileFilterMetadataManager $profileFilterModel, ProfileMetadataManager $profileMetadataManager, EventDispatcher $dispatcher, Validator $validator)
     {
         $this->gm = $gm;
         $this->profileFilterModel = $profileFilterModel;
+        $this->profileMetadataManager = $profileMetadataManager;
         $this->dispatcher = $dispatcher;
         $this->validator = $validator;
     }
@@ -185,7 +188,7 @@ class ProfileModel
 
                 $typeName = $this->profileFilterModel->labelToType($label->getName());
 
-                $metadata = $this->profileFilterModel->getProfileMetadata();
+                $metadata = $this->profileMetadataManager->getMetadata();
                 switch ($metadata[$typeName]['type']) {
                     case 'multiple_choices':
                         $result = $this->getOptionArrayResult($optionsResult, $typeName, $optionId);

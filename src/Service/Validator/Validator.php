@@ -3,6 +3,7 @@
 namespace Service\Validator;
 
 use Model\Exception\ValidationException;
+use Model\Metadata\ProfileMetadataManager;
 use Model\Neo4j\GraphManager;
 use Model\Metadata\ContentFilterMetadataManager;
 use Model\Metadata\ProfileFilterMetadataManager;
@@ -24,6 +25,8 @@ class Validator
      */
     protected $profileFilterModel;
 
+    protected $profileMetadataManager;
+
     /**
      * @var GraphManager
      */
@@ -42,12 +45,14 @@ class Validator
     public function __construct(
         GraphManager $graphManager,
         ProfileFilterMetadataManager $profileFilterModel,
+        ProfileMetadataManager $profileMetadataManager,
         UserFilterMetadataManager $userFilterModel,
         ContentFilterMetadataManager $contentFilterModel,
         array $metadata
     ) {
         $this->metadata = $metadata;
         $this->profileFilterModel = $profileFilterModel;
+        $this->profileMetadataManager = $profileMetadataManager;
         $this->userFilterModel = $userFilterModel;
         $this->contentFilterModel = $contentFilterModel;
         $this->graphManager = $graphManager;
@@ -256,7 +261,7 @@ class Validator
 //TODO: Move to ProfileValidator
     public function validateProfile(array $data)
     {
-        $metadata = $this->profileFilterModel->getProfileMetadata();
+        $metadata = $this->profileMetadataManager->getMetadata();
 
         if (isset($data['orientationRequired']) && $data['orientationRequired'] === false) {
             $metadata['orientation']['required'] = false;
