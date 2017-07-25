@@ -6,7 +6,7 @@ use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
 use Symfony\Component\Translation\Translator;
 
-class ProfileFilterMetadataManager extends FilterMetadataManager
+class ProfileFilterMetadataManager extends MetadataManager
 {
     protected $profileMetadata;
     protected $profileCategories;
@@ -20,11 +20,11 @@ class ProfileFilterMetadataManager extends FilterMetadataManager
         $this->profileCategories = $profileCategories;
     }
 
-    protected function modifyPublicFieldByType($publicField, $name, $values, $locale)
+    protected function modifyPublicFieldByType($publicField, $name, $values)
     {
-        $publicField = parent::modifyPublicFieldByType($publicField, $name, $values, $locale);
+        $publicField = parent::modifyPublicFieldByType($publicField, $name, $values);
 
-        $choiceOptions = $this->getChoiceOptions($locale);
+        $choiceOptions = $this->getChoiceOptions();
 
         switch ($values['type']) {
             case 'choice':
@@ -33,7 +33,7 @@ class ProfileFilterMetadataManager extends FilterMetadataManager
             case 'double_choice':
             case 'double_multiple_choices':
                 $publicField = $this->addChoices($publicField, $name, $choiceOptions);
-                $publicField = $this->addDoubleChoices($publicField, $values, $locale);
+                $publicField = $this->addDoubleChoices($publicField, $values);
                 break;
             case 'multiple_choices':
                 $publicField = $this->addChoices($publicField, $name, $choiceOptions);
@@ -43,7 +43,7 @@ class ProfileFilterMetadataManager extends FilterMetadataManager
                 $publicField['choices'] = array();
                 if (isset($values['choices'])) {
                     foreach ($values['choices'] as $choice => $description) {
-                        $publicField['choices'][$choice] = $description[$locale];
+                        $publicField['choices'][$choice] = $this->getLocaleString($description);
                     }
                 }
                 $publicField['top'] = $this->getTopProfileTags($name);
@@ -60,13 +60,12 @@ class ProfileFilterMetadataManager extends FilterMetadataManager
 
     /**
      * Output  choice options according to user language
-     * @param $locale
      * @return array
      * @throws \Model\Neo4j\Neo4jException
      */
-    protected function getChoiceOptions($locale)
+    protected function getChoiceOptions()
     {
-        $translationField = 'name_' . $locale;
+        $translationField = $this->getTranslationField();
         if (isset($this->profileOptions[$translationField])) {
             return $this->profileOptions[$translationField];
         }
@@ -91,6 +90,13 @@ class ProfileFilterMetadataManager extends FilterMetadataManager
         $this->profileOptions[$translationField] = $choiceOptions;
 
         return $choiceOptions;
+    }
+
+    protected function getTranslationField()
+    {
+        $locale = $this->translator->getLocale();
+
+        return 'name_' . $locale;
     }
 
     /**
@@ -124,17 +130,17 @@ class ProfileFilterMetadataManager extends FilterMetadataManager
     //For use with ProfileModel for validation and creation
     public function getProfileFilterMetadata($locale = null)
     {
-        $locale = $this->getLocale($locale);
+        $this->setLocale($locale);
 
         $publicMetadata = array();
         foreach ($this->profileMetadata as $name => $values) {
             $publicField = $values;
-            $publicField['label'] = $values['label'][$locale];
-            $publicField['labelEdit'] = isset($values['labelEdit'][$locale]) ? $values['labelEdit'][$locale] : $publicField['label'];
+            $publicField['label'] = $this->getLabel($values);
+            $publicField['labelEdit'] = isset($values['labelEdit']) ? $this->getLocaleString($values['labelEdit']) : $publicField['label'];
             $publicField['required'] = isset($values['required']) ? $values['required'] : false;
             $publicField['editable'] = isset($values['editable']) ? $values['editable'] : true;
 
-            $publicField = $this->modifyPublicFieldByType($publicField, $name, $values, $locale);
+            $publicField = $this->modifyPublicFieldByType($publicField, $name, $values);
 
             $publicMetadata[$name] = $publicField;
         }
@@ -146,9 +152,8 @@ class ProfileFilterMetadataManager extends FilterMetadataManager
     {
         $metadata = $this->getProfileFilterMetadata($locale);
 
-        foreach ($metadata as &$field)
-        {
-            if (isset($field['choices'])){
+        foreach ($metadata as &$field) {
+            if (isset($field['choices'])) {
                 foreach ($field['choices'] as $name => $value) {
                     $field['choices'][$name] = $name;
                 }
@@ -160,13 +165,11 @@ class ProfileFilterMetadataManager extends FilterMetadataManager
 
     public function getProfileCategories($locale = null)
     {
-        $locale = $this->getLocale($locale);
-
         $publicCategories = array();
         foreach ($this->profileCategories as $type => $categories) {
             foreach ($categories as $category) {
                 $publicField = $category;
-                $publicField['label'] = $category['label'][$locale];
+                $publicField['label'] = $this->getLabel($category);
                 $publicCategories[$type][] = $publicField;
             }
         }
@@ -364,15 +367,14 @@ class ProfileFilterMetadataManager extends FilterMetadataManager
     /**
      * @param $publicField
      * @param $values
-     * @param $locale
      * @return mixed
      */
-    protected function addDoubleChoices($publicField, $values, $locale)
+    protected function addDoubleChoices($publicField, $values)
     {
         $valueDoubleChoices = isset($values['doubleChoices']) ? $values['doubleChoices'] : array();
         foreach ($valueDoubleChoices as $choice => $doubleChoices) {
             foreach ($doubleChoices as $doubleChoice => $doubleChoiceValues) {
-                $publicField['doubleChoices'][$choice][$doubleChoice] = $doubleChoiceValues[$locale];
+                $publicField['doubleChoices'][$choice][$doubleChoice] = $this->getLocaleString($doubleChoiceValues);
             }
         }
 

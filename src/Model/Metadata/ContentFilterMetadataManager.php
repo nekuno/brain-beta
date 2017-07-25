@@ -6,18 +6,13 @@ use Model\Link\LinkModel;
 use Model\Neo4j\GraphManager;
 use Symfony\Component\Translation\Translator;
 
-class ContentFilterMetadataManager extends FilterMetadataManager
+class ContentFilterMetadataManager extends MetadataManager
 {
-    public function __construct(GraphManager $gm, Translator $translator, array $metadata, array $socialMetadata, $defaultLocale)
+    protected function modifyPublicFieldByType($publicField, $name, $values)
     {
-        parent::__construct($gm, $translator, $metadata, $socialMetadata, $defaultLocale);
-    }
+        $publicField = parent::modifyPublicFieldByType($publicField, $name, $values);
 
-    protected function modifyPublicFieldByType($publicField, $name, $values, $locale)
-    {
-        $publicField = parent::modifyPublicFieldByType($publicField, $name, $values, $locale);
-
-        $choiceOptions = $this->getChoiceOptions($locale);
+        $choiceOptions = $this->getChoiceOptions();
 
         if ($values['type'] === 'multiple_choices') {
             $publicField['choices'] = array();
@@ -34,17 +29,15 @@ class ContentFilterMetadataManager extends FilterMetadataManager
         return $publicField;
     }
 
-    protected function getChoiceOptions($locale)
+    protected function getChoiceOptions()
     {
         return array(
-            'type' => $this->getValidTypesLabels($locale)
+            'type' => $this->getValidTypesLabels()
         );
     }
 
-    public function getValidTypesLabels($locale = 'en')
+    protected function getValidTypesLabels()
     {
-        $this->translator->setLocale($locale);
-
         $types = array();
         $keyTypes = LinkModel::getValidTypes();
 

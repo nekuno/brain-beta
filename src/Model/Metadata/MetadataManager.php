@@ -5,12 +5,11 @@ namespace Model\Metadata;
 use Model\Neo4j\GraphManager;
 use Symfony\Component\Translation\Translator;
 
-abstract class FilterMetadataManager
+abstract class MetadataManager
 {
     protected $gm;
     protected $translator;
     protected $metadata;
-    protected $socialMetadata;
     protected $defaultLocale;
 
     protected $validLocales = array('en', 'es');
@@ -20,17 +19,7 @@ abstract class FilterMetadataManager
         $this->gm = $gm;
         $this->translator = $translator;
         $this->metadata = $metadata;
-        $this->socialMetadata = $socialMetadata;
         $this->defaultLocale = $defaultLocale;
-    }
-
-    protected function getLocale($locale)
-    {
-        if (!$locale || !in_array($locale, $this->validLocales)) {
-            $locale = $this->defaultLocale;
-        }
-
-        return $locale;
     }
 
     /**
@@ -55,25 +44,62 @@ abstract class FilterMetadataManager
     }
 
     /**
-     * Returns the metadata for filtering users
      * @param null $locale Locale of the metadata
      * @return array
      */
     public function getMetadata($locale = null)
     {
-        $locale = $this->getLocale($locale);
+        $this->setLocale($locale);
 
         $publicMetadata = array();
         foreach ($this->metadata as $name => $values) {
             $publicField = $values;
-            $publicField['label'] = $values['label'][$locale];
+            $publicField['label'] = $this->getLabel($values);
 
-            $publicField = $this->modifyPublicFieldByType($publicField, $name, $values, $locale);
+            $publicField = $this->modifyPublicFieldByType($publicField, $name, $values);
 
             $publicMetadata[$name] = $publicField;
         }
 
         return $publicMetadata;
+    }
+
+    protected function setLocale($locale)
+    {
+        $locale = $this->getLocale($locale);
+        $this->translator->setLocale($locale);
+    }
+
+    protected function getLocale($locale)
+    {
+        if (!$locale || !in_array($locale, $this->validLocales)) {
+            $locale = $this->defaultLocale;
+        }
+
+        return $locale;
+    }
+
+    protected function modifyPublicFieldByType($publicField, $name, $values)
+    {
+        return $publicField;
+    }
+
+    protected function getLabel($field)
+    {
+        $labelField = isset($field['label']) ? $field['label'] : null;
+
+        return $this->getLocaleString($labelField);
+    }
+
+    protected function getLocaleString($labelField)
+    {
+        $locale = $this->translator->getLocale();
+        if (null === $labelField || !is_array($labelField) || !isset($labelField[$locale])) {
+            $errorMessage = sprintf('Locale %s not present for metadata', $locale);
+            throw new \InvalidArgumentException($errorMessage);
+        }
+
+        return $labelField[$locale];
     }
 
 //    public function getSocialFilters($locale)
@@ -125,9 +151,4 @@ abstract class FilterMetadataManager
 //
 //        return $publicMetadata;
 //    }
-
-    protected function modifyPublicFieldByType($publicField, $name, $values, $locale)
-    {
-        return $publicField;
-    }
 }

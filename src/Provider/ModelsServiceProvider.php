@@ -54,7 +54,6 @@ use Model\User\Token\TokensModel;
 use Model\Metadata\UserFilterMetadataManager;
 use Model\User\Token\TokenStatus\TokenStatusManager;
 use Model\User\UserDisabledPaginatedModel;
-use Model\User\UserFilterModel;
 use Model\User\UserStatsManager;
 use Manager\UserManager;
 use Model\User\UserTrackingModel;
@@ -215,7 +214,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.matching.model'] = $app->share(
             function ($app) {
 
-                return new MatchingModel($app['dispatcher'], $app['neo4j.graph_manager'], $app['users.content.model'], $app['users.answers.model']);
+                return new MatchingModel($app['dispatcher'], $app['neo4j.graph_manager']);
 
             }
         );
