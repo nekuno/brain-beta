@@ -104,7 +104,7 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['validator.service'] = $app->share(
             function (Application $app) {
-                return new Validator($app['neo4j.graph_manager'], $app['users.profileFilter.model'], $app['users.profileMetadata.manager'], $app['users.userFilter.model'], $app['users.contentFilter.model'], $app['fields']);
+                return new Validator($app['neo4j.graph_manager'], $app['users.metadataManager.factory']);
             }
         );
 

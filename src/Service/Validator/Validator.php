@@ -3,11 +3,8 @@
 namespace Service\Validator;
 
 use Model\Exception\ValidationException;
-use Model\Metadata\ProfileMetadataManager;
+use Model\Metadata\MetadataManagerFactory;
 use Model\Neo4j\GraphManager;
-use Model\Metadata\ContentFilterMetadataManager;
-use Model\Metadata\ProfileFilterMetadataManager;
-use Model\Metadata\UserFilterMetadataManager;
 
 class Validator
 {
@@ -16,46 +13,18 @@ class Validator
     const LONGITUDE_REGEX = '/^-?([1]?[0-7][1-9]|[1]?[1-8][0]|[1-9]?[0-9])\.{1}\d+$/';
 
     /**
-     * @var array
-     */
-    protected $metadata;
-
-    /**
-     * @var ProfileFilterMetadataManager
-     */
-    protected $profileFilterModel;
-
-    protected $profileMetadataManager;
-
-    /**
      * @var GraphManager
      */
     protected $graphManager;
 
-    /**
-     * @var UserFilterMetadataManager
-     */
-    protected $userFilterModel;
-
-    /**
-     * @var ContentFilterMetadataManager
-     */
-    protected $contentFilterModel;
+    protected $metadataManagerFactory;
 
     public function __construct(
         GraphManager $graphManager,
-        ProfileFilterMetadataManager $profileFilterModel,
-        ProfileMetadataManager $profileMetadataManager,
-        UserFilterMetadataManager $userFilterModel,
-        ContentFilterMetadataManager $contentFilterModel,
-        array $metadata
+        MetadataManagerFactory $metadataManagerFactory
     ) {
-        $this->metadata = $metadata;
-        $this->profileFilterModel = $profileFilterModel;
-        $this->profileMetadataManager = $profileMetadataManager;
-        $this->userFilterModel = $userFilterModel;
-        $this->contentFilterModel = $contentFilterModel;
         $this->graphManager = $graphManager;
+        $this->metadataManagerFactory = $metadataManagerFactory;
     }
 
     public function validateUserId($userId)
@@ -79,7 +48,7 @@ class Validator
             $errors['userId'][] = array(sprintf('User with id %d not found', $userId));
         }
 
-        if (empty($errors['userId'])){
+        if (empty($errors['userId'])) {
             unset($errors['userId']);
         }
 
@@ -107,7 +76,7 @@ class Validator
             $errors['groupId'][] = array(sprintf('Group with id %d not found', $groupId));
         }
 
-        if (empty($errors['groupId'])){
+        if (empty($errors['groupId'])) {
             unset($errors['groupId']);
         }
 
@@ -116,12 +85,15 @@ class Validator
 
     public function validateEditThread(array $data, array $choices = array())
     {
-        return $this->validate($data, $this->metadata['threads'], $choices);
+        $metadata = $this->metadataManagerFactory->build('threads')->getMetadata();
+
+        return $this->validate($data, $metadata, $choices);
     }
 
     public function validateGroup(array $data)
     {
-        $this->validate($data, $this->metadata['groups']);
+        $metadata = $this->metadataManagerFactory->build('groups')->getMetadata();
+        $this->validate($data, $metadata);
 
         $errors = array();
         if (isset($data['followers']) && $data['followers']) {
@@ -150,7 +122,7 @@ class Validator
 
     public function validateInvitation(array $data, $invitationIdRequired = false)
     {
-        $metadata = $this->metadata['invitations'];
+        $metadata = $this->metadataManagerFactory->build('invitations')->getMetadata();
 
         if ($invitationIdRequired) {
             $metadata['invitationId']['required'] = true;
@@ -173,11 +145,13 @@ class Validator
 
     public function validateToken(array $data, $userId = null, array $choices = array())
     {
-        $this->validate($data, $this->metadata['tokens'], $choices);
+        $metadata = $this->metadataManagerFactory->build('tokens')->getMetadata();
+
+        $this->validate($data, $metadata, $choices);
 
         $this->validateTokenResourceId($data['resourceId'], $userId, $data['resourceOwner']);
 
-        $this->validateExtraFields($data, $this->metadata['tokens']);
+        $this->validateExtraFields($data, $metadata);
     }
 
     protected function validateExtraFields($data, $metadata)
@@ -225,12 +199,15 @@ class Validator
     {
         $data = array('boolean' => $parameter);
         $metadata = array('boolean' => array('type' => 'integer', 'min' => 0, 'max' => 1));
+
         return $this->validate($data, $metadata);
     }
 
     public function validateQuestion(array $data, array $choices = array(), $userIdRequired = false)
     {
-        $this->validate($data, $this->metadata['questions'], $choices);
+        $metadata = $this->metadataManagerFactory->build('questions')->getMetadata();
+
+        $this->validate($data, $metadata, $choices);
 
         $this->validateUserInData($data, $userIdRequired);
 
@@ -243,7 +220,9 @@ class Validator
 
     public function validateAnswer(array $data)
     {
-        $this->validate($data, $this->metadata['answers'], array());
+        $metadata = $this->metadataManagerFactory->build('answers')->getMetadata();
+
+        $this->validate($data, $metadata, array());
 
         $this->validateUserInData($data);
     }
@@ -258,10 +237,11 @@ class Validator
             $this->validateUserId($data['userId']);
         }
     }
+
 //TODO: Move to ProfileValidator
     public function validateProfile(array $data)
     {
-        $metadata = $this->profileMetadataManager->getMetadata();
+        $metadata = $this->metadataManagerFactory->build('profile')->getMetadata();
 
         if (isset($data['orientationRequired']) && $data['orientationRequired'] === false) {
             $metadata['orientation']['required'] = false;
@@ -272,27 +252,37 @@ class Validator
 
     public function validateEditFilterContent(array $data, array $choices = array())
     {
-        return $this->validate($data, $this->contentFilterModel->getMetadata(), $choices);
+        $metadata = $this->metadataManagerFactory->build('content_filter')->getMetadata();
+
+        return $this->validate($data, $metadata, $choices);
     }
 
     public function validateEditFilterUsers($data, $choices = array())
     {
-        return $this->validate($data, $this->userFilterModel->getMetadata(), $choices);
+        $metadata = $this->metadataManagerFactory->build('user_filter')->getMetadata();
+
+        return $this->validate($data, $metadata, $choices);
     }
 
     public function validateEditFilterProfile($data, $choices = array())
     {
-        return $this->validate($data, $this->profileFilterModel->getMetadata(), $choices);
+        $metadata = $this->metadataManagerFactory->build('profile_filter')->getMetadata();
+
+        return $this->validate($data, $metadata, $choices);
     }
 
     public function validateRecommendateContent($data, $choices = array())
     {
-        return $this->validate($data, $this->contentFilterModel->getMetadata(), $choices);
+        $metadata = $this->metadataManagerFactory->build('content_filter')->getMetadata();
+
+        return $this->validate($data, $metadata, $choices);
     }
 
     public function validateDevice($data)
     {
-        $this->validate($data, $this->metadata['device'], array());
+        $metadata = $this->metadataManagerFactory->build('device')->getMetadata();
+
+        $this->validate($data, $metadata, array());
     }
 
     protected function validate($data, $metadata, $dataChoices = array())
@@ -560,6 +550,7 @@ class Validator
     /**
      * @param $dataChoices
      * @param $fieldData
+     * @param $fieldName
      * @return array
      */
     protected function buildChoices($dataChoices, $fieldData, $fieldName)

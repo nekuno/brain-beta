@@ -2,10 +2,11 @@
 
 namespace Provider;
 
+use Igorw\Silex\ConfigServiceProvider;
 use Manager\PhotoManager;
 use Model\EnterpriseUser\EnterpriseUserModel;
 use Model\Link\LinkModel;
-use Model\Metadata\ProfileMetadataManager;
+use Model\Metadata\MetadataManagerFactory;
 use Model\Popularity\PopularityManager;
 use Model\Popularity\PopularityPaginatedModel;
 use Model\User\ContactModel;
@@ -16,7 +17,6 @@ use Model\User\Affinity\AffinityModel;
 use Model\User\Question\AnswerManager;
 use Model\EnterpriseUser\CommunityModel;
 use Model\User\Content\ContentComparePaginatedModel;
-use Model\Metadata\ContentFilterMetadataManager;
 use Model\User\Content\ContentPaginatedModel;
 use Model\User\Content\ContentTagModel;
 use Model\User\Filters\FilterContentManager;
@@ -30,7 +30,6 @@ use Model\User\LookUpModel;
 use Model\User\Matching\MatchingModel;
 use Model\User\Question\OldQuestionComparePaginatedModel;
 use Model\User\PrivacyModel;
-use Model\Metadata\ProfileFilterMetadataManager;
 use Model\User\ProfileModel;
 use Model\User\ProfileTagModel;
 use Model\User\Question\QuestionComparePaginatedModel;
@@ -52,7 +51,6 @@ use Model\User\Thread\ThreadManager;
 use Model\User\Thread\ThreadPaginatedModel;
 use Model\User\Thread\UsersThreadManager;
 use Model\User\Token\TokensModel;
-use Model\Metadata\UserFilterMetadataManager;
 use Model\User\Token\TokenStatus\TokenStatusManager;
 use Model\User\UserDisabledPaginatedModel;
 use Model\User\UserStatsManager;
@@ -114,31 +112,39 @@ class ModelsServiceProvider implements ServiceProviderInterface
             }
         );
 
-        $app['users.userFilter.model'] = $app->share(
+        $app->register(new ConfigServiceProvider(__DIR__ . "/../Model/Metadata/config.yml"));
+
+        $app['users.metadataManager.factory'] = $app->share(
             function ($app) {
 
-                return new UserFilterMetadataManager($app['neo4j.graph_manager'], $app['translator'], $app['fields']['filters']['user'], $app['socialFields']['user'], $app['locale.options']['default']);
+                return new MetadataManagerFactory($app['metadata.config'], $app['neo4j.graph_manager'], $app['translator'], $app['fields'], $app['locale.options']['default']);
+            }
+        );
+
+        $app['users.userFilter.model'] = $app->share(
+            function ($app) {
+                return $app['users.metadataManager.factory']->build('user_filter');
             }
         );
 
         $app['users.profileMetadata.manager'] = $app->share(
             function ($app) {
 
-                return new ProfileMetadataManager($app['neo4j.graph_manager'], $app['translator'], $app['fields']['profile'], $app['socialFields']['user'], $app['locale.options']['default']);
+                return $app['users.metadataManager.factory']->build('profile');
             }
         );
 
         $app['users.profileFilter.model'] = $app->share(
             function ($app) {
 
-                return new ProfileFilterMetadataManager($app['neo4j.graph_manager'], $app['translator'], $app['fields']['filters']['profile'], $app['fields']['profile'], $app['fields']['categories'], $app['socialFields']['profile'], $app['locale.options']['default']);
+                return $app['users.metadataManager.factory']->build('profile_filter');
             }
         );
 
         $app['users.contentFilter.model'] = $app->share(
             function ($app) {
 
-                return new ContentFilterMetadataManager($app['neo4j.graph_manager'], $app['translator'], $app['fields']['filters']['content'], array(), $app['locale.options']['default']);
+                return $app['users.metadataManager.factory']->build('content_filter');
             }
         );
 
