@@ -2,6 +2,9 @@
 
 namespace Service\Validator;
 
+use Model\Metadata\MetadataManagerFactory;
+use Model\Neo4j\GraphManager;
+
 class ValidatorFactory
 {
     protected $metadataManagerFactory;
@@ -16,7 +19,7 @@ class ValidatorFactory
      * @param $metadataManagerFactory
      * @param $config
      */
-    public function __construct($graphManager, $metadataManagerFactory, $config)
+    public function __construct(GraphManager $graphManager, MetadataManagerFactory $metadataManagerFactory, $config)
     {
         $this->graphManager = $graphManager;
         $this->metadataManagerFactory = $metadataManagerFactory;
@@ -26,8 +29,11 @@ class ValidatorFactory
     public function build($name)
     {
         $class = $this->getClass($name);
+        /** @var Validator $validator */
+        $metadata = $this->metadataManagerFactory->build($name)->getMetadata();
+        $validator = new $class($this->graphManager, $metadata);
 
-        return new $class($this->graphManager, $this->metadataManagerFactory);
+        return $validator;
     }
 
     /**

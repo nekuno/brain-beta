@@ -23,7 +23,7 @@ class ProfileValidator extends Validator
     {
         $this->validateUserInData($data);
 
-        $metadata = $this->metadataManagerFactory->build('profile')->getMetadata();
+        $metadata = $this->metadata;
         $this->fixOrientationRequired($data, $metadata);
 
         return $this->validateMetadata($data, $metadata);

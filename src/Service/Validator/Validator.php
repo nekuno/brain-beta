@@ -3,7 +3,6 @@
 namespace Service\Validator;
 
 use Model\Exception\ValidationException;
-use Model\Metadata\MetadataManagerFactory;
 use Model\Neo4j\GraphManager;
 
 class Validator implements \ValidatorInterface
@@ -17,14 +16,12 @@ class Validator implements \ValidatorInterface
      */
     protected $graphManager;
 
-    protected $metadataManagerFactory;
+    protected $metadata;
 
-    public function __construct(
-        GraphManager $graphManager,
-        MetadataManagerFactory $metadataManagerFactory
-    ) {
+    public function __construct(GraphManager $graphManager, $metadata)
+    {
         $this->graphManager = $graphManager;
-        $this->metadataManagerFactory = $metadataManagerFactory;
+        $this->metadata = $metadata;
     }
 
     public function validateOnCreate($data)
