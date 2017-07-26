@@ -1,4 +1,5 @@
 validator.config:
     profile: Service\Validator\ProfileValidator
     groups: Service\Validator\GroupValidator
+    invitations: Service\Validator\InvitationValidator
     default: Service\Validator\Validator

@@ -2,6 +2,7 @@
 
 namespace Service\Validator;
 
+use Everyman\Neo4j\Query\ResultSet;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 
@@ -39,7 +40,7 @@ class Validator implements \ValidatorInterface
         // TODO: Implement validateOnDelete() method.
     }
 
-    public function validateUserId($userId)
+    public function validateUserId($userId, $desired = true)
     {
         $errors = array('userId' => array());
 
@@ -56,18 +57,13 @@ class Validator implements \ValidatorInterface
 
         $result = $qb->getQuery()->getResultSet();
 
-        if ($result->count() == 0) {
-            $errors['userId'][] = array(sprintf('User with id %d not found', $userId));
-        }
+        $errors['userId'] = $this->getExistenceErrors($result, $userId, $desired);
 
-        if (empty($errors['userId'])) {
-            unset($errors['userId']);
-        }
 
         $this->throwException($errors);
     }
 
-    public function validateGroupId($groupId)
+    public function validateGroupId($groupId, $desired = true)
     {
         $errors = array('groupId' => array());
 
@@ -84,15 +80,59 @@ class Validator implements \ValidatorInterface
 
         $result = $qb->getQuery()->getResultSet();
 
-        if ($result->count() == 0) {
-            $errors['groupId'][] = array(sprintf('Group with id %d not found', $groupId));
-        }
+        $errors['groupId'] = $this->getExistenceErrors($result, $groupId, $desired);
 
-        if (empty($errors['groupId'])) {
-            unset($errors['groupId']);
-        }
 
         $this->throwException($errors);
+    }
+    
+    public function validateInvitationId($invitationId, $desired = true)
+    {
+        $errors = array('invitationId' => array());
+
+        $qb = $this->graphManager->createQueryBuilder();
+        $qb->match('(inv:Invitation)')
+            ->where('id(inv) = { invitationId }')
+            ->setParameter('invitationId', (integer)$invitationId)
+            ->returns('inv AS Invitation');
+
+        $query = $qb->getQuery();
+
+        $result = $query->getResultSet();
+
+        $errors['invitationId'] = $this->getExistenceErrors($result, $invitationId, $desired);
+
+        $this->throwException($errors);
+    }
+
+    public function validateInvitationToken($token, $excludedId, $desired = true)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+        $qb->match('(invitation:Invitation)')
+            ->where('toLower(invitation.token) = toLower({ token }) AND NOT id(invitation) = { excludedId }')
+            ->setParameter('token', (string)$token)
+            ->setParameter('excludedId', (int)$excludedId)
+            ->returns('invitation');
+
+        $query = $qb->getQuery();
+
+        $result = $query->getResultSet();
+
+        $errors['invitationToken'] = $this->getExistenceErrors($result, $token, $desired);
+
+        $this->throwException($errors);
+    }
+
+    protected function getExistenceErrors(ResultSet $result, $id, $desired)
+    {
+        $exists = $result->count() > 0;
+        if ($desired && !$exists) {
+            return array(sprintf('Invitation with id %d not found', $id));
+        } else if (!$desired && $exists) {
+            return array(sprintf('Invitation with id %d already exists', $id));
+        }
+
+        return array();
     }
 
     public function validateEditThread(array $data, array $choices = array())
@@ -521,6 +561,12 @@ class Validator implements \ValidatorInterface
      */
     protected function throwException($errors)
     {
+        foreach ($errors as $field => $fieldErrors){
+            if (empty($fieldErrors)){
+                unset($errors[$field]);
+            }
+        }
+
         if (count($errors) > 0) {
             throw new ValidationException($errors);
         }

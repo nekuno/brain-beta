@@ -10,7 +10,6 @@ use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Label;
 use Model\Exception\ValidationException;
-use Service\Validator\ProfileValidator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -24,7 +23,7 @@ class ProfileModel
     protected $dispatcher;
     protected $validator;
 
-    public function __construct(GraphManager $gm, ProfileFilterMetadataManager $profileFilterModel, ProfileMetadataManager $profileMetadataManager, EventDispatcher $dispatcher, ProfileValidator $validator)
+    public function __construct(GraphManager $gm, ProfileFilterMetadataManager $profileFilterModel, ProfileMetadataManager $profileMetadataManager, EventDispatcher $dispatcher, \ValidatorInterface $validator)
     {
         $this->gm = $gm;
         $this->profileFilterModel = $profileFilterModel;

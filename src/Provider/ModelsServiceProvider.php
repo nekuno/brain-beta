@@ -107,8 +107,9 @@ class ModelsServiceProvider implements ServiceProviderInterface
 
         $app['users.profile.model'] = $app->share(
             function ($app) {
+                $profileValidator = $app['validator.validator_factory']->build('profile');
 
-                return new ProfileModel($app['neo4j.graph_manager'], $app['users.profileFilter.model'], $app['users.profileMetadata.manager'], $app['dispatcher'], $app['validator.service']);
+                return new ProfileModel($app['neo4j.graph_manager'], $app['users.profileFilter.model'], $app['users.profileMetadata.manager'], $app['dispatcher'], $profileValidator);
             }
         );
 
@@ -387,8 +388,9 @@ class ModelsServiceProvider implements ServiceProviderInterface
 
         $app['users.groups.model'] = $app->share(
             function ($app) {
+                $groupValidator = $app['validator.validator_factory']->build('groups');
 
-                return new GroupModel($app['neo4j.graph_manager'], $app['dispatcher'], $app['users.manager'], $app['users.photo.manager'], $app['users.filterusers.manager'], $app['validator.service'], $app['admin_domain_plus_post']);
+                return new GroupModel($app['neo4j.graph_manager'], $app['dispatcher'], $app['users.manager'], $app['users.photo.manager'], $app['users.filterusers.manager'], $groupValidator, $app['admin_domain_plus_post']);
             }
         );
 
@@ -426,7 +428,9 @@ class ModelsServiceProvider implements ServiceProviderInterface
 
         $app['users.invitations.model'] = $app->share(
             function ($app) {
-                return new InvitationModel($app['tokenGenerator.service'], $app['neo4j.graph_manager'], $app['validator.service'], $app['admin_domain_plus_post']);
+                $invitationValidator = $app['validator.validator_factory']->build('invitations');
+
+                return new InvitationModel($app['tokenGenerator.service'], $app['neo4j.graph_manager'], $invitationValidator, $app['admin_domain_plus_post']);
             }
         );
 
