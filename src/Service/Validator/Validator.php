@@ -34,7 +34,7 @@ class Validator implements \ValidatorInterface
         // TODO: Implement validateOnUpdate() method.
     }
 
-    public function validateOnDelete($userId)
+    public function validateOnDelete($data)
     {
         // TODO: Implement validateOnDelete() method.
     }
@@ -100,36 +100,6 @@ class Validator implements \ValidatorInterface
         $metadata = $this->metadataManagerFactory->build('threads')->getMetadata();
 
         return $this->validateMetadata($data, $metadata, $choices);
-    }
-
-    public function validateGroup(array $data)
-    {
-        $metadata = $this->metadataManagerFactory->build('groups')->getMetadata();
-        $this->validateMetadata($data, $metadata);
-
-        $errors = array();
-        if (isset($data['followers']) && $data['followers']) {
-            if (!is_bool($data['followers'])) {
-                $errors['followers'] = array('"followers" must be boolean');
-            }
-            if (!isset($data['influencer_id'])) {
-                $errors['influencer_id'] = array('"influencer_id" is required for followers groups');
-            } elseif (!is_int($data['influencer_id'])) {
-                $errors['influencer_id'] = array('"influencer_id" must be integer');
-            }
-            if (!isset($data['min_matching'])) {
-                $errors['min_matching'] = array('"min_matching" is required for followers groups');
-            } elseif (!is_int($data['min_matching'])) {
-                $errors['min_matching'] = array('"min_matching" must be integer');
-            }
-            if (!isset($data['type_matching'])) {
-                $errors['type_matching'] = array('"type_matching" is required for followers groups');
-            } elseif ($data['type_matching'] !== 'similarity' && $data['type_matching'] !== 'compatibility') {
-                $errors['type_matching'] = array('"type_matching" must be "similarity" or "compatibility"');
-            }
-        }
-
-        $this->throwException($errors);
     }
 
     public function validateInvitation(array $data, $invitationIdRequired = false)
@@ -242,11 +212,22 @@ class Validator implements \ValidatorInterface
     protected function validateUserInData(array $data, $userIdRequired = true)
     {
         if ($userIdRequired && !isset($data['userId'])) {
-            $this->throwException(array('userId', 'User id is required for this question'));
+            $this->throwException(array('userId', 'User id is required for this action'));
         }
 
         if (isset($data['userId'])) {
             $this->validateUserId($data['userId']);
+        }
+    }
+    
+    protected function validateGroupInData(array $data, $groupIdRequired = true)
+    {
+        if ($groupIdRequired && !isset($data['groupId'])) {
+            $this->throwException(array('groupId', 'Group id is required for this action'));
+        }
+
+        if (isset($data['groupId'])) {
+            $this->validateGroupId($data['groupId']);
         }
     }
 
@@ -390,9 +371,7 @@ class Validator implements \ValidatorInterface
                         break;
 
                     case 'boolean':
-                        if ($dataValue !== true && $dataValue !== false) {
-                            $fieldErrors[] = 'Must be a boolean.';
-                        }
+                        $fieldErrors = $this->validateBoolean($dataValue);
                         break;
 
                     case 'choice':
@@ -590,6 +569,16 @@ class Validator implements \ValidatorInterface
         }
 
         return $fieldErrors;
+    }
+
+    protected function validateBoolean($value, $name = null)
+    {
+        $errors = array();
+        if (!is_bool($value)) {
+            $fieldErrors[] = sprintf('%s must be a boolean, %s given', $name, $value);
+        }
+
+        return $errors;
     }
 
 }

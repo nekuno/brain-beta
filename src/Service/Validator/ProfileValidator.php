@@ -14,9 +14,9 @@ class ProfileValidator extends Validator
         return $this->validate($data);
     }
 
-    public function validateOnDelete($userId)
+    public function validateOnDelete($data)
     {
-        $this->validateUserId($userId);
+        $this->validateUserInData($data);
     }
 
     protected function validate(array $data)

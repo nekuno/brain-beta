@@ -42,7 +42,7 @@ class GroupModel
     protected $dispatcher;
 
     /**
-     * @var Validator
+     * @var \ValidatorInterface
      */
     protected $validator;
 
@@ -57,9 +57,9 @@ class GroupModel
      * @param UserManager $um
      * @param PhotoManager $pm
      * @param FilterUsersManager $filterUsersManager
-     * @param Validator $validator
+     * @param \ValidatorInterface $validator
      */
-    public function __construct(GraphManager $gm, EventDispatcher $dispatcher, UserManager $um, PhotoManager $pm, FilterUsersManager $filterUsersManager, Validator $validator, $invitationImagesRoot)
+    public function __construct(GraphManager $gm, EventDispatcher $dispatcher, UserManager $um, PhotoManager $pm, FilterUsersManager $filterUsersManager, \ValidatorInterface $validator, $invitationImagesRoot)
     {
         $this->gm = $gm;
         $this->um = $um;
@@ -201,12 +201,29 @@ class GroupModel
     }
 
     public function validate($data) {
-        $this->validator->validateGroup($data);
+        $this->validator->validate($data);
+    }
+
+    public function validateOnCreate(array $data)
+    {
+        $this->validator->validateOnCreate($data);
+    }
+
+    protected function validateOnUpdate(array $data, $groupId)
+    {
+        $data['groupId'] = $groupId;
+        $this->validator->validateOnUpdate($data);
+    }
+
+    protected function validateOnDelete($groupId, $userId)
+    {
+        $data = array('groupId' => $groupId, 'userId' => $userId);
+        $this->validator->validateOnDelete($data);
     }
 
     public function create(array $data)
     {
-        $this->validate($data);
+        $this->validateOnCreate($data);
 
         $qb = $this->gm->createQueryBuilder();
 
@@ -283,7 +300,7 @@ class GroupModel
 
     public function update($id, array $data)
     {
-        $this->validate($data);
+        $this->validateOnUpdate($data, $id);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(g:Group)')
@@ -470,8 +487,7 @@ class GroupModel
 
     public function removeUser($id, $userId)
     {
-        $this->validator->validateGroupId($id);
-        $this->validator->validateUserId($userId);
+        $this->validateOnDelete($id, $userId);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(g:Group)')

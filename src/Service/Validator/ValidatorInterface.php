@@ -6,6 +6,6 @@ interface ValidatorInterface {
 
     public function validateOnUpdate($data);
 
-    public function validateOnDelete($userId);
+    public function validateOnDelete($data);
 
 }
