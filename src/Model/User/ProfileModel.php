@@ -10,7 +10,7 @@ use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Label;
 use Model\Exception\ValidationException;
-use Service\Validator\Validator;
+use Service\Validator\ProfileValidator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -24,7 +24,7 @@ class ProfileModel
     protected $dispatcher;
     protected $validator;
 
-    public function __construct(GraphManager $gm, ProfileFilterMetadataManager $profileFilterModel, ProfileMetadataManager $profileMetadataManager, EventDispatcher $dispatcher, Validator $validator)
+    public function __construct(GraphManager $gm, ProfileFilterMetadataManager $profileFilterModel, ProfileMetadataManager $profileMetadataManager, EventDispatcher $dispatcher, ProfileValidator $validator)
     {
         $this->gm = $gm;
         $this->profileFilterModel = $profileFilterModel;
@@ -74,7 +74,7 @@ class ProfileModel
      */
     public function create($id, array $data)
     {
-        $this->validate($data);
+        $this->validateOnCreate($data, $id);
 
         list($userNode, $profileNode) = $this->getUserAndProfileNodesById($id);
 
@@ -110,7 +110,7 @@ class ProfileModel
      */
     public function update($id, array $data)
     {
-        $this->validate($data);
+        $this->validateOnUpdate($data, $id);
 
         list($userNode, $profileNode) = $this->getUserAndProfileNodesById($id);
 
@@ -132,6 +132,8 @@ class ProfileModel
      */
     public function remove($id)
     {
+        $this->validateOnRemove($id);
+
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(user:User)<-[:PROFILE_OF]-(profile:Profile)')
             ->where('user.qnoow_id = { id }')
@@ -146,11 +148,23 @@ class ProfileModel
 
     /**
      * @param array $data
-     * @throws ValidationException
+     * @param $userId
      */
-    public function validate(array $data)
+    public function validateOnCreate(array $data, $userId)
     {
-        $this->validator->validateProfile($data);
+        $data['userId'] = $userId;
+        $this->validator->validateOnCreate($data);
+    }
+
+    protected function validateOnUpdate(array $data, $userId)
+    {
+        $data['userId'] = $userId;
+        $this->validator->validateOnUpdate($data);
+    }
+
+    public function validateOnRemove($userId)
+    {
+        $this->validator->validateOnDelete($userId);
     }
 
     public function build(Row $row, $locale = null)
