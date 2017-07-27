@@ -142,40 +142,6 @@ class Validator implements \ValidatorInterface
         return $this->validateMetadata($data, $metadata, $choices);
     }
 
-    public function validateInvitation(array $data, $invitationIdRequired = false)
-    {
-        $metadata = $this->metadataManagerFactory->build('invitations')->getMetadata();
-
-        if ($invitationIdRequired) {
-            $metadata['invitationId']['required'] = true;
-        }
-
-        if (isset($data['groupId'])) {
-            $groupId = $data['groupId'];
-            if (!(is_int($groupId) || is_double($groupId))) {
-                throw new ValidationException(array('groupId' => array('GroupId must be an integer')));
-            }
-            $this->validateGroupId($groupId);
-        }
-
-        if (isset($data['userId'])) {
-            $this->validateUserId($data['userId']);
-        }
-
-        $this->validateMetadata($data, $metadata);
-    }
-
-    public function validateToken(array $data, $userId = null, array $choices = array())
-    {
-        $metadata = $this->metadataManagerFactory->build('tokens')->getMetadata();
-
-        $this->validateMetadata($data, $metadata, $choices);
-
-        $this->validateTokenResourceId($data['resourceId'], $userId, $data['resourceOwner']);
-
-        $this->validateExtraFields($data, $metadata);
-    }
-
     protected function validateExtraFields($data, $metadata)
     {
         $errors = array();
@@ -190,7 +156,7 @@ class Validator implements \ValidatorInterface
         $this->throwException($errors);
     }
 
-    protected function validateTokenResourceId($resourceId, $userId, $resourceOwner)
+    protected function validateTokenResourceId($resourceId, $userId, $resourceOwner, $desired = true)
     {
         $errors = array();
 
@@ -210,9 +176,7 @@ class Validator implements \ValidatorInterface
 
         $result = $query->getResultSet();
 
-        if ($result->count() > 0) {
-            $errors = array('resourceId' => array('There is other user with the same resourceId already registered'));
-        }
+        $errors['resourceId'] = $this->getExistenceErrors($result, $resourceId, $desired);
 
         $this->throwException($errors);
     }

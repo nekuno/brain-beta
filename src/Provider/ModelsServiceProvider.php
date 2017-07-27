@@ -94,7 +94,8 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.tokens.model'] = $app->share(
             function ($app) {
 
-                return new TokensModel($app['dispatcher'], $app['neo4j.graph_manager'], $app['users.tokenStatus.manager'], $app['validator.service']);
+                $validator = $app['validator.validator_factory']->build('tokens');
+                return new TokensModel($app['dispatcher'], $app['neo4j.graph_manager'], $app['users.tokenStatus.manager'], $validator);
             }
         );
 
