@@ -123,6 +123,16 @@ class FilterUsersManager
         return $filter;
     }
 
+    public function validateOnCreate(array $filters, $userId = null)
+    {
+        $this->validateFilterUsers($filters, $userId);
+    }
+
+    public function validateOnUpdate(array $filters, $userId = null)
+    {
+        $this->validateFilterUsers($filters, $userId);
+    }
+
     public function validateFilterUsers(array $filters, $userId = null)
     {
         $filters = $this->profileFilterModel->splitFilters($filters);

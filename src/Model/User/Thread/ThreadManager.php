@@ -52,7 +52,7 @@ class ThreadManager
         ContentThreadManager $cm,
         ProfileModel $profileModel,
         Translator $translator,
-        Validator $validator
+        \ValidatorInterface $validator
     ) {
         $this->graphManager = $graphManager;
         $this->usersThreadManager = $um;
@@ -379,7 +379,7 @@ class ThreadManager
      */
     public function create($userId, $data)
     {
-        $this->validateEditThread($data, $userId);
+        $this->validateOnCreate($data, $userId);
 
         $name = isset($data['name']) ? $data['name'] : null;
         $category = isset($data['category']) ? $data['category'] : null;
@@ -428,7 +428,7 @@ class ThreadManager
      */
     public function update($threadId, $userId, $data)
     {
-        $this->validateEditThread($data, $userId);
+        $this->validateOnUpdate($data, $userId);
 
         $name = isset($data['name']) ? $data['name'] : null;
         $category = isset($data['category']) ? $data['category'] : null;
@@ -638,18 +638,22 @@ class ThreadManager
         );
     }
 
-    private function validateEditThread($data, $userId = null)
+    private function validateOnCreate($data, $userId)
     {
-        if ($userId) {
-            $this->validator->validateUserId($userId);
-        }
-
-        $this->validator->validateEditThread($data, $this->getChoices());
-
+        $data['userId'] = $userId;
+        $this->validator->validateOnCreate($data);
         if (isset($data['filters'])) {
-            $this->usersThreadManager->getFilterUsersManager()->validateFilterUsers($data['filters'], $userId);
+            $this->usersThreadManager->getFilterUsersManager()->validateOnCreate($data['filters'], $userId);
         }
+    }
 
+    private function validateOnUpdate($data, $userId)
+    {
+        $data['userId'] = $userId;
+        $this->validator->validateOnUpdate($data);
+        if (isset($data['filters'])) {
+            $this->usersThreadManager->getFilterUsersManager()->validateOnUpdate($data['filters'], $userId);
+        }
     }
 
     /**
@@ -697,16 +701,6 @@ class ThreadManager
         }
 
         return $this->getById($thread->getId());
-    }
-
-    private function getChoices()
-    {
-        return array(
-            'category' => array(
-                ThreadManager::LABEL_THREAD_USERS,
-                ThreadManager::LABEL_THREAD_CONTENT
-            )
-        );
     }
 
     private function deleteCachedResults(Thread $thread)

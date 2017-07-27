@@ -135,13 +135,6 @@ class Validator implements \ValidatorInterface
         return array();
     }
 
-    public function validateEditThread(array $data, array $choices = array())
-    {
-        $metadata = $this->metadataManagerFactory->build('threads')->getMetadata();
-
-        return $this->validateMetadata($data, $metadata, $choices);
-    }
-
     protected function validateExtraFields($data, $metadata)
     {
         $errors = array();
