@@ -94,7 +94,7 @@ class QuestionController
 
         /* @var $model QuestionModel */
         $model = $app['questionnaire.questions.model'];
-        $model->validate($data);
+        $model->validateOnCreate($data);
 
         return $app->json(array(), 200);
     }

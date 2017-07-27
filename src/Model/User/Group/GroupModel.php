@@ -42,7 +42,7 @@ class GroupModel
     protected $dispatcher;
 
     /**
-     * @var \ValidatorInterface
+     * @var \Service\Validator\ValidatorInterface
      */
     protected $validator;
 
@@ -57,9 +57,9 @@ class GroupModel
      * @param UserManager $um
      * @param PhotoManager $pm
      * @param FilterUsersManager $filterUsersManager
-     * @param \ValidatorInterface $validator
+     * @param \Service\Validator\ValidatorInterface $validator
      */
-    public function __construct(GraphManager $gm, EventDispatcher $dispatcher, UserManager $um, PhotoManager $pm, FilterUsersManager $filterUsersManager, \ValidatorInterface $validator, $invitationImagesRoot)
+    public function __construct(GraphManager $gm, EventDispatcher $dispatcher, UserManager $um, PhotoManager $pm, FilterUsersManager $filterUsersManager, \Service\Validator\ValidatorInterface $validator, $invitationImagesRoot)
     {
         $this->gm = $gm;
         $this->um = $um;

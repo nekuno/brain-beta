@@ -101,8 +101,8 @@ class ModelsServiceProvider implements ServiceProviderInterface
 
         $app['users.tokenStatus.manager'] = $app->share(
             function ($app) {
-
-                return new TokenStatusManager($app['neo4j.graph_manager'], $app['validator.service']);
+                $validator = $app['validator.validator_factory']->build('tokenStatus');
+                return new TokenStatusManager($app['neo4j.graph_manager'], $validator);
             }
         );
 
@@ -167,7 +167,8 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.answers.model'] = $app->share(
             function ($app) {
 
-                return new AnswerManager($app['neo4j.graph_manager'], $app['questionnaire.questions.model'], $app['users.manager'], $app['validator.service'], $app['dispatcher']);
+                $validator = $app['validator.validator_factory']->build('answers');
+                return new AnswerManager($app['neo4j.graph_manager'], $app['questionnaire.questions.model'], $app['users.manager'], $validator, $app['dispatcher']);
             }
         );
 
@@ -355,8 +356,8 @@ class ModelsServiceProvider implements ServiceProviderInterface
 
         $app['questionnaire.questions.model'] = $app->share(
             function ($app) {
-
-                return new QuestionModel($app['neo4j.graph_manager'], $app['validator.service']);
+                $validator = $app['validator.validator_factory']->build('answers');
+                return new QuestionModel($app['neo4j.graph_manager'], $validator);
             }
         );
 

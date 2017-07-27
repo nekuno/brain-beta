@@ -23,7 +23,7 @@ class ProfileModel
     protected $dispatcher;
     protected $validator;
 
-    public function __construct(GraphManager $gm, ProfileFilterMetadataManager $profileFilterModel, ProfileMetadataManager $profileMetadataManager, EventDispatcher $dispatcher, \ValidatorInterface $validator)
+    public function __construct(GraphManager $gm, ProfileFilterMetadataManager $profileFilterModel, ProfileMetadataManager $profileMetadataManager, EventDispatcher $dispatcher, \Service\Validator\ValidatorInterface $validator)
     {
         $this->gm = $gm;
         $this->profileFilterModel = $profileFilterModel;

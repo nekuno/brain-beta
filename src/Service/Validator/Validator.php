@@ -6,7 +6,7 @@ use Everyman\Neo4j\Query\ResultSet;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 
-class Validator implements \ValidatorInterface
+class Validator implements \Service\Validator\ValidatorInterface
 {
     const MAX_TAGS_AND_CHOICE_LENGTH = 15;
     const LATITUDE_REGEX = '/^-?([1-8]?[0-9]|[1-9]0)\.{1}\d+$/';
@@ -17,6 +17,9 @@ class Validator implements \ValidatorInterface
      */
     protected $graphManager;
 
+    /**
+     * @var array Section from yml config file, chosen by Factory
+     */
     protected $metadata;
 
     public function __construct(GraphManager $graphManager, $metadata)
@@ -27,17 +30,19 @@ class Validator implements \ValidatorInterface
 
     public function validateOnCreate($data)
     {
-        // TODO: Implement validateOnCreate() method.
+        $metadata = $this->metadata;
+        $this->validateMetadata($data, $metadata);
     }
 
     public function validateOnUpdate($data)
     {
-        // TODO: Implement validateOnUpdate() method.
+        $metadata = $this->metadata;
+        $this->validateMetadata($data, $metadata);
     }
 
     public function validateOnDelete($data)
     {
-        // TODO: Implement validateOnDelete() method.
+
     }
 
     public function validateUserId($userId, $desired = true)
@@ -123,6 +128,28 @@ class Validator implements \ValidatorInterface
         $this->throwException($errors);
     }
 
+    /**
+     * @param $questionId
+     * @param $answerId
+     * @return bool
+     * @throws \Exception
+     */
+    protected function validateAnswerId($questionId, $answerId)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+        $qb->match('(q:Question)<-[:IS_ANSWER_OF]-(a:Answer)')
+            ->where('id(q) = { questionId }', 'id(a) = { answerId }')
+            ->setParameter('questionId', (integer)$questionId)
+            ->setParameter('answerId', (integer)$answerId)
+            ->returns('a AS answer');
+
+        $query = $qb->getQuery();
+
+        $result = $query->getResultSet();
+
+        $this->getExistenceErrors($result, $answerId, true);
+    }
+
     protected function getExistenceErrors(ResultSet $result, $id, $desired)
     {
         $exists = $result->count() > 0;
@@ -174,14 +201,6 @@ class Validator implements \ValidatorInterface
         $this->throwException($errors);
     }
 
-    public function validateTokenStatus($parameter)
-    {
-        $data = array('boolean' => $parameter);
-        $metadata = array('boolean' => array('type' => 'integer', 'min' => 0, 'max' => 1));
-
-        return $this->validateMetadata($data, $metadata);
-    }
-
     public function validateQuestion(array $data, array $choices = array(), $userIdRequired = false)
     {
         $metadata = $this->metadataManagerFactory->build('questions')->getMetadata();
@@ -195,15 +214,6 @@ class Validator implements \ValidatorInterface
                 $this->throwException(array('answers', 'Each answer must be an array with key "text" string'));
             }
         }
-    }
-
-    public function validateAnswer(array $data)
-    {
-        $metadata = $this->metadataManagerFactory->build('answers')->getMetadata();
-
-        $this->validateMetadata($data, $metadata, array());
-
-        $this->validateUserInData($data);
     }
 
     protected function validateUserInData(array $data, $userIdRequired = true)

@@ -10,6 +10,7 @@ use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 use Manager\UserManager;
 use Service\Validator\Validator;
+use Service\Validator\ValidatorInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -40,7 +41,7 @@ class AnswerManager
      */
     protected $validator;
 
-    public function __construct(GraphManager $gm, QuestionModel $qm, UserManager $um, Validator $validator, EventDispatcher $eventDispatcher)
+    public function __construct(GraphManager $gm, QuestionModel $qm, UserManager $um, ValidatorInterface $validator, EventDispatcher $eventDispatcher)
     {
         $this->gm = $gm;
         $this->qm = $qm;
@@ -75,7 +76,7 @@ class AnswerManager
 
     public function answer(array $data)
     {
-        if ($this->existsUserAnswer($data['userId'], $data['questionId'])) {
+        if ($this->isQuestionAnswered($data['userId'], $data['questionId'])) {
             return $this->update($data);
         } else {
             return $this->create($data);
@@ -84,7 +85,7 @@ class AnswerManager
 
     public function create(array $data)
     {
-        $this->validate($data);
+        $this->validateOnCreate($data);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(user:User)', '(question:Question)', '(answer:Answer)')
@@ -113,8 +114,7 @@ class AnswerManager
 
     public function update(array $data)
     {
-        $this->validate($data);
-        $this->validateExpired($data);
+        $this->validateOnUpdate($data);
 
         $data['userId'] = intval($data['userId']);
         $data['questionId'] = intval($data['questionId']);
@@ -147,18 +147,6 @@ class AnswerManager
         $this->handleAnswerAddedEvent($data);
 
         return $this->getUserAnswer($data['userId'], $data['questionId'], $data['locale']);
-    }
-
-    protected function validateExpired(array $data)
-    {
-        $answerResult = $this->getUserAnswer($data['userId'], $data['questionId'], $data['locale']);
-        /** @var Answer $answer */
-        $answer = $answerResult['userAnswer'];
-        $this->setEditable($answer);
-
-        if (!$answer->isEditable()){
-            throw new ValidationException(array('answer' => sprintf('This answer cannot be edited now. Please wait %s seconds', $answer->getEditableIn())));
-        }
     }
 
     public function explain(array $data)
@@ -274,26 +262,27 @@ class AnswerManager
      * @param array $data
      * @throws ValidationException
      */
-    public function validate(array $data)
+    public function validateOnCreate(array $data)
     {
-        $this->validator->validateAnswer($data);
-
-        $this->validateAcceptedAnswers($data);
+        $this->validator->validateOnCreate($data);
     }
 
-    /**
-     * @param array $data
-     */
-    protected function validateAcceptedAnswers(array $data)
+    public function validateOnUpdate(array $data)
     {
-        foreach ($data['acceptedAnswers'] as $acceptedAnswer) {
-            if (!is_int($acceptedAnswer)) {
-                throw new ValidationException(array('acceptedAnswers' => 'acceptedAnswers items must be integers'));
-            } elseif (!$this->existsAnswer($data['questionId'], $acceptedAnswer)) {
-                throw new ValidationException(array('acceptedAnswers' => 'Invalid accepted answers ID'));
-                break;
-            }
-        }
+        $data = $this->addUserAnswer($data);
+        $this->validator->validateOnUpdate($data);
+    }
+
+    protected function addUserAnswer(array $data)
+    {
+        $answerResult = $this->getUserAnswer($data['userId'], $data['questionId'], $data['locale']);
+        /** @var Answer $answer */
+        $answer = $answerResult['userAnswer'];
+        $this->updateEditable($answer);
+
+        $data['userAnswer'] = $answer;
+
+        return $data;
     }
 
     public function build(Row $row, $locale)
@@ -320,12 +309,12 @@ class AnswerManager
         $answer->setExplanation($userAnswer->getProperty('explanation'));
         $answer->setPrivate($userAnswer->getProperty('private'));
         $answer->setAnsweredAt($userAnswer->getProperty('answeredAt'));
-        $this->setEditable($answer);
+        $this->updateEditable($answer);
 
         return $answer;
     }
 
-    protected function setEditable(Answer $answer)
+    protected function updateEditable(Answer $answer)
     {
         $answeredAt = floor($answer->getAnsweredAt() / 1000);
         $now = time();
@@ -337,37 +326,13 @@ class AnswerManager
     }
 
     /**
-     * @param $questionId
-     * @param $answerId
-     * @return bool
-     * @throws \Exception
-     */
-    protected function existsAnswer($questionId, $answerId)
-    {
-
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(q:Question)<-[:IS_ANSWER_OF]-(a:Answer)')
-            ->where('id(q) = { questionId }', 'id(a) = { answerId }')
-            ->setParameter('questionId', (integer)$questionId)
-            ->setParameter('answerId', (integer)$answerId)
-            ->returns('a AS answer');
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        return $result->count() > 0;
-    }
-
-    /**
      * @param $userId
      * @param $questionId
      * @return bool
      * @throws \Exception
      */
-    protected function existsUserAnswer($userId, $questionId)
+    protected function isQuestionAnswered($userId, $questionId)
     {
-
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(q:Question)<-[:IS_ANSWER_OF]-(a:Answer)<-[ua:ANSWERS]->(u:User)')
             ->where('id(q) = { questionId }', 'u.qnoow_id = { userId }')

@@ -7,7 +7,6 @@ use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
 use Model\Neo4j\QueryBuilder;
-use Service\Validator\Validator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class TokenStatusManager
@@ -20,7 +19,7 @@ class TokenStatusManager
      * @param $graphManager
      * @param $validator
      */
-    public function __construct(GraphManager $graphManager, Validator $validator)
+    public function __construct(GraphManager $graphManager, \Service\Validator\ValidatorInterface $validator)
     {
         $this->graphManager = $graphManager;
         $this->validator = $validator;
@@ -50,7 +49,7 @@ class TokenStatusManager
 
     protected function setBooleanParameter($userId, $resource, $name, $value)
     {
-        $this->validate($value);
+        $this->validateOnCreate($value);
 
         $qb = $this->mergeTokenStatusQuery($userId, $resource);
         $this->setParameterQuery($qb, $name, (integer)$value);
@@ -123,9 +122,10 @@ class TokenStatusManager
         return $tokenStatusToBeDeleted;
     }
 
-    protected function validate($fetched)
+    protected function validateOnCreate($value)
     {
-        $this->validator->validateTokenStatus($fetched);
+        $data = array('boolean' => $value);
+        $this->validator->validateOnCreate($data);
     }
 
     /**

@@ -36,7 +36,7 @@ class TokensModel
 
     protected $validator;
 
-    public function __construct(EventDispatcher $dispatcher, GraphManager $graphManager, TokenStatusManager $tokenStatusManager, \ValidatorInterface $validator)
+    public function __construct(EventDispatcher $dispatcher, GraphManager $graphManager, TokenStatusManager $tokenStatusManager, \Service\Validator\ValidatorInterface $validator)
     {
         $this->dispatcher = $dispatcher;
         $this->gm = $graphManager;

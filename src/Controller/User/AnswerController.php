@@ -113,7 +113,7 @@ class AnswerController
         $data['userId'] = $user->getId();
         $data['locale'] = $this->getLocale($request, $app['locale.options']['default']);
 
-        $app['users.answers.model']->validate($data);
+        $app['users.answers.model']->validateOnCreate($data);
 
         return $app->json(array(), 200);
     }

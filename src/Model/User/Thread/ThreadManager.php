@@ -52,7 +52,7 @@ class ThreadManager
         ContentThreadManager $cm,
         ProfileModel $profileModel,
         Translator $translator,
-        \ValidatorInterface $validator
+        \Service\Validator\ValidatorInterface $validator
     ) {
         $this->graphManager = $graphManager;
         $this->usersThreadManager = $um;

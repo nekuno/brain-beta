@@ -37,7 +37,7 @@ class InvitationModel
 
     const MAX_AVAILABLE = 9999999999;
 
-    public function __construct(TokenGenerator $tokenGenerator, GraphManager $gm, \ValidatorInterface $validator, $adminDomain)
+    public function __construct(TokenGenerator $tokenGenerator, GraphManager $gm, \Service\Validator\ValidatorInterface $validator, $adminDomain)
     {
         $this->tokenGenerator = $tokenGenerator;
         $this->gm = $gm;
