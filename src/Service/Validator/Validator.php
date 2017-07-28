@@ -2,30 +2,26 @@
 
 namespace Service\Validator;
 
-use Everyman\Neo4j\Query\ResultSet;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 
-class Validator implements \Service\Validator\ValidatorInterface
+class Validator implements ValidatorInterface
 {
     const MAX_TAGS_AND_CHOICE_LENGTH = 15;
     const LATITUDE_REGEX = '/^-?([1-8]?[0-9]|[1-9]0)\.{1}\d+$/';
     const LONGITUDE_REGEX = '/^-?([1]?[0-7][1-9]|[1]?[1-8][0]|[1-9]?[0-9])\.{1}\d+$/';
 
-    /**
-     * @var GraphManager
-     */
-    protected $graphManager;
+    protected $existenceValidator;
 
     /**
      * @var array Section from yml config file, chosen by Factory
      */
     protected $metadata;
 
-    public function __construct(GraphManager $graphManager, $metadata)
+    public function __construct(GraphManager $graphManager, array $metadata)
     {
-        $this->graphManager = $graphManager;
         $this->metadata = $metadata;
+        $this->existenceValidator = new ExistenceValidator($graphManager);
     }
 
     public function validateOnCreate($data)
@@ -47,175 +43,12 @@ class Validator implements \Service\Validator\ValidatorInterface
 
     public function validateUserId($userId, $desired = true)
     {
-        $errors = array('userId' => array());
-
         if (!is_int($userId)) {
-            $errors['userId'][] = array('User Id must be an integer');
+            $errors = array('userId' => array('User Id must be an integer'));
+        } else {
+            $errors = array('userId' => $this->existenceValidator->validateUserId($userId, $desired));
         }
 
-        $qb = $this->graphManager->createQueryBuilder();
-
-        $qb->match('(u:User)')
-            ->where('u.qnoow_id = {userId}')
-            ->setParameter('userId', $userId);
-        $qb->returns('u.qnoow_id');
-
-        $result = $qb->getQuery()->getResultSet();
-
-        $errors['userId'] = $this->getExistenceErrors($result, $userId, $desired);
-
-
-        $this->throwException($errors);
-    }
-
-    protected function validateGroupId($groupId, $desired = true)
-    {
-        $errors = array('groupId' => array());
-
-        if (!is_int($groupId)) {
-            $errors['groupId'][] = array('Group Id must be an integer');
-        }
-
-        $qb = $this->graphManager->createQueryBuilder();
-
-        $qb->match('(g:Group)')
-            ->where('id(g) = {groupId}')
-            ->setParameter('groupId', $groupId);
-        $qb->returns('id(g)');
-
-        $result = $qb->getQuery()->getResultSet();
-
-        $errors['groupId'] = $this->getExistenceErrors($result, $groupId, $desired);
-
-
-        $this->throwException($errors);
-    }
-    
-    protected function validateInvitationId($invitationId, $desired = true)
-    {
-        $errors = array('invitationId' => array());
-
-        $qb = $this->graphManager->createQueryBuilder();
-        $qb->match('(inv:Invitation)')
-            ->where('id(inv) = { invitationId }')
-            ->setParameter('invitationId', (integer)$invitationId)
-            ->returns('inv AS Invitation');
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        $errors['invitationId'] = $this->getExistenceErrors($result, $invitationId, $desired);
-
-        $this->throwException($errors);
-    }
-
-    protected function validateInvitationToken($token, $excludedId, $desired = true)
-    {
-        $qb = $this->graphManager->createQueryBuilder();
-        $qb->match('(invitation:Invitation)')
-            ->where('toLower(invitation.token) = toLower({ token }) AND NOT id(invitation) = { excludedId }')
-            ->setParameter('token', (string)$token)
-            ->setParameter('excludedId', (int)$excludedId)
-            ->returns('invitation');
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        $errors['invitationToken'] = $this->getExistenceErrors($result, $token, $desired);
-
-        $this->throwException($errors);
-    }
-
-    /**
-     * @param $questionId
-     * @param $answerId
-     * @throws \Exception
-     */
-    protected function validateAnswerId($questionId, $answerId)
-    {
-        $qb = $this->graphManager->createQueryBuilder();
-        $qb->match('(q:Question)<-[:IS_ANSWER_OF]-(a:Answer)')
-            ->where('id(q) = { questionId }', 'id(a) = { answerId }')
-            ->setParameter('questionId', (integer)$questionId)
-            ->setParameter('answerId', (integer)$answerId)
-            ->returns('a AS answer');
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        $this->getExistenceErrors($result, $answerId, true);
-    }
-
-    protected function getExistenceErrors(ResultSet $result, $id, $desired)
-    {
-        $exists = $result->count() > 0;
-        if ($desired && !$exists) {
-            return array(sprintf('Invitation with id %d not found', $id));
-        } else if (!$desired && $exists) {
-            return array(sprintf('Invitation with id %d already exists', $id));
-        }
-
-        return array();
-    }
-
-    protected function validateExtraFields($data, $metadata)
-    {
-        $errors = array();
-
-        $diff = array_diff_key($data, $metadata);
-        if (count($diff) > 0) {
-            foreach ($diff as $invalidKey => $invalidValue) {
-                $errors[$invalidKey] = array(sprintf('Invalid key "%s"', $invalidKey));
-            }
-        }
-
-        $this->throwException($errors);
-    }
-
-    protected function validateTokenResourceId($resourceId, $userId, $resourceOwner, $desired = true)
-    {
-        $errors = array();
-
-        $conditions = array('token.resourceOwner = { resourceOwner }', 'token.resourceId = { resourceId }');
-        if (null !== $userId) {
-            $conditions[] = 'user.qnoow_id <> { id }';
-        }
-        $qb = $this->graphManager->createQueryBuilder();
-        $qb->match('(user:User)<-[:TOKEN_OF]-(token:Token)')
-            ->where($conditions)
-            ->setParameter('id', (integer)$userId)
-            ->setParameter('resourceId', $resourceId)
-            ->setParameter('resourceOwner', $resourceOwner)
-            ->returns('user');
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        $errors['resourceId'] = $this->getExistenceErrors($result, $resourceId, $desired);
-
-        $this->throwException($errors);
-    }
-
-    protected function validateRegistrationId($registrationId, $desired = true)
-    {
-        $errors = array();
-
-        $qb = $this->graphManager->createQueryBuilder();
-        $qb->match('(d:Device)')
-            ->where('d.registrationId = { registrationId }')
-            ->setParameter('registrationId', $registrationId)
-            ->returns('d');
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        $errors['registrationId'] = $this->getExistenceErrors($result, $registrationId, $desired);
-        
         $this->throwException($errors);
     }
 
@@ -230,7 +63,18 @@ class Validator implements \Service\Validator\ValidatorInterface
             $this->validateUserId($data['userId']);
         }
     }
-    
+
+    protected function validateGroupId($groupId, $desired = true)
+    {
+        if (!is_int($groupId)) {
+            $errors = array('groupId' => array('Group Id must be an integer'));
+        } else {
+            $errors = array('groupId' => $this->existenceValidator->validateGroupId($groupId, $desired));
+        }
+
+        $this->throwException($errors);
+    }
+
     protected function validateGroupInData(array $data, $groupIdRequired = true)
     {
         if ($groupIdRequired && !isset($data['groupId'])) {
@@ -240,6 +84,41 @@ class Validator implements \Service\Validator\ValidatorInterface
         if (isset($data['groupId'])) {
             $this->validateGroupId($data['groupId']);
         }
+    }
+    
+    protected function validateInvitationId($invitationId, $desired = true)
+    {
+        $errors = array('invitationId' => $this->existenceValidator->validateInvitationId($invitationId, $desired));
+
+        $this->throwException($errors);
+    }
+
+    protected function validateInvitationToken($token, $excludedId, $desired = true)
+    {
+        $errors = array('invitationToken' => $this->existenceValidator->validateInvitationToken($token, $excludedId, $desired));
+
+        $this->throwException($errors);
+    }
+
+    protected function validateAnswerId($questionId, $answerId, $desired = true)
+    {
+        $errors = array('answerId' => $this->existenceValidator->validateAnswerId($questionId, $answerId, $desired));
+
+        $this->throwException($errors);
+    }
+
+    protected function validateTokenResourceId($resourceId, $userId, $resourceOwner, $desired = true)
+    {
+        $errors = array('tokenResourceId' => $this->existenceValidator->validateTokenResourceId($resourceId, $userId, $resourceOwner, $desired));
+
+        $this->throwException($errors);
+    }
+
+    protected function validateRegistrationId($registrationId, $desired = true)
+    {
+        $errors = array('registrationId' => $this->existenceValidator->validateRegistrationId($registrationId, $desired));
+        
+        $this->throwException($errors);
     }
     
     protected function validateRegistrationIdInData(array $data, $registrationIdRequired = true)
@@ -253,6 +132,9 @@ class Validator implements \Service\Validator\ValidatorInterface
         }
     }
 
+    /******* TO REMOVE WITH QS-1461 ************/
+    /***********************************************/
+
     public function validateEditFilterUsers($data, $choices = array())
     {
         $metadata = $this->metadata['user_filter'];
@@ -265,6 +147,21 @@ class Validator implements \Service\Validator\ValidatorInterface
         $metadata = $this->metadata['profile_filter'];
 
         return $this->validateMetadata($data, $metadata, $choices);
+    }
+    /***********************************************/
+
+    protected function validateExtraFields($data, $metadata)
+    {
+        $errors = array();
+
+        $diff = array_diff_key($data, $metadata);
+        if (count($diff) > 0) {
+            foreach ($diff as $invalidKey => $invalidValue) {
+                $errors[$invalidKey] = array(sprintf('Invalid key "%s"', $invalidKey));
+            }
+        }
+
+        $this->throwException($errors);
     }
 
     protected function validateMetadata($data, $metadata, $dataChoices = array())
