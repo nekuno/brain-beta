@@ -131,7 +131,6 @@ class Validator implements \Service\Validator\ValidatorInterface
     /**
      * @param $questionId
      * @param $answerId
-     * @return bool
      * @throws \Exception
      */
     protected function validateAnswerId($questionId, $answerId)
@@ -201,6 +200,25 @@ class Validator implements \Service\Validator\ValidatorInterface
         $this->throwException($errors);
     }
 
+    protected function validateRegistrationId($registrationId, $desired = true)
+    {
+        $errors = array();
+
+        $qb = $this->graphManager->createQueryBuilder();
+        $qb->match('(d:Device)')
+            ->where('d.registrationId = { registrationId }')
+            ->setParameter('registrationId', $registrationId)
+            ->returns('d');
+
+        $query = $qb->getQuery();
+
+        $result = $query->getResultSet();
+
+        $errors['registrationId'] = $this->getExistenceErrors($result, $registrationId, $desired);
+        
+        $this->throwException($errors);
+    }
+
     protected function validateUserInData(array $data, $userIdRequired = true)
     {
         $isMissing = $userIdRequired && (!isset($data['userId']) || null === $data['userId']);
@@ -223,6 +241,17 @@ class Validator implements \Service\Validator\ValidatorInterface
             $this->validateGroupId($data['groupId']);
         }
     }
+    
+    protected function validateRegistrationIdInData(array $data, $registrationIdRequired = true)
+    {
+        if ($registrationIdRequired && !isset($data['registrationId'])) {
+            $this->throwException(array('registrationId', 'Registration id is required for this action'));
+        }
+        
+        if (isset($data['registrationId'])) {
+            $this->validateRegistrationId($data['registrationId']);
+        }
+    }
 
     public function validateEditFilterUsers($data, $choices = array())
     {
@@ -236,13 +265,6 @@ class Validator implements \Service\Validator\ValidatorInterface
         $metadata = $this->metadata['profile_filter'];
 
         return $this->validateMetadata($data, $metadata, $choices);
-    }
-
-    public function validateDevice($data)
-    {
-        $metadata = $this->metadataManagerFactory->build('device')->getMetadata();
-
-        $this->validateMetadata($data, $metadata, array());
     }
 
     protected function validateMetadata($data, $metadata, $dataChoices = array())

@@ -336,8 +336,8 @@ class ModelsServiceProvider implements ServiceProviderInterface
 
         $app['users.device.model'] = $app->share(
             function ($app) {
-
-                return new DeviceModel($app['neo4j.graph_manager'], $app['push_private_key'], $app['validator.service']);
+                $validator = $app['validator.validator_factory']->build('device');
+                return new DeviceModel($app['neo4j.graph_manager'], $app['push_private_key'], $validator);
             }
         );
 
