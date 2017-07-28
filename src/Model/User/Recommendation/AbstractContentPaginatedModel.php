@@ -9,7 +9,7 @@ use Model\Link\LinkModel;
 use Model\Neo4j\GraphManager;
 use Paginator\PaginatedInterface;
 use Service\ImageTransformations;
-use Service\Validator\Validator;
+use Service\Validator\ValidatorInterface;
 
 abstract class AbstractContentPaginatedModel implements PaginatedInterface
 {
@@ -26,7 +26,7 @@ abstract class AbstractContentPaginatedModel implements PaginatedInterface
     protected $lm;
 
     /**
-     * @var Validator
+     * @var ValidatorInterface
      */
     protected $validator;
 
@@ -38,10 +38,10 @@ abstract class AbstractContentPaginatedModel implements PaginatedInterface
     /**
      * @param GraphManager $gm
      * @param LinkModel $lm
-     * @param Validator $validator
+     * @param ValidatorInterface $validator
      * @param ImageTransformations $it
      */
-    public function __construct(GraphManager $gm, LinkModel $lm, Validator $validator, ImageTransformations $it)
+    public function __construct(GraphManager $gm, LinkModel $lm, ValidatorInterface $validator, ImageTransformations $it)
     {
         $this->gm = $gm;
         $this->lm = $lm;
@@ -117,7 +117,7 @@ abstract class AbstractContentPaginatedModel implements PaginatedInterface
      */
     public function validateFilters(array $filters)
     {
-        return $this->validator->validateRecommendateContent($filters, $this->getChoices());
+        return $this->validator->validateOnUpdate($filters);
     }
 
     /**
@@ -229,11 +229,6 @@ abstract class AbstractContentPaginatedModel implements PaginatedInterface
         }
 
         return $response;
-    }
-
-    protected function getChoices()
-    {
-        return array('type' => LinkModel::getValidTypes());
     }
 
     /**

@@ -6,7 +6,6 @@ use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
 use Model\Exception\ValidationException;
-use Model\User;
 
 class ContentReportModel extends ContentPaginatedModel
 {
@@ -147,21 +146,6 @@ class ContentReportModel extends ContentPaginatedModel
         }
 
         return $count;
-    }
-
-    /**
-     * Hook point for validating the query.
-     * @param array $filters
-     * @return boolean
-     */
-    public function validateFilters(array $filters)
-    {
-        $userId = isset($filters['id']) ? $filters['id'] : null;
-        if ($userId) {
-            $this->validator->validateUserId($userId);
-        }
-
-        return $this->validator->validateRecommendateContent($filters, $this->getChoices());
     }
 
     /**

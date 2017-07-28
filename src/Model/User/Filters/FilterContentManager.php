@@ -4,15 +4,13 @@ namespace Model\User\Filters;
 
 
 use Everyman\Neo4j\Node;
-use Model\Link\LinkModel;
 use Model\Neo4j\GraphManager;
 use Model\Metadata\ContentFilterMetadataManager;
-use Service\Validator\Validator;
+use Service\Validator\ValidatorInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class FilterContentManager
 {
-
     /**
      * @var GraphManager
      */
@@ -24,11 +22,11 @@ class FilterContentManager
     protected $contentFilterModel;
 
     /**
-     * @var Validator
+     * @var ValidatorInterface
      */
     protected $validator;
 
-    public function __construct(GraphManager $graphManager, ContentFilterMetadataManager $contentFilterModel, Validator $validator)
+    public function __construct(GraphManager $graphManager, ContentFilterMetadataManager $contentFilterModel, ValidatorInterface $validator)
     {
         $this->graphManager = $graphManager;
         $this->contentFilterModel = $contentFilterModel;
@@ -64,7 +62,7 @@ class FilterContentManager
     public function updateFilterContentByThreadId($id, $filtersArray)
     {
         $contentFilters = isset($filtersArray['contentFilters']) ? $filtersArray['contentFilters'] : array();
-        $this->validator->validateEditFilterContent($contentFilters, LinkModel::getValidTypes());
+        $this->validator->validateOnUpdate($contentFilters);
 
         $filters = $this->buildFiltersContent();
 

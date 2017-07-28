@@ -68,7 +68,7 @@ class Validator implements \Service\Validator\ValidatorInterface
         $this->throwException($errors);
     }
 
-    public function validateGroupId($groupId, $desired = true)
+    protected function validateGroupId($groupId, $desired = true)
     {
         $errors = array('groupId' => array());
 
@@ -91,7 +91,7 @@ class Validator implements \Service\Validator\ValidatorInterface
         $this->throwException($errors);
     }
     
-    public function validateInvitationId($invitationId, $desired = true)
+    protected function validateInvitationId($invitationId, $desired = true)
     {
         $errors = array('invitationId' => array());
 
@@ -110,7 +110,7 @@ class Validator implements \Service\Validator\ValidatorInterface
         $this->throwException($errors);
     }
 
-    public function validateInvitationToken($token, $excludedId, $desired = true)
+    protected function validateInvitationToken($token, $excludedId, $desired = true)
     {
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(invitation:Invitation)')
@@ -201,24 +201,10 @@ class Validator implements \Service\Validator\ValidatorInterface
         $this->throwException($errors);
     }
 
-    public function validateQuestion(array $data, array $choices = array(), $userIdRequired = false)
-    {
-        $metadata = $this->metadataManagerFactory->build('questions')->getMetadata();
-
-        $this->validateMetadata($data, $metadata, $choices);
-
-        $this->validateUserInData($data, $userIdRequired);
-
-        foreach ($data['answers'] as $answer) {
-            if (!isset($answer['text']) || !is_string($answer['text'])) {
-                $this->throwException(array('answers', 'Each answer must be an array with key "text" string'));
-            }
-        }
-    }
-
     protected function validateUserInData(array $data, $userIdRequired = true)
     {
-        if ($userIdRequired && !isset($data['userId'])) {
+        $isMissing = $userIdRequired && (!isset($data['userId']) || null === $data['userId']);
+        if ($isMissing) {
             $this->throwException(array('userId', 'User id is required for this action'));
         }
 
@@ -238,30 +224,16 @@ class Validator implements \Service\Validator\ValidatorInterface
         }
     }
 
-    public function validateEditFilterContent(array $data, array $choices = array())
-    {
-        $metadata = $this->metadataManagerFactory->build('content_filter')->getMetadata();
-
-        return $this->validateMetadata($data, $metadata, $choices);
-    }
-
     public function validateEditFilterUsers($data, $choices = array())
     {
-        $metadata = $this->metadataManagerFactory->build('user_filter')->getMetadata();
+        $metadata = $this->metadata['user_filter'];
 
         return $this->validateMetadata($data, $metadata, $choices);
     }
 
     public function validateEditFilterProfile($data, $choices = array())
     {
-        $metadata = $this->metadataManagerFactory->build('profile_filter')->getMetadata();
-
-        return $this->validateMetadata($data, $metadata, $choices);
-    }
-
-    public function validateRecommendateContent($data, $choices = array())
-    {
-        $metadata = $this->metadataManagerFactory->build('content_filter')->getMetadata();
+        $metadata = $this->metadata['profile_filter'];
 
         return $this->validateMetadata($data, $metadata, $choices);
     }

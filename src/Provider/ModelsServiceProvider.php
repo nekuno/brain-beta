@@ -195,15 +195,15 @@ class ModelsServiceProvider implements ServiceProviderInterface
 
         $app['users.content.model'] = $app->share(
             function ($app) {
-
-                return new ContentPaginatedModel($app['neo4j.graph_manager'], $app['links.model'], $app['validator.service']);
+                $validator = $app['validator.validator_factory']->build('content_filter');
+                return new ContentPaginatedModel($app['neo4j.graph_manager'], $app['links.model'], $validator);
             }
         );
 
         $app['users.content.compare.model'] = $app->share(
             function ($app) {
-
-                return new ContentComparePaginatedModel($app['neo4j.graph_manager'], $app['links.model'], $app['validator.service']);
+                $validator = $app['validator.validator_factory']->build('content_filter');
+                return new ContentComparePaginatedModel($app['neo4j.graph_manager'], $app['links.model'], $validator);
             }
         );
 
@@ -223,8 +223,8 @@ class ModelsServiceProvider implements ServiceProviderInterface
 
         $app['users.content.report.model'] = $app->share(
             function ($app) {
-
-                return new ContentReportModel($app['neo4j.graph_manager'], $app['links.model'], $app['validator.service']);
+                $validator = $app['validator.validator_factory']->build('content_filter');
+                return new ContentReportModel($app['neo4j.graph_manager'], $app['links.model'], $validator);
             }
         );
 
@@ -279,15 +279,16 @@ class ModelsServiceProvider implements ServiceProviderInterface
 
         $app['users.recommendation.content.model'] = $app->share(
             function ($app) {
-
-                return new ContentRecommendationPaginatedModel($app['neo4j.graph_manager'], $app['users.affinity.model'], $app['links.model'], $app['validator.service'], $app['imageTransformations.service']);
+                $validator = $app['validator.validator_factory']->build('content_filter');
+                return new ContentRecommendationPaginatedModel($app['neo4j.graph_manager'], $app['users.affinity.model'], $app['links.model'], $validator, $app['imageTransformations.service']);
             }
         );
 
         $app['users.recommendation.popularcontent.model'] = $app->share(
             function ($app) {
+                $validator = $app['validator.validator_factory']->build('content_filter');
 
-                return new ContentPopularRecommendationPaginatedModel($app['neo4j.graph_manager'], $app['links.model'], $app['validator.service'], $app['imageTransformations.service']);
+                return new ContentPopularRecommendationPaginatedModel($app['neo4j.graph_manager'], $app['links.model'], $validator, $app['imageTransformations.service']);
             }
         );
 
@@ -384,7 +385,8 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.filtercontent.manager'] = $app->share(
             function ($app) {
 
-                return new FilterContentManager($app['neo4j.graph_manager'], $app['users.contentFilter.model'], $app['validator.service']);
+                $validator = $app['validator.validator_factory']->build('content_filter');
+                return new FilterContentManager($app['neo4j.graph_manager'], $app['users.contentFilter.model'], $validator);
             }
         );
 
