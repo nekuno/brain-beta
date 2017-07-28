@@ -161,6 +161,16 @@ class UserController
             return $app->json($e->getMessage(), 404);
         }
 
+        if (!$enabled) {
+
+            /** @var User\Device\DeviceModel $deviceModel */
+            $deviceModel = $app['users.device.model'];
+            $allDevices = $deviceModel->getAll($user->getId());
+            foreach ($allDevices as $device) {
+                $deviceModel->delete($device->toArray());
+            }
+        }
+
         return $app->json();
     }
 

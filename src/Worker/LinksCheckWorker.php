@@ -41,6 +41,8 @@ class LinksCheckWorker extends LoggerAwareWorker implements RabbitMQConsumerInte
         $checkEvent = new CheckEvent($url);
         $this->dispatcher->dispatch(\AppEvents::CHECK_START, $checkEvent);
         $this->client->setDefaultOption('verify', false);
+        $this->client->setDefaultOption('connect_timeout', 10);
+        $this->client->setDefaultOption('timeout', 10);
 
         try {
             $response = $this->client->get($url);

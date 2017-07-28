@@ -563,7 +563,7 @@ class UserManager implements PaginatedInterface
     {
         $conditions = array('u.qnoow_id = { qnoow_id }');
         if (!$fromAdmin){
-            $conditions[] = 'NOT u.canReenable = false';
+            $conditions[] = 'NOT EXISTS(u.canReenable) OR NOT u.canReenable = false';
         }
 
         $qb = $this->gm->createQueryBuilder();
