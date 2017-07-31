@@ -530,9 +530,10 @@ class UserManager implements PaginatedInterface
 
         $this->setDefaults($data);
 
-        $this->createPhoto($data['userId'], $data);
+        $photo = $data['photo'];
         unset($data['photo']);
         $user = $this->save($data);
+        $this->createPhoto($data['userId'], $photo);
 
         $this->dispatcher->dispatch(\AppEvents::USER_CREATED, new UserEvent($user));
 
