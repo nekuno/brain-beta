@@ -6,6 +6,7 @@ use Model\Metadata\ProfileFilterMetadataManager;
 use Model\User\ProfileModel;
 use Model\User\ProfileTagModel;
 use Model\User;
+use Service\Validator\ProfileValidator;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -89,8 +90,8 @@ class ProfileController
         $locale = $request->query->get('locale');
 
         /* @var $model ProfileFilterMetadataManager */
-        $model = $app['users.profileFilter.model'];
-        $metadata = $model->getProfileFilterMetadata($locale);
+        $model = $app['users.metadataManager.factory']->build('profile');
+        $metadata = $model->getMetadata($locale);
 
         return $app->json($metadata);
     }
@@ -105,8 +106,8 @@ class ProfileController
         $locale = $request->query->get('locale');
 
         /* @var $model ProfileFilterMetadataManager */
-        $model = $app['users.profileFilter.model'];
-        $categories = $model->getProfileCategories($locale);
+        $model = $app['users.metadataManager.factory']->build('categories');
+        $categories = $model->getMetadata($locale);
 
         return $app->json($categories);
     }
@@ -130,14 +131,16 @@ class ProfileController
     /**
      * @param Request $request
      * @param Application $app
+     * @param User $user
      * @return JsonResponse
      */
-    public function validateAction(Request $request, Application $app)
+    public function validateAction(Request $request, Application $app, User $user)
     {
-        /* @var $model ProfileModel */
-        $model = $app['users.profile.model'];
+        /** @var ProfileValidator $validator */
+        $validator = $app['validator.factory']->build('profile');
 
-        $model->validate($request->request->all());
+        $data = array_merge($request->request->all(), array('userId' => $user->getId()));
+        $validator->validateOnUpdate($data);
 
         return $app->json();
     }

@@ -1,6 +1,6 @@
 validator.config:
     answers: Service\Validator\AnswerValidator
-    content_filter: Service\Validator\ContentFilterValidator
+    content_filter: Service\Validator\FilterContentValidator
     device: Service\Validator\DeviceValidator
     groups: Service\Validator\GroupValidator
     invitations: Service\Validator\InvitationValidator

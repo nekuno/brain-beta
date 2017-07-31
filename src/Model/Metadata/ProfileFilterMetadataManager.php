@@ -3,27 +3,40 @@
 namespace Model\Metadata;
 
 use Everyman\Neo4j\Query\Row;
-use Model\Neo4j\GraphManager;
-use Symfony\Component\Translation\Translator;
 
 class ProfileFilterMetadataManager extends MetadataManager
 {
-    protected $profileMetadata;
-    protected $profileCategories;
     protected $profileOptions = array();
     protected $profileTags = array();
-
-    public function __construct(GraphManager $gm, Translator $translator, array $metadata, array $profileMetadata, array $profileCategories, array $socialMetadata, $defaultLocale)
-    {
-        parent::__construct($gm, $translator, $metadata, $socialMetadata, $defaultLocale);
-        $this->profileMetadata = $profileMetadata;
-        $this->profileCategories = $profileCategories;
-    }
 
     protected function modifyPublicField($publicField, $name, $values)
     {
         $publicField = parent::modifyPublicField($publicField, $name, $values);
 
+        $publicField = $this->modifyCommonAttributes($publicField, $values);
+
+        $publicField = $this->modifyByType($publicField, $name, $values);
+
+        return $publicField;
+    }
+
+    protected function modifyCommonAttributes(array $publicField, $values)
+    {
+        $publicField['labelEdit'] = isset($values['labelEdit']) ? $this->getLocaleString($values['labelEdit']) : $publicField['label'];
+        $publicField['required'] = isset($values['required']) ? $values['required'] : false;
+        $publicField['editable'] = isset($values['editable']) ? $values['editable'] : true;
+
+        return $publicField;
+    }
+
+    /**
+     * @param $publicField
+     * @param $name
+     * @param $values
+     * @return mixed
+     */
+    protected function modifyByType($publicField, $name, $values)
+    {
         $choiceOptions = $this->getChoiceOptions();
 
         switch ($values['type']) {
@@ -126,63 +139,10 @@ class ProfileFilterMetadataManager extends MetadataManager
         return $choiceOptions;
     }
 
-    //TODO: Most is from FilterModel, Refactor with QS-979
-    //For use with ProfileModel for validation and creation
-    public function getProfileFilterMetadata($locale = null)
-    {
-        $this->setLocale($locale);
-
-        $publicMetadata = array();
-        foreach ($this->profileMetadata as $name => $values) {
-            $publicField = $values;
-            $publicField['label'] = $this->getLabel($values);
-            $publicField['labelEdit'] = isset($values['labelEdit']) ? $this->getLocaleString($values['labelEdit']) : $publicField['label'];
-            $publicField['required'] = isset($values['required']) ? $values['required'] : false;
-            $publicField['editable'] = isset($values['editable']) ? $values['editable'] : true;
-
-            $publicField = $this->modifyPublicField($publicField, $name, $values);
-
-            $publicMetadata[$name] = $publicField;
-        }
-
-        return $publicMetadata;
-    }
-
-    public function getProfileMetadata($locale = null)
-    {
-        $metadata = $this->getProfileFilterMetadata($locale);
-
-        foreach ($metadata as &$field) {
-            if (isset($field['choices'])) {
-                foreach ($field['choices'] as $name => $value) {
-                    $field['choices'][$name] = $name;
-                }
-            }
-        }
-
-        return $metadata;
-    }
-
-    public function getProfileCategories($locale = null)
-    {
-        $this->setLocale($locale);
-
-        $publicCategories = array();
-        foreach ($this->profileCategories as $type => $categories) {
-            foreach ($categories as $category) {
-                $publicField = $category;
-                $publicField['label'] = $this->getLabel($category);
-                $publicCategories[$type][] = $publicField;
-            }
-        }
-
-        return $publicCategories;
-    }
-
     public function splitFilters($filters)
     {
         $filters['profileFilters'] = (isset($filters['profileFilters']) && is_array($filters['profileFilters'])) ? $filters['profileFilters'] : array();
-        $profileMetadata = $this->getProfileFilterMetadata();
+        $profileMetadata = $this->getMetadata();
         foreach ($profileMetadata as $fieldName => $fieldData) {
             if (isset($filters['userFilters'][$fieldName])) {
                 $filters['profileFilters'][$fieldName] = $filters['userFilters'][$fieldName];

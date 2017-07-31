@@ -14,7 +14,7 @@ class MetadataManager
 
     protected $validLocales = array('en', 'es');
 
-    public function __construct(GraphManager $gm, Translator $translator, array $metadata, array $socialMetadata, $defaultLocale)
+    public function __construct(GraphManager $gm, Translator $translator, array $metadata, $defaultLocale)
     {
         $this->gm = $gm;
         $this->translator = $translator;
@@ -64,7 +64,7 @@ class MetadataManager
     {
         $labelField = isset($field['label']) ? $field['label'] : null;
 
-        return $this->getLocaleString($labelField);
+        return $labelField ? $this->getLocaleString($labelField) : null;
     }
 
     protected function getLocaleString($labelField)

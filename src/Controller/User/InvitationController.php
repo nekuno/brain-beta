@@ -145,7 +145,7 @@ class InvitationController
     {
         /* @var $model InvitationModel */
         $model = $app['users.invitations.model'];
-        $invitation = $model->validateToken($token);
+        $invitation = $model->validateTokenAvailable($token);
 
         return $app->json($invitation, 200);
     }

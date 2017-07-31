@@ -15,8 +15,11 @@ class ProfileFilterModelTest extends \PHPUnit_Framework_TestCase
         $gm = $client = $this->getMockBuilder('Model\Neo4j\GraphManager')
             ->disableOriginalConstructor()
             ->getMock();
+        $translator = $this->getMockBuilder('Symfony\Component\Translation\Translator')
+            ->disableOriginalConstructor()
+            ->getMock();
 
-        $model = new ProfileFilterMetadataManager($gm, array(), array(), array(), array(), 'es');
+        $model = new ProfileFilterMetadataManager($gm, $translator, array(), array(), array(), array(), 'es');
 
         $return = $model->getBirthdayRangeFromAgeRange($ageMin, $ageMax, $now);
 

@@ -633,7 +633,7 @@ class InvitationModel
         return strtolower($result->current()->offsetGet('token')) === strtolower($token);
     }
 
-    public function validateToken($token)
+    public function validateTokenAvailable($token)
     {
 
         $qb = $this->gm->createQueryBuilder();

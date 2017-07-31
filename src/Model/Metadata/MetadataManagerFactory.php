@@ -18,13 +18,13 @@ class MetadataManagerFactory
      * @param $defaultLocale
      * @param $metadata
      */
-    public function __construct($config, $graphManager, $translator, $defaultLocale, $metadata)
+    public function __construct($config, $graphManager, $translator, $metadata, $defaultLocale)
     {
         $this->config = $config;
         $this->graphManager = $graphManager;
         $this->translator = $translator;
-        $this->defaultLocale = $defaultLocale;
         $this->metadata = $metadata;
+        $this->defaultLocale = $defaultLocale;
     }
 
     /**

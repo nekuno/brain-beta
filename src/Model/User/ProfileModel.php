@@ -149,7 +149,7 @@ class ProfileModel
      * @param array $data
      * @param $userId
      */
-    public function validateOnCreate(array $data, $userId)
+    public function validateOnCreate(array $data, $userId = null)
     {
         $data['userId'] = $userId;
         $this->validator->validateOnCreate($data);
@@ -324,7 +324,7 @@ class ProfileModel
 
     protected function saveProfileData($id, array $data)
     {
-        $metadata = $this->profileFilterModel->getProfileFilterMetadata();
+        $metadata = $this->profileMetadataManager->getMetadata();
         $options = $this->getProfileNodeOptions($id);
         $tags = $this->getProfileNodeTags($id);
 

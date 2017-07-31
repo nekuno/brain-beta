@@ -6,11 +6,15 @@ class ProfileValidator extends Validator
 {
     public function validateOnCreate($data)
     {
+        $this->validateUserInData($data, false);
+
         return $this->validate($data);
     }
 
     public function validateOnUpdate($data)
     {
+        $this->validateUserInData($data);
+
         return $this->validate($data);
     }
 
@@ -21,7 +25,6 @@ class ProfileValidator extends Validator
 
     protected function validate(array $data)
     {
-        $this->validateUserInData($data);
 
         $metadata = $this->metadata;
         $this->fixOrientationRequired($data, $metadata);

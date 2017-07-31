@@ -16,4 +16,25 @@ abstract class AbstractProcessorTest extends \PHPUnit_Framework_TestCase
 
         return $app;
     }
+
+    protected function getEmptyLink()
+    {
+        return array(
+            'title' => null,
+            'description' => null,
+            'thumbnail' => null,
+            'url' => null,
+            'id' => null,
+            'tags' => array(),
+            'created' => null,
+            'processed' => true,
+            'language' => null,
+            'synonymous' => array(),
+            'imageProcessed' => null,
+            'additionalLabels' => array('Creator', 'CreatorFacebook'),
+            'lastChecked' => null,
+            'lastReprocessed' => null,
+            'reprocessedCount' => null,
+        );
+    }
 }

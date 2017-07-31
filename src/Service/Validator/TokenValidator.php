@@ -14,7 +14,7 @@ class TokenValidator extends Validator
 
         $this->validateMetadata($data, $metadata, $choices);
 
-        $this->validateUserInData($data, true);
+        $this->validateUserInData($data, false);
         $this->validateTokenResourceId($data['resourceId'], $data['userId'], $data['resourceOwner'], false);
 
         $this->validateExtraFields($data, $metadata);
