@@ -275,12 +275,12 @@ class PhotoManager
         $height = $size[1];
         $x = $width * $xPercent / 100;
         $y = $height * $yPercent / 100;
-        $widthCrop = $width * $widthPercent / 100;
-        $heightCrop = $height * $heightPercent / 100;
-        if ($widthCrop > $heightCrop) {
+        $widthCrop = round($width * $widthPercent / 100);
+        $heightCrop = round($height * $heightPercent / 100);
+        if ($widthCrop > $heightCrop + 1) {
             $widthCrop = $heightCrop;
             $x = $width / 2 - $widthCrop / 2;
-        } else if ($heightCrop > $widthCrop) {
+        } else if ($heightCrop > $widthCrop  + 1) {
             $heightCrop = $widthCrop;
             $y = $height / 2 - $heightCrop / 2;
         }
