@@ -531,6 +531,7 @@ class UserManager implements PaginatedInterface
         $this->setDefaults($data);
 
         $this->createPhoto($data['userId'], $data);
+        unset($data['photo']);
         $user = $this->save($data);
 
         $this->dispatcher->dispatch(\AppEvents::USER_CREATED, new UserEvent($user));
@@ -1561,7 +1562,7 @@ class UserManager implements PaginatedInterface
         }
     }
 
-    protected function createPhoto($userId, array &$data)
+    protected function createPhoto($userId, array $data)
     {
         $defaultImageUrl = $this->imagesBaseDir . 'bundles/qnoowlanding/images/user-no-img.jpg';
         if (isset($data['photo']) && filter_var($data['photo'], FILTER_VALIDATE_URL)) {
@@ -1576,13 +1577,7 @@ class UserManager implements PaginatedInterface
         } catch (\Exception $e) {
             $photo = $this->pm->create($user, @file_get_contents($defaultImageUrl));
         }
-        $profilePhoto = $this->pm->setAsProfilePhoto($photo, $user);
-        $data['photo'] = $profilePhoto->getPath();
-
-        if (!$profilePhoto) {
-            unset($data['photo']);
-        }
-
+        $this->pm->setAsProfilePhoto($photo, $user);
     }
 
     private function getResultBySlug($slug)
