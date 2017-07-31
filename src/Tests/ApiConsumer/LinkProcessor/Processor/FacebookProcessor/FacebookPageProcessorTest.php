@@ -117,7 +117,7 @@ class FacebookPageProcessorTest extends AbstractProcessorTest
             array(
                 $this->getProfileUrl(),
                 $this->getProfileItemResponse(),
-                $expectedLink
+                $expectedLink->toArray()
             )
         );
     }

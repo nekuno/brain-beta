@@ -116,19 +116,7 @@ class FacebookProfileProcessorTest extends AbstractProcessorTest
             array(
                 $this->getProfileUrl(),
                 $this->getProfileItemResponse(),
-                array(
-                    'title' => $this->getTitle(),
-                    'description' => $this->getTitle(),
-                    'thumbnail' => null,
-                    'url' => null,
-                    'id' => null,
-                    'tags' => array(),
-                    'created' => null,
-                    'processed' => true,
-                    'language' => null,
-                    'synonymous' => array(),
-                    'imageProcessed' => null,
-                )
+                $expectedLink->toArray()
             )
         );
     }

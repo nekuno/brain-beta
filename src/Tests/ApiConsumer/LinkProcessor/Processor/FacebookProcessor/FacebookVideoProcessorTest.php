@@ -7,6 +7,7 @@ use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\AbstractFacebookProces
 use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookVideoProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;
+use Model\Link\Video;
 use Model\User\Token\TokensModel;
 use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
@@ -106,29 +107,18 @@ class FacebookVideoProcessorTest extends AbstractProcessorTest
 
     public function getResponseHydration()
     {
+        $expectedLink = new Video();
+        $expectedLink->setTitle('¡Tu combo de likes más...');
+        $expectedLink->setDescription("¡Tu combo de likes más rápido con el nuevo WIFI! A conectar! #wifigratis");
+        $expectedLink->setEmbedId('1184085874980824');
+        $expectedLink->setEmbedType('facebook');
+
         return array(
             array(
                 $this->getVideoUrl(),
                 $this->getVideoId(),
                 $this->getVideoItemResponse(),
-                array(
-                    'title' => '¡Tu combo de likes más...',
-                    'description' => "¡Tu combo de likes más rápido con el nuevo WIFI! A conectar! #wifigratis",
-                    'thumbnail' => null,
-                    'url' => null,
-                    'id' => null,
-                    'tags' => array(),
-                    'created' => null,
-                    'processed' => true,
-                    'language' => null,
-                    'synonymous' => array(),
-                    'imageProcessed' => null,
-                    'additionalLabels' => array('Video'),
-                    'additionalFields' => array(
-                        'embed_type' => 'facebook',
-                        'embed_id' => '1184085874980824',
-                        )
-                )
+                $expectedLink->toArray(),
             )
         );
     }

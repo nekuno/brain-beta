@@ -7,6 +7,7 @@ use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\AbstractFacebookProces
 use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookStatusProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;
+use Model\Link\Link;
 use Model\User\Token\TokensModel;
 use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
@@ -108,23 +109,15 @@ class FacebookStatusProcessorTest extends AbstractProcessorTest
 
     public function getResponseHydration()
     {
+        $expectedLink = new Link();
+        $expectedLink->setTitle($this->getTitle());
+        $expectedLink->setDescription($this->getDescription());
+
         return array(
             array(
                 $this->getStatusUrl(),
                 $this->getStatusItemResponse(),
-                array(
-                    'title' => $this->getTitle(),
-                    'description' => $this->getDescription(),
-                    'thumbnail' => null,
-                    'url' => null,
-                    'id' => null,
-                    'tags' => array(),
-                    'created' => null,
-                    'processed' => true,
-                    'language' => null,
-                    'synonymous' => array(),
-                    'imageProcessed' => null,
-                )
+                $expectedLink->toArray(),
             )
         );
     }
