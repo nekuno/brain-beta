@@ -3,13 +3,13 @@
 namespace Model\User;
 
 use Event\ProfileEvent;
-use Model\Metadata\ProfileFilterMetadataManager;
 use Model\Metadata\ProfileMetadataManager;
 use Model\Neo4j\GraphManager;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Label;
 use Model\Exception\ValidationException;
+use Service\Validator\ValidatorInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -18,16 +18,16 @@ class ProfileModel
 {
     const MAX_TAGS_AND_CHOICE_LENGTH = 15;
     protected $gm;
-    protected $profileFilterModel;
+    protected $profileOptionManager;
     protected $profileMetadataManager;
     protected $dispatcher;
     protected $validator;
 
-    public function __construct(GraphManager $gm, ProfileFilterMetadataManager $profileFilterModel, ProfileMetadataManager $profileMetadataManager, EventDispatcher $dispatcher, \Service\Validator\ValidatorInterface $validator)
+    public function __construct(GraphManager $gm, ProfileMetadataManager $profileMetadataManager, ProfileOptionManager $profileOptionManager, EventDispatcher $dispatcher, ValidatorInterface $validator)
     {
         $this->gm = $gm;
-        $this->profileFilterModel = $profileFilterModel;
         $this->profileMetadataManager = $profileMetadataManager;
+        $this->profileOptionManager = $profileOptionManager;
         $this->dispatcher = $dispatcher;
         $this->validator = $validator;
     }
@@ -152,12 +152,15 @@ class ProfileModel
     public function validateOnCreate(array $data, $userId = null)
     {
         $data['userId'] = $userId;
+        $data['choices'] = $this->profileOptionManager->getChoiceOptionIds();
+
         $this->validator->validateOnCreate($data);
     }
 
-    protected function validateOnUpdate(array $data, $userId)
+    public function validateOnUpdate(array $data, $userId)
     {
         $data['userId'] = $userId;
+        $data['choices'] = $this->profileOptionManager->getChoiceOptionIds();
         $this->validator->validateOnUpdate($data);
     }
 
@@ -182,82 +185,10 @@ class ProfileModel
             $location = null;
         }
 
-        $profile += $this->buildOptions($row);
+        $profile += $this->profileOptionManager->buildOptions($row);
         $profile += $this->buildTags($row, $locale);
 
         return $profile;
-    }
-
-    protected function buildOptions(Row $row)
-    {
-        $options = $row->offsetGet('options');
-        $optionsResult = array();
-        /** @var Row $optionData */
-        foreach ($options as $optionData) {
-
-            list($optionId, $labels, $detail) = $this->getOptionData($optionData);
-            /** @var Label[] $labels */
-            foreach ($labels as $label) {
-
-                $typeName = $this->profileFilterModel->labelToType($label->getName());
-
-                $metadata = $this->profileMetadataManager->getMetadata();
-                switch ($metadata[$typeName]['type']) {
-                    case 'multiple_choices':
-                        $result = $this->getOptionArrayResult($optionsResult, $typeName, $optionId);
-                        break;
-                    case 'double_choice':
-                    case 'tags_and_choice':
-                        $result = $this->getOptionDetailResult($optionId, $detail);
-                        break;
-                    default:
-                        $result = $optionId;
-                        break;
-                }
-
-                $optionsResult[$typeName] = $result;
-            }
-        }
-
-        return $optionsResult;
-    }
-
-    protected function getOptionData(Row $optionData = null)
-    {
-        if (!$optionData->offsetExists('option')) {
-            return array(null, array(), null);
-        }
-        $optionNode = $optionData->offsetGet('option');
-        $optionId = $optionNode->getProperty('id');
-
-        /** @var Label[] $labels */
-        $labels = $optionNode->getLabels();
-        foreach ($labels as $key => $label) {
-            if ($label->getName() === 'ProfileOption') {
-                unset($labels[$key]);
-            }
-        }
-
-        $detail = $optionData->offsetExists('detail') ? $optionData->offsetGet('detail') : '';
-
-        return array($optionId, $labels, $detail);
-    }
-
-    protected function getOptionArrayResult($optionsResult, $typeName, $optionId)
-    {
-        if (isset($optionsResult[$typeName])) {
-            $currentResult = is_array($optionsResult[$typeName]) ? $optionsResult[$typeName] : array($optionsResult[$typeName]);
-            $currentResult[] = $optionId;
-        } else {
-            $currentResult = array($optionId);
-        }
-
-        return $currentResult;
-    }
-
-    protected function getOptionDetailResult($optionId, $detail)
-    {
-        return array('choice' => $optionId, 'detail' => $detail);
     }
 
     protected function buildTags(Row $row, $locale = null)
@@ -273,7 +204,7 @@ class ProfileModel
             /* @var Label $label */
             foreach ($labels as $label) {
                 if ($label->getName() && $label->getName() != 'ProfileTag') {
-                    $typeName = $this->profileFilterModel->labelToType($label->getName());
+                    $typeName = $this->profileMetadataManager->labelToType($label->getName());
                     $tagResult = $tag->getProperty('name');
                     $detail = $tagged->getProperty('detail');
                     if (!is_null($detail)) {
@@ -287,7 +218,7 @@ class ProfileModel
                             $tagResult['tag'] = $tag->getProperty('name');
                             $tagResult['choice'] = '';
                         }
-                        $tagResult['tag'] = $this->profileFilterModel->translateLanguageToLocale($tagResult['tag'], $locale);
+                        $tagResult['tag'] = $this->profileMetadataManager->translateLanguageToLocale($tagResult['tag'], $locale);
                     }
                     $tagsResult[$typeName][] = $tagResult;
                 }
@@ -387,12 +318,12 @@ class ProfileModel
                         break;
                     case 'choice':
                         if (isset($options[$fieldName])) {
-                            $qb->optionalMatch('(profile)<-[optionRel:OPTION_OF]-(:' . $this->profileFilterModel->typeToLabel($fieldName) . ')')
+                            $qb->optionalMatch('(profile)<-[optionRel:OPTION_OF]-(:' . $this->profileMetadataManager->typeToLabel($fieldName) . ')')
                                 ->delete('optionRel')
                                 ->with('profile');
                         }
                         if (!is_null($fieldValue)) {
-                            $qb->match('(option:' . $this->profileFilterModel->typeToLabel($fieldName) . ' {id: { ' . $fieldName . ' }})')
+                            $qb->match('(option:' . $this->profileMetadataManager->typeToLabel($fieldName) . ' {id: { ' . $fieldName . ' }})')
                                 ->merge('(profile)<-[:OPTION_OF]-(option)')
                                 ->setParameter($fieldName, $fieldValue)
                                 ->with('profile');
@@ -406,13 +337,13 @@ class ProfileModel
                             ->with('profile');
 
                         if (isset($options[$fieldName])) {
-                            $qbDoubleChoice->optionalMatch('(profile)<-[doubleChoiceOptionRel:OPTION_OF]-(:' . $this->profileFilterModel->typeToLabel($fieldName) . ')')
+                            $qbDoubleChoice->optionalMatch('(profile)<-[doubleChoiceOptionRel:OPTION_OF]-(:' . $this->profileMetadataManager->typeToLabel($fieldName) . ')')
                                 ->delete('doubleChoiceOptionRel')
                                 ->with('profile');
                         }
                         if (isset($fieldValue['choice'])) {
                             $detail = !is_null($fieldValue['detail']) ? $fieldValue['detail'] : '';
-                            $qbDoubleChoice->match('(option:' . $this->profileFilterModel->typeToLabel($fieldName) . ' {id: { ' . $fieldName . ' }})')
+                            $qbDoubleChoice->match('(option:' . $this->profileMetadataManager->typeToLabel($fieldName) . ' {id: { ' . $fieldName . ' }})')
                                 ->merge('(profile)<-[:OPTION_OF {detail: {' . $fieldName . '_detail}}]-(option)')
                                 ->setParameter($fieldName, $fieldValue['choice'])
                                 ->setParameter($fieldName . '_detail', $detail);
@@ -431,13 +362,13 @@ class ProfileModel
                                 ->setParameter('id', (int)$id)
                                 ->with('profile');
 
-                            $qbTagsAndChoice->optionalMatch('(profile)<-[tagsAndChoiceOptionRel:TAGGED]-(:' . $this->profileFilterModel->typeToLabel($fieldName) . ')')
+                            $qbTagsAndChoice->optionalMatch('(profile)<-[tagsAndChoiceOptionRel:TAGGED]-(:' . $this->profileMetadataManager->typeToLabel($fieldName) . ')')
                                 ->delete('tagsAndChoiceOptionRel');
 
                             $savedTags = array();
                             foreach ($fieldValue as $index => $value) {
                                 $tagValue = $fieldName === 'language' ?
-                                    $this->profileFilterModel->getLanguageFromTag($value['tag']) :
+                                    $this->profileMetadataManager->getLanguageFromTag($value['tag']) :
                                     $value['tag'];
                                 if (in_array($tagValue, $savedTags)) {
                                     continue;
@@ -448,7 +379,7 @@ class ProfileModel
                                 $choiceParameter = $fieldName . '_choice_' . $index;
 
                                 $qbTagsAndChoice->with('profile')
-                                    ->merge('(' . $tagLabel . ':ProfileTag:' . $this->profileFilterModel->typeToLabel($fieldName) . ' {name: { ' . $tagParameter . ' }})')
+                                    ->merge('(' . $tagLabel . ':ProfileTag:' . $this->profileMetadataManager->typeToLabel($fieldName) . ' {name: { ' . $tagParameter . ' }})')
                                     ->merge('(profile)<-[:TAGGED {detail: {' . $choiceParameter . '}}]-(' . $tagLabel . ')')
                                     ->setParameter($tagParameter, $tagValue)
                                     ->setParameter($choiceParameter, $choice);
@@ -467,13 +398,13 @@ class ProfileModel
                             ->with('profile');
 
                         if (isset($options[$fieldName])) {
-                            $qbMultipleChoices->optionalMatch('(profile)<-[optionRel:OPTION_OF]-(:' . $this->profileFilterModel->typeToLabel($fieldName) . ')')
+                            $qbMultipleChoices->optionalMatch('(profile)<-[optionRel:OPTION_OF]-(:' . $this->profileMetadataManager->typeToLabel($fieldName) . ')')
                                 ->delete('optionRel')
                                 ->with('profile');
                         }
                         if (is_array($fieldValue)) {
                             foreach ($fieldValue as $index => $value) {
-                                $qbMultipleChoices->match('(option:' . $this->profileFilterModel->typeToLabel($fieldName) . ' {id: { ' . $index . ' }})')
+                                $qbMultipleChoices->match('(option:' . $this->profileMetadataManager->typeToLabel($fieldName) . ' {id: { ' . $index . ' }})')
                                     ->merge('(profile)<-[:OPTION_OF]-(option)')
                                     ->setParameter($index, $value)
                                     ->with('profile');
@@ -488,14 +419,14 @@ class ProfileModel
                     case 'tags':
                         if (isset($tags[$fieldName])) {
                             foreach ($tags[$fieldName] as $tag) {
-                                $qb->optionalMatch('(profile)<-[tagRel:TAGGED]-(tag:' . $this->profileFilterModel->typeToLabel($fieldName) . ' {name: "' . $tag . '" })')
+                                $qb->optionalMatch('(profile)<-[tagRel:TAGGED]-(tag:' . $this->profileMetadataManager->typeToLabel($fieldName) . ' {name: "' . $tag . '" })')
                                     ->delete('tagRel')
                                     ->with('profile');
                             }
                         }
                         if (is_array($fieldValue) && !empty($fieldValue)) {
                             foreach ($fieldValue as $tag) {
-                                $qb->merge('(tag:ProfileTag:' . $this->profileFilterModel->typeToLabel($fieldName) . ' {name: "' . $tag . '" })')
+                                $qb->merge('(tag:ProfileTag:' . $this->profileMetadataManager->typeToLabel($fieldName) . ' {name: "' . $tag . '" })')
                                     ->merge('(profile)<-[:TAGGED]-(tag)')
                                     ->with('profile');
                             }
@@ -532,7 +463,7 @@ class ProfileModel
 
         $options = array();
         foreach ($result as $row) {
-            $options += $this->buildOptions($row);
+            $options += $this->profileOptionManager->buildOptions($row);
         }
 
         return $options;

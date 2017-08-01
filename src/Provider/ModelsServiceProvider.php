@@ -13,6 +13,7 @@ use Model\Popularity\PopularityPaginatedModel;
 use Model\User\ContactModel;
 use Model\User\Content\ContentReportModel;
 use Model\User\Device\DeviceModel;
+use Model\User\ProfileOptionManager;
 use Model\User\Question\QuestionModel;
 use Model\User\Affinity\AffinityModel;
 use Model\User\Question\AnswerManager;
@@ -111,7 +112,13 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
                 $profileValidator = $app['validator.factory']->build('profile');
 
-                return new ProfileModel($app['neo4j.graph_manager'], $app['users.profileFilter.model'], $app['users.profileMetadata.manager'], $app['dispatcher'], $profileValidator);
+                return new ProfileModel($app['neo4j.graph_manager'], $app['users.profileMetadata.manager'], $app['users.profileOption.manager'], $app['dispatcher'], $profileValidator);
+            }
+        );
+
+        $app['users.profileOption.manager'] = $app->share(
+            function ($app) {
+                return new ProfileOptionManager($app['neo4j.graph_manager'], $app['users.profileMetadata.manager']);
             }
         );
 
@@ -382,7 +389,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.filterusers.manager'] = $app->share(
             function ($app) {
 
-                return new FilterUsersManager($app['neo4j.graph_manager'], $app['users.profileFilter.model'], $app['users.userFilter.model'], $app['validator.service']);
+                return new FilterUsersManager($app['neo4j.graph_manager'], $app['users.profileFilter.model'], $app['users.userFilter.model'], $app['users.profileOption.manager'], $app['validator.service']);
             }
         );
 

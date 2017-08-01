@@ -112,33 +112,6 @@ class ProfileFilterMetadataManager extends MetadataManager
         return 'name_' . $locale;
     }
 
-    /**
-     * Output choice options independently of locale
-     * @return array
-     * @throws \Model\Neo4j\Neo4jException
-     */
-    public function getChoiceOptionIds()
-    {
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(option:ProfileOption)')
-            ->returns("head(filter(x IN labels(option) WHERE x <> 'ProfileOption')) AS labelName, option.id AS id")
-            ->orderBy('labelName');
-
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
-
-        $choiceOptions = array();
-        /** @var Row $row */
-        foreach ($result as $row) {
-            $typeName = $this->labelToType($row->offsetGet('labelName'));
-            $optionId = $row->offsetGet('id');
-
-            $choiceOptions[$typeName][] = $optionId;
-        }
-
-        return $choiceOptions;
-    }
-
     public function splitFilters($filters)
     {
         $filters['profileFilters'] = (isset($filters['profileFilters']) && is_array($filters['profileFilters'])) ? $filters['profileFilters'] : array();
@@ -151,17 +124,6 @@ class ProfileFilterMetadataManager extends MetadataManager
         }
 
         return $filters;
-    }
-
-    public function labelToType($labelName)
-    {
-
-        return lcfirst($labelName);
-    }
-
-    public function typeToLabel($typeName)
-    {
-        return ucfirst($typeName);
     }
 
     public function getAgeRangeFromBirthdayRange(array $birthday)
@@ -195,97 +157,6 @@ class ProfileFilterMetadataManager extends MetadataManager
         }
 
         return $return;
-    }
-
-    public function getLanguageFromTag($tag)
-    {
-        return $this->translateTypicalLanguage($this->formatLanguage($tag));
-    }
-
-    public function formatLanguage($typeName)
-    {
-        $firstCharacter = mb_strtoupper(mb_substr($typeName, 0, 1, 'UTF-8'), 'UTF-8');
-        $restString = mb_strtolower(mb_substr($typeName, 1, null, 'UTF-8'), 'UTF-8');
-
-        return $firstCharacter . $restString;
-    }
-
-    //TODO: Refactor this translation functions
-    public function translateTypicalLanguage($language)
-    {
-        switch ($language) {
-            case 'Español':
-                return 'Spanish';
-            case 'Castellano':
-                return 'Spanish';
-            case 'Inglés':
-                return 'English';
-            case 'Ingles':
-                return 'English';
-            case 'Francés':
-                return 'French';
-            case 'Frances':
-                return 'French';
-            case 'Alemán':
-                return 'German';
-            case 'Aleman':
-                return 'German';
-            case 'Portugués':
-                return 'Portuguese';
-            case 'Portugues':
-                return 'Portuguese';
-            case 'Italiano':
-                return 'Italian';
-            case 'Chino':
-                return 'Chinese';
-            case 'Japonés':
-                return 'Japanese';
-            case 'Japones':
-                return 'Japanese';
-            case 'Ruso':
-                return 'Russian';
-            case 'Árabe':
-                return 'Arabic';
-            case 'Arabe':
-                return 'Arabic';
-            default:
-                return $language;
-        }
-    }
-
-    public function translateLanguageToLocale($language, $locale)
-    {
-        $locale = $this->getLocale($locale);
-
-        if ($locale === 'en') {
-            return $language;
-        }
-        if ($locale === 'es') {
-            switch ($language) {
-                case 'Spanish':
-                    return 'Español';
-                case 'English':
-                    return 'Inglés';
-                case 'French':
-                    return 'Francés';
-                case 'German':
-                    return 'Alemán';
-                case 'Portuguese':
-                    return 'Portugués';
-                case 'Italian':
-                    return 'Italiano';
-                case 'Chinese':
-                    return 'Chino';
-                case 'Japanese':
-                    return 'Japonés';
-                case 'Russian':
-                    return 'Ruso';
-                case 'Arabic':
-                    return 'Árabe';
-            }
-        }
-
-        return $language;
     }
 
     protected function getTopProfileTags($tagType)

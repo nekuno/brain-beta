@@ -29,7 +29,7 @@ $app['security.firewalls'] = array(
         )
     ),
     'public_post' => array(
-        'pattern' => new RequestMatcher('(^/users$)|(^/register)|(^/invitations/token/validate/)|(^/lookUp/webHook$)|(^/users/validate$)|(^/profile/validate$)', null, array('POST')),
+        'pattern' => new RequestMatcher('(^/users$)|(^/register)|(^/invitations/token/validate/)|(^/lookUp/webHook$)|(^/users/validate$)', null, array('POST')),
         'anonymous' => true,
     ),
     'instant' => array(

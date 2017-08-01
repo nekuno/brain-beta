@@ -25,11 +25,11 @@ class ProfileValidator extends Validator
 
     protected function validate(array $data)
     {
-
         $metadata = $this->metadata;
-        $this->fixOrientationRequired($data, $metadata);
+        $choices = $data['choices'];
+//        $this->fixOrientationRequired($data, $metadata);
 
-        return $this->validateMetadata($data, $metadata);
+        return $this->validateMetadata($data, $metadata, $choices);
     }
 
     protected function fixOrientationRequired($data, &$metadata)

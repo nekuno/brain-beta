@@ -202,7 +202,10 @@ class TokensModel
      */
     public function validateOnCreate(array $data, $userId = null)
     {
-        $data['userId'] = $userId;
+        if ($userId){
+            $data['userId'] = $userId;
+        }
+
         $this->validator->validateOnCreate($data);
     }
 

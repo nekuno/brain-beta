@@ -107,8 +107,11 @@ class Validator implements ValidatorInterface
         $this->throwException($errors);
     }
 
-    protected function validateTokenResourceId($resourceId, $userId, $resourceOwner, $desired = true)
+    protected function validateTokenResourceId($data, $desired = true)
     {
+        $userId = isset($data['userId']) ? $data['userId'] : null;
+        $resourceOwner = $data['resourceOwner'];
+        $resourceId = $data['resourceId'];
         $errors = array('tokenResourceId' => $this->existenceValidator->validateTokenResourceId($resourceId, $userId, $resourceOwner, $desired));
 
         $this->throwException($errors);

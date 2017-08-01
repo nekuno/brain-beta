@@ -6,7 +6,6 @@ use Model\Metadata\ProfileFilterMetadataManager;
 use Model\User\ProfileModel;
 use Model\User\ProfileTagModel;
 use Model\User;
-use Service\Validator\ProfileValidator;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -136,11 +135,8 @@ class ProfileController
      */
     public function validateAction(Request $request, Application $app, User $user)
     {
-        /** @var ProfileValidator $validator */
-        $validator = $app['validator.factory']->build('profile');
-
-        $data = array_merge($request->request->all(), array('userId' => $user->getId()));
-        $validator->validateOnUpdate($data);
+        $model = $app['users.profile.model'];
+        $model->validateOnUpdate($request->request->all(), $user->getId());
 
         return $app->json();
     }

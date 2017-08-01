@@ -72,7 +72,6 @@ class RegisterService
     {
         $this->im->validateTokenAvailable($invitationToken);
         $this->um->validate($userData);
-
         $this->pm->validateOnCreate($profileData);
         $this->tm->validateOnCreate($oauth);
 

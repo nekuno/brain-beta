@@ -105,7 +105,7 @@ class ExistenceValidator
     protected function validateAttributeId($label, $idName, $idValue, $desired)
     {
         $qb = $this->graphManager->createQueryBuilder();
-        $qb->match("(node$label)")
+        $qb->match("(node:$label)")
             ->where("node.$idName = { idValue }")
             ->setParameter('idValue', $idValue)
             ->returns('node');
@@ -120,7 +120,7 @@ class ExistenceValidator
     protected function validateNodeId($label, $id, $desired)
     {
         $qb = $this->graphManager->createQueryBuilder();
-        $qb->match("(node$label)")
+        $qb->match("(node:$label)")
             ->where("id(node) = { idValue }")
             ->setParameter('idValue', $id)
             ->returns('node');

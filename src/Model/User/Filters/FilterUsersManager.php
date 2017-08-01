@@ -9,6 +9,7 @@ use Everyman\Neo4j\Relationship;
 use Model\Neo4j\GraphManager;
 use Model\Metadata\ProfileFilterMetadataManager;
 use Model\Metadata\UserFilterMetadataManager;
+use Model\User\ProfileOptionManager;
 use Service\Validator\Validator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -30,15 +31,21 @@ class FilterUsersManager
     protected $userFilterModel;
 
     /**
+     * @var ProfileOptionManager
+     */
+    protected $profileOptionManager;
+
+    /**
      * @var Validator
      */
     protected $validator;
 
-    public function __construct(GraphManager $graphManager, ProfileFilterMetadataManager $profileFilterModel, UserFilterMetadataManager $userFilterModel, Validator $validator)
+    public function __construct(GraphManager $graphManager, ProfileFilterMetadataManager $profileFilterModel, UserFilterMetadataManager $userFilterModel, ProfileOptionManager $profileOptionManager, Validator $validator)
     {
         $this->graphManager = $graphManager;
         $this->profileFilterModel = $profileFilterModel;
         $this->userFilterModel = $userFilterModel;
+        $this->profileOptionManager = $profileOptionManager;
         $this->validator = $validator;
     }
 
@@ -51,7 +58,7 @@ class FilterUsersManager
 
     /**
      * @param FilterUsers $filters
-     * @return Node|null
+     * @return bool
      * @throws \Model\Neo4j\Neo4jException
      */
     public function createFilterUsers(FilterUsers $filters)
@@ -138,7 +145,7 @@ class FilterUsersManager
         $filters = $this->profileFilterModel->splitFilters($filters);
 
         if (isset($filters['profileFilters'])) {
-            $this->validator->validateEditFilterProfile($filters['profileFilters'], $this->profileFilterModel->getChoiceOptionIds());
+            $this->validator->validateEditFilterProfile($filters['profileFilters'], $this->profileOptionManager->getChoiceOptionIds());
         }
 
         if (isset($filters['userFilters'])) {
@@ -228,7 +235,7 @@ class FilterUsersManager
 
     private function saveProfileFilters($profileFilters, $id)
     {
-        $profileOptions = $this->profileFilterModel->getChoiceOptionIds();
+        $profileOptions = $this->profileOptionManager->getChoiceOptionIds();
         $this->validator->validateEditFilterProfile($profileFilters, $profileOptions);
 
         $metadata = $this->profileFilterModel->getMetadata();

@@ -15,9 +15,9 @@ class TokenValidator extends Validator
         $this->validateMetadata($data, $metadata, $choices);
 
         $this->validateUserInData($data, false);
-        $this->validateTokenResourceId($data['resourceId'], $data['userId'], $data['resourceOwner'], false);
+        $this->validateTokenResourceId($data, false);
 
-        $this->validateExtraFields($data, $metadata);
+//        $this->validateExtraFields($data, $metadata);
     }
 
     public function validateOnUpdate($data)
@@ -28,9 +28,9 @@ class TokenValidator extends Validator
         $this->validateMetadata($data, $metadata, $choices);
 
         $this->validateUserInData($data, true);
-        $this->validateTokenResourceId($data['resourceId'], $data['userId'], $data['resourceOwner'], true);
+        $this->validateTokenResourceId($data, true);
 
-        $this->validateExtraFields($data, $metadata);
+//        $this->validateExtraFields($data, $metadata);
     }
 
     public function validateOnDelete($data)
@@ -43,7 +43,7 @@ class TokenValidator extends Validator
         $this->validateMetadata($data, $metadata, $choices);
 
         $this->validateUserInData($data, true);
-        $this->validateTokenResourceId($data['resourceId'], $data['userId'], $data['resourceOwner'], true);
+        $this->validateTokenResourceId($data, true);
     }
 
     private function getChoices()
