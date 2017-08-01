@@ -36,9 +36,15 @@ class FixProfilePhotoCommand extends ApplicationAwareCommand
             $photo = $user->getPhoto();
             if ($photo && preg_match('/^uploads\/gallery\//i', $photo->getPath())) {
                 if (file_get_contents($photo->getFullPath())) {
-                    $fixed++;
-                    $output->writeln('Set profile photo ' . $photo->getPath());
-                    $photoManager->setAsProfilePhoto($photo, $user);
+                    $photos = $photoManager->getAll($user->getId());
+                    /** @var Photo $galleryPhoto */
+                    foreach ($photos as $galleryPhoto) {
+                        if ($galleryPhoto->getIsProfilePhoto()) {
+                            $fixed++;
+                            $output->writeln('Set profile photo ' . $galleryPhoto->getPath());
+                            $photoManager->setAsProfilePhoto($galleryPhoto, $user);
+                        }
+                    }
                 } else {
                     $errors++;
                     $output->writeln('ERROR: ' . $photo->getFullPath() . ' not found');
