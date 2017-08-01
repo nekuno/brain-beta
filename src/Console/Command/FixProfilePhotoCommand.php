@@ -56,7 +56,7 @@ class FixProfilePhotoCommand extends ApplicationAwareCommand
                     if (!file_get_contents($photo->getFullPath()) && !$photo->getIsProfilePhoto()) {
                         $notFound++;
                         $output->writeln('Photo for user ' . $user->getUsername() . ' not found and will be deleted');
-                        $photo->delete();
+                        $photoManager->remove($photo->getId());
                     } else if (!file_get_contents($photo->getFullPath())) {
                         $errors++;
                         $output->writeln('ERROR: Profile photo for user ' . $user->getUsername() . ' not found. SET IT MANUALLY!.');
