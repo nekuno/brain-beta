@@ -12,6 +12,7 @@ class UsersTest extends UsersAPITest
         $this->assertGetExistingUsernameAvailableResponse();
         $this->assertLoginUserResponse();
         $this->assertGetOwnUserResponse();
+        $this->assertGetOwnStatusResponse();
         $this->assertGetOtherUserResponse();
         $this->assertEditOwnUserResponse();
         $this->assertValidationErrorsResponse();
@@ -98,6 +99,15 @@ class UsersTest extends UsersAPITest
         $response = $this->getOwnUser();
         $formattedResponse = $this->assertJsonResponse($response, 200, "Get own user");
         $this->assertUserAFormat($formattedResponse, "Bad own user response");
+    }
+
+    protected function assertGetOwnStatusResponse()
+    {
+        $response = $this->getOwnUserStatus();
+        $formattedResponse = $this->assertJsonResponse($response, 200, "Get own user status");
+        $this->assertArrayOfType('array', $formattedResponse, 'Own user status is array of array');
+        $socialNetworksConnected = 1;
+        $this->assertEquals($socialNetworksConnected, count($formattedResponse));
     }
 
     protected function assertGetOtherUserResponse()
