@@ -530,7 +530,11 @@ class UserManager implements PaginatedInterface
 
         $this->setDefaults($data);
 
-        $this->createPhoto($data['userId'], $data);
+        $photo = isset($data['photo']) ? $data['photo'] : '';
+        if (isset($data['photo'])) {
+            unset($data['photo']);
+        }
+        $this->createPhoto($data['userId'], $photo);
         $user = $this->save($data);
 
         $this->dispatcher->dispatch(\AppEvents::USER_CREATED, new UserEvent($user));
@@ -1561,11 +1565,11 @@ class UserManager implements PaginatedInterface
         }
     }
 
-    protected function createPhoto($userId, array &$data)
+    protected function createPhoto($userId, $photoUrl = "")
     {
         $defaultImageUrl = $this->imagesBaseDir . 'bundles/qnoowlanding/images/user-no-img.jpg';
-        if (isset($data['photo']) && filter_var($data['photo'], FILTER_VALIDATE_URL)) {
-            $url = $data['photo'];
+        if (filter_var($photoUrl, FILTER_VALIDATE_URL)) {
+            $url = $photoUrl;
         } else {
             $url = $defaultImageUrl;
         }
