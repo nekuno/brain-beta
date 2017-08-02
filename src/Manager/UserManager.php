@@ -534,6 +534,7 @@ class UserManager implements PaginatedInterface
         if (isset($data['photo'])) {
             unset($data['photo']);
         }
+
         $user = $this->save($data);
         $this->createPhoto($data['userId'], $photo);
 
