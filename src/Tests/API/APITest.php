@@ -91,6 +91,15 @@ abstract class APITest extends WebTestCase
         $this->assertEquals('Validation error', $exception['error'], "error key is not Validation error");
     }
 
+    protected function assertArrayOfType($type, $array, $message)
+    {
+        $this->isType('array')->evaluate($array, 'Is not an array when '. $message);
+        foreach ($array as $item)
+        {
+            $this->isType($type)->evaluate($item, 'Is not an item of type ' . $type . ' when ' .$message);
+        }
+    }
+
     protected function runCommand($commandString)
     {
         $application = new ConsoleApplication();

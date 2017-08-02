@@ -8,6 +8,7 @@ class ProfileTest extends ProfileAPITest
     {
         $this->assertProfileOptionsCommandDisplay();
         $this->assertGetProfileWithoutCredentialsResponse();
+        $this->assertGetCategories();
         $this->createAndLoginUserA();
         $this->createUserProfile(1);
         $this->assertGetNoneExistentProfileResponse();
@@ -34,6 +35,25 @@ class ProfileTest extends ProfileAPITest
     {
         $response = $this->getOtherProfile(2);
         $this->assertStatusCode($response, 401, "Get Profile without credentials");
+    }
+
+    protected function assertGetCategories()
+    {
+        $response = $this->getCategories();
+        $formattedResponse = $this->assertJsonResponse($response, 200, "Get categories status");
+        $this->assertArrayOfType('array', $formattedResponse, 'Categories is array of array');
+        
+        $this->arrayHasKey('profile')->evaluate($formattedResponse, 'Categories has profile key');
+        $this->assertArrayOfType('array', $formattedResponse['profile'], 'Categories profile is array of array');
+        foreach ($formattedResponse['profile'] as $item) {
+            $this->assertHasLocaleLabel($item, 'Categories profile field');
+        }
+
+        $this->arrayHasKey('filters')->evaluate($formattedResponse, 'Categories has filter key');
+        $this->assertArrayOfType('array', $formattedResponse['filters'], 'Categories filter is array of array');
+        foreach ($formattedResponse['filters'] as $item) {
+            $this->assertHasLocaleLabel($item, 'Categories filters field');
+        }
     }
 
     protected function assertGetNoneExistentProfileResponse()

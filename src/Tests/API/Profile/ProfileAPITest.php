@@ -31,6 +31,11 @@ abstract class ProfileAPITest extends APITest
         return $this->getResponseByRoute('/profile/metadata', 'GET', array(), $loggedInUserId);
     }
 
+    protected function getCategories()
+    {
+        return $this->getResponseByRoute('/profile/categories', 'GET');
+    }
+
     protected function getProfileFilters($loggedInUserId = 1)
     {
         return $this->getResponseByRoute('/profile/filters', 'GET', array(), $loggedInUserId);
@@ -39,5 +44,11 @@ abstract class ProfileAPITest extends APITest
     protected function getProfileTags($type, $loggedInUserId = 1)
     {
         return $this->getResponseByRoute('/profile/tags/' . $type, 'GET', array(), $loggedInUserId);
+    }
+
+    protected function assertHasLocaleLabel($field, $message = '')
+    {
+        $this->assertArrayHasKey('label', $field, 'Has not locale label on ' . $message);
+        $this->isType('string')->evaluate($field['label'], 'Label is not string on ' . $message);
     }
 }
