@@ -54,7 +54,7 @@ class GroupController
     {
         $data = $request->request->all();
 
-        $app['users.groups.model']->validate($data);
+        $app['users.groups.model']->validateOnCreate($data);
 
         return $app->json();
     }

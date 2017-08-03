@@ -9,7 +9,8 @@ use Manager\PhotoManager;
 use Model\Neo4j\GraphManager;
 use Model\User\Filters\FilterUsersManager;
 use Manager\UserManager;
-use Service\Validator\Validator;
+use Service\Validator\GroupValidator;
+use Service\Validator\ValidatorInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -42,7 +43,7 @@ class GroupModel
     protected $dispatcher;
 
     /**
-     * @var \Service\Validator\ValidatorInterface
+     * @var GroupValidator
      */
     protected $validator;
 
@@ -57,9 +58,10 @@ class GroupModel
      * @param UserManager $um
      * @param PhotoManager $pm
      * @param FilterUsersManager $filterUsersManager
-     * @param \Service\Validator\ValidatorInterface $validator
+     * @param GroupValidator|ValidatorInterface $validator
+     * @param $invitationImagesRoot
      */
-    public function __construct(GraphManager $gm, EventDispatcher $dispatcher, UserManager $um, PhotoManager $pm, FilterUsersManager $filterUsersManager, \Service\Validator\ValidatorInterface $validator, $invitationImagesRoot)
+    public function __construct(GraphManager $gm, EventDispatcher $dispatcher, UserManager $um, PhotoManager $pm, FilterUsersManager $filterUsersManager, GroupValidator $validator, $invitationImagesRoot)
     {
         $this->gm = $gm;
         $this->um = $um;
@@ -200,10 +202,6 @@ class GroupModel
         return $this->build($row);
     }
 
-    public function validate($data) {
-        $this->validator->validate($data);
-    }
-
     public function validateOnCreate(array $data)
     {
         $this->validator->validateOnCreate($data);
@@ -219,6 +217,12 @@ class GroupModel
     {
         $data = array('groupId' => $groupId, 'userId' => $userId);
         $this->validator->validateOnDelete($data);
+    }
+
+    protected function validateOnAddUser($groupId, $userId)
+    {
+        $data = array('groupId' => $groupId, 'userId' => $userId);
+        $this->validator->validateOnAddUser($data);
     }
 
     public function create(array $data)
@@ -437,8 +441,7 @@ class GroupModel
 
     public function addUser($id, $userId)
     {
-        $this->validator->validateGroupId($id);
-        $this->validator->validateUserId($userId);
+        $this->validateOnAddUser($id, $userId);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(g:Group)')
@@ -466,8 +469,7 @@ class GroupModel
 
     public function addGhostUser($id, $userId)
     {
-        $this->validator->validateGroupId($id);
-        $this->validator->validateUserId($userId);
+        $this->validateOnAddUser($id, $userId);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(g:Group)')

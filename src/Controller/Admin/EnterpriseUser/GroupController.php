@@ -72,7 +72,7 @@ class GroupController
             throw new NotFoundHttpException(sprintf('There is not enterprise user with id "%s"', $enterpriseUserId));
         }
 
-        $app['users.groups.model']->validate($data);
+        $app['users.groups.model']->validateOnCreate($data);
 
         return $app->json();
     }

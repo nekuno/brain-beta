@@ -21,6 +21,12 @@ class GroupValidator extends Validator
         $this->validateUserInData($data);
     }
 
+    public function validateOnAddUser($data)
+    {
+        $this->validateGroupInData($data);
+        $this->validateUserInData($data);
+    }
+
     protected function validate(array $data)
     {
         $metadata = $this->metadata;
