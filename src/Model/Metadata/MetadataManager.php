@@ -5,7 +5,7 @@ namespace Model\Metadata;
 use Model\Neo4j\GraphManager;
 use Symfony\Component\Translation\Translator;
 
-class MetadataManager
+class MetadataManager implements MetadataManagerInterface
 {
     protected $gm;
     protected $translator;

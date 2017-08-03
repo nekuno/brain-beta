@@ -4,7 +4,7 @@ namespace Controller\User;
 
 use Model\Exception\ValidationException;
 use Model\User\Content\ContentPaginatedModel;
-use Model\Metadata\ProfileFilterMetadataManager;
+use Model\Metadata\ProfileMetadataManager;
 use Model\User\RateModel;
 use Model\User\Content\ContentReportModel;
 use Model\User\UserStatsManager;
@@ -647,7 +647,7 @@ class UserController
         $locale = $request->query->get('locale');
         $filters = array();
 
-        /* @var $profileFilterModel ProfileFilterMetadataManager */
+        /* @var $profileFilterModel ProfileMetadataManager */
         $profileFilterModel = $app['users.profileFilter.model'];
         $filters['userFilters'] = $profileFilterModel->getMetadata($locale);
 

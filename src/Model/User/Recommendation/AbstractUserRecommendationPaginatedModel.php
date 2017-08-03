@@ -6,7 +6,7 @@ use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
 use Manager\PhotoManager;
 use Model\Neo4j\GraphManager;
-use Model\Metadata\ProfileFilterMetadataManager;
+use Model\Metadata\ProfileMetadataManager;
 use Model\User\ProfileModel;
 use Model\Metadata\UserFilterMetadataManager;
 use Paginator\PaginatedInterface;
@@ -19,7 +19,7 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
     protected $gm;
 
     /**
-     * @var ProfileFilterMetadataManager
+     * @var ProfileMetadataManager
      */
     protected $profileFilterModel;
 
@@ -38,7 +38,7 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
      */
     protected $profileModel;
 
-    public function __construct(GraphManager $gm, ProfileFilterMetadataManager $profileFilterModel, UserFilterMetadataManager $userFilterModel, PhotoManager $pm, ProfileModel $profileModel)
+    public function __construct(GraphManager $gm, ProfileMetadataManager $profileFilterModel, UserFilterMetadataManager $userFilterModel, PhotoManager $pm, ProfileModel $profileModel)
     {
         $this->gm = $gm;
         $this->profileFilterModel = $profileFilterModel;

@@ -2,7 +2,7 @@
 
 namespace Controller\User;
 
-use Model\Metadata\ProfileFilterMetadataManager;
+use Model\Metadata\ProfileMetadataManager;
 use Model\User\ProfileModel;
 use Model\User\ProfileTagModel;
 use Model\User;
@@ -88,7 +88,7 @@ class ProfileController
     {
         $locale = $request->query->get('locale');
 
-        /* @var $model ProfileFilterMetadataManager */
+        /* @var $model ProfileMetadataManager */
         $model = $app['users.metadataManager.factory']->build('profile');
         $metadata = $model->getMetadata($locale);
 
@@ -104,7 +104,7 @@ class ProfileController
     {
         $locale = $request->query->get('locale');
 
-        /* @var $model ProfileFilterMetadataManager */
+        /* @var $model ProfileMetadataManager */
         $model = $app['users.metadataManager.factory']->build('categories');
         $categories = $model->getMetadata($locale);
 
@@ -120,7 +120,7 @@ class ProfileController
     {
         $locale = $request->query->get('locale');
 
-        /* @var $model ProfileFilterMetadataManager */
+        /* @var $model ProfileMetadataManager */
         $model = $app['users.profileFilter.model'];
         $filters = $model->getMetadata($locale);
 

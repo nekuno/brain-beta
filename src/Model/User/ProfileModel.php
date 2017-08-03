@@ -3,7 +3,7 @@
 namespace Model\User;
 
 use Event\ProfileEvent;
-use Model\Metadata\ProfileMetadataManager;
+use Model\Metadata\MetadataManagerInterface;
 use Model\Neo4j\GraphManager;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
@@ -23,7 +23,7 @@ class ProfileModel
     protected $dispatcher;
     protected $validator;
 
-    public function __construct(GraphManager $gm, ProfileMetadataManager $profileMetadataManager, ProfileOptionManager $profileOptionManager, EventDispatcher $dispatcher, ValidatorInterface $validator)
+    public function __construct(GraphManager $gm, MetadataManagerInterface $profileMetadataManager, ProfileOptionManager $profileOptionManager, EventDispatcher $dispatcher, ValidatorInterface $validator)
     {
         $this->gm = $gm;
         $this->profileMetadataManager = $profileMetadataManager;

@@ -7,7 +7,7 @@ use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
 use Model\Neo4j\GraphManager;
-use Model\Metadata\ProfileFilterMetadataManager;
+use Model\Metadata\ProfileMetadataManager;
 use Model\Metadata\UserFilterMetadataManager;
 use Model\User\ProfileOptionManager;
 use Service\Validator\Validator;
@@ -21,7 +21,7 @@ class FilterUsersManager
     protected $graphManager;
 
     /**
-     * @var ProfileFilterMetadataManager
+     * @var ProfileMetadataManager
      */
     protected $profileFilterModel;
 
@@ -40,7 +40,7 @@ class FilterUsersManager
      */
     protected $validator;
 
-    public function __construct(GraphManager $graphManager, ProfileFilterMetadataManager $profileFilterModel, UserFilterMetadataManager $userFilterModel, ProfileOptionManager $profileOptionManager, Validator $validator)
+    public function __construct(GraphManager $graphManager, ProfileMetadataManager $profileFilterModel, UserFilterMetadataManager $userFilterModel, ProfileOptionManager $profileOptionManager, Validator $validator)
     {
         $this->graphManager = $graphManager;
         $this->profileFilterModel = $profileFilterModel;

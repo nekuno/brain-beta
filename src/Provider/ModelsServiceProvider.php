@@ -7,7 +7,7 @@ use Manager\PhotoManager;
 use Model\EnterpriseUser\EnterpriseUserModel;
 use Model\Link\LinkModel;
 use Model\Metadata\MetadataManagerFactory;
-use Model\Metadata\ProfileFilterMetadataManager;
+use Model\Metadata\ProfileMetadataManager;
 use Model\Popularity\PopularityManager;
 use Model\Popularity\PopularityPaginatedModel;
 use Model\User\ContactModel;
@@ -147,7 +147,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.profileFilter.model'] = $app->share(
             function ($app) {
 
-                /** @var ProfileFilterMetadataManager $model */
+                /** @var ProfileMetadataManager $model */
                 $model = $app['users.metadataManager.factory']->build('profile_filter');
 
                 return $model;

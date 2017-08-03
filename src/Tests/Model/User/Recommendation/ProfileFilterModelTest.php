@@ -2,7 +2,7 @@
 
 namespace Tests\Model\User\Recommendation;
 
-use Model\Metadata\ProfileFilterMetadataManager;
+use Model\Metadata\ProfileMetadataManager;
 
 class ProfileFilterModelTest extends \PHPUnit_Framework_TestCase
 {
@@ -19,7 +19,7 @@ class ProfileFilterModelTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $model = new ProfileFilterMetadataManager($gm, $translator, array(), array(), array(), array(), 'es');
+        $model = new ProfileMetadataManager($gm, $translator, array(), array(), array(), array(), 'es');
 
         $return = $model->getBirthdayRangeFromAgeRange($ageMin, $ageMax, $now);
 

@@ -5,7 +5,7 @@ namespace Controller\Social;
 use Model\User\Group\GroupModel;
 use Manager\UserManager;
 use Model\User;
-use Model\Metadata\ProfileFilterMetadataManager;
+use Model\Metadata\ProfileMetadataManager;
 use Service\Recommendator;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -90,7 +90,7 @@ class UserController
         $locale = $request->query->get('locale');
         $filters = array();
 
-        /* @var $profileFilterModel ProfileFilterMetadataManager */
+        /* @var $profileFilterModel ProfileMetadataManager */
         $profileFilterModel = $app['users.profileFilter.model'];
         $filters['profileFilters'] = $profileFilterModel->getSocialFilters($locale);
 
