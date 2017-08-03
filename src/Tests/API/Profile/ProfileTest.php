@@ -356,8 +356,30 @@ class ProfileTest extends ProfileAPITest
 
     protected function assertGetProfileFiltersFormat($metadata)
     {
-        foreach ($metadata as $value) {
-            $this->assertArrayHasKey('label', $value, "Filters has not label key");
+        $this->assertArrayOfType('array', $metadata, "Metadata is not an array of arrays");
+        $this->assertArrayHasKey('birthday', $metadata, "Metadata has not birthday key");
+        $this->assertArrayHasKey('location', $metadata, "Metadata has not location key");
+        $this->assertNotContains('gender', $metadata, "Filter metadata has gender key");
+        $this->assertArrayHasKey('orientation', $metadata, "Metadata has not orientation key");
+        $this->assertNotContains('interfaceLanguage', $metadata, "Filter metadata has interfaceLanguage key");
+        foreach ($metadata as $field)
+        {
+            $this->assertArrayHasKey('label', $field, "Metadata does not have label key");
+            $this->assertArrayHasKey('labelEdit', $field, "Metadata does not have labelEdit key");
+            $this->assertArrayHasKey('required', $field, "Metadata does not have required key");
+            $this->assertArrayHasKey('editable', $field, "Metadata does not have editable key");
+            $this->assertArrayHasKey('type', $field, "Metadata does not have type key");
+            if (in_array($field['type'], array('choice', 'multiple_choices', 'tags_and_choice'))){
+                $this->assertArrayHasKey('choices', $field, 'Metadata does not have required choices');
+                $this->assertArrayOfType('string', $field['choices'], 'Metadata choices are not strings');
+            };
+            if ($field['type'] === 'double_choice'){
+                $this->assertArrayHasKey('doubleChoices', $field, 'Metadata does not have required double choices');
+                $this->assertArrayOfType('array', $field['doubleChoices'], 'Metadata choices are not arrays');
+                foreach ($field['doubleChoices'] as $doubleChoice){
+                    $this->assertArrayOfType('string', $doubleChoice ,'Metadata double choices are not strings');
+                }
+            }
         }
    }
 
