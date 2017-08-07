@@ -93,8 +93,12 @@ class Validator implements ValidatorInterface
         $this->throwException($errors);
     }
 
-    protected function validateInvitationToken($token, $excludedId, $desired = true)
+    protected function validateInvitationToken($token, $excludedId = null, $desired = true)
     {
+        if (!is_string($token) && !is_numeric($token)) {
+            $this->throwException(array('token' => array('Token must be a string or a numeric')));
+        }
+
         $errors = array('invitationToken' => $this->existenceValidator->validateInvitationToken($token, $excludedId, $desired));
 
         $this->throwException($errors);

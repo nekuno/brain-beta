@@ -214,6 +214,7 @@ class InvitationModel
         return $invitations;
     }
 
+    //Too many ifs, divide in methods (createFromUser, createFromAdmin, createFromGroup...)
     public function create(array $data)
     {
         $this->validateCreate($data);

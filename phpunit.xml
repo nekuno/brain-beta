@@ -9,7 +9,15 @@
         colors="true">
     <testsuites>
         <testsuite name="Test">
-            <directory>src/Tests</directory>
+            <directory>src/Tests/API/Invitations</directory>
+            <directory>src/Tests/API/Privacy</directory>
+            <directory>src/Tests/API/Profile</directory>
+            <directory>src/Tests/API/Threads</directory>
+            <directory>src/Tests/API/Users</directory>
+            <directory>src/Tests/ApiConsumer/Images</directory>
+            <directory>src/Tests/ApiConsumer/LinkProcessor</directory>
+            <directory>src/Tests/Model</directory>
+            <directory>src/Tests/Paginator</directory>
         </testsuite>
     </testsuites>
 

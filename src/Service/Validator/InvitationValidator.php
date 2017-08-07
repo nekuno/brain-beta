@@ -6,24 +6,14 @@ class InvitationValidator extends Validator
 {
     public function validateOnCreate($data)
     {
-        if (isset($data['token'])){
-            //TODO: Move to validateInvitationToken?
-            $token = $data['token'];
-            if (!is_string($token) && !is_numeric($token)) {
-                $this->throwException(array('token' => array('Token must be a string or a numeric')));
-            }
-
-            $this->validateInvitationToken($data['token'], $data['invitationId'], false);
+        if (isset($data['token'])) {
+            $this->validateInvitationToken($data['token'], null, false);
         }
-
-        $metadata = $this->metadata;
 
         $this->validateGroupInData($data, false);
+        $this->validateUserInData($data, false);
 
-        if (isset($data['userId'])) {
-            $this->validateUserId($data['userId']);
-        }
-
+        $metadata = $this->metadata;
         $this->validateMetadata($data, $metadata);
     }
 
@@ -33,18 +23,15 @@ class InvitationValidator extends Validator
         $metadata['invitationId']['required'] = true;
 
         $this->validateGroupInData($data, false);
-
-        if (isset($data['userId'])) {
-            $this->validateUserId($data['userId']);
-        }
+        $this->validateUserInData($data, false);
 
         $this->validateMetadata($data, $metadata);
 
-        if (isset($data['invitationId'])){
+        if (isset($data['invitationId'])) {
             $this->validateInvitationId($data['invitationId'], true);
         }
 
-        if (isset($data['token'])){
+        if (isset($data['token'])) {
             $this->validateInvitationToken($data['token'], $data['invitationId'], false);
         }
     }

@@ -33,7 +33,7 @@ class ExistenceValidator
         return $this->validateNodeId('Invitation', $invitationId, $desired);
     }
 
-    public function validateInvitationToken($token, $excludedId, $desired = true)
+    public function validateInvitationToken($token, $excludedId = null, $desired = true)
     {
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(invitation:Invitation)')
@@ -94,9 +94,9 @@ class ExistenceValidator
     {
         $exists = $result->count() > 0;
         if ($desired && !$exists) {
-            return array(sprintf('Node with id %d not found', $id));
+            return array(sprintf('Node with id %s not found', $id));
         } else if (!$desired && $exists) {
-            return array(sprintf('Node with id %d already exists', $id));
+            return array(sprintf('Node with id %s already exists', $id));
         }
 
         return array();
