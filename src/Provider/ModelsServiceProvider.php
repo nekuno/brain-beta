@@ -368,7 +368,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
 
         $app['questionnaire.questions.model'] = $app->share(
             function ($app) {
-                $validator = $app['validator.factory']->build('answers');
+                $validator = $app['validator.factory']->build('questions');
                 return new QuestionModel($app['neo4j.graph_manager'], $validator);
             }
         );

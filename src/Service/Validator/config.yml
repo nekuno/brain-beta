@@ -5,7 +5,7 @@ validator.config:
     groups: Service\Validator\GroupValidator
     invitations: Service\Validator\InvitationValidator
     profile: Service\Validator\ProfileValidator
-    questions: Service\Validator\QuestionsValidator
+    questions: Service\Validator\QuestionValidator
     tokens: Service\Validator\TokenValidator
     tokenStatus: Service\Validator\TokenStatusValidator
     default: Service\Validator\Validator
