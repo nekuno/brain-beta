@@ -15,9 +15,14 @@ class FilterContentValidator extends Validator
         $this->validateUserInData($data, false);
     }
 
+    public function validateOnContent($data)
+    {
+        $this->validateUserInData($data, true);
+    }
+
     protected function getChoices()
     {
-        return LinkModel::getValidTypes();
+        return array('type' => LinkModel::getValidTypes());
     }
 
 }

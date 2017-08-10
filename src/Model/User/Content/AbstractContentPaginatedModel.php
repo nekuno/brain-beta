@@ -7,6 +7,7 @@ use Everyman\Neo4j\Query\Row;
 use Model\Link\LinkModel;
 use Model\Neo4j\GraphManager;
 use Paginator\PaginatedInterface;
+use Service\Validator\FilterContentValidator;
 use Service\Validator\ValidatorInterface;
 
 abstract class AbstractContentPaginatedModel implements PaginatedInterface
@@ -22,11 +23,11 @@ abstract class AbstractContentPaginatedModel implements PaginatedInterface
     protected $linkModel;
 
     /**
-     * @var ValidatorInterface
+     * @var FilterContentValidator
      */
     protected $validator;
 
-    public function __construct(GraphManager $gm, LinkModel $linkModel, ValidatorInterface $validator)
+    public function __construct(GraphManager $gm, LinkModel $linkModel, FilterContentValidator $validator)
     {
         $this->gm = $gm;
         $this->linkModel = $linkModel;
@@ -41,7 +42,9 @@ abstract class AbstractContentPaginatedModel implements PaginatedInterface
     public function validateFilters(array $filters)
     {
         $filters['userId'] = isset($filters['id'])? $filters['id'] : null;
-        return $this->validator->validateOnUpdate($filters);
+        $this->validator->validateOnContent($filters);
+
+        return true;
     }
 
     protected function hydrateNodeProperties(Interest $content, Row $row)
