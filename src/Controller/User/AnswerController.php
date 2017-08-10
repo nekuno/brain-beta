@@ -74,7 +74,7 @@ class AnswerController
         $questionModel = $app['questionnaire.questions.model'];
         $questionModel->setOrUpdateRankingForQuestion($data['questionId']);
 
-        return $app->json($userAnswer);
+        return $app->json($userAnswer, 201);
     }
 
     /**
@@ -97,7 +97,7 @@ class AnswerController
         $questionModel = $app['questionnaire.questions.model'];
         $questionModel->setOrUpdateRankingForQuestion($data['questionId']);
 
-        return $app->json($userAnswer);
+        return $app->json($userAnswer, 201);
     }
 
     /**

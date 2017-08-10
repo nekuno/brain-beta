@@ -138,7 +138,7 @@ class QuestionController
 
         $model->skip($id, $user->getId());
 
-        return $app->json($question);
+        return $app->json($question, 201);
     }
 
     /**
@@ -161,7 +161,7 @@ class QuestionController
 
         $model->report($id, $user->getId(), $reason);
 
-        return $app->json($question);
+        return $app->json($question, 201);
     }
 
     /**
