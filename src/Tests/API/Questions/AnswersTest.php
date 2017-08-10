@@ -29,7 +29,6 @@ class AnswersTest extends QuestionsAPITest
         $this->assertJsonResponse($response, 201, 'Correctly answering a question');
 
         $response = $this->answerQuestion($answerData);
-        var_dump($response->getContent());
         $this->assertStatusCode($response, 422, 'Cannot answer again in less than 24 hours');
     }
 
