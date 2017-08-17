@@ -207,13 +207,13 @@ class GroupModel
         $this->validator->validateOnCreate($data);
     }
 
-    protected function validateOnUpdate(array $data, $groupId)
+    public function validateOnUpdate(array $data, $groupId)
     {
         $data['groupId'] = $groupId;
         $this->validator->validateOnUpdate($data);
     }
 
-    protected function validateOnDelete($groupId, $userId)
+    public function validateOnDelete($groupId, $userId)
     {
         $data = array('groupId' => $groupId, 'userId' => $userId);
         $this->validator->validateOnDelete($data);
@@ -716,6 +716,7 @@ class GroupModel
         $group = Group::createFromNode($groupNode);
         $group->setLocation($this->buildLocation($locationNode));
         $group->setDate($groupNode->getProperty('date'));
+        $group->setHtml($groupNode->getProperty('html'));
         $photo = $this->pm->createGroupPhoto();
         if ($groupNode->getProperty('image_path')) {
             $photo->setPath($groupNode->getProperty('image_path'));

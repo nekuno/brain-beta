@@ -2,7 +2,6 @@
 
 namespace Provider;
 
-use Igorw\Silex\ConfigServiceProvider;
 use Manager\PhotoManager;
 use Model\EnterpriseUser\EnterpriseUserModel;
 use Model\Link\LinkModel;
@@ -59,6 +58,7 @@ use Model\User\UserStatsManager;
 use Manager\UserManager;
 use Model\User\UserTrackingModel;
 use Security\UserProvider;
+use Service\Validator\FilterUsersValidator;
 use Silex\Application;
 use Silex\ServiceProviderInterface;
 use Symfony\Component\Security\Core\Encoder\MessageDigestPasswordEncoder;
@@ -121,8 +121,6 @@ class ModelsServiceProvider implements ServiceProviderInterface
                 return new ProfileOptionManager($app['neo4j.graph_manager'], $app['users.profileMetadata.manager']);
             }
         );
-
-        $app->register(new ConfigServiceProvider(__DIR__ . "/../Model/Metadata/config.yml"));
 
         $app['users.metadataManager.factory'] = $app->share(
             function ($app) {
@@ -389,7 +387,8 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.filterusers.manager'] = $app->share(
             function ($app) {
 
-                return new FilterUsersManager($app['neo4j.graph_manager'], $app['users.profileFilter.model'], $app['users.userFilter.model'], $app['users.profileOption.manager'], $app['validator.service']);
+                $validator = new FilterUsersValidator($app['neo4j.graph_manager'], $app['users.profileOption.manager'], $app['users.userFilter.model'], $app['fields']);
+                return new FilterUsersManager($app['neo4j.graph_manager'], $app['users.profileFilter.model'], $app['users.userFilter.model'], $validator);
             }
         );
 

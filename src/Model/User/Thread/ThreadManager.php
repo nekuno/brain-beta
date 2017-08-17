@@ -10,6 +10,7 @@ use Model\User;
 use Model\User\Group\Group;
 use Model\User\ProfileModel;
 use Service\Validator\Validator;
+use Service\Validator\ValidatorInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Translation\Translator;
 
@@ -52,7 +53,7 @@ class ThreadManager
         ContentThreadManager $cm,
         ProfileModel $profileModel,
         Translator $translator,
-        \Service\Validator\ValidatorInterface $validator
+        ValidatorInterface $validator
     ) {
         $this->graphManager = $graphManager;
         $this->usersThreadManager = $um;

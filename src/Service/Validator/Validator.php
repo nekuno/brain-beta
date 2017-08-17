@@ -139,24 +139,6 @@ class Validator implements ValidatorInterface
         }
     }
 
-    /******* TO REMOVE WITH QS-1461 ************/
-    /***********************************************/
-
-    public function validateEditFilterUsers($data, $choices = array())
-    {
-        $metadata = $this->metadata['user_filter'];
-
-        return $this->validateMetadata($data, $metadata, $choices);
-    }
-
-    public function validateEditFilterProfile($data, $choices = array())
-    {
-        $metadata = $this->metadata['profile_filter'];
-
-        return $this->validateMetadata($data, $metadata, $choices);
-    }
-    /***********************************************/
-
     protected function validateExtraFields($data, $metadata)
     {
         $errors = array();

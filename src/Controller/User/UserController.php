@@ -5,6 +5,7 @@ namespace Controller\User;
 use Model\Exception\ValidationException;
 use Model\User\Content\ContentPaginatedModel;
 use Model\Metadata\ProfileMetadataManager;
+use Model\Metadata\UserFilterMetadataManager;
 use Model\User\RateModel;
 use Model\User\Content\ContentReportModel;
 use Model\User\UserStatsManager;
@@ -653,7 +654,7 @@ class UserController
 
         //user-dependent filters
 
-        /* @var $userFilterModel \Model\Metadata\UserFilterMetadataManager */
+        /* @var $userFilterModel UserFilterMetadataManager */
         $userFilterModel = $app['users.userFilter.model'];
         $userFilters = $userFilterModel->getMetadata($locale);
 

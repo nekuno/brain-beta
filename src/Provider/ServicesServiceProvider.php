@@ -2,7 +2,6 @@
 
 namespace Provider;
 
-use Igorw\Silex\ConfigServiceProvider;
 use Service\AffinityRecalculations;
 use Service\AMQPManager;
 use Service\AuthService;
@@ -102,8 +101,6 @@ class ServicesServiceProvider implements ServiceProviderInterface
                 );
             }
         );
-
-        $app->register(new ConfigServiceProvider(__DIR__ . "/../Service/Validator/config.yml"));
 
         $app['validator.service'] = $app->share(
             function (Application $app) {
