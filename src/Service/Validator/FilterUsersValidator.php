@@ -34,8 +34,6 @@ class FilterUsersValidator extends Validator
 
     public function validateOnCreate($data, $userId = null)
     {
-        $this->validateUserInData($data, true);
-
         $this->validate($data, $userId);
     }
 
