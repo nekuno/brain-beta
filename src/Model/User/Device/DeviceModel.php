@@ -5,7 +5,7 @@ namespace Model\User\Device;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
-use Service\Validator\ValidatorInterface;
+use Service\Validator\DeviceValidator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class DeviceModel
@@ -22,11 +22,11 @@ class DeviceModel
     protected $applicationServerKey;
 
     /**
-     * @var ValidatorInterface
+     * @var DeviceValidator
      */
     protected $validator;
 
-    public function __construct(GraphManager $gm, $applicationServerKey, ValidatorInterface $validator)
+    public function __construct(GraphManager $gm, $applicationServerKey, DeviceValidator $validator)
     {
         $this->gm = $gm;
         $this->applicationServerKey = $applicationServerKey;

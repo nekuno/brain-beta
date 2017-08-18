@@ -424,11 +424,12 @@ class ModelsServiceProvider implements ServiceProviderInterface
 
         $app['users.threads.manager'] = $app->share(
             function ($app) {
+                $validator = $app['validator.factory']->build('threads');
 
                 return new ThreadManager(
                     $app['neo4j.graph_manager'], $app['users.threadusers.manager'],
                     $app['users.threadcontent.manager'], $app['users.profile.model'],
-                    $app['translator'], $app['validator.service']
+                    $app['translator'], $validator
                 );
             }
         );

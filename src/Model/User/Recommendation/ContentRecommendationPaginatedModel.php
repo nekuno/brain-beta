@@ -8,7 +8,7 @@ use Model\Link\LinkModel;
 use Model\User\Affinity\AffinityModel;
 use Model\Neo4j\GraphManager;
 use Service\ImageTransformations;
-use Service\Validator\ValidatorInterface;
+use Service\Validator\FilterContentValidator;
 
 class ContentRecommendationPaginatedModel extends AbstractContentPaginatedModel
 {
@@ -22,10 +22,10 @@ class ContentRecommendationPaginatedModel extends AbstractContentPaginatedModel
      * @param GraphManager $gm
      * @param AffinityModel $am
      * @param LinkModel $lm
-     * @param ValidatorInterface $validator
+     * @param FilterContentValidator $validator
      * @param ImageTransformations $it
      */
-    public function __construct(GraphManager $gm, AffinityModel $am, LinkModel $lm, ValidatorInterface $validator, ImageTransformations $it)
+    public function __construct(GraphManager $gm, AffinityModel $am, LinkModel $lm, FilterContentValidator $validator, ImageTransformations $it)
     {
         parent::__construct($gm, $lm, $validator, $it);
         $this->am = $am;

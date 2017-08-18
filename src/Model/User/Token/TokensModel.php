@@ -10,7 +10,7 @@ use HWI\Bundle\OAuthBundle\DependencyInjection\Configuration;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 use Model\User\Token\TokenStatus\TokenStatusManager;
-use Service\Validator\ValidatorInterface;
+use Service\Validator\TokenValidator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -35,9 +35,12 @@ class TokensModel
 
     protected $tokenStatusManager;
 
+    /**
+     * @var TokenValidator
+     */
     protected $validator;
 
-    public function __construct(EventDispatcher $dispatcher, GraphManager $graphManager, TokenStatusManager $tokenStatusManager, ValidatorInterface $validator)
+    public function __construct(EventDispatcher $dispatcher, GraphManager $graphManager, TokenStatusManager $tokenStatusManager, TokenValidator $validator)
     {
         $this->dispatcher = $dispatcher;
         $this->gm = $graphManager;

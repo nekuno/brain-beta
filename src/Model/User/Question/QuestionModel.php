@@ -7,8 +7,7 @@ use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
-use Service\Validator\Validator;
-use Service\Validator\ValidatorInterface;
+use Service\Validator\QuestionValidator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class QuestionModel
@@ -20,15 +19,15 @@ class QuestionModel
     protected $gm;
 
     /**
-     * @var Validator
+     * @var QuestionValidator
      */
     protected $validator;
 
     /**
      * @param GraphManager $gm
-     * @param ValidatorInterface $validator
+     * @param QuestionValidator $validator
      */
-    public function __construct(GraphManager $gm, ValidatorInterface $validator)
+    public function __construct(GraphManager $gm, QuestionValidator $validator)
     {
         $this->gm = $gm;
         $this->validator = $validator;

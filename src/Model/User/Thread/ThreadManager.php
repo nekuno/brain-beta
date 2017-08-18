@@ -9,8 +9,8 @@ use Model\Neo4j\GraphManager;
 use Model\User;
 use Model\User\Group\Group;
 use Model\User\ProfileModel;
+use Service\Validator\ThreadValidator;
 use Service\Validator\Validator;
-use Service\Validator\ValidatorInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Translation\Translator;
 
@@ -35,7 +35,7 @@ class ThreadManager
     protected $profileModel;
     /** @var Translator */
     protected $translator;
-    /** @var Validator */
+    /** @var ThreadValidator */
     protected $validator;
 
     /**
@@ -45,7 +45,7 @@ class ThreadManager
      * @param ContentThreadManager $cm
      * @param ProfileModel $profileModel
      * @param Translator $translator
-     * @param Validator $validator
+     * @param ThreadValidator $validator
      */
     public function __construct(
         GraphManager $graphManager,
@@ -53,7 +53,7 @@ class ThreadManager
         ContentThreadManager $cm,
         ProfileModel $profileModel,
         Translator $translator,
-        ValidatorInterface $validator
+        ThreadValidator $validator
     ) {
         $this->graphManager = $graphManager;
         $this->usersThreadManager = $um;

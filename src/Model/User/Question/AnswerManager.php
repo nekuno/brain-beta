@@ -9,8 +9,7 @@ use Everyman\Neo4j\Relationship;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 use Manager\UserManager;
-use Service\Validator\Validator;
-use Service\Validator\ValidatorInterface;
+use Service\Validator\AnswerValidator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -37,11 +36,11 @@ class AnswerManager
     protected $eventDispatcher;
 
     /**
-     * @var Validator
+     * @var AnswerValidator
      */
     protected $validator;
 
-    public function __construct(GraphManager $gm, QuestionModel $qm, UserManager $um, ValidatorInterface $validator, EventDispatcher $eventDispatcher)
+    public function __construct(GraphManager $gm, QuestionModel $qm, UserManager $um, AnswerValidator $validator, EventDispatcher $eventDispatcher)
     {
         $this->gm = $gm;
         $this->qm = $qm;

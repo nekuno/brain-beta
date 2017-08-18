@@ -8,8 +8,7 @@ use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 use Model\User\Group\Group;
 use Service\TokenGenerator;
-use Service\Validator\Validator;
-use Service\Validator\ValidatorInterface;
+use Service\Validator\InvitationValidator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 
@@ -17,17 +16,17 @@ class InvitationModel
 {
 
     /**
-     * @var TokenGenerator
+     * @var TokenGenerator $tokenGenerator
      */
     protected $tokenGenerator;
 
     /**
-     * @var GraphManager
+     * @var GraphManager $gm
      */
     protected $gm;
 
     /**
-     * @var Validator
+     * @var InvitationValidator $validator
      */
     protected $validator;
 
@@ -38,7 +37,7 @@ class InvitationModel
 
     const MAX_AVAILABLE = 9999999999;
 
-    public function __construct(TokenGenerator $tokenGenerator, GraphManager $gm, ValidatorInterface $validator, $adminDomain)
+    public function __construct(TokenGenerator $tokenGenerator, GraphManager $gm, InvitationValidator $validator, $adminDomain)
     {
         $this->tokenGenerator = $tokenGenerator;
         $this->gm = $gm;

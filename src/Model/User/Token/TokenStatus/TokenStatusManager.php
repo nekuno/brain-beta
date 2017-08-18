@@ -7,12 +7,18 @@ use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
 use Model\Neo4j\QueryBuilder;
-use Service\Validator\ValidatorInterface;
+use Service\Validator\TokenStatusValidator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class TokenStatusManager
 {
+    /**
+     * @var GraphManager
+     */
     protected $graphManager;
+    /**
+     * @var TokenStatusValidator
+     */
     protected $validator;
 
     /**
@@ -20,7 +26,7 @@ class TokenStatusManager
      * @param $graphManager
      * @param $validator
      */
-    public function __construct(GraphManager $graphManager, ValidatorInterface $validator)
+    public function __construct(GraphManager $graphManager, TokenStatusValidator $validator)
     {
         $this->graphManager = $graphManager;
         $this->validator = $validator;
