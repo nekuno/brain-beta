@@ -41,4 +41,44 @@ class InvitationValidator extends Validator
         $this->validateGroupInData($data);
         $this->validateUserInData($data);
     }
+
+    protected function validateInvitationId($invitationId, $desired = true)
+    {
+        $errors = array('invitationId' => $this->existenceValidator->validateInvitationId($invitationId, $desired));
+
+        $this->throwException($errors);
+    }
+
+    protected function validateInvitationToken($token, $excludedId = null, $desired = true)
+    {
+        if (!is_string($token) && !is_numeric($token)) {
+            $this->throwException(array('token' => array('Token must be a string or a numeric')));
+        }
+
+        $errors = array('invitationToken' => $this->existenceValidator->validateInvitationToken($token, $excludedId, $desired));
+
+        $this->throwException($errors);
+    }
+
+    protected function validateGroupId($groupId, $desired = true)
+    {
+        if (!is_int($groupId)) {
+            $errors = array('groupId' => array('Group Id must be an integer'));
+        } else {
+            $errors = array('groupId' => $this->existenceValidator->validateGroupId($groupId, $desired));
+        }
+
+        $this->throwException($errors);
+    }
+
+    protected function validateGroupInData(array $data, $groupIdRequired = true)
+    {
+        if ($groupIdRequired && !isset($data['groupId'])) {
+            $this->throwException(array('groupId', 'Group id is required for this action'));
+        }
+
+        if (isset($data['groupId'])) {
+            $this->validateGroupId($data['groupId']);
+        }
+    }
 }

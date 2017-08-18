@@ -41,4 +41,10 @@ class AnswerValidator extends Validator
         }
     }
 
+    protected function validateAnswerId($questionId, $answerId, $desired = true)
+    {
+        $errors = array('answerId' => $this->existenceValidator->validateAnswerId($questionId, $answerId, $desired));
+
+        $this->throwException($errors);
+    }
 }
