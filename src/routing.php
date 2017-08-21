@@ -58,9 +58,9 @@ $app['security.access_rules'] = array(
     array(new RequestMatcher('^/admin'), 'ROLE_NO_ACCESS'),
 );
 
-require __DIR__ . '/../config/routing/routing-client.php';
-require __DIR__ . '/../config/routing/routing-admin.php';
-require __DIR__ . '/../config/routing/routing-instant.php';
+require __DIR__ . '/../src/routing/routing-client.php';
+require __DIR__ . '/../src/routing/routing-admin.php';
+require __DIR__ . '/../src/routing/routing-instant.php';
 
 $controllers
     ->assert('id', '\d+')
