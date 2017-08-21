@@ -85,23 +85,6 @@ class QuestionController
     /**
      * @param Request $request
      * @param Application $app
-     * @return JsonResponse
-     */
-    public function validateAction(Request $request, Application $app)
-    {
-        $data = $request->request->all();
-        $data['locale'] = $this->getLocale($request, $app['locale.options']['default']);
-
-        /* @var $model QuestionModel */
-        $model = $app['questionnaire.questions.model'];
-        $model->validateOnCreate($data);
-
-        return $app->json(array(), 200);
-    }
-
-    /**
-     * @param Request $request
-     * @param Application $app
      * @param User $user
      * @return JsonResponse
      * @throws \Exception

@@ -40,10 +40,6 @@ $app['security.firewalls'] = array(
         'pattern' => new RequestMatcher('^/admin/', null, null, $app['valid_ips']),
         'anonymous' => true,
     ),
-    'social' => array(
-        'pattern' => new RequestMatcher('^/social', null, null, $app['valid_ips']),
-        'anonymous' => true,
-    ),
     'secured' => array(
         'pattern' => '^.*$',
         'users' => $app['security.users_provider'],
@@ -60,12 +56,9 @@ $app['security.access_rules'] = array(
     array(new RequestMatcher('^/instant'), 'ROLE_NO_ACCESS'),
     array(new RequestMatcher('^/admin', null, null, $app['valid_ips']), 'IS_AUTHENTICATED_ANONYMOUSLY'),
     array(new RequestMatcher('^/admin'), 'ROLE_NO_ACCESS'),
-    array(new RequestMatcher('^/social', null, null, $app['valid_ips']), 'IS_AUTHENTICATED_ANONYMOUSLY'),
-    array(new RequestMatcher('^/social'), 'ROLE_NO_ACCESS'),
 );
 
 require __DIR__ . '/../config/routing/routing-client.php';
-require __DIR__ . '/../config/routing/routing-social.php';
 require __DIR__ . '/../config/routing/routing-admin.php';
 require __DIR__ . '/../config/routing/routing-instant.php';
 

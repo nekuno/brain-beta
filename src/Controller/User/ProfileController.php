@@ -130,20 +130,6 @@ class ProfileController
     /**
      * @param Request $request
      * @param Application $app
-     * @param User $user
-     * @return JsonResponse
-     */
-    public function validateAction(Request $request, Application $app, User $user)
-    {
-        $model = $app['users.profile.model'];
-        $model->validateOnUpdate($request->request->all(), $user->getId());
-
-        return $app->json();
-    }
-
-    /**
-     * @param Request $request
-     * @param Application $app
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      * @throws NotFoundHttpException
      */

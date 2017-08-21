@@ -151,24 +151,6 @@ class InvitationController
     }
 
     /**
-     * @param Request $request
-     * @param Application $app
-     * @param User $user
-     * @return \Symfony\Component\HttpFoundation\JsonResponse
-     * @throws \Exception
-     */
-    public function validateAction(Request $request, Application $app, User $user)
-    {
-        $data = $request->request->all();
-        $data['userId'] = $user->getId();
-        /* @var $model InvitationModel */
-        $model = $app['users.invitations.model'];
-        $model->validate($data);
-
-        return $app->json(array(), 200);
-    }
-
-    /**
      * @param Application $app
      * @param User $user
      * @param string $token

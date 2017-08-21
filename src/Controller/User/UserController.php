@@ -136,20 +136,6 @@ class UserController
         return $app->json();
     }
 
-    /**
-     * @param Request $request
-     * @param Application $app
-     * @return JsonResponse
-     */
-    public function validateAction(Request $request, Application $app)
-    {
-        /* @var $model UserManager */
-        $model = $app['users.manager'];
-        $model->validate($request->request->all());
-
-        return $app->json();
-    }
-
     public function setEnableAction(Request $request, Application $app, User $user)
     {
         $enabled = $request->request->get('enabled');

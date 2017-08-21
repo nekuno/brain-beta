@@ -107,24 +107,6 @@ class AnswerController
      * @return JsonResponse
      * @throws \Exception
      */
-    public function validateAction(Request $request, Application $app, User $user)
-    {
-        $data = $request->request->all();
-        $data['userId'] = $user->getId();
-        $data['locale'] = $this->getLocale($request, $app['locale.options']['default']);
-
-        $app['users.answers.model']->validateOnCreate($data);
-
-        return $app->json(array(), 200);
-    }
-
-    /**
-     * @param Request $request
-     * @param Application $app
-     * @param User $user
-     * @return JsonResponse
-     * @throws \Exception
-     */
     public function explainAction(Request $request, Application $app, User $user)
     {
         $data = $request->request->all();

@@ -16,14 +16,12 @@ $app->get('/users/{slug}', 'users.controller:getOtherAction');
 $app->get('/public/users/{slug}', 'users.controller:getPublicAction');
 $app->post('/register', 'users.controller:registerAction');
 $app->put('/users', 'users.controller:putAction');
-//$app->post('/users/validate', 'users.controller:validateAction');
 $app->get('/users/available/{username}', 'users.controller:availableAction');
 $app->post('users/enable', 'users.controller:setEnableAction');
 
 $app->get('/profile', 'users.profile.controller:getAction');
 $app->get('/profile/{userId}', 'users.profile.controller:getOtherAction')->value('userId', null);
 $app->put('/profile', 'users.profile.controller:putAction');
-//$app->post('/profile/validate', 'users.profile.controller:validateAction');
 $app->get('/profile/metadata', 'users.profile.controller:getMetadataAction');
 $app->get('/profile/categories', 'users.profile.controller:getCategoriesAction');
 $app->get('/profile/filters', 'users.profile.controller:getFiltersAction');
@@ -34,7 +32,6 @@ $app->post('/privacy', 'users.privacy.controller:postAction');
 $app->put('/privacy', 'users.privacy.controller:putAction');
 $app->delete('/privacy', 'users.privacy.controller:deleteAction');
 $app->get('/privacy/metadata', 'users.privacy.controller:getMetadataAction');
-//$app->post('/privacy/validate', 'users.privacy.controller:validateAction');
 
 /** Relations routes */
 $app->get('/blocks', 'users.relations.controller:indexAction')->value('relation', RelationsModel::BLOCKS);
@@ -97,7 +94,6 @@ $app->post('/answers', 'users.answers.controller:answerAction');
 $app->get('/users/{userId}/answers/count', 'users.answers.controller:countAction');
 $app->get('/answers/{questionId}', 'users.answers.controller:getAnswerAction');
 $app->delete('/answers/{questionId}', 'users.answers.controller:deleteAnswerAction');
-//$app->post('/answers/validate', 'users.answers.controller:validateAction');
 
 $app->get('/data/status', 'users.data.controller:getStatusAction')->value('resourceOwner', null);
 
@@ -106,7 +102,6 @@ $app->get('/questions/next', 'questionnaire.questions.controller:getNextQuestion
 $app->get('/other-questions/{userId}/next', 'questionnaire.questions.controller:getNextOtherQuestionAction');
 $app->get('/questions/register', 'questionnaire.questions.controller:getDivisiveQuestionsAction');
 $app->post('/questions', 'questionnaire.questions.controller:postQuestionAction');
-//$app->post('/questions/validate', 'questionnaire.questions.controller:validateAction');
 $app->get('/questions/{questionId}', 'questionnaire.questions.controller:getQuestionAction');
 $app->post('/questions/{questionId}/skip', 'questionnaire.questions.controller:skipAction');
 $app->post('/questions/{questionId}/report', 'questionnaire.questions.controller:reportAction');
@@ -142,7 +137,6 @@ $app->get('/invitations/{invitationId}', 'users.invitations.controller:getAction
 $app->post('/invitations', 'users.invitations.controller:postAction');
 $app->put('/invitations/{invitationId}', 'users.invitations.controller:putAction');
 $app->delete('/invitations/{invitationId}', 'users.invitations.controller:deleteAction');
-//$app->post('/invitations/validate', 'users.invitations.controller:validateAction');
 $app->post('/invitations/token/validate/{token}', 'users.invitations.controller:validateTokenAction');
 $app->post('/invitations/consume/{token}', 'users.invitations.controller:consumeAction');
 $app->get('/invitations/count', 'users.invitations.controller:countByUserAction');
