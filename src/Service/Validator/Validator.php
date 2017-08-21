@@ -235,7 +235,7 @@ class Validator implements ValidatorInterface
                             if (!isset($tagAndChoice['tag']) || !array_key_exists('choice', $tagAndChoice)) {
                                 $fieldErrors[] = sprintf('Tag and choice must be defined for tags and choice type');
                             }
-                            if (isset($tagAndChoice['choice']) && isset($choices) && !in_array($tagAndChoice['choice'], array_keys($choices))) {
+                            if (isset($tagAndChoice['choice']) && $tagAndChoice['choice'] && isset($choices) && !in_array($tagAndChoice['choice'], array_keys($choices))) {
                                 $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $tagAndChoice['choice'], implode("', '", array_keys($choices)));
                             }
                         }
