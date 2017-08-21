@@ -90,7 +90,7 @@ class ProfileController
         $locale = $request->query->get('locale');
 
         /* @var $model ProfileMetadataManager */
-        $model = $app['users.profileMetadata.model'];
+        $model = $app['users.profileMetadata.manager'];
         $metadata = $model->getMetadata($locale);
 
         return $app->json($metadata);
@@ -106,7 +106,7 @@ class ProfileController
         $locale = $request->query->get('locale');
 
         /* @var $model CategoryMetadataManager */
-        $model = $app['users.profileCategories.model'];
+        $model = $app['users.profileCategories.manager'];
         $categories = $model->getMetadata($locale);
 
         return $app->json($categories);

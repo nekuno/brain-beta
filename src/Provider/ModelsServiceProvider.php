@@ -152,7 +152,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
             }
         );
 
-        $app['users.profileCategories.model'] = $app->share(
+        $app['users.profileCategories.manager'] = $app->share(
             function ($app) {
 
                 /** @var CategoryMetadataManager $model */
