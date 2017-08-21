@@ -198,7 +198,7 @@ class Validator implements ValidatorInterface
                             $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $dataValue['choice'], implode("', '", $thisChoices));
                         }
                         $doubleChoices = $fieldData['doubleChoices'] + array('' => '');
-                        if (!isset($doubleChoices[$dataValue['choice']]) || isset($dataValue['detail']) && !isset($doubleChoices[$dataValue['choice']][$dataValue['detail']])) {
+                        if (!isset($doubleChoices[$dataValue['choice']]) || isset($dataValue['detail']) && $dataValue['detail'] && !isset($doubleChoices[$dataValue['choice']][$dataValue['detail']])) {
                             $fieldErrors[] = sprintf('Option choice and detail must be set in "%s"', $dataValue['choice']);
                         } elseif ($dataValue['detail'] && !in_array($dataValue['detail'], array_keys($doubleChoices[$dataValue['choice']]))) {
                             $fieldErrors[] = sprintf('Detail with value "%s" is not valid, possible values are "%s"', $dataValue['detail'], implode("', '", array_keys($doubleChoices)));
