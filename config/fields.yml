@@ -672,9 +672,7 @@ profile_filter:
         max: 99
     zodiacSign:
         type: multiple_choices
-        label:
-            en: 'Zodiac'
-            es: 'Zodiaco'
+        label: *zodiacSignLabelEdit
     height:
         type: integer_range
         min: 50
