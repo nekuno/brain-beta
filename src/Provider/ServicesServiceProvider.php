@@ -87,8 +87,8 @@ class ServicesServiceProvider implements ServiceProviderInterface
                 return new Recommendator(
                     $app['paginator'], $app['paginator.content'], $app['users.groups.model'],
                     $app['users.manager'], $app['users.recommendation.users.model'],
-                    $app['users.socialRecommendation.users.model'], $app['users.recommendation.content.model'],
-                    $app['users.recommendation.popularusers.model'], $app['users.recommendation.popularcontent.model']
+                    $app['users.recommendation.content.model'], $app['users.recommendation.popularusers.model'],
+                    $app['users.recommendation.popularcontent.model']
                 );
             }
         );
