@@ -4,7 +4,7 @@ namespace Model\User;
 
 use Everyman\Neo4j\Label;
 use Everyman\Neo4j\Query\Row;
-use Model\Metadata\MetadataManagerInterface;
+use Model\Metadata\ProfileMetadataManager;
 use Model\Neo4j\GraphManager;
 
 class ProfileOptionManager
@@ -15,11 +15,11 @@ class ProfileOptionManager
     protected $graphManager;
 
     /**
-     * @var MetadataManagerInterface
+     * @var ProfileMetadataManager
      */
     protected $profileMetadataManager;
 
-    public function __construct(GraphManager $graphManager, MetadataManagerInterface $profileMetadataManager)
+    public function __construct(GraphManager $graphManager, ProfileMetadataManager $profileMetadataManager)
     {
         $this->graphManager = $graphManager;
         $this->profileMetadataManager = $profileMetadataManager;
