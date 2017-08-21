@@ -5,6 +5,7 @@ namespace Provider;
 use Manager\PhotoManager;
 use Model\EnterpriseUser\EnterpriseUserModel;
 use Model\Link\LinkModel;
+use Model\Metadata\CategoryMetadataManager;
 use Model\Metadata\MetadataManagerFactory;
 use Model\Metadata\ProfileMetadataManager;
 use Model\Popularity\PopularityManager;
@@ -146,6 +147,16 @@ class ModelsServiceProvider implements ServiceProviderInterface
 
                 /** @var ProfileMetadataManager $model */
                 $model = $app['users.metadataManager.factory']->build('profile_filter');
+
+                return $model;
+            }
+        );
+
+        $app['users.profileCategories.model'] = $app->share(
+            function ($app) {
+
+                /** @var CategoryMetadataManager $model */
+                $model = $app['users.metadataManager.factory']->build('categories');
 
                 return $model;
             }
