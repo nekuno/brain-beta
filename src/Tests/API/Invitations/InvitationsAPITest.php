@@ -6,13 +6,13 @@ use Tests\API\APITest;
 
 abstract class InvitationsAPITest extends APITest
 {
-    protected function getInvitations($loggedInUserId = 1)
+    protected function getInvitations($loggedInUserId = self::OWN_USER_ID)
     {
-        return $this->getResponseByRoute('/invitations', 'GET', array(), $loggedInUserId);
+        return $this->getResponseByRouteWithCredentials('/invitations', 'GET', array(), $loggedInUserId);
     }
 
-    protected function createInvitation($data, $loggedInUserId = 1)
+    protected function createInvitation($data, $loggedInUserId = self::OWN_USER_ID)
     {
-        return $this->getResponseByRoute('/invitations' , 'POST', $data, $loggedInUserId);
+        return $this->getResponseByRouteWithCredentials('/invitations' , 'POST', $data, $loggedInUserId);
     }
 }

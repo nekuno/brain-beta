@@ -6,25 +6,15 @@ class PrivacyTest extends PrivacyAPITest
 {
     public function testPrivacy()
     {
-        $this->assertProfileOptionsCommandDisplay();
         $this->assertGetPrivacyWithoutCredentialsResponse();
-        $this->createAndLoginUserA();
-        $this->createAndLoginUserB();
-        $this->assertGetNoneExistentPrivacyResponse();
+        $this->loginOwnUser();
         $this->assertCreateAndDeleteVoidPrivacyResponse();
-//        $this->assertValidatePrivacyResponse();
-        $this->assertCreatePrivaciesResponse();
+        $this->assertCreatePrivacyResponse();
         $this->assertGetOwnPrivacyResponse();
         $this->assertEditOwnPrivacyResponse();
         $this->assertGetDeletedPrivacyResponse();
         $this->assertValidationErrorsResponse();
         $this->assetsGetPrivacyMetadataResponse();
-    }
-
-    protected function assertProfileOptionsCommandDisplay()
-    {
-        $display = $this->runProfileOptionsCommand();
-        $this->assertRegExp('/\n[^0].*\snew\sprivacy\soptions\screated\./', $display);
     }
 
     protected function assertGetPrivacyWithoutCredentialsResponse()
@@ -33,16 +23,8 @@ class PrivacyTest extends PrivacyAPITest
         $this->assertStatusCode($response, 401, "Get Privacy without credentials");
     }
 
-    protected function assertGetNoneExistentPrivacyResponse()
-    {
-        $response = $this->getOwnPrivacy();
-        $this->assertJsonResponse($response, 404, "Get none-existent privacy");
-    }
-
     protected function assertCreateAndDeleteVoidPrivacyResponse()
     {
-        $userData = $this->getUserAFixtures();
-        $this->loginUser($userData);
         $privacyData = $this->getVoidPrivacyFixtures();
         $response = $this->createPrivacy($privacyData);
         $formattedResponse = $this->assertJsonResponse($response, 201, "Create Void PrivacyA");
@@ -50,7 +32,7 @@ class PrivacyTest extends PrivacyAPITest
 
         $response = $this->deletePrivacy();
         $formattedResponse = $this->assertJsonResponse($response, 200, "Delete Privacy");
-        $this->assertEmptyPrivacyFormat($formattedResponse, "Bad Privacy response on delete privacy A");
+        $this->assertEmptyPrivacyFormat($formattedResponse);
     }
 
     protected function assertValidatePrivacyResponse()
@@ -60,29 +42,19 @@ class PrivacyTest extends PrivacyAPITest
         $this->assertStatusCode($response, 200, "Bad response on validate privacy");
     }
 
-    protected function assertCreatePrivaciesResponse()
+    protected function assertCreatePrivacyResponse()
     {
-        $userData = $this->getUserAFixtures();
-        $this->loginUser($userData);
         $privacyData = $this->getPrivacyFixtures();
         $response = $this->createPrivacy($privacyData);
         $formattedResponse = $this->assertJsonResponse($response, 201, "Create PrivacyA");
-        $this->assertPrivacyFormat($formattedResponse, "Bad privacy response on create privacy A");
-
-        $userData = $this->getUserBFixtures();
-        $this->loginUser($userData);
-        $response = $this->createPrivacy($privacyData, 2);
-        $formattedResponse = $this->assertJsonResponse($response, 201, "Create PrivacyB");
-        $this->assertPrivacyFormat($formattedResponse, "Bad privacy response on create privacy B");
+        $this->assertPrivacyFormat($formattedResponse);
     }
 
     protected function assertGetOwnPrivacyResponse()
     {
-        $userData = $this->getUserAFixtures();
-        $this->loginUser($userData);
         $response = $this->getOwnPrivacy();
         $formattedResponse = $this->assertJsonResponse($response, 200, "Get own privacy");
-        $this->assertPrivacyFormat($formattedResponse, "Bad own privacy response");
+        $this->assertPrivacyFormat($formattedResponse);
     }
 
     protected function assertEditOwnPrivacyResponse()
@@ -90,19 +62,19 @@ class PrivacyTest extends PrivacyAPITest
         $privacyData = $this->getEditedPrivacyFixtures();
         $response = $this->editPrivacy($privacyData);
         $formattedResponse = $this->assertJsonResponse($response, 200, "Edit Privacy");
-        $this->assertEditedPrivacyFormat($formattedResponse, "Bad Privacy response on edit privacy A");
+        $this->assertEditedPrivacyFormat($formattedResponse);
 
         $privacyData = $this->getPrivacyFixtures();
         $response = $this->editPrivacy($privacyData);
         $formattedResponse = $this->assertJsonResponse($response, 200, "Edit Privacy");
-        $this->assertPrivacyFormat($formattedResponse, "Bad Privacy response on edit privacy A");
+        $this->assertPrivacyFormat($formattedResponse);
     }
 
     protected function assertGetDeletedPrivacyResponse()
     {
         $response = $this->deletePrivacy();
         $formattedResponse = $this->assertJsonResponse($response, 200, "Delete Privacy");
-        $this->assertPrivacyFormat($formattedResponse, "Bad Privacy response on delete privacy A");
+        $this->assertPrivacyFormat($formattedResponse);
 
         $response = $this->getOwnPrivacy();
         $this->assertJsonResponse($response, 404, "Get none-existent privacy");
@@ -125,7 +97,7 @@ class PrivacyTest extends PrivacyAPITest
     {
         $response = $this->getPrivacyMetadata();
         $formattedResponse = $this->assertJsonResponse($response, 200, "Get Privacy metadata");
-        $this->assertGetPrivacyMetadataFormat($formattedResponse, "Bad response on get privacy metadata");
+        $this->assertGetPrivacyMetadataFormat($formattedResponse);
     }
 
     protected function assertEmptyPrivacyFormat($privacy)

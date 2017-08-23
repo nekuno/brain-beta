@@ -1,30 +1,28 @@
 <?php
 
-namespace Model\Neo4j;
+namespace Tests\API;
 
 use Model\Link\LinkModel;
+use Model\Neo4j\Constraints;
+use Model\Neo4j\GraphManager;
+use Model\Neo4j\PrivacyOptions;
+use Model\Neo4j\ProfileOptions;
 use Model\User\Question\QuestionModel;
-use Model\User;
 use Model\User\Question\AnswerManager;
 use Model\User\ProfileModel;
 use Model\User\RateModel;
-use Manager\UserManager;
-use Model\EnterpriseUser\EnterpriseUserModel;
 use Model\User\Group\GroupModel;
 use Model\User\InvitationModel;
-use Model\User\PrivacyModel;
 use Psr\Log\LoggerInterface;
+use Service\RegisterService;
 use Silex\Application;
 
-class Fixtures
+class TestingFixtures
 {
 
-    const NUM_OF_USERS = 50;
-    const NUM_OF_ENTERPRISE_USERS = 10;
-    const NUM_OF_GROUPS = 15;
-    const NUM_OF_LINKS = 2000;
-    const NUM_OF_TAGS = 200;
-    const NUM_OF_QUESTIONS = 200;
+    const NUM_OF_LINKS = 5;
+    const NUM_OF_TAGS = 10;
+    const NUM_OF_QUESTIONS = 10;
 
     /**
      * @var LoggerInterface
@@ -42,9 +40,9 @@ class Fixtures
     protected $constraints;
 
     /**
-     * @var UserManager
+     * @var RegisterService
      */
-    protected $um;
+    protected $registerService;
 
     /**
      * @var LinkModel
@@ -67,16 +65,6 @@ class Fixtures
     protected $pm;
 
     /**
-     * @var  PrivacyModel
-     * */
-    protected $prim;
-
-    /**
-     * @var EnterpriseUserModel
-     */
-    protected $eu;
-
-    /**
      * @var GroupModel
      */
     protected $gpm;
@@ -87,35 +75,44 @@ class Fixtures
     protected $im;
 
     /**
-     * @var array
+     * @var string
      */
-    protected $scenario = array();
+    protected $userAResourceId;
 
     /**
-     * @var array
+     * @var string
      */
-    protected $questions = array();
+    protected $userBResourceId;
+
+    /**
+     * @var string
+     */
+    protected $userAAccessToken;
+
+    /**
+     * @var string
+     */
+    protected $userBAccessToken;
 
     /**
      * @var RateModel
      */
     protected $rm;
 
-    public function __construct(Application $app, $scenario)
+    public function __construct(Application $app)
     {
         $this->gm = $app['neo4j.graph_manager'];
         $this->constraints = $app['neo4j.constraints'];
-        $this->um = $app['users.manager'];
-        $this->eu = $app['enterpriseUsers.model'];
+        $this->registerService = $app['register.service'];
         $this->gpm = $app['users.groups.model'];
         $this->im = $app['users.invitations.model'];
         $this->lm = $app['links.model'];
         $this->qm = $app['questionnaire.questions.model'];
-        $this->am = $app['users.answers.model'];
-        $this->pm = $app['users.profile.model'];
-        $this->prim = $app['users.privacy.model'];
         $this->rm = $app['users.rate.model'];
-        $this->scenario = $scenario;
+        $this->userAResourceId = $app['userA.resource_id'];
+        $this->userBResourceId = $app['userB.resource_id'];
+        $this->userAAccessToken = $app['userA.access_token'];
+        $this->userBAccessToken = $app['userB.access_token'];
     }
 
     /**
@@ -133,18 +130,14 @@ class Fixtures
         $this->clean();
         $this->loadProfileOptions();
         $this->loadPrivacyOptions();
-        $this->loadUsers();
-        $this->loadEnterpriseUsers();
         $this->loadInvitations();
+        $this->loadUsers();
         $this->loadGroups();
         $createdLinks = $this->loadLinks();
         $this->loadTags();
         $this->loadQuestions();
         $this->loadLinkTags();
         $this->loadLikes($createdLinks);
-        $this->loadAnswers();
-        $this->loadPrivacy();
-        $this->calculateStatus();
         $this->calculateRegisterQuestions();
     }
 
@@ -166,52 +159,6 @@ class Fixtures
         $this->logger->notice('Constraints created');
     }
 
-    protected function loadUsers()
-    {
-
-        $this->logger->notice(sprintf('Loading %d users', self::NUM_OF_USERS));
-
-        for ($i = 1; $i <= self::NUM_OF_USERS; $i++) {
-
-            $this->um->create(
-                array(
-                    'username' => 'user' . $i,
-                    'email' => 'user' . $i . '@nekuno.com',
-                )
-            );
-            $profileData = array(
-                'birthday' => '1970-01-01',
-                'gender' => 'male',
-                'orientation' => 'heterosexual',
-                'interfaceLanguage' => 'es',
-                'location' => array(
-                    'latitude' => 40.4167754,
-                    'longitude' => -3.7037902,
-                    'address' => 'Madrid',
-                    'locality' => 'Madrid',
-                    'country' => 'Spain'
-                )
-            );
-            $this->pm->create($i, $profileData);
-        }
-    }
-
-    protected function loadEnterpriseUsers()
-    {
-        $this->logger->notice(sprintf('Loading %d enterprise users', self::NUM_OF_ENTERPRISE_USERS));
-
-        for ($i = 1; $i <= self::NUM_OF_ENTERPRISE_USERS; $i++) {
-
-            $this->eu->create(
-                array(
-                    'admin_id' => $i,
-                    'username' => 'user' . $i,
-                    'email' => 'user' . $i . '@nekuno.com',
-                )
-            );
-        }
-    }
-
     protected function loadInvitations()
     {
         $this->logger->notice('Loading generic invitation');
@@ -219,70 +166,61 @@ class Fixtures
         $invitationData = array(
             'orientationRequired' => false,
             'available' => 10000,
-            'token' => 'join',
+            'token' => $this->getUserInvitationTokenFixtures(),
         );
 
         $this->im->create($invitationData);
 
     }
 
+    protected function loadUsers()
+    {
+        $this->logger->notice('Loading UserA');
+
+        $invitationTokenFixtures = $this->getUserInvitationTokenFixtures();
+
+        $userAFixtures = $this->getUserADataFixtures();
+        $profileAFixtures = $this->getUserAProfileFixtures();
+        $tokenAFixtures = $this->getUserATokenFixtures();
+        $trackingDataAFixtures = $this->getUserATrackingDataFixtures();
+
+        $this->registerService->register($userAFixtures, $profileAFixtures, $invitationTokenFixtures, $tokenAFixtures, $trackingDataAFixtures);
+
+        $this->logger->notice('Loading UserB');
+
+        $userBFixtures = $this->getUserBFixtures();
+        $profileBFixtures = $this->getUserBProfileFixtures();
+        $tokenBFixtures = $this->getUserBTokenFixtures();
+        $trackingDataBFixtures = $this->getUserBTrackingDataFixtures();
+
+        $this->registerService->register($userBFixtures, $profileBFixtures, $invitationTokenFixtures, $tokenBFixtures, $trackingDataBFixtures);
+    }
+
     protected function loadGroups()
     {
-        $this->logger->notice(sprintf('Loading %d enterprise groups and invitations', self::NUM_OF_ENTERPRISE_USERS));
+        $this->logger->notice('Loading testing group');
 
-        for ($i = 1; $i <= self::NUM_OF_ENTERPRISE_USERS; $i++) {
-
-            $group = $this->gpm->create(
-                array(
-                    'name' => 'group ' . $i,
-                    'html' => $this->getHTMLFixture(),
-                    'date' => 1447012842,
-                    'location' => array(
-                        'address' => "Madrid",
-                        'latitude' => 40.416178,
-                        'longitude' => -3.703579,
-                        'locality' => "Madrid",
-                        'country' => "Spain",
-                    )
+        $group = $this->gpm->create(
+            array(
+                'name' => 'testing group',
+                'html' => $this->getHTMLFixture(),
+                'date' => 1447012842,
+                'location' => array(
+                    'address' => "Madrid",
+                    'latitude' => 40.416178,
+                    'longitude' => -3.703579,
+                    'locality' => "Madrid",
+                    'country' => "Spain",
                 )
-            );
-            $this->gpm->setCreatedByEnterpriseUser($group->getId(), $i);
+            )
+        );
 
-            $invitationData = array(
-                'groupId' => $group->getId(),
-                'orientationRequired' => false,
-                'available' => 100,
-            );
-            $invitation = $this->im->create($invitationData);
-
-            foreach ($this->um->getAll() as $index => $user) {
-                /* @var $user User */
-                if ($index > 25) {
-                    break;
-                }
-                $this->im->consume($invitation['invitation']['token'], $user->getId());
-                $this->gpm->addUser($group->getId(), $user->getId());
-            }
-        }
-
-        $this->logger->notice(sprintf('Loading %d groups', self::NUM_OF_GROUPS - self::NUM_OF_ENTERPRISE_USERS));
-
-        for ($i = self::NUM_OF_ENTERPRISE_USERS + 1; $i <= self::NUM_OF_GROUPS - self::NUM_OF_ENTERPRISE_USERS; $i++) {
-            $this->gpm->create(
-                array(
-                    'name' => 'group ' . $i,
-                    'html' => $this->getHTMLFixture(),
-                    'date' => 1447012842,
-                    'location' => array(
-                        'address' => "Madrid",
-                        'latitude' => 40.416178,
-                        'longitude' => -3.703579,
-                        'locality' => "Madrid",
-                        'country' => "Spain",
-                    )
-                )
-            );
-        }
+        $invitationData = array(
+            'groupId' => $group->getId(),
+            'orientationRequired' => false,
+            'available' => 100,
+        );
+       $this->im->create($invitationData);
     }
 
     protected function loadLinks()
@@ -401,8 +339,6 @@ class Fixtures
                     'answers' => $answers,
                 )
             );
-
-            $this->questions[$i] = $question;
         }
     }
 
@@ -426,95 +362,9 @@ class Fixtures
 
         $this->logger->notice('Loading likes');
 
-        $likes = $this->scenario['likes'];
-
         foreach ($createdLinks as $link) {
             $this->rm->userRateLink(1, $link['id']);
         }
-
-        foreach ($likes as $like) {
-            foreach (range($like['linkFrom'], $like['linkTo']) as $i) {
-                $this->rm->userRateLink($like['user'], $createdLinks[$i]['id']);
-            }
-        }
-    }
-
-    protected function loadAnswers()
-    {
-        $this->logger->notice('Loading answers');
-
-        $answers = $this->scenario['answers'];
-
-        foreach ($answers as $answer) {
-
-            foreach (range($answer['questionFrom'], $answer['questionTo']) as $i) {
-
-                $answerIds = array();
-                foreach ($this->questions[$i]['answers'] as $questionAnswer) {
-                    $answerIds[] = $questionAnswer['answerId'];
-                }
-                $questionId = $this->questions[$i]['questionId'];
-                $answerId = $answerIds[$answer['answer'] - 1];
-                $this->am->create(
-                    array(
-                        'userId' => $answer['user'],
-                        'questionId' => $questionId,
-                        'answerId' => $answerId,
-                        'acceptedAnswers' => array($answerId),
-                        'isPrivate' => false,
-                        'rating' => 3,
-                        'explanation' => '',
-                        'locale' => 'en',
-                    )
-                );
-            }
-        }
-
-    }
-
-    protected function loadPrivacy()
-    {
-
-        if (isset($this->scenario['privacy'])) {
-
-            $this->logger->notice('Loading privacy');
-
-            $privacy = $this->scenario['privacy'];
-
-            foreach ($privacy as $userPrivacy) {
-                $userId = $userPrivacy['user'];
-                unset($userPrivacy['user']);
-
-                $this->prim->create($userId, $userPrivacy);
-            }
-
-        }
-    }
-
-    protected function calculateStatus()
-    {
-        $this->logger->notice(sprintf('Calculating status for %d users', self::NUM_OF_USERS));
-
-        for ($i = 1; $i <= self::NUM_OF_USERS; $i++) {
-
-            $status = $this->um->calculateStatus($i);
-            $this->logger->notice(sprintf('Calculating user "%s" new status: "%s"', $i, $status->getStatus()));
-        }
-    }
-
-    protected function createUserDisLikesLinkRelationship($user, $link)
-    {
-
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(l:Link {url: { url } })', '(u:User {qnoow_id: { qnoow_id } })')
-            ->setParameter('url', 'https://www.nekuno.com/link' . $link)
-            ->setParameter('qnoow_id', $user)
-            ->createUnique('(l)<-[r:DISLIKES]-(u)')
-            ->returns('l', 'u');
-
-        $query = $qb->getQuery();
-        $query->getResultSet();
-
     }
 
     private function loadProfileOptions()
@@ -561,6 +411,112 @@ class Fixtures
         $logger->notice(sprintf('%d new privacy options created.', $result->getCreated()));
     }
 
+    private function calculateRegisterQuestions()
+    {
+        $this->logger->notice('Calculating uncorrelated questions');
+        $result = $this->qm->getUncorrelatedQuestions();
+        $this->qm->setDivisiveQuestions($result['questions']);
+        $this->logger->notice(sprintf('Obtained and saved %d questions', count($result['questions'])));
+
+    }
+
+    protected function getUserInvitationTokenFixtures()
+    {
+        return 'join';
+    }
+
+    protected function getUserADataFixtures()
+    {
+        return array(
+            'username' => 'JohnDoe',
+            'email' => 'nekuno-johndoe@gmail.com',
+        );
+    }
+
+    protected function getUserAProfileFixtures()
+    {
+        return array(
+            "birthday" => "1970-01-01",
+            "location" => array(
+                "locality" => "Madrid",
+                "address" => "Madrid",
+                "country" => "Spain",
+                "longitude" => -3.7037902,
+                "latitude" => 40.4167754
+            )
+        );
+    }
+
+    protected function getUserATokenFixtures()
+    {
+        return array(
+            'resourceOwner' => 'facebook',
+            'oauthToken' => $this->userAAccessToken,
+            'resourceId' => $this->userAResourceId,
+            'expireTime' => strtotime("+1 week"),
+            'refreshToken' => null
+        );
+    }
+
+    protected function getUserATrackingDataFixtures()
+    {
+        return array();
+    }
+
+    protected function getUserBFixtures()
+    {
+        return array(
+            'username' => 'JaneDoe',
+            'email' => 'nekuno-janedoe@gmail.com',
+        );
+    }
+
+    protected function getUserBProfileFixtures()
+    {
+        return array(
+            "birthday" => "1970-01-01",
+            "location" => array(
+                "locality" => "Madrid",
+                "address" => "Madrid",
+                "country" => "Spain",
+                "longitude" => -3.7037902,
+                "latitude" => 40.4167754
+            )
+        );
+    }
+
+    protected function getUserBTokenFixtures()
+    {
+        return array(
+            'resourceOwner' => 'facebook',
+            'oauthToken' => $this->userBAccessToken,
+            'resourceId' => $this->userBResourceId,
+            'expireTime' => strtotime("+1 week"),
+            'refreshToken' => null
+        );
+    }
+
+    protected function getUserBTrackingDataFixtures()
+    {
+        return array();
+    }
+
+    protected function getGroupFixtures()
+    {
+        return array(
+            'name' => 'testing group',
+            'html' => $this->getHTMLFixture(),
+            'date' => 1447012842,
+            'location' => array(
+                'address' => "Madrid",
+                'latitude' => 40.416178,
+                'longitude' => -3.703579,
+                'locality' => "Madrid",
+                'country' => "Spain",
+            )
+        );
+    }
+
     private function getHTMLFixture()
     {
         return 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut malesuada risus elit, et vestibulum leo convallis ut. Aenean eu purus nulla. Nunc consectetur, lectus sed sagittis lacinia, lacus quam vestibulum sapien, sit amet condimentum enim odio quis mi. Morbi rutrum nulla sed ipsum convallis, eu ultricies sapien mollis. Aenean dui dui, bibendum id dui sit amet, interdum posuere massa. Sed sed lorem ac nunc aliquet posuere. Donec vitae nunc ut ante faucibus ornare eget at risus. Aenean sodales neque aliquam felis dapibus, ut ultrices tortor mattis. Fusce iaculis mi sem. Aliquam convallis dignissim augue, sit amet vehicula enim hendrerit eu. Cras pretium velit nisi, ac egestas nibh gravida vitae. Praesent consectetur posuere ex. Etiam eleifend orci ut porta imperdiet. Mauris finibus cursus ipsum, a facilisis orci sodales laoreet. Quisque pellentesque nulla vitae nulla tempus, vel porta tortor vehicula.
@@ -573,14 +529,4 @@ Maecenas ac sem a quam aliquam scelerisque eu ut ligula. Cum sociis natoque pena
 
 Duis venenatis porta arcu sed luctus. Quisque eu mi sit amet tellus porttitor vulputate eget eu lectus. Nam dolor leo, congue sed scelerisque in, gravida sed tellus. Pellentesque ultricies congue enim, sit amet suscipit elit sagittis nec. Quisque porttitor, ipsum sed molestie vulputate, lacus orci feugiat nunc, non dapibus mi velit non mauris. Maecenas dolor diam, commodo ut sollicitudin eget, vestibulum ac dui. Sed eget odio pulvinar, aliquet lectus luctus, pulvinar urna. Nullam sed rhoncus nunc. Duis convallis interdum odio, eu blandit ipsum. Duis sollicitudin et erat a posuere. Nullam varius aliquam sapien, et consequat erat sagittis quis. Vivamus varius, sem at finibus efficitur, nisl tortor lacinia massa, non molestie felis ante id nisl. Quisque feugiat suscipit metus congue accumsan.';
     }
-
-    private function calculateRegisterQuestions()
-    {
-        $this->logger->notice('Calculating uncorrelated questions');
-        $result = $this->qm->getUncorrelatedQuestions();
-        $this->qm->setDivisiveQuestions($result['questions']);
-        $this->logger->notice(sprintf('Obtained and saved %d questions', count($result['questions'])));
-
-    }
-
 }

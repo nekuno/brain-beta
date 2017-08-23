@@ -8,7 +8,7 @@ class QuestionsTest extends QuestionsAPITest
 
     public function testQuestions()
     {
-        $this->createAndLoginUserA();
+        $this->loginOwnUser();
         $this->assertQuestionCreation();
         $this->assertNextQuestion();
         $this->assertSkipQuestion();
@@ -24,15 +24,6 @@ class QuestionsTest extends QuestionsAPITest
         $response = $this->createQuestion($questionData, 1);
         $this->assertStatusCode($response, 201, 'Correct question creation');
     }
-
-    //TODO: Get own answers
-//    public function assertGetQuestions()
-//    {
-//        $response = $this->getOwnQuestions();
-//        $questionsData = $this->assertJsonResponse($response, 200, 'Getting own questions');
-//        $this->a
-//
-//    }
 
     public function assertNextQuestion()
     {

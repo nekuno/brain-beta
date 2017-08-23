@@ -6,38 +6,28 @@ use Tests\API\APITest;
 
 abstract class QuestionsAPITest extends APITest
 {
-    public function createQuestion($questionData, $loggedInUserId = 1)
+    public function createQuestion($questionData, $loggedInUserId = self::OWN_USER_ID)
     {
-        return $this->getResponseByRoute('/questions', 'POST', $questionData, $loggedInUserId);
+        return $this->getResponseByRouteWithCredentials('/questions', 'POST', $questionData, $loggedInUserId);
     }
 
-    public function getOwnAnswers($loggedInUserId = 1)
+    public function getNextOwnQuestion($loggedInUserId = self::OWN_USER_ID)
     {
-        return $this->getResponseByRoute('/answers', 'GET', array(), $loggedInUserId);
+        return $this->getResponseByRouteWithCredentials('/questions/next', 'GET', array(), $loggedInUserId);
     }
 
-    public function getNextOwnQuestion($loggedInUserId = 1)
-    {
-        return $this->getResponseByRoute('/questions/next', 'GET', array(), $loggedInUserId);
-    }
-
-    public function skipQuestion($questionId, $loggedInUserId = 1)
+    public function skipQuestion($questionId, $loggedInUserId = self::OWN_USER_ID)
     {
         $url = '/questions/' . $questionId . '/skip';
 
-        return $this->getResponseByRoute($url, 'POST', array(), $loggedInUserId);
+        return $this->getResponseByRouteWithCredentials($url, 'POST', array(), $loggedInUserId);
     }
 
-    public function reportQuestion($questionId, $loggedInUserId = 1)
+    public function reportQuestion($questionId, $loggedInUserId = self::OWN_USER_ID)
     {
         $url = '/questions/' . $questionId . '/report';
 
-        return $this->getResponseByRoute($url, 'POST', array(), $loggedInUserId);
-    }
-
-    public function answerQuestion($data, $loggedInUserId = 1)
-    {
-        return $this->getResponseByRoute('/answers', 'POST', $data, $loggedInUserId);
+        return $this->getResponseByRouteWithCredentials($url, 'POST', array(), $loggedInUserId);
     }
 
     protected function assertQuestionFormat($data)
