@@ -39,14 +39,6 @@ class AuthController
 	    elseif ($resourceOwner && $oauthToken) {
 		    $jwt = $authService->loginByResourceOwner($resourceOwner, $oauthToken, $refreshToken);
 	    }
-
-
-	    //TODO: Remove once app store is updated (07/07/2017)
-        elseif ($oauth = $request->request->get('oauth')) {
-            $jwt = $authService->loginByResourceOwner($oauth['resourceOwner'], $oauth['oauthToken'], $oauth['refreshToken']);
-        }
-
-
 	    else {
 		    throw new BadRequestHttpException('Los datos introducidos no coinciden con nuestros registros.');
 	    }

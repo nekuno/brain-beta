@@ -29,7 +29,7 @@ class AnswersTest extends AnswersAPITest
 
     protected function getAnswerData()
     {
-        $question = $this->getNextOwnQuestion();
+        $question = json_decode($this->getNextOwnQuestion()->getContent(), true);
 
         return array(
             'questionId' => $question['questionId'],
