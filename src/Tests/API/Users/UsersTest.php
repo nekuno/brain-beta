@@ -88,8 +88,7 @@ class UsersTest extends UsersAPITest
 
     protected function assertLoginUserResponse()
     {
-        $userData = $this->getUserAFixtures();
-        $response = $this->loginUser($userData);
+        $response = $this->loginOwnUser();
         $this->assertStatusCode($response, 200, "Login UserA");
     }
 

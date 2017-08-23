@@ -444,7 +444,10 @@ class TestingFixtures
                 "country" => "Spain",
                 "longitude" => -3.7037902,
                 "latitude" => 40.4167754
-            )
+            ),
+            "gender" => "male",
+            "orientation" => "heterosexual",
+            "interfaceLanguage" => "es"
         );
     }
 
@@ -482,7 +485,10 @@ class TestingFixtures
                 "country" => "Spain",
                 "longitude" => -3.7037902,
                 "latitude" => 40.4167754
-            )
+            ),
+            "gender" => "male",
+            "orientation" => "heterosexual",
+            "interfaceLanguage" => "es"
         );
     }
 

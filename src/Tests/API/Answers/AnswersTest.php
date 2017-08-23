@@ -4,9 +4,6 @@ namespace Tests\API\Answers;
 
 class AnswersTest extends AnswersAPITest
 {
-    protected $createdQuestionId = 6132;
-    protected $createdAnswerId = 6133;
-
     public function testAnswers()
     {
         $this->loginOwnUser();
@@ -32,10 +29,12 @@ class AnswersTest extends AnswersAPITest
 
     protected function getAnswerData()
     {
+        $question = $this->getNextOwnQuestion();
+
         return array(
-            'questionId' => $this->createdQuestionId,
-            'answerId' => $this->createdAnswerId,
-            'acceptedAnswers' => array($this->createdAnswerId),
+            'questionId' => $question['questionId'],
+            'answerId' => $question['answers'][0]['answerId'],
+            'acceptedAnswers' => array($question['answers'][0]['answerId']),
             'rating' => 2,
             'explanation' => '',
             'isPrivate' => false,
