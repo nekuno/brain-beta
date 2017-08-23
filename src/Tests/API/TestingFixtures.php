@@ -1,6 +1,6 @@
 <?php
 
-namespace Test\API;
+namespace Tests\API;
 
 use Model\Link\LinkModel;
 use Model\Neo4j\Constraints;
