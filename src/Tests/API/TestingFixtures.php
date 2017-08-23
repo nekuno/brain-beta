@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\API;
+namespace Test\API;
 
 use Model\Link\LinkModel;
 use Model\Neo4j\Constraints;
@@ -113,6 +113,7 @@ class TestingFixtures
         $this->userBResourceId = $app['userB.resource_id'];
         $this->userAAccessToken = $app['userA.access_token'];
         $this->userBAccessToken = $app['userB.access_token'];
+        $this->logger = $app['logger'];
     }
 
     /**

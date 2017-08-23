@@ -25,7 +25,7 @@ class UsersTest extends UsersAPITest
 
     protected function assertGetUserWithoutCredentialsResponse()
     {
-        $response = $this->getOtherUser('janedoe');
+        $response = $this->getOtherUser('janedoe', null);
         $this->assertStatusCode($response, 401, "Get User without credentials");
     }
 

@@ -22,7 +22,7 @@ class ProfileTest extends ProfileAPITest
 
     protected function assertGetProfileWithoutCredentialsResponse()
     {
-        $response = $this->getOtherProfile();
+        $response = $this->getOtherProfile(self::OTHER_USER_ID, null);
         $this->assertStatusCode($response, 401, "Get Profile without credentials");
     }
 

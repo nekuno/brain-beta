@@ -4,8 +4,8 @@ namespace Tests\API\Answers;
 
 class AnswersTest extends AnswersAPITest
 {
-    protected $createdQuestionId = 1;
-    protected $createdAnswerId = 1;
+    protected $createdQuestionId = 6132;
+    protected $createdAnswerId = 6133;
 
     public function testAnswers()
     {

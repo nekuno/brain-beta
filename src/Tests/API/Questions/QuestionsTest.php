@@ -39,7 +39,7 @@ class QuestionsTest extends QuestionsAPITest
         $this->assertStatusCode($response, 201, 'Skipping question response');
 
         $response = $this->getNextOwnQuestion();
-        $this->assertStatusCode($response, 404, 'No next question after skipped');
+        $this->assertStatusCode($response, 200, 'Next question after skipped');
     }
 
     public function assertReportQuestions()

@@ -19,7 +19,7 @@ class PrivacyTest extends PrivacyAPITest
 
     protected function assertGetPrivacyWithoutCredentialsResponse()
     {
-        $response = $this->getOwnPrivacy();
+        $response = $this->getOwnPrivacy(null);
         $this->assertStatusCode($response, 401, "Get Privacy without credentials");
     }
 
