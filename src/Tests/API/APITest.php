@@ -107,20 +107,6 @@ abstract class APITest extends WebTestCase
         }
     }
 
-    protected function loginOwnUser()
-    {
-        // TODO: Error if using POST at AuthService | getNewToken (maybe tokens are expired?)
-        return $this->getResponseByRouteWithoutCredentials('/login', 'OPTIONS', $this->getUserAFixtures());
-    }
-
-    protected function getUserAFixtures()
-    {
-        return array(
-            'resourceOwner' => 'facebook',
-            'oauthToken' => $this->app['userA.access_token'],
-        );
-    }
-
     private function tryToGetJwtByUserId($userId)
     {
         try {

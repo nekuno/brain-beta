@@ -8,7 +8,6 @@ class QuestionsTest extends QuestionsAPITest
 
     public function testQuestions()
     {
-        $this->loginOwnUser();
         $this->assertQuestionCreation();
         $this->assertNextQuestion();
         $this->assertSkipQuestion();

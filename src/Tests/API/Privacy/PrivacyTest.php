@@ -7,7 +7,6 @@ class PrivacyTest extends PrivacyAPITest
     public function testPrivacy()
     {
         $this->assertGetPrivacyWithoutCredentialsResponse();
-        $this->loginOwnUser();
         $this->assertCreateAndDeleteVoidPrivacyResponse();
         $this->assertCreatePrivacyResponse();
         $this->assertGetOwnPrivacyResponse();

@@ -6,7 +6,6 @@ class AnswersTest extends AnswersAPITest
 {
     public function testAnswers()
     {
-        $this->loginOwnUser();
         $this->assertAnswer();
         $this->assertGetOwnAnswers();
     }

@@ -8,7 +8,6 @@ class ProfileTest extends ProfileAPITest
     {
         $this->assertGetProfileWithoutCredentialsResponse();
         $this->assertGetCategories();
-        $this->loginOwnUser();
         $this->assertGetNoneExistentProfileResponse();
         $this->assertGetExistentProfileResponse();
         $this->assertGetOwnProfileResponse();

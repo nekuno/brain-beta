@@ -6,7 +6,6 @@ class InvitationsTest extends InvitationsAPITest
 {
     public function testInvitations()
     {
-        $this->loginOwnUser();
         $this->assertCreateInvitationWithUser();
         $this->assertGetInvitations();
     }
