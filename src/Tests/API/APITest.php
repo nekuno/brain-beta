@@ -4,6 +4,8 @@ namespace Tests\API;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\Tools\SchemaTool;
+use Model\User\Token\Token;
+use Model\User\Token\TokensModel;
 use Silex\Application;
 use Silex\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
@@ -113,10 +115,36 @@ abstract class APITest extends WebTestCase
             /** @var AuthService $authService */
             $authService = $this->app['auth.service'];
             $jwt = $authService->getToken($userId);
+            $this->updateTokenInParams($userId, 'facebook');
 
             return array('HTTP_PHP_AUTH_DIGEST' => 'Bearer ' . $jwt);
         } catch (\Exception $e) {
             return array();
         }
+    }
+
+    private function updateTokenInParams($userId, $resourceOwner)
+    {
+        /** @var TokensModel $model */
+        $model = $this->app['users.tokens.model'];
+        /** @var Token $token */
+        $token = $model->getById($userId, $resourceOwner);
+        $oauthToken = $token->getOauthToken();
+
+        switch($userId) {
+            case self::OWN_USER_ID:
+                $param = 'userA.access_token: ';
+                break;
+            case self::OTHER_USER_ID:
+                $param = 'userB.access_token: ';
+                break;
+            default:
+                $param = 'userC.access_token: ';
+
+        }
+        $paramsFileName = __DIR__ . '/../../../config/params.yml';
+        $paramsString = file_get_contents($paramsFileName);
+        $newParamsString = preg_replace('/' . $param . '[^\b]+/', $param . $oauthToken, $paramsString);
+        file_put_contents($paramsFileName, $newParamsString);
     }
 }

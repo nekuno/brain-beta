@@ -28,6 +28,9 @@ params:
     userB.resource: ''
     userB.access_token: ''
     userB.resource_id: ''
+    userC.resource: ''
+    userC.access_token: ''
+    userC.resource_id: ''
 
     ## Locale
     locale.default: en
