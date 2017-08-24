@@ -25,6 +25,7 @@ class ProfileMetadataManager extends MetadataManager
         $publicField['labelEdit'] = isset($values['labelEdit']) ? $this->getLocaleString($values['labelEdit']) : $publicField['label'];
         $publicField['required'] = isset($values['required']) ? $values['required'] : false;
         $publicField['editable'] = isset($values['editable']) ? $values['editable'] : true;
+        $publicField['hidden'] = isset($values['hidden']) ? $values['hidden'] : false;
 
         return $publicField;
     }
