@@ -144,7 +144,7 @@ abstract class APITest extends WebTestCase
         }
         $paramsFileName = __DIR__ . '/../../../config/params.yml';
         $paramsString = file_get_contents($paramsFileName);
-        $newParamsString = preg_replace('/' . $param . '[^\b]+/', $param . $oauthToken, $paramsString);
+        $newParamsString = preg_replace('/' . $param . '[^\n]+/', $param . $oauthToken, $paramsString);
         file_put_contents($paramsFileName, $newParamsString);
     }
 }
