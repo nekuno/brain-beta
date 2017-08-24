@@ -255,6 +255,7 @@ profile:
             en: 'Want to be found in searches by gender'
             es: 'Quiero salir en búsquedas por género'
         notErasable: true
+        hidden: true
     descriptiveGender:
         type: multiple_choices
         label: &descriptiveGenderLabel
