@@ -39,7 +39,7 @@ params:
     images_relative_dir: '/../../landing/web/'
 
     ## Base url
-    brain_base_url: 'http://brain.local.nekuno.com/'
+    brain_base_url: 'https://brain.local.nekuno.com/'
 
     ## Instant
     instant.host: https://local.nekuno.com:8008/
@@ -49,11 +49,11 @@ params:
     dbs.mysql_brain.driver: pdo_mysql
     dbs.mysql_brain.host: localhost
     dbs.mysql_brain.dbname: nekuno_brain
-    dbs.mysql_brain.user: root
-    dbs.mysql_brain.pass: root
+    dbs.mysql_brain.user: nekuno
+    dbs.mysql_brain.pass: nekuno
 
     ## Neo4j
-    db.neo4j.host: 127.0.0.1
+    db.neo4j.host: localhost
     db.neo4j.port: 7474
     db.neo4j.auth: true
     db.neo4j.user: nekuno
@@ -65,7 +65,7 @@ params:
     db.neo4j.testing.pass: nekuno
 
     ## Swiftmailer
-    swiftmailer.host: 127.0.0.1
+    swiftmailer.host: localhost
     swiftmailer.port: 25
     swiftmailer.username: nekuno
     swiftmailer.password: nekuno
@@ -74,7 +74,7 @@ params:
     swiftmailer.sender_address: null
 
     ## RabbitMQ
-    rabbitmq.host: 127.0.0.1
+    rabbitmq.host: localhost
     rabbitmq.port: 5672
     rabbitmq.user: nekuno
     rabbitmq.pass: nekuno
@@ -99,10 +99,10 @@ params:
     ## Facebook App
     facebook.consumer_key: ~
     facebook.consumer_secret: ~
-    facebook.redirect_uri: https://local.nekuno.com/login/check-facebook
+    facebook.redirect_uri: https://client.local.nekuno.com/
 
     ## Invitations migration
-    admin.domain_plus_port: https://admin.local.nekuno.com:443/
+    admin.domain_plus_port: https://admin.local.nekuno.com/
 
     ## Social host
     social.host: https://local.nekuno.com/
