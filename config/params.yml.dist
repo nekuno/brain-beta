@@ -21,17 +21,6 @@ params:
     support_email_2: 'manolez@gmail.com'
     support_email_3: 'yawmoght@gmail.com'
 
-    ## Testing users
-    userA.resource: ''
-    userA.access_token: ''
-    userA.resource_id: ''
-    userB.resource: ''
-    userB.access_token: ''
-    userB.resource_id: ''
-    userC.resource: ''
-    userC.access_token: ''
-    userC.resource_id: ''
-
     ## Locale
     locale.default: en
 

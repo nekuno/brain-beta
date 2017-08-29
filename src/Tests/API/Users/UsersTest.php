@@ -2,8 +2,13 @@
 
 namespace Tests\API\Users;
 
+use Tests\API\TestingFixtures;
+
 class UsersTest extends UsersAPITest
 {
+    const USER_C_OAUTH_TOKEN = 'TESTING_OAUTH_TOKEN_C';
+    const USER_C_RESOURCE_ID = '34567';
+
     public function testUsers()
     {
         $this->assertGetUserWithoutCredentialsResponse();
@@ -89,8 +94,7 @@ class UsersTest extends UsersAPITest
     protected function assertLoginUserResponse()
     {
         $response = $this->loginUser($this->getUserAFixtures());
-        // TODO: Error if using POST at AuthService | getNewToken (maybe tokens are expired?)
-        //$this->assertStatusCode($response, 200, "Login UserA");
+        $this->assertStatusCode($response, 200, "Login UserA");
     }
 
     protected function assertGetOwnUserResponse()
@@ -210,7 +214,7 @@ class UsersTest extends UsersAPITest
     {
         return array(
             'resourceOwner' => 'facebook',
-            'oauthToken' => $this->app['userA.access_token'],
+            'oauthToken' => TestingFixtures::USER_A_OAUTH_TOKEN,
         );
     }
 
@@ -224,9 +228,9 @@ class UsersTest extends UsersAPITest
             'profile' => array(),
             'token' => 'join',
             'oauth' => array(
-                'resourceOwner' => $this->app['userA.resource'],
-                'oauthToken' => $this->app['userA.access_token'],
-                'resourceId' => $this->app['userA.resource_id'],
+                'resourceOwner' => 'facebook',
+                'oauthToken' => TestingFixtures::USER_A_OAUTH_TOKEN,
+                'resourceId' => TestingFixtures::USER_A_RESOURCE_ID,
                 'expireTime' => strtotime("+1 week"),
                 'refreshToken' => null
             ),
@@ -244,9 +248,9 @@ class UsersTest extends UsersAPITest
             'profile' => array(),
             'token' => 'join',
             'oauth' => array(
-                'resourceOwner' => $this->app['userB.resource'],
-                'oauthToken' => $this->app['userB.access_token'],
-                'resourceId' => $this->app['userB.resource_id'],
+                'resourceOwner' => 'facebook',
+                'oauthToken' => TestingFixtures::USER_B_OAUTH_TOKEN,
+                'resourceId' => TestingFixtures::USER_B_RESOURCE_ID,
                 'expireTime' => strtotime("+1 week"),
                 'refreshToken' => null
             ),
@@ -264,9 +268,9 @@ class UsersTest extends UsersAPITest
             'profile' => array(),
             'token' => 'join',
             'oauth' => array(
-                'resourceOwner' => $this->app['userC.resource'],
-                'oauthToken' => $this->app['userC.access_token'],
-                'resourceId' => $this->app['userC.resource_id'],
+                'resourceOwner' => 'facebook',
+                'oauthToken' => self::USER_C_OAUTH_TOKEN,
+                'resourceId' => self::USER_C_RESOURCE_ID,
                 'expireTime' => strtotime("+1 week"),
                 'refreshToken' => null
             ),

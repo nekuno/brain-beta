@@ -23,6 +23,10 @@ class TestingFixtures
     const NUM_OF_LINKS = 5;
     const NUM_OF_TAGS = 10;
     const NUM_OF_QUESTIONS = 10;
+    const USER_A_OAUTH_TOKEN = 'TESTING_OAUTH_TOKEN_A';
+    const USER_B_OAUTH_TOKEN = 'TESTING_OAUTH_TOKEN_B';
+    const USER_A_RESOURCE_ID = '12345';
+    const USER_B_RESOURCE_ID = '54321';
 
     /**
      * @var LoggerInterface
@@ -75,26 +79,6 @@ class TestingFixtures
     protected $im;
 
     /**
-     * @var string
-     */
-    protected $userAResourceId;
-
-    /**
-     * @var string
-     */
-    protected $userBResourceId;
-
-    /**
-     * @var string
-     */
-    protected $userAAccessToken;
-
-    /**
-     * @var string
-     */
-    protected $userBAccessToken;
-
-    /**
      * @var RateModel
      */
     protected $rm;
@@ -109,10 +93,6 @@ class TestingFixtures
         $this->lm = $app['links.model'];
         $this->qm = $app['questionnaire.questions.model'];
         $this->rm = $app['users.rate.model'];
-        $this->userAResourceId = $app['userA.resource_id'];
-        $this->userBResourceId = $app['userB.resource_id'];
-        $this->userAAccessToken = $app['userA.access_token'];
-        $this->userBAccessToken = $app['userB.access_token'];
         $this->logger = $app['logger'];
     }
 
@@ -455,8 +435,8 @@ class TestingFixtures
     {
         return array(
             'resourceOwner' => 'facebook',
-            'oauthToken' => $this->userAAccessToken,
-            'resourceId' => $this->userAResourceId,
+            'oauthToken' => self::USER_A_OAUTH_TOKEN,
+            'resourceId' => self::USER_A_RESOURCE_ID,
             'expireTime' => strtotime("+1 week"),
             'refreshToken' => null
         );
@@ -496,8 +476,8 @@ class TestingFixtures
     {
         return array(
             'resourceOwner' => 'facebook',
-            'oauthToken' => $this->userBAccessToken,
-            'resourceId' => $this->userBResourceId,
+            'oauthToken' => self::USER_B_OAUTH_TOKEN,
+            'resourceId' => self::USER_B_RESOURCE_ID,
             'expireTime' => strtotime("+1 week"),
             'refreshToken' => null
         );
