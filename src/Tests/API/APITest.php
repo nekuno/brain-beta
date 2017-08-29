@@ -39,8 +39,6 @@ abstract class APITest extends WebTestCase
         parent::setUp();
         /* @var $app Application */
         $app = $this->app;
-        $fixtures = new TestingFixtures($this->app);
-        $fixtures->load();
         // Create brain DB
         $em = $app['orm.ems']['mysql_brain'];
         $schemaTool = new SchemaTool($em);
@@ -52,6 +50,9 @@ abstract class APITest extends WebTestCase
         $bm = $app['dbs']['mysql_brain'];
         $bm->executeQuery('DROP TABLE IF EXISTS chat_message');
         $bm->executeQuery('CREATE TABLE chat_message (id INTEGER PRIMARY KEY NOT NULL, text VARCHAR(255) NOT NULL, createdAt DATETIME NOT NULL, readed TINYINT(1) NOT NULL, user_from INT DEFAULT NULL, user_to INT DEFAULT NULL)');
+
+        $fixtures = new TestingFixtures($this->app);
+        $fixtures->load();
     }
 
     protected function loadMockUps(Application $app)
