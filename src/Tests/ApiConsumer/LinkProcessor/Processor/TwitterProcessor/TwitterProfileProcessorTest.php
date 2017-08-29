@@ -8,6 +8,7 @@ use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\AbstractTwitterProcesso
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterProfileProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
+use Model\Link\Creator\CreatorTwitter;
 use Model\User\Token\TokensModel;
 use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
@@ -125,25 +126,18 @@ class TwitterProfileProcessorTest extends AbstractProcessorTest
 
     public function getResponseHydration()
     {
+        $expected = new CreatorTwitter();
+        $expected->setTitle('yawmoght');
+        $expected->setDescription('Tool developer & data junkie');
+        $expected->setThumbnail('http://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png');
+        $expected->setUrl('https://twitter.com/yawmoght');
+        $expected->setCreated(time() * 1000);
         return array(
             array(
                 $this->getProfileUrl(),
                 $this->getProfileItemResponse(),
                 array($this->getProfileLink()),
-                array(
-                    'title' => 'yawmoght',
-                    'description' => 'Tool developer & data junkie',
-                    'thumbnail' => 'http://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png',
-                    'url' => 'https://twitter.com/yawmoght',
-                    'id' => null,
-                    'tags' => array(),
-                    'created' => time() * 1000,
-                    'processed' => true,
-                    'language' => null,
-                    'synonymous' => array(),
-                    'imageProcessed' => null,
-                    'additionalLabels' => array('Creator', 'CreatorTwitter'),
-                ),
+                $expected->toArray(),
                 34529134,
             )
         );

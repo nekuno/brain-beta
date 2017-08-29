@@ -8,6 +8,7 @@ use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\AbstractYoutubeProcesso
 use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\YoutubePlaylistProcessor;
 use ApiConsumer\ResourceOwner\GoogleResourceOwner;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
+use Model\Link\Video;
 use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
 class YoutubePlaylistProcessorTest extends AbstractProcessorTest
@@ -124,29 +125,17 @@ class YoutubePlaylistProcessorTest extends AbstractProcessorTest
 
     public function getResponseHydration()
     {
+        $expected = new Video();
+        $expected->setTitle('PelleK plays bad NES-games');
+        $expected->setDescription('');
+        $expected->setEmbedType('youtube');
+        $expected->setEmbedId('PLcB-8ayo3tzddinO3ob7cEHhUtyyo66mN');
         return array(
             array(
                 $this->getPlaylistUrl(),
                 $this->getPlaylistId(),
                 $this->getPlaylistResponse(),
-                array(
-                    'title' => 'PelleK plays bad NES-games',
-                    'description' => '',
-                    'thumbnail' => null,
-                    'url' => null,
-                    'id' => null,
-                    'tags' => array(),
-                    'created' => null,
-                    'processed' => true,
-                    'language' => null,
-                    'synonymous' => array(),
-                    'imageProcessed' => null,
-                    'additionalLabels' => array('Video'),
-                    'additionalFields' => array(
-                        'embed_type' => 'youtube',
-                        'embed_id' => 'PLcB-8ayo3tzddinO3ob7cEHhUtyyo66mN',
-                    )
-                )
+                $expected->toArray(),
             )
         );
     }

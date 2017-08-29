@@ -133,55 +133,6 @@ $app['lookUp.controller'] = $app->share(
     }
 );
 
-$app['social.tokens.controller'] = $app->share(
-    function () {
-
-        return new \Controller\Social\TokensController;
-    }
-);
-
-$app['social.users.controller'] = $app->share(
-    function () {
-
-        return new \Controller\Social\UserController;
-    }
-);
-
-$app['social.profile.controller'] = $app->share(
-    function () {
-
-        return new \Controller\Social\ProfileController;
-    }
-);
-
-$app['social.privacy.controller'] = $app->share(
-    function () {
-
-        return new \Controller\Social\PrivacyController;
-    }
-);
-
-$app['social.answers.controller'] = $app->share(
-    function () {
-
-        return new \Controller\Social\AnswerController;
-    }
-);
-
-$app['social.lookUp.controller'] = $app->share(
-    function () {
-
-        return new \Controller\Social\LookUpController;
-    }
-);
-
-$app['social.groups.controller'] = $app->share(
-    function () {
-
-        return new \Controller\Social\GroupController;
-    }
-);
-
 $app['admin.groups.controller'] = $app->share(
     function () {
 

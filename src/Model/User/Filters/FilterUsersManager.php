@@ -7,9 +7,9 @@ use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
 use Model\Neo4j\GraphManager;
-use Model\User\ProfileFilterModel;
-use Model\User\UserFilterModel;
-use Service\Validator;
+use Model\Metadata\ProfileMetadataManager;
+use Model\Metadata\UserFilterMetadataManager;
+use Service\Validator\FilterUsersValidator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class FilterUsersManager
@@ -20,21 +20,21 @@ class FilterUsersManager
     protected $graphManager;
 
     /**
-     * @var ProfileFilterModel
+     * @var ProfileMetadataManager
      */
     protected $profileFilterModel;
 
     /**
-     * @var UserFilterModel
+     * @var UserFilterMetadataManager
      */
     protected $userFilterModel;
 
     /**
-     * @var Validator
+     * @var FilterUsersValidator
      */
     protected $validator;
 
-    public function __construct(GraphManager $graphManager, ProfileFilterModel $profileFilterModel, UserFilterModel $userFilterModel, Validator $validator)
+    public function __construct(GraphManager $graphManager, ProfileMetadataManager $profileFilterModel, UserFilterMetadataManager $userFilterModel, FilterUsersValidator $validator)
     {
         $this->graphManager = $graphManager;
         $this->profileFilterModel = $profileFilterModel;
@@ -47,26 +47,6 @@ class FilterUsersManager
         $filterId = $this->getFilterUsersIdByThreadId($id);
 
         return $this->getFilterUsersById($filterId);
-    }
-
-    /**
-     * @param FilterUsers $filters
-     * @return Node|null
-     * @throws \Model\Neo4j\Neo4jException
-     */
-    public function createFilterUsers(FilterUsers $filters)
-    {
-        $qb = $this->graphManager->createQueryBuilder();
-        $qb->create('(filter:Filter:FilterUsers)')
-            ->returns('filter');
-        $result = $qb->getQuery()->getResultSet();
-
-        $filter = $result->current()->offsetGet('filter');
-        if ($filter == null) {
-            return null;
-        }
-
-        return $this->updateFiltersUsers($filters);
     }
 
     public function updateFilterUsersByThreadId($id, $filtersArray)
@@ -123,17 +103,16 @@ class FilterUsersManager
         return $filter;
     }
 
-    public function validateFilterUsers(array $filters, $userId = null)
+    public function validateOnCreate(array $filters, $userId = null)
     {
         $filters = $this->profileFilterModel->splitFilters($filters);
+        $this->validator->validateOnCreate($filters, $userId);
+    }
 
-        if (isset($filters['profileFilters'])) {
-            $this->validator->validateEditFilterProfile($filters['profileFilters'], $this->profileFilterModel->getChoiceOptionIds());
-        }
-
-        if (isset($filters['userFilters'])) {
-            $this->validator->validateEditFilterUsers($filters['userFilters'], $this->userFilterModel->getChoiceOptionIds($userId));
-        }
+    public function validateOnUpdate(array $filters, $userId = null)
+    {
+        $filters = $this->profileFilterModel->splitFilters($filters);
+        $this->validator->validateOnUpdate($filters, $userId);
     }
 
     /**
@@ -218,8 +197,7 @@ class FilterUsersManager
 
     private function saveProfileFilters($profileFilters, $id)
     {
-        $profileOptions = $this->profileFilterModel->getChoiceOptionIds();
-        $this->validator->validateEditFilterProfile($profileFilters, $profileOptions);
+        $this->validateOnUpdate(array('profileFilters' => $profileFilters));
 
         $metadata = $this->profileFilterModel->getMetadata();
 
@@ -575,7 +553,7 @@ class FilterUsersManager
      */
     private function buildProfileOptions(\ArrayAccess $options, Node $filterNode)
     {
-        $filterMetadata = $this->profileFilterModel->getFilters();
+        $filterMetadata = $this->profileFilterModel->getMetadata();
         $optionsResult = array();
         /* @var Node $option */
         foreach ($options as $option) {

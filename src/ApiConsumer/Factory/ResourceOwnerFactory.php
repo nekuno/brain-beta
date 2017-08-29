@@ -41,6 +41,7 @@ class ResourceOwnerFactory
     {
         $this->options = $options;
         $this->client = $client;
+        $this->client->setTimeout(30);
         $this->httpUtils = $httpUtils;
         $this->storage = $storage;
         $this->dispatcher = $dispatcher;

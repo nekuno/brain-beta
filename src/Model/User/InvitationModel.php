@@ -8,7 +8,7 @@ use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 use Model\User\Group\Group;
 use Service\TokenGenerator;
-use Service\Validator;
+use Service\Validator\InvitationValidator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 
@@ -16,17 +16,17 @@ class InvitationModel
 {
 
     /**
-     * @var TokenGenerator
+     * @var TokenGenerator $tokenGenerator
      */
     protected $tokenGenerator;
 
     /**
-     * @var GraphManager
+     * @var GraphManager $gm
      */
     protected $gm;
 
     /**
-     * @var Validator
+     * @var InvitationValidator $validator
      */
     protected $validator;
 
@@ -37,7 +37,7 @@ class InvitationModel
 
     const MAX_AVAILABLE = 9999999999;
 
-    public function __construct(TokenGenerator $tokenGenerator, GraphManager $gm, Validator $validator, $adminDomain)
+    public function __construct(TokenGenerator $tokenGenerator, GraphManager $gm, InvitationValidator $validator, $adminDomain)
     {
         $this->tokenGenerator = $tokenGenerator;
         $this->gm = $gm;
@@ -214,6 +214,7 @@ class InvitationModel
         return $invitations;
     }
 
+    //Too many ifs, divide in methods (createFromUser, createFromAdmin, createFromGroup...)
     public function create(array $data)
     {
         $this->validateCreate($data);
@@ -633,7 +634,7 @@ class InvitationModel
         return strtolower($result->current()->offsetGet('token')) === strtolower($token);
     }
 
-    public function validateToken($token)
+    public function validateTokenAvailable($token)
     {
 
         $qb = $this->gm->createQueryBuilder();
@@ -666,14 +667,7 @@ class InvitationModel
 
     public function validateUpdate(array $data)
     {
-        if (isset($data['invitationId']) && !$this->existsInvitation($data['invitationId'])) {
-                throw new ValidationException(array('invitatonId' => array('Invalid invitation ID')));
-        }
-        if (isset($data['token']) && $this->existsToken($data['token'], $data['invitationId'])) {
-            throw new ValidationException(array('token' => array('Token already exists')));
-        }
-
-        $this->validator->validateInvitation($data, true);
+        return $this->validator->validateOnUpdate($data);
     }
 
     /**
@@ -682,18 +676,7 @@ class InvitationModel
      */
     public function validateCreate(array $data)
     {
-        if (isset($data['token'])){
-            $token = $data['token'];
-            if (!is_string($token) && !is_numeric($token)) {
-                throw new ValidationException(array('token' => array('Token must be a string or a numeric')));
-            }
-
-            if ($this->existsToken($token)) {
-                throw new ValidationException(array('token' => array('Token already exists')));
-            }
-        }
-
-        $this->validator->validateInvitation($data, false);
+        return $this->validator->validateOnCreate($data);
     }
 
 

@@ -9,7 +9,8 @@ use Manager\PhotoManager;
 use Model\Neo4j\GraphManager;
 use Model\User\Filters\FilterUsersManager;
 use Manager\UserManager;
-use Service\Validator;
+use Service\Validator\GroupValidator;
+use Service\Validator\ValidatorInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -42,7 +43,7 @@ class GroupModel
     protected $dispatcher;
 
     /**
-     * @var Validator
+     * @var GroupValidator
      */
     protected $validator;
 
@@ -57,9 +58,10 @@ class GroupModel
      * @param UserManager $um
      * @param PhotoManager $pm
      * @param FilterUsersManager $filterUsersManager
-     * @param Validator $validator
+     * @param GroupValidator|ValidatorInterface $validator
+     * @param $invitationImagesRoot
      */
-    public function __construct(GraphManager $gm, EventDispatcher $dispatcher, UserManager $um, PhotoManager $pm, FilterUsersManager $filterUsersManager, Validator $validator, $invitationImagesRoot)
+    public function __construct(GraphManager $gm, EventDispatcher $dispatcher, UserManager $um, PhotoManager $pm, FilterUsersManager $filterUsersManager, GroupValidator $validator, $invitationImagesRoot)
     {
         $this->gm = $gm;
         $this->um = $um;
@@ -103,9 +105,11 @@ class GroupModel
             ->setParameter('userId', $userId)
             ->optionalMatch('(g)-[:LOCATION]->(l:Location)')
             ->optionalMatch('(g)-[:HAS_FILTER]->(f:FilterUsers)')
+            ->with('g', 'l', 'f')
             ->optionalMatch('(g)-[b:BELONGS_TO]-(:User)')
+            ->with('g', 'l', 'f', 'count(b) AS usersCount')
             ->optionalMatch('(g)<-[:HAS_GROUP]-(i:Invitation)')
-            ->returns('g', 'l', 'f', 'collect(i) AS invitations', 'count(b) AS usersCount');
+            ->returns('g', 'l', 'f', 'usersCount', 'collect(i) AS invitations');
 
         $query = $qb->getQuery();
 
@@ -200,13 +204,32 @@ class GroupModel
         return $this->build($row);
     }
 
-    public function validate($data) {
-        $this->validator->validateGroup($data);
+    public function validateOnCreate(array $data)
+    {
+        $this->validator->validateOnCreate($data);
+    }
+
+    public function validateOnUpdate(array $data, $groupId)
+    {
+        $data['groupId'] = $groupId;
+        $this->validator->validateOnUpdate($data);
+    }
+
+    public function validateOnDelete($groupId, $userId)
+    {
+        $data = array('groupId' => $groupId, 'userId' => $userId);
+        $this->validator->validateOnDelete($data);
+    }
+
+    protected function validateOnAddUser($groupId, $userId)
+    {
+        $data = array('groupId' => $groupId, 'userId' => $userId);
+        $this->validator->validateOnAddUser($data);
     }
 
     public function create(array $data)
     {
-        $this->validate($data);
+        $this->validateOnCreate($data);
 
         $qb = $this->gm->createQueryBuilder();
 
@@ -283,7 +306,7 @@ class GroupModel
 
     public function update($id, array $data)
     {
-        $this->validate($data);
+        $this->validateOnUpdate($data, $id);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(g:Group)')
@@ -420,8 +443,7 @@ class GroupModel
 
     public function addUser($id, $userId)
     {
-        $this->validator->validateGroupId($id);
-        $this->validator->validateUserId($userId);
+        $this->validateOnAddUser($id, $userId);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(g:Group)')
@@ -449,8 +471,7 @@ class GroupModel
 
     public function addGhostUser($id, $userId)
     {
-        $this->validator->validateGroupId($id);
-        $this->validator->validateUserId($userId);
+        $this->validateOnAddUser($id, $userId);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(g:Group)')
@@ -470,8 +491,7 @@ class GroupModel
 
     public function removeUser($id, $userId)
     {
-        $this->validator->validateGroupId($id);
-        $this->validator->validateUserId($userId);
+        $this->validateOnDelete($id, $userId);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(g:Group)')
@@ -698,6 +718,7 @@ class GroupModel
         $group = Group::createFromNode($groupNode);
         $group->setLocation($this->buildLocation($locationNode));
         $group->setDate($groupNode->getProperty('date'));
+        $group->setHtml($groupNode->getProperty('html'));
         $photo = $this->pm->createGroupPhoto();
         if ($groupNode->getProperty('image_path')) {
             $photo->setPath($groupNode->getProperty('image_path'));

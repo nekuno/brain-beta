@@ -10,7 +10,7 @@ use HWI\Bundle\OAuthBundle\DependencyInjection\Configuration;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 use Model\User\Token\TokenStatus\TokenStatusManager;
-use Service\Validator;
+use Service\Validator\TokenValidator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -35,9 +35,12 @@ class TokensModel
 
     protected $tokenStatusManager;
 
+    /**
+     * @var TokenValidator
+     */
     protected $validator;
 
-    public function __construct(EventDispatcher $dispatcher, GraphManager $graphManager, TokenStatusManager $tokenStatusManager, Validator $validator)
+    public function __construct(EventDispatcher $dispatcher, GraphManager $graphManager, TokenStatusManager $tokenStatusManager, TokenValidator $validator)
     {
         $this->dispatcher = $dispatcher;
         $this->gm = $graphManager;
@@ -111,28 +114,6 @@ class TokensModel
     }
 
     /**
-     * @param int $resourceId
-     * @param string $resourceOwner
-     * @return boolean
-     */
-    public function exists($resourceId, $resourceOwner)
-    {
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(token:Token)')
-            ->where('token.resourceId = { resourceId }', 'token.resourceOwner = { resourceOwner }')
-            ->setParameter('resourceId', $resourceId)
-            ->setParameter('resourceOwner', $resourceOwner)
-            ->returns('token')
-            ->limit(1);
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        return count($result) > 0;
-    }
-
-    /**
      * @param int $userId
      * @param string $resourceOwner
      * @param array $data
@@ -141,24 +122,8 @@ class TokensModel
      */
     public function create($userId, $resourceOwner, array $data)
     {
-        if (!isset($data['resourceId'])) {
-            throw new ValidationException(array('resourceId' => array('resourceId must be sent')));
-        } elseif ($this->exists($data['resourceId'], $resourceOwner)) {
-            throw new ValidationException(array('resourceId' => array('Token already exists')));
-        }
-
-        list($userNode, $tokenNode) = $this->getUserAndTokenNodesById($userId, $resourceOwner);
-
-        if (!($userNode instanceof Node)) {
-            throw new NotFoundHttpException('User not found');
-        }
-
-        if ($tokenNode instanceof Node) {
-            throw new MethodNotAllowedHttpException(array('PUT'), 'Token already exists');
-        }
-
         $data['resourceOwner'] = $resourceOwner;
-        $this->validate($data, $userId);
+        $this->validateOnCreate($data, $userId);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(user:User)')
@@ -195,16 +160,8 @@ class TokensModel
     {
         list($userNode, $tokenNode) = $this->getUserAndTokenNodesById($id, $resourceOwner);
 
-        if (!($userNode instanceof Node)) {
-            throw new NotFoundHttpException('User not found');
-        }
-
-        if (!($tokenNode instanceof Node)) {
-            throw new NotFoundHttpException('Token not found');
-        }
-
         $data['resourceOwner'] = $resourceOwner;
-        $this->validate($data, $id);
+        $this->validateOnUpdate($data, $id);
 
         $this->saveTokenData($tokenNode, $data);
 
@@ -218,17 +175,7 @@ class TokensModel
      */
     public function remove($userId, $resourceOwner)
     {
-
-        list($userNode, $tokenNode) = $this->getUserAndTokenNodesById($userId, $resourceOwner);
-
-        if (!($userNode instanceof Node)) {
-            throw new NotFoundHttpException('User not found');
-        }
-
-        if (!($tokenNode instanceof Node)) {
-            throw new NotFoundHttpException('Token not found');
-        }
-
+        $this->validateOnDelete($userId, $resourceOwner);
         $token = $this->getById($userId, $resourceOwner);
 
         $qb = $this->gm->createQueryBuilder();
@@ -254,22 +201,28 @@ class TokensModel
 
     /**
      * @param array $data
-     * @param string $id
+     * @param string $userId
      * @throws ValidationException
      */
-    public function validate(array $data, $id = null)
+    public function validateOnCreate(array $data, $userId = null)
     {
-        if (!$id && !isset($data['resourceId'])) {
-            throw new ValidationException(array('resourceId' => array('ResourceId is required')));
+        if ($userId){
+            $data['userId'] = $userId;
         }
-        $this->validator->validateToken($data, $id, $this->getChoices());
+
+        $this->validator->validateOnCreate($data);
     }
 
-    private function getChoices()
+    public function validateOnUpdate(array $data, $userId)
     {
-        return array(
-            'resourceOwner' => self::getResourceOwners(),
-        );
+        $data['userId'] = $userId;
+        $this->validator->validateOnUpdate($data);
+    }
+
+    public function validateOnDelete($userId, $resourceOwner)
+    {
+        $data = array('userId' => $userId, 'resourceOwner' => $resourceOwner);
+        $this->validator->validateOnDelete($data);
     }
 
     public function getByLikedUrl($url, $resource)

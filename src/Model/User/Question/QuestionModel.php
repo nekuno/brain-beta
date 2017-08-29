@@ -7,8 +7,7 @@ use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
-use Manager\UserManager;
-use Service\Validator;
+use Service\Validator\QuestionValidator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class QuestionModel
@@ -20,15 +19,15 @@ class QuestionModel
     protected $gm;
 
     /**
-     * @var Validator
+     * @var QuestionValidator
      */
     protected $validator;
 
     /**
      * @param GraphManager $gm
-     * @param Validator $validator
+     * @param QuestionValidator $validator
      */
-    public function __construct(GraphManager $gm, Validator $validator)
+    public function __construct(GraphManager $gm, QuestionValidator $validator)
     {
         $this->gm = $gm;
         $this->validator = $validator;
@@ -36,7 +35,6 @@ class QuestionModel
 
     public function getAll($locale, $skip = null, $limit = null)
     {
-
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(q:Question)')
             ->where("EXISTS(q.text_$locale)")
@@ -215,11 +213,11 @@ class QuestionModel
 
     /**
      * @param array $data
-     * @return \Everyman\Neo4j\Query\ResultSet
+     * @return array
      */
     public function create(array $data)
     {
-        $this->validate($data);
+        $this->validateOnCreate($data);
 
         $locale = $data['locale'];
         $data['userId'] = (integer)$data['userId'];
@@ -251,8 +249,7 @@ class QuestionModel
 
     public function update(array $data)
     {
-
-        $this->validate($data, false);
+        $this->validateOnUpdate($data);
 
         $data['questionId'] = (integer)$data['questionId'];
         $locale = $data['locale'];
@@ -477,25 +474,20 @@ class QuestionModel
 
     /**
      * @param array $data
-     * @param bool $userRequired
      * @throws ValidationException
      */
-    public function validate(array $data, $userRequired = true)
+    public function validateOnCreate(array $data)
     {
-        $choices = $this->getChoices();
-        $this->validator->validateQuestion($data, $choices, $userRequired);
+        $this->validator->validateOnCreate($data);
     }
 
-    protected function getChoices()
+    public function validateOnUpdate(array $data)
     {
-        return array(
-            'locale' => array('en', 'es'),
-        );
+        $this->validator->validateOnUpdate($data);
     }
 
     public function build(Row $row, $locale)
     {
-
         $keys = array('question', 'answers');
         foreach ($keys as $key) {
             if (!$row->offsetExists($key)) {

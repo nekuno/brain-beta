@@ -8,6 +8,7 @@ use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\AbstractYoutubeProcesso
 use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\YoutubeVideoProcessor;
 use ApiConsumer\ResourceOwner\GoogleResourceOwner;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
+use Model\Link\Video;
 use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
 class YoutubeVideoProcessorTest extends AbstractProcessorTest
@@ -123,29 +124,18 @@ class YoutubeVideoProcessorTest extends AbstractProcessorTest
 
     public function getResponseHydration()
     {
+        $expected = new Video();
+        $expected->setTitle('Tu peor error');
+        $expected->setDescription('En Mawi');
+        $expected->setEmbedType('youtube');
+        $expected->setEmbedId('zLgY05beCnY');
+
         return array(
             array(
                 $this->getVideoUrl(),
                 $this->getVideoId(),
                 $this->getVideoResponse(),
-                array(
-                    'title' => 'Tu peor error',
-                    'description' => 'En Mawi',
-                    'thumbnail' => null,
-                    'url' => null,
-                    'id' => null,
-                    'tags' => array(),
-                    'created' => null,
-                    'processed' => true,
-                    'language' => null,
-                    'synonymous' => array(),
-                    'imageProcessed' => null,
-                    'additionalLabels' => array('Video'),
-                    'additionalFields' => array(
-                        'embed_type' => 'youtube',
-                        'embed_id' => 'zLgY05beCnY',
-                    )
-                )
+                $expected->toArray(),
             )
         );
     }

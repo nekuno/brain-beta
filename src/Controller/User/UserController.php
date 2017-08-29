@@ -4,7 +4,8 @@ namespace Controller\User;
 
 use Model\Exception\ValidationException;
 use Model\User\Content\ContentPaginatedModel;
-use Model\User\ProfileFilterModel;
+use Model\Metadata\ProfileMetadataManager;
+use Model\Metadata\UserFilterMetadataManager;
 use Model\User\RateModel;
 use Model\User\Content\ContentReportModel;
 use Model\User\UserStatsManager;
@@ -131,20 +132,6 @@ class UserController
         /* @var $model UserManager */
         $model = $app['users.manager'];
         $model->validateUsername(0, $username);
-
-        return $app->json();
-    }
-
-    /**
-     * @param Request $request
-     * @param Application $app
-     * @return JsonResponse
-     */
-    public function validateAction(Request $request, Application $app)
-    {
-        /* @var $model UserManager */
-        $model = $app['users.manager'];
-        $model->validate($request->request->all());
 
         return $app->json();
     }
@@ -647,15 +634,15 @@ class UserController
         $locale = $request->query->get('locale');
         $filters = array();
 
-        /* @var $profileFilterModel ProfileFilterModel */
+        /* @var $profileFilterModel ProfileMetadataManager */
         $profileFilterModel = $app['users.profileFilter.model'];
-        $filters['userFilters'] = $profileFilterModel->getFilters($locale);
+        $filters['userFilters'] = $profileFilterModel->getMetadata($locale);
 
         //user-dependent filters
 
-        /* @var $userFilterModel User\UserFilterModel */
+        /* @var $userFilterModel UserFilterMetadataManager */
         $userFilterModel = $app['users.userFilter.model'];
-        $userFilters = $userFilterModel->getFilters($locale);
+        $userFilters = $userFilterModel->getMetadata($locale);
 
         //TODO: Move this logic to userFilter during/after QS-982 (remove filter logic from GroupModel)
         /* @var $groupModel \Model\User\Group\GroupModel */
@@ -675,9 +662,9 @@ class UserController
 
         // content filters
 
-        /* @var $contentFilterModel User\ContentFilterModel */
+        /* @var $contentFilterModel \Model\Metadata\ContentFilterMetadataManager */
         $contentFilterModel = $app['users.contentFilter.model'];
-        $filters['contentFilters'] = $contentFilterModel->getFilters($locale);
+        $filters['contentFilters'] = $contentFilterModel->getMetadata($locale);
 
         return $app->json($filters, 200);
     }

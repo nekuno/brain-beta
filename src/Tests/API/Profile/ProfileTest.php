@@ -6,14 +6,9 @@ class ProfileTest extends ProfileAPITest
 {
     public function testProfile()
     {
-        $this->assertProfileOptionsCommandDisplay();
         $this->assertGetProfileWithoutCredentialsResponse();
-        $this->createAndLoginUserA();
-        $this->createUserProfile(1);
+        $this->assertGetCategories();
         $this->assertGetNoneExistentProfileResponse();
-        $this->createAndLoginUserB();
-        $this->createUserProfile(2);
-        $this->assertValidateProfileFormat();
         $this->assertGetExistentProfileResponse();
         $this->assertGetOwnProfileResponse();
         $this->assertEditOwnProfileResponse();
@@ -24,45 +19,49 @@ class ProfileTest extends ProfileAPITest
         $this->assetsGetProfileTagsResponse();
     }
 
-    protected function assertProfileOptionsCommandDisplay()
-    {
-        $display = $this->runProfileOptionsCommand();
-        $this->assertRegExp('/\n[^0].*\snew\sprofile\soptions\screated\./', $display);
-    }
-
     protected function assertGetProfileWithoutCredentialsResponse()
     {
-        $response = $this->getOtherProfile(2);
+        $response = $this->getOtherProfile(self::OTHER_USER_ID, null);
         $this->assertStatusCode($response, 401, "Get Profile without credentials");
+    }
+
+    protected function assertGetCategories()
+    {
+        $response = $this->getCategories();
+        $formattedResponse = $this->assertJsonResponse($response, 200, "Get categories status");
+        $this->assertArrayOfType('array', $formattedResponse, 'Categories is array of array');
+        
+        $this->arrayHasKey('profile')->evaluate($formattedResponse, 'Categories has profile key');
+        $this->assertArrayOfType('array', $formattedResponse['profile'], 'Categories profile is array of array');
+        foreach ($formattedResponse['profile'] as $item) {
+            $this->assertHasLocaleLabel($item, 'Categories profile field');
+        }
+
+        $this->arrayHasKey('filters')->evaluate($formattedResponse, 'Categories has filter key');
+        $this->assertArrayOfType('array', $formattedResponse['filters'], 'Categories filter is array of array');
+        foreach ($formattedResponse['filters'] as $item) {
+            $this->assertHasLocaleLabel($item, 'Categories filters field');
+        }
     }
 
     protected function assertGetNoneExistentProfileResponse()
     {
-        $response = $this->getOtherProfile(2);
+        $response = $this->getOtherProfile(self::UNDEFINED_USER_ID);
         $this->assertStatusCode($response, 404, "Get none-existent profile");
-    }
-
-    protected function assertValidateProfileFormat()
-    {
-        $profileData = $this->getProfileFixtures();
-        $response = $this->validateProfile($profileData);
-        $this->assertStatusCode($response, 200, "Bad response on validate profile");
     }
 
     protected function assertGetExistentProfileResponse()
     {
-        $userData = $this->getUserAFixtures();
-        $this->loginUser($userData);
-        $response = $this->getOtherProfile(2);
+        $response = $this->getOtherProfile(self::OTHER_USER_ID);
         $formattedResponse = $this->assertJsonResponse($response, 200, "Get existent profile");
-        $this->assertProfileFormat($formattedResponse, "Bad get other profile response");
+        $this->assertProfileFormat($formattedResponse);
     }
 
     protected function assertGetOwnProfileResponse()
     {
         $response = $this->getOwnProfile();
         $formattedResponse = $this->assertJsonResponse($response, 200, "Get own profile");
-        $this->assertProfileFormat($formattedResponse, "Bad own profile response");
+        $this->assertProfileFormat($formattedResponse);
     }
 
     protected function assertEditOwnProfileResponse()
@@ -70,12 +69,12 @@ class ProfileTest extends ProfileAPITest
         $profileData = $this->getEditedProfileFixtures();
         $response = $this->editProfile($profileData);
         $formattedResponse = $this->assertJsonResponse($response, 200, "Edit Profile");
-        $this->assertEditedProfileFormat($formattedResponse, "Bad Profile response on edit profile A");
+        $this->assertEditedProfileFormat($formattedResponse);
 
         $profileData = $this->getProfileFixtures();
         $response = $this->editProfile($profileData);
         $formattedResponse = $this->assertJsonResponse($response, 200, "Edit Profile");
-        $this->assertProfileFormat($formattedResponse, "Bad Profile response on edit profile A");
+        $this->assertProfileFormat($formattedResponse);
     }
 
     protected function assertValidationErrorsResponse()
@@ -111,21 +110,21 @@ class ProfileTest extends ProfileAPITest
         $profileData = $this->getEditedComplexProfileFixtures();
         $response = $this->editProfile($profileData);
         $formattedResponse = $this->assertJsonResponse($response, 200, "Edit Complex ProfileA");
-        $this->assertEditedComplexProfileFormat($formattedResponse, "Bad complex profile response on edit profile A");
+        $this->assertEditedComplexProfileFormat($formattedResponse);
     }
 
     protected function assetsGetProfileMetadataResponse()
     {
         $response = $this->getProfileMetadata();
         $formattedResponse = $this->assertJsonResponse($response, 200, "Get Profile metadata");
-        $this->assertGetProfileMetadataFormat($formattedResponse, "Bad response on get profile metadata");
+        $this->assertGetProfileMetadataFormat($formattedResponse);
     }
 
     protected function assetsGetProfileFiltersResponse()
     {
         $response = $this->getProfileFilters();
         $formattedResponse = $this->assertJsonResponse($response, 200, "Get Profile filters");
-        $this->assertGetProfileFiltersFormat($formattedResponse, "Bad response on get profile filters");
+        $this->assertGetProfileFiltersFormat($formattedResponse);
     }
 
     protected function assetsGetProfileTagsResponse()
@@ -134,7 +133,7 @@ class ProfileTest extends ProfileAPITest
         $formattedResponse = $this->assertJsonResponse($response, 200, "Get Profile tags for profession type");
         $this->assertArrayHasKey('items', $formattedResponse, "Profile tag has not items key");
         $this->assertArrayHasKey(0, $formattedResponse['items'], "Profile tag items has not 0 key");
-        $this->assertGetProfileTagFormat($formattedResponse['items'][0], 'writer', "Bad response on get profile tags for profession type");
+        $this->assertGetProfileTagFormat($formattedResponse['items'][0], 'writer');
     }
 
     protected function assertProfileFormat($profile)
@@ -307,19 +306,59 @@ class ProfileTest extends ProfileAPITest
 
     protected function assertGetProfileMetadataFormat($metadata)
     {
+        $this->assertArrayOfType('array', $metadata, "Metadata is not an array of arrays");
         $this->assertArrayHasKey('birthday', $metadata, "Metadata has not birthday key");
         $this->assertArrayHasKey('location', $metadata, "Metadata has not location key");
         $this->assertArrayHasKey('gender', $metadata, "Metadata has not gender key");
         $this->assertArrayHasKey('orientation', $metadata, "Metadata has not orientation key");
         $this->assertArrayHasKey('interfaceLanguage', $metadata, "Metadata has not interfaceLanguage key");
+        foreach ($metadata as $field)
+        {
+            $this->assertArrayHasKey('label', $field, "Metadata does not have label key");
+            $this->assertArrayHasKey('labelEdit', $field, "Metadata does not have labelEdit key");
+            $this->assertArrayHasKey('required', $field, "Metadata does not have required key");
+            $this->assertArrayHasKey('editable', $field, "Metadata does not have editable key");
+            $this->assertArrayHasKey('type', $field, "Metadata does not have type key");
+            if (in_array($field['type'], array('choice', 'multiple_choices', 'tags_and_choice'))){
+                $this->assertArrayHasKey('choices', $field, 'Metadata does not have required choices');
+                $this->assertArrayOfType('string', $field['choices'], 'Metadata choices are not strings');
+            };
+            if ($field['type'] === 'double_choice'){
+                $this->assertArrayHasKey('doubleChoices', $field, 'Metadata does not have required double choices');
+                $this->assertArrayOfType('array', $field['doubleChoices'], 'Metadata choices are not arrays');
+                foreach ($field['doubleChoices'] as $doubleChoice){
+                    $this->assertArrayOfType('string', $doubleChoice ,'Metadata double choices are not strings');
+                }
+            }
+        }
     }
 
     protected function assertGetProfileFiltersFormat($metadata)
     {
-        foreach ($metadata as $value) {
-            $this->assertArrayHasKey('label', $value, "Filters has not label key");
-            $this->assertArrayNotHasKey('labelFilter', $value, "Filters has labelFilter key");
-            $this->assertArrayNotHasKey('filterable', $value, "Filters has filterable key");
+        $this->assertArrayOfType('array', $metadata, "Metadata is not an array of arrays");
+        $this->assertArrayHasKey('birthday', $metadata, "Metadata has not birthday key");
+        $this->assertArrayHasKey('location', $metadata, "Metadata has not location key");
+        $this->assertNotContains('gender', $metadata, "Filter metadata has gender key");
+        $this->assertArrayHasKey('orientation', $metadata, "Metadata has not orientation key");
+        $this->assertNotContains('interfaceLanguage', $metadata, "Filter metadata has interfaceLanguage key");
+        foreach ($metadata as $field)
+        {
+            $this->assertArrayHasKey('label', $field, "Metadata does not have label key");
+            $this->assertArrayHasKey('labelEdit', $field, "Metadata does not have labelEdit key");
+            $this->assertArrayHasKey('required', $field, "Metadata does not have required key");
+            $this->assertArrayHasKey('editable', $field, "Metadata does not have editable key");
+            $this->assertArrayHasKey('type', $field, "Metadata does not have type key");
+            if (in_array($field['type'], array('choice', 'multiple_choices', 'tags_and_choice'))){
+                $this->assertArrayHasKey('choices', $field, 'Metadata does not have required choices');
+                $this->assertArrayOfType('string', $field['choices'], 'Metadata choices are not strings');
+            };
+            if ($field['type'] === 'double_choice'){
+                $this->assertArrayHasKey('doubleChoices', $field, 'Metadata does not have required double choices');
+                $this->assertArrayOfType('array', $field['doubleChoices'], 'Metadata choices are not arrays');
+                foreach ($field['doubleChoices'] as $doubleChoice){
+                    $this->assertArrayOfType('string', $doubleChoice ,'Metadata double choices are not strings');
+                }
+            }
         }
    }
 
@@ -363,12 +402,6 @@ class ProfileTest extends ProfileAPITest
         $this->assertValidationErrorFormat($exception);
         $this->assertArrayHasKey('interfaceLanguage', $exception['validationErrors'], "Profile has not interfaceLanguage key");
         $this->assertContains('Option with value "none-existent" is not valid, possible values are', $exception['validationErrors']['interfaceLanguage'][0], "interfaceLanguage key is not Option with value \"none-existent\" is not valid, possible values are");
-    }
-
-    private function createUserProfile($userId = 1)
-    {
-        $profileData = $this->getProfileFixtures();
-        $this->editProfile($profileData, $userId);
     }
 
     private function getProfileFixtures()

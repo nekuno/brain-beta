@@ -173,10 +173,9 @@ profile:
         label: &zodiacSignLabel
             en: 'Zodiac sign'
             es: 'Signo del zodíaco'
-        labelFilter: &zodiacSignLabelFilter
+        labelEdit: &zodiacSignLabelEdit
             en: 'Zodiac'
             es: 'Zodiaco'
-        labelEdit: *zodiacSignLabelFilter
     height:
         type: integer
         min: 50
@@ -256,6 +255,7 @@ profile:
             en: 'Want to be found in searches by gender'
             es: 'Quiero salir en búsquedas por género'
         notErasable: true
+        hidden: true
     descriptiveGender:
         type: multiple_choices
         label: &descriptiveGenderLabel
@@ -348,7 +348,6 @@ profile:
         notErasable: true
     orientationRequired:
         type: boolean
-        filterable: false
         label:
             en: 'Orientation required'
             es: 'Orientación obligatoria'
@@ -625,139 +624,140 @@ tokens:
         required: false
         type: integer
 
-filters:
-    content:
-        type:
-            type: multiple_choices
-            max_choices: 5
-            label:
-                en: 'Type of content (Music, images, etc…)'
-                es: 'Tipo de contenido (Música, imágenes, etc…)'
-        tags:
-            type: tags
-            label:
-                en: 'Keywords'
-                es: 'Palabras clave'
-    user:
-        order:
-            type: order
-            label:
-                en: 'Order'
-                es: 'Orden'
-        groups:
-            type: multiple_choices
-            label:
-                en: 'Badges'
-                es: 'Insignias'
-        compatibility:
-            type: integer
-            min: 50
-            max: 100
-            label:
-                en: 'Minimum compatibility (%)'
-                es: 'Compatibilidad mínima (%)'
-        similarity:
-            type: integer
-            min: 50
-            max: 100
-            label:
-                en: 'Minimum similarity (%)'
-                es: 'Similaridad mínima (%)'
-    profile:
-        birthday:
-            type: birthday_range
-            label:
-                en: 'Age'
-                es: 'Edad'
-            min: 14
-            max: 99
-        zodiacSign:
-            type: multiple_choices
-            label: *zodiacSignLabelFilter
-        height:
-            type: integer_range
-            min: 50
-            max: 300
-            label: *heightLabel
-        sons:
-            type: double_multiple_choices
-            label: *sonsLabel
-            doubleChoices: *sonsDoubleChoices
-        language:
-            type: tags_and_multiple_choices
-            label: *languageLabel
-            choiceLabel: *languageChoiceLabel
-            choices: *languageChoices
+content_filter:
+    type:
+        type: multiple_choices
+        max_choices: 5
+        label:
+            en: 'Type of content (Music, images, etc…)'
+            es: 'Tipo de contenido (Música, imágenes, etc…)'
+    tags:
+        type: tags
+        label:
+            en: 'Keywords'
+            es: 'Palabras clave'
+
+user_filter:
+    order:
+        type: order
+        label:
+            en: 'Order'
+            es: 'Orden'
+    groups:
+        type: multiple_choices
+        label:
+            en: 'Badges'
+            es: 'Insignias'
+    compatibility:
+        type: integer
+        min: 50
+        max: 100
+        label:
+            en: 'Minimum compatibility (%)'
+            es: 'Compatibilidad mínima (%)'
+    similarity:
+        type: integer
+        min: 50
+        max: 100
+        label:
+            en: 'Minimum similarity (%)'
+            es: 'Similaridad mínima (%)'
+
+profile_filter:
+    birthday:
+        type: birthday_range
+        label:
+            en: 'Age'
+            es: 'Edad'
+        min: 14
+        max: 99
+    zodiacSign:
+        type: multiple_choices
+        label: *zodiacSignLabelEdit
+    height:
+        type: integer_range
+        min: 50
+        max: 300
+        label: *heightLabel
+    sons:
+        type: double_multiple_choices
+        label: *sonsLabel
+        doubleChoices: *sonsDoubleChoices
+    language:
+        type: tags_and_multiple_choices
+        label: *languageLabel
+        choiceLabel: *languageChoiceLabel
+        choices: *languageChoices
 #        gender:
 #            type: multiple_choices
 #            label: *genderLabel
-        descriptiveGender:
-            type: multiple_choices
-            label: *descriptiveGenderLabel
-        hairColor:
-            type: multiple_choices
-            label: *hairColorLabel
-        ethnicGroup:
-            type: multiple_choices
-            label: *ethnicGroupLabel
-        complexion:
-            type: multiple_choices
-            label: *complexionLabel
-        eyeColor:
-            type: multiple_choices
-            label: *eyeColorLabel
-        civilStatus:
-            type: multiple_choices
-            label: *civilStatusLabel
-        income:
-            type: multiple_choices
-            label: *incomeLabel
-        pets:
-            type: multiple_choices
-            label: *petsLabel
-        smoke:
-            type: multiple_choices
-            label: *smokeLabel
-        alcohol:
-            type: multiple_choices
-            label: *alcoholLabel
-        drugs:
-            type: multiple_choices
-            label: *drugsLabel
-        diet:
-            type: multiple_choices
-            label: *dietLabel
-        orientation:
-            type: multiple_choices
-            label: *orientationLabel
-        relationshipInterest:
-            type: multiple_choices
-            label: *relationshipInterestLabel
-        interfaceLanguage:
-            type: multiple_choices
-            label: *interfaceLanguageLabel
-        religion:
-            type: double_multiple_choices
-            label: *religionLabel
-            doubleChoices: *religionDoubleChoices
-        allergy:
-            type: tags
-            label: *allergyLabel
-        handicap:
-            type: tags
-            label: *handicapLabel
-        ideology:
-            type: tags
-            label: *ideologyLabel
-        profession:
-            type: tags
-            label: *professionLabel
-        education:
-            type: tags
-            label: *educationLabel
-        location:
-            type: location_distance
-            label: *locationLabel
+    descriptiveGender:
+        type: multiple_choices
+        label: *descriptiveGenderLabel
+    hairColor:
+        type: multiple_choices
+        label: *hairColorLabel
+    ethnicGroup:
+        type: multiple_choices
+        label: *ethnicGroupLabel
+    complexion:
+        type: multiple_choices
+        label: *complexionLabel
+    eyeColor:
+        type: multiple_choices
+        label: *eyeColorLabel
+    civilStatus:
+        type: multiple_choices
+        label: *civilStatusLabel
+    income:
+        type: multiple_choices
+        label: *incomeLabel
+    pets:
+        type: multiple_choices
+        label: *petsLabel
+    smoke:
+        type: multiple_choices
+        label: *smokeLabel
+    alcohol:
+        type: multiple_choices
+        label: *alcoholLabel
+    drugs:
+        type: multiple_choices
+        label: *drugsLabel
+    diet:
+        type: multiple_choices
+        label: *dietLabel
+    orientation:
+        type: multiple_choices
+        label: *orientationLabel
+    relationshipInterest:
+        type: multiple_choices
+        label: *relationshipInterestLabel
+    interfaceLanguage:
+        type: multiple_choices
+        label: *interfaceLanguageLabel
+    religion:
+        type: double_multiple_choices
+        label: *religionLabel
+        doubleChoices: *religionDoubleChoices
+    allergy:
+        type: tags
+        label: *allergyLabel
+    handicap:
+        type: tags
+        label: *handicapLabel
+    ideology:
+        type: tags
+        label: *ideologyLabel
+    profession:
+        type: tags
+        label: *professionLabel
+    education:
+        type: tags
+        label: *educationLabel
+    location:
+        type: location_distance
+        label: *locationLabel
 
 questions:
     locale:

@@ -176,7 +176,6 @@ class Fixtures
             $this->um->create(
                 array(
                     'username' => 'user' . $i,
-                    'plainPassword' => 'userpass',
                     'email' => 'user' . $i . '@nekuno.com',
                 )
             );

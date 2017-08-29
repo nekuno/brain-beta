@@ -1,178 +1,67 @@
 <?php
 
-namespace Service;
+namespace Service\Validator;
 
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
-use Model\User\ContentFilterModel;
-use Model\User\ProfileFilterModel;
-use Model\User\UserFilterModel;
 
-class Validator
+class Validator implements ValidatorInterface
 {
     const MAX_TAGS_AND_CHOICE_LENGTH = 15;
     const LATITUDE_REGEX = '/^-?([1-8]?[0-9]|[1-9]0)\.{1}\d+$/';
     const LONGITUDE_REGEX = '/^-?([1]?[0-7][1-9]|[1]?[1-8][0]|[1-9]?[0-9])\.{1}\d+$/';
 
+    protected $existenceValidator;
+
     /**
-     * @var array
+     * @var array Section from yml config file, chosen by Factory
      */
     protected $metadata;
 
-    /**
-     * @var ProfileFilterModel
-     */
-    protected $profileFilterModel;
-
-    /**
-     * @var GraphManager
-     */
-    protected $graphManager;
-
-    /**
-     * @var UserFilterModel
-     */
-    protected $userFilterModel;
-
-    /**
-     * @var ContentFilterModel
-     */
-    protected $contentFilterModel;
-
-    public function __construct(
-        GraphManager $graphManager,
-        ProfileFilterModel $profileFilterModel,
-        UserFilterModel $userFilterModel,
-        ContentFilterModel $contentFilterModel,
-        array $metadata
-    ) {
+    public function __construct(GraphManager $graphManager, array $metadata)
+    {
         $this->metadata = $metadata;
-        $this->profileFilterModel = $profileFilterModel;
-        $this->userFilterModel = $userFilterModel;
-        $this->contentFilterModel = $contentFilterModel;
-        $this->graphManager = $graphManager;
+        $this->existenceValidator = new ExistenceValidator($graphManager);
     }
 
-    public function validateUserId($userId)
+    public function validateOnCreate($data)
     {
-        $errors = array('userId' => array());
+        $metadata = $this->metadata;
+        $this->validateMetadata($data, $metadata);
+    }
 
+    public function validateOnUpdate($data)
+    {
+        $metadata = $this->metadata;
+        $this->validateMetadata($data, $metadata);
+    }
+
+    public function validateOnDelete($data)
+    {
+
+    }
+
+    public function validateUserId($userId, $desired = true)
+    {
         if (!is_int($userId)) {
-            $errors['userId'][] = array('User Id must be an integer');
-        }
-
-        $qb = $this->graphManager->createQueryBuilder();
-
-        $qb->match('(u:User)')
-            ->where('u.qnoow_id = {userId}')
-            ->setParameter('userId', $userId);
-        $qb->returns('u.qnoow_id');
-
-        $result = $qb->getQuery()->getResultSet();
-
-        if ($result->count() == 0) {
-            $errors['userId'][] = array(sprintf('User with id %d not found', $userId));
-        }
-
-        if (empty($errors['userId'])){
-            unset($errors['userId']);
+            $errors = array('userId' => array('User Id must be an integer'));
+        } else {
+            $errors = array('userId' => $this->existenceValidator->validateUserId($userId, $desired));
         }
 
         $this->throwException($errors);
     }
 
-    public function validateGroupId($groupId)
+    protected function validateUserInData(array $data, $userIdRequired = true)
     {
-        $errors = array('groupId' => array());
-
-        if (!is_int($groupId)) {
-            $errors['groupId'][] = array('Group Id must be an integer');
-        }
-
-        $qb = $this->graphManager->createQueryBuilder();
-
-        $qb->match('(g:Group)')
-            ->where('id(g) = {groupId}')
-            ->setParameter('groupId', $groupId);
-        $qb->returns('id(g)');
-
-        $result = $qb->getQuery()->getResultSet();
-
-        if ($result->count() == 0) {
-            $errors['groupId'][] = array(sprintf('Group with id %d not found', $groupId));
-        }
-
-        if (empty($errors['groupId'])){
-            unset($errors['groupId']);
-        }
-
-        $this->throwException($errors);
-    }
-
-    public function validateEditThread(array $data, array $choices = array())
-    {
-        return $this->validate($data, $this->metadata['threads'], $choices);
-    }
-
-    public function validateGroup(array $data)
-    {
-        $this->validate($data, $this->metadata['groups']);
-
-        $errors = array();
-        if (isset($data['followers']) && $data['followers']) {
-            if (!is_bool($data['followers'])) {
-                $errors['followers'] = array('"followers" must be boolean');
-            }
-            if (!isset($data['influencer_id'])) {
-                $errors['influencer_id'] = array('"influencer_id" is required for followers groups');
-            } elseif (!is_int($data['influencer_id'])) {
-                $errors['influencer_id'] = array('"influencer_id" must be integer');
-            }
-            if (!isset($data['min_matching'])) {
-                $errors['min_matching'] = array('"min_matching" is required for followers groups');
-            } elseif (!is_int($data['min_matching'])) {
-                $errors['min_matching'] = array('"min_matching" must be integer');
-            }
-            if (!isset($data['type_matching'])) {
-                $errors['type_matching'] = array('"type_matching" is required for followers groups');
-            } elseif ($data['type_matching'] !== 'similarity' && $data['type_matching'] !== 'compatibility') {
-                $errors['type_matching'] = array('"type_matching" must be "similarity" or "compatibility"');
-            }
-        }
-
-        $this->throwException($errors);
-    }
-
-    public function validateInvitation(array $data, $invitationIdRequired = false)
-    {
-        $metadata = $this->metadata['invitations'];
-
-        if ($invitationIdRequired) {
-            $metadata['invitationId']['required'] = true;
-        }
-
-        if (isset($data['groupId'])) {
-            $groupId = $data['groupId'];
-            if (!(is_int($groupId) || is_double($groupId))) {
-                throw new ValidationException(array('groupId' => array('GroupId must be an integer')));
-            }
-            $this->validateGroupId($groupId);
+        $isMissing = $userIdRequired && (!isset($data['userId']) || null === $data['userId']);
+        if ($isMissing) {
+            $this->throwException(array('userId', 'User id is required for this action'));
         }
 
         if (isset($data['userId'])) {
             $this->validateUserId($data['userId']);
         }
-
-        $this->validate($data, $metadata);
-    }
-
-    public function validateToken(array $data, $userId = null, array $choices = array())
-    {
-        $this->validate($data, $this->metadata['tokens'], $choices);
-
-        $this->validateTokenResourceId($data['resourceId'], $userId, $data['resourceOwner']);
-
-        $this->validateExtraFields($data, $this->metadata['tokens']);
     }
 
     protected function validateExtraFields($data, $metadata)
@@ -189,108 +78,17 @@ class Validator
         $this->throwException($errors);
     }
 
-    protected function validateTokenResourceId($resourceId, $userId, $resourceOwner)
+    protected function validateMetadata($data, $metadata, $dataChoices = array())
     {
         $errors = array();
-
-        $conditions = array('token.resourceOwner = { resourceOwner }', 'token.resourceId = { resourceId }');
-        if (null !== $userId) {
-            $conditions[] = 'user.qnoow_id <> { id }';
-        }
-        $qb = $this->graphManager->createQueryBuilder();
-        $qb->match('(user:User)<-[:TOKEN_OF]-(token:Token)')
-            ->where($conditions)
-            ->setParameter('id', (integer)$userId)
-            ->setParameter('resourceId', $resourceId)
-            ->setParameter('resourceOwner', $resourceOwner)
-            ->returns('user');
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        if ($result->count() > 0) {
-            $errors = array('resourceId' => array('There is other user with the same resourceId already registered'));
-        }
-
-        $this->throwException($errors);
-    }
-
-    public function validateTokenStatus($parameter)
-    {
-        $data = array('boolean' => $parameter);
-        $metadata = array('boolean' => array('type' => 'integer', 'min' => 0, 'max' => 1));
-        return $this->validate($data, $metadata);
-    }
-
-    public function validateQuestion(array $data, array $choices = array(), $userIdRequired = false)
-    {
-        $this->validate($data, $this->metadata['questions'], $choices);
-
-        $this->validateUserInData($data, $userIdRequired);
-
-        foreach ($data['answers'] as $answer) {
-            if (!isset($answer['text']) || !is_string($answer['text'])) {
-                $this->throwException(array('answers', 'Each answer must be an array with key "text" string'));
-            }
-        }
-    }
-
-    public function validateAnswer(array $data)
-    {
-        $this->validate($data, $this->metadata['answers'], array());
-
-        $this->validateUserInData($data);
-    }
-
-    protected function validateUserInData(array $data, $userIdRequired = true)
-    {
-        if ($userIdRequired && !isset($data['userId'])) {
-            $this->throwException(array('userId', 'User id is required for this question'));
-        }
-
-        if (isset($data['userId'])) {
-            $this->validateUserId($data['userId']);
-        }
-    }
-
-    public function validateEditFilterContent(array $data, array $choices = array())
-    {
-        return $this->validate($data, $this->contentFilterModel->getFilters(), $choices);
-    }
-
-    public function validateEditFilterUsers($data, $choices = array())
-    {
-        return $this->validate($data, $this->userFilterModel->getFilters(), $choices);
-    }
-
-    public function validateEditFilterProfile($data, $choices = array())
-    {
-        return $this->validate($data, $this->profileFilterModel->getFilters(), $choices);
-    }
-
-    public function validateRecommendateContent($data, $choices = array())
-    {
-        return $this->validate($data, $this->contentFilterModel->getFilters(), $choices);
-    }
-
-    public function validateDevice($data)
-    {
-        $this->validate($data, $this->metadata['device'], array());
-    }
-
-    protected function validate($data, $metadata, $dataChoices = array())
-    {
-        $errors = array();
-        //TODO: Build $choices as a merge of argument and choices from each metadata
         foreach ($metadata as $fieldName => $fieldData) {
 
             $fieldErrors = array();
+            $choices = $this->buildChoices($dataChoices, $fieldData, $fieldName);
+
             if (isset($data[$fieldName])) {
 
                 $dataValue = $data[$fieldName];
-                $choices = array_merge($dataChoices, isset($fieldData['choices']) ? $fieldData['choices'] : array());
-
                 switch ($fieldData['type']) {
                     case 'text':
                     case 'textarea':
@@ -385,24 +183,22 @@ class Validator
                         break;
 
                     case 'boolean':
-                        if ($dataValue !== true && $dataValue !== false) {
-                            $fieldErrors[] = 'Must be a boolean.';
-                        }
+                        $fieldErrors = $this->validateBoolean($dataValue);
                         break;
 
                     case 'choice':
-                        if (!in_array($dataValue, $choices[$fieldName])) {
-                            $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $dataValue, implode("', '", $choices[$fieldName]));
+                        if (!in_array($dataValue, $choices)) {
+                            $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $dataValue, implode("', '", $choices));
                         }
                         break;
 
                     case 'double_choice':
-                        $thisChoices = $choices[$fieldName] + array('' => '');
+                        $thisChoices = $choices + array('' => '');
                         if (!in_array($dataValue['choice'], $thisChoices)) {
                             $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $dataValue['choice'], implode("', '", $thisChoices));
                         }
                         $doubleChoices = $fieldData['doubleChoices'] + array('' => '');
-                        if (!isset($doubleChoices[$dataValue['choice']]) || isset($dataValue['detail']) && !isset($doubleChoices[$dataValue['choice']][$dataValue['detail']])) {
+                        if (!isset($doubleChoices[$dataValue['choice']]) || isset($dataValue['detail']) && $dataValue['detail'] && !isset($doubleChoices[$dataValue['choice']][$dataValue['detail']])) {
                             $fieldErrors[] = sprintf('Option choice and detail must be set in "%s"', $dataValue['choice']);
                         } elseif ($dataValue['detail'] && !in_array($dataValue['detail'], array_keys($doubleChoices[$dataValue['choice']]))) {
                             $fieldErrors[] = sprintf('Detail with value "%s" is not valid, possible values are "%s"', $dataValue['detail'], implode("', '", array_keys($doubleChoices)));
@@ -413,7 +209,7 @@ class Validator
                             $fieldErrors[] = 'Multiple choices value must be an array';
                             continue;
                         }
-                        $thisChoices = $choices[$fieldName] + array('' => '');
+                        $thisChoices = $choices + array('' => '');
                         $doubleChoices = $fieldData['doubleChoices'] + array('' => '');
                         foreach ($dataValue as $singleDataValue) {
                             if (!in_array($singleDataValue['choice'], $thisChoices)) {
@@ -439,13 +235,13 @@ class Validator
                             if (!isset($tagAndChoice['tag']) || !array_key_exists('choice', $tagAndChoice)) {
                                 $fieldErrors[] = sprintf('Tag and choice must be defined for tags and choice type');
                             }
-                            if (isset($tagAndChoice['choice']) && isset($choices[$fieldName]) && !in_array($tagAndChoice['choice'], array_keys($choices[$fieldName]))) {
+                            if (isset($tagAndChoice['choice']) && $tagAndChoice['choice'] && isset($choices) && !in_array($tagAndChoice['choice'], array_keys($choices))) {
                                 $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $tagAndChoice['choice'], implode("', '", array_keys($choices)));
                             }
                         }
                         break;
                     case 'multiple_choices':
-                        $multipleChoices = $choices[$fieldName];
+                        $multipleChoices = $choices;
                         if (!is_array($dataValue)) {
                             $fieldErrors[] = 'Multiple choices value must be an array';
                             continue;
@@ -537,9 +333,29 @@ class Validator
      */
     protected function throwException($errors)
     {
+        foreach ($errors as $field => $fieldErrors){
+            if (empty($fieldErrors)){
+                unset($errors[$field]);
+            }
+        }
+
         if (count($errors) > 0) {
             throw new ValidationException($errors);
         }
+    }
+
+    /**
+     * @param $dataChoices
+     * @param $fieldData
+     * @param $fieldName
+     * @return array
+     */
+    protected function buildChoices($dataChoices, $fieldData, $fieldName)
+    {
+        $fieldChoices = isset($fieldData['choices']) ? $fieldData['choices'] : array();
+        $thisDataChoices = isset($dataChoices[$fieldName]) ? $dataChoices[$fieldName] : array();
+
+        return array_merge($fieldChoices, $thisDataChoices);
     }
 
     private function validateLocation($dataValue)
@@ -571,6 +387,16 @@ class Validator
         }
 
         return $fieldErrors;
+    }
+
+    protected function validateBoolean($value, $name = null)
+    {
+        $errors = array();
+        if (!is_bool($value)) {
+            $fieldErrors[] = sprintf('%s must be a boolean, %s given', $name, $value);
+        }
+
+        return $errors;
     }
 
 }

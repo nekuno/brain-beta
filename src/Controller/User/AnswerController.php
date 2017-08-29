@@ -74,7 +74,7 @@ class AnswerController
         $questionModel = $app['questionnaire.questions.model'];
         $questionModel->setOrUpdateRankingForQuestion($data['questionId']);
 
-        return $app->json($userAnswer);
+        return $app->json($userAnswer, 201);
     }
 
     /**
@@ -97,25 +97,7 @@ class AnswerController
         $questionModel = $app['questionnaire.questions.model'];
         $questionModel->setOrUpdateRankingForQuestion($data['questionId']);
 
-        return $app->json($userAnswer);
-    }
-
-    /**
-     * @param Request $request
-     * @param Application $app
-     * @param User $user
-     * @return JsonResponse
-     * @throws \Exception
-     */
-    public function validateAction(Request $request, Application $app, User $user)
-    {
-        $data = $request->request->all();
-        $data['userId'] = $user->getId();
-        $data['locale'] = $this->getLocale($request, $app['locale.options']['default']);
-
-        $app['users.answers.model']->validate($data);
-
-        return $app->json(array(), 200);
+        return $app->json($userAnswer, 201);
     }
 
     /**
