@@ -444,7 +444,7 @@ class TestingFixtures
 
     protected function getUserATrackingDataFixtures()
     {
-        return array();
+        return '{}';
     }
 
     protected function getUserBFixtures()
@@ -485,7 +485,7 @@ class TestingFixtures
 
     protected function getUserBTrackingDataFixtures()
     {
-        return array();
+        return '{}';
     }
 
     protected function getGroupFixtures()

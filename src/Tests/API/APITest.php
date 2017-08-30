@@ -51,6 +51,7 @@ abstract class APITest extends WebTestCase
         $bm->executeQuery('DROP TABLE IF EXISTS chat_message');
         $bm->executeQuery('CREATE TABLE chat_message (id INTEGER PRIMARY KEY NOT NULL, text VARCHAR(255) NOT NULL, createdAt DATETIME NOT NULL, readed TINYINT(1) NOT NULL, user_from INT DEFAULT NULL, user_to INT DEFAULT NULL)');
 
+        $app->boot();
         $fixtures = new TestingFixtures($this->app);
         $fixtures->load();
     }
