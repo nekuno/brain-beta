@@ -13,6 +13,7 @@ use Manager\UserManager;
 use Model\User;
 use Service\AuthService;
 use Service\Recommendator;
+use Service\UserStatsService;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -693,10 +694,9 @@ class UserController
      */
     public function statsAction(Application $app, User $user)
     {
-        /* @var $manager UserStatsManager */
-        $manager = $app['users.stats.manager'];
-
-        $stats = $manager->getStats($user->getId());
+        /** @var UserStatsService $statsService */
+        $statsService = $app['userStats.service'];
+        $stats = $statsService->getStats($user->getId());
 
         return $app->json($stats->toArray());
     }
@@ -711,16 +711,10 @@ class UserController
     public function statsCompareAction(Request $request, Application $app, User $user)
     {
         $otherUserId = $request->get('userId');
-        if (null === $otherUserId) {
-            throw new NotFoundHttpException('User not found');
-        }
-        if ($user->getId() === $otherUserId) {
-            return $app->json(array(), 400);
-        }
-        /* @var $model UserManager */
-        $model = $app['users.manager'];
 
-        $stats = $model->getComparedStats($user->getId(), $otherUserId);
+        /** @var UserStatsService $statsService */
+        $statsService = $app['userStats.service'];
+        $stats = $statsService->getComparedStats($user->getId(), $otherUserId);
 
         return $app->json($stats->toArray());
     }

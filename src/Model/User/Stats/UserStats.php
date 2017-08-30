@@ -3,7 +3,7 @@
 namespace Model\User\Stats;
 
 
-class UserStatsModel
+class UserStats
 {
 
     protected $numberOfContentLikes;

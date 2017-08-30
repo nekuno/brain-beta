@@ -18,6 +18,7 @@ use Service\RegisterService;
 use Service\SocialNetwork;
 use Service\TokenGenerator;
 use Service\UserAggregator;
+use Service\UserStatsService;
 use Service\Validator\Validator;
 use Service\Validator\ValidatorFactory;
 use Silex\Application;
@@ -99,6 +100,12 @@ class ServicesServiceProvider implements ServiceProviderInterface
                     $app['users.manager'], $app['users.ghostuser.manager'], $app['users.socialprofile.manager'],
                     $app['api_consumer.resource_owner_factory'], $app['socialNetwork.service'], $app['users.lookup.model'], $app['amqpManager.service']
                 );
+            }
+        );
+
+        $app['userStats.service'] = $app->share(
+            function (Application $app) {
+                return new UserStatsService( $app['users.stats.manager'], $app['users.groups.model'], $app['users.relations.model'], $app['users.content.model']);
             }
         );
 
