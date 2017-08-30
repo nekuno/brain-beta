@@ -215,9 +215,9 @@ class Validator implements ValidatorInterface
                             if (!in_array($singleDataValue['choice'], $thisChoices)) {
                                 $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $singleDataValue['choice'], implode("', '", $thisChoices));
                             }
-                            if (!isset($doubleChoices[$singleDataValue['choice']]) || isset($singleDataValue['detail']) && !isset($doubleChoices[$singleDataValue['choice']][$singleDataValue['detail']])) {
+                            if (!isset($doubleChoices[$singleDataValue['choice']]) || isset($singleDataValue['detail']) && $singleDataValue['detail'] && !isset($doubleChoices[$singleDataValue['choice']][$singleDataValue['detail']])) {
                                 $fieldErrors[] = sprintf('Option choice and detail must be set in "%s"', $singleDataValue['choice']);
-                            } elseif (isset($singleDataValue['detail']) && !in_array($singleDataValue['detail'], array_keys($doubleChoices[$singleDataValue['choice']]))) {
+                            } elseif (isset($singleDataValue['detail']) && $singleDataValue['detail'] && !in_array($singleDataValue['detail'], array_keys($doubleChoices[$singleDataValue['choice']]))) {
                                 $fieldErrors[] = sprintf('Detail with value "%s" is not valid, possible values are "%s"', $singleDataValue['detail'], implode("', '", array_keys($doubleChoices)));
                             }
                         }
@@ -237,6 +237,26 @@ class Validator implements ValidatorInterface
                             }
                             if (isset($tagAndChoice['choice']) && $tagAndChoice['choice'] && isset($choices) && !in_array($tagAndChoice['choice'], array_keys($choices))) {
                                 $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $tagAndChoice['choice'], implode("', '", array_keys($choices)));
+                            }
+                        }
+                        break;
+                    case 'tags_and_multiple_choices':
+                        if (!is_array($dataValue)) {
+                            $fieldErrors[] = 'Tags and multiple choices value must be an array';
+                        }
+                        if (count($dataValue) > self::MAX_TAGS_AND_CHOICE_LENGTH) {
+                            $fieldErrors[] = sprintf('Tags and multiple choices length "%s" is too long. "%s" is the maximum', count($dataValue), self::MAX_TAGS_AND_CHOICE_LENGTH);
+                        }
+                        foreach ($dataValue as $tagAndMultipleChoices) {
+                            if (!isset($tagAndMultipleChoices['tag']) || !array_key_exists('choices', $tagAndMultipleChoices)) {
+                                $fieldErrors[] = sprintf('Tag and choices must be defined for tags and multiple choices type');
+                            }
+                            if (isset($tagAndMultipleChoices['choices'])) {
+                                foreach ($tagAndMultipleChoices['choices'] as $singleChoice) {
+                                    if ($singleChoice && isset($choices) && !in_array($singleChoice, array_keys($choices))) {
+                                        $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $singleChoice, implode("', '", array_keys($choices)));
+                                    }
+                                }
                             }
                         }
                         break;

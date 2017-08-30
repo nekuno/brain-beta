@@ -263,14 +263,12 @@ class FilterUsersManager
 
                     if (isset($profileFilters[$fieldName])) {
                         $value = $profileFilters[$fieldName];
-                        $qb->setParameters(array(
-                            'distance' =>(int)$value['distance'],
-                            'latitude' => (float)$value['location']['latitude'],
-                            'longitude' => (float)$value['location']['longitude'],
-                            'address' => $value['location']['address'],
-                            'locality' => $value['location']['locality'],
-                            'country' => $value['location']['country'],
-                        ));
+                        $qb->setParameter('distance', (int)$value['distance']);
+                        $qb->setParameter('latitude', (float)$value['location']['latitude']);
+                        $qb->setParameter('longitude', (float)$value['location']['longitude']);
+                        $qb->setParameter('address', $value['location']['address']);
+                        $qb->setParameter('locality', $value['location']['locality']);
+                        $qb->setParameter('country', $value['location']['country']);
                         $qb->merge("(filter)-[loc_rel:FILTERS_BY{distance:{distance} }]->(location:Location)");
                         $qb->set("loc_rel.distance = {distance}");
                         $qb->set("location.latitude = {latitude}");
@@ -376,8 +374,7 @@ class FilterUsersManager
                             $tag = $fieldName === 'language' ?
                                 $this->profileFilterModel->getLanguageFromTag($value['tag']) :
                                 $value['tag'];
-
-                            $choices = isset($value['choices']) ? $value['choices'] : array();
+                            $choices = isset($value['choices']) ? $value['choices'] : '';
                             $qb->merge("(tag$fieldName$tag:$tagLabelName:ProfileTag{name:'$tag'})");
                             $qb->merge("(filter)-[tag_rel$fieldName$tag:FILTERS_BY]->(tag$fieldName$tag)")
                                 ->set("tag_rel$fieldName$tag.detail = {detail$fieldName$tag}");
@@ -568,7 +565,7 @@ class FilterUsersManager
                     switch ($metadataValues['type']) {
                         case 'double_multiple_choices':
                             $detail = $relationship->getProperty('detail');
-                            $choiceArray = array('choice' => $option->getProperty('id'), 'detail' => $detail);
+                            $choiceArray = array('choice' => $option->getProperty('id'), 'detail' => $detail ?: null);
                             $optionsResult[$typeName] = isset($optionsResult[$typeName]) && is_array($optionsResult[$typeName]) ?
                                 array_merge($optionsResult[$typeName], array($choiceArray))
                                 : array($choiceArray);
