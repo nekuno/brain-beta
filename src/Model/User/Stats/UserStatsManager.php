@@ -1,11 +1,13 @@
 <?php
 
-namespace Model\User;
+namespace Model\User\Stats;
 
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
 use Model\User\Content\ContentPaginatedModel;
 use Model\User\Group\GroupModel;
+use Model\User\RelationsModel;
+use Model\User\Stats\UserStatsModel;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class UserStatsManager

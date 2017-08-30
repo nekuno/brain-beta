@@ -54,7 +54,7 @@ use Model\User\Thread\UsersThreadManager;
 use Model\User\Token\TokensModel;
 use Model\User\Token\TokenStatus\TokenStatusManager;
 use Model\User\UserDisabledPaginatedModel;
-use Model\User\UserStatsManager;
+use Model\User\Stats\UserStatsManager;
 use Manager\UserManager;
 use Model\User\UserTrackingModel;
 use Security\UserProvider;
