@@ -13,7 +13,7 @@ use Service\EventDispatcher;
 use Service\ImageTransformations;
 use Service\Links\EnqueueLinksService;
 use Service\NotificationManager;
-use Service\Recommendator;
+use Service\RecommendatorService;
 use Service\RegisterService;
 use Service\SocialNetwork;
 use Service\TokenGenerator;
@@ -85,11 +85,11 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['recommendator.service'] = $app->share(
             function (Application $app) {
-                return new Recommendator(
+                return new RecommendatorService(
                     $app['paginator'], $app['paginator.content'], $app['users.groups.model'],
                     $app['users.manager'], $app['users.recommendation.users.model'],
                     $app['users.recommendation.content.model'], $app['users.recommendation.popularusers.model'],
-                    $app['users.recommendation.popularcontent.model']
+                    $app['users.recommendation.popularcontent.model'], $app['users.shares.manager']
                 );
             }
         );
@@ -105,7 +105,7 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['userStats.service'] = $app->share(
             function (Application $app) {
-                return new UserStatsService( $app['users.stats.manager'], $app['users.groups.model'], $app['users.relations.model'], $app['users.content.model']);
+                return new UserStatsService( $app['users.stats.manager'], $app['users.groups.model'], $app['users.relations.model'], $app['users.content.model'], $app['users.shares.manager']);
             }
         );
 

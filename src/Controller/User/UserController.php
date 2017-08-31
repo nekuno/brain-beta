@@ -12,7 +12,7 @@ use Model\User\Stats\UserStatsCalculator;
 use Manager\UserManager;
 use Model\User;
 use Service\AuthService;
-use Service\Recommendator;
+use Service\RecommendatorService;
 use Service\UserStatsService;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -488,7 +488,7 @@ class UserController
      */
     public function getUserRecommendationAction(Request $request, Application $app, User $user)
     {
-        /** @var Recommendator $recommendator */
+        /** @var RecommendatorService $recommendator */
         $recommendator = $app['recommendator.service'];
 
         try {
@@ -545,7 +545,7 @@ class UserController
     public function getContentRecommendationAction(Request $request, Application $app, User $user)
     {
 
-        /* @var $recommendator Recommendator */
+        /* @var $recommendator RecommendatorService */
         $recommendator = $app['recommendator.service'];
 
         try {

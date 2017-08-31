@@ -2,6 +2,8 @@
 
 namespace Model\User\Shares;
 
+use Everyman\Neo4j\Query\ResultSet;
+use Everyman\Neo4j\Relationship;
 use Model\Neo4j\GraphManager;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -17,7 +19,29 @@ class SharesManager
         $this->graphManager = $graphManager;
     }
 
-    public function mergeShares($userId1, $userId2, Shares $shares)
+    public function get($userId1, $userId2)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(u1:User{qnoow_id: {id1}})', '(u2:User{qnoow_id: {id2}})')
+            ->setParameter('id1', (integer)$userId1)
+            ->setParameter('id2', (integer) $userId2);
+
+        $qb->match('(u1)-[shares:SHARES_WITH]-(u2)');
+
+        $qb->returns('shares');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() === 0)
+        {
+            return null;
+        }
+
+        return $this->buildOne($result);
+    }
+
+    public function merge($userId1, $userId2, Shares $shares)
     {
         $qb = $this->graphManager->createQueryBuilder();
 
@@ -49,7 +73,7 @@ class SharesManager
         return $shares;
     }
 
-    public function deleteShares($userId1, $userId2)
+    public function delete($userId1, $userId2)
     {
         $qb = $this->graphManager->createQueryBuilder();
 
@@ -63,5 +87,17 @@ class SharesManager
         $result = $qb->getQuery()->getResultSet();
 
         return $result->count();
+    }
+
+    protected function buildOne(ResultSet $resultSet)
+    {
+        /** @var Relationship $sharesRelationship */
+        $sharesRelationship = $resultSet->offsetGet('shares');
+
+        $shares = new Shares();
+        $shares->setId($sharesRelationship->getId());
+        $shares->setTopLinks($sharesRelationship->getProperty('topLinks'));
+
+        return $shares;
     }
 }

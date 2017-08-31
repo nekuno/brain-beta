@@ -114,6 +114,6 @@ class UserStatsService
         $shares = new Shares();
         $shares->setTopLinks($topLinks);
 
-        return $this->sharesManager->mergeShares($userId1, $userId2, $shares);
+        return $this->sharesManager->merge($userId1, $userId2, $shares);
     }
 }
