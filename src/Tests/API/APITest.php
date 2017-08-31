@@ -91,7 +91,7 @@ abstract class APITest extends WebTestCase
     private function getResponseByRoute($route, $method = 'GET', $data = array(), $headers = array())
     {
         $headers += array('CONTENT_TYPE' => 'application/json');
-        $client = static::createClient();
+        $client = $this->createClient();
         $client->request($method, $route, array(), array(), $headers, json_encode($data));
 
         return $client->getResponse();
