@@ -8,6 +8,7 @@ use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\AbstractYoutubeProcesso
 use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\YoutubeChannelProcessor;
 use ApiConsumer\ResourceOwner\GoogleResourceOwner;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
+use Model\Link\Link;
 use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
 class YoutubeChannelProcessorTest extends AbstractProcessorTest
@@ -124,24 +125,15 @@ class YoutubeChannelProcessorTest extends AbstractProcessorTest
 
     public function getResponseHydration()
     {
+        $expected = new Link();
+        $expected->setTitle('Efecto Pasillo');
+        $expected->setDescription('Canal Oficial de Youtube de Efecto Pasillo.');
         return array(
             array(
                 $this->getChannelUrl(),
                 $this->getChannelId(),
                 $this->getChannelResponse(),
-                array(
-                    'title' => 'Efecto Pasillo',
-                    'description' => 'Canal Oficial de Youtube de Efecto Pasillo.',
-                    'thumbnail' => null,
-                    'url' => null,
-                    'id' => null,
-                    'tags' => array(),
-                    'created' => null,
-                    'processed' => true,
-                    'language' => null,
-                    'synonymous' => array(),
-                    'imageProcessed' => null,
-                )
+                $expected->toArray(),
             )
         );
     }

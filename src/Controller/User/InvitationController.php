@@ -145,27 +145,9 @@ class InvitationController
     {
         /* @var $model InvitationModel */
         $model = $app['users.invitations.model'];
-        $invitation = $model->validateToken($token);
+        $invitation = $model->validateTokenAvailable($token);
 
         return $app->json($invitation, 200);
-    }
-
-    /**
-     * @param Request $request
-     * @param Application $app
-     * @param User $user
-     * @return \Symfony\Component\HttpFoundation\JsonResponse
-     * @throws \Exception
-     */
-    public function validateAction(Request $request, Application $app, User $user)
-    {
-        $data = $request->request->all();
-        $data['userId'] = $user->getId();
-        /* @var $model InvitationModel */
-        $model = $app['users.invitations.model'];
-        $model->validate($data);
-
-        return $app->json(array(), 200);
     }
 
     /**

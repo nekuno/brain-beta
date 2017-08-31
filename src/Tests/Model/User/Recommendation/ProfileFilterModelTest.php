@@ -2,7 +2,7 @@
 
 namespace Tests\Model\User\Recommendation;
 
-use Model\User\ProfileFilterModel;
+use Model\Metadata\ProfileMetadataManager;
 
 class ProfileFilterModelTest extends \PHPUnit_Framework_TestCase
 {
@@ -15,8 +15,11 @@ class ProfileFilterModelTest extends \PHPUnit_Framework_TestCase
         $gm = $client = $this->getMockBuilder('Model\Neo4j\GraphManager')
             ->disableOriginalConstructor()
             ->getMock();
+        $translator = $this->getMockBuilder('Symfony\Component\Translation\Translator')
+            ->disableOriginalConstructor()
+            ->getMock();
 
-        $model = new ProfileFilterModel($gm, array(), array(), array(), array(), 'es');
+        $model = new ProfileMetadataManager($gm, $translator, array(), array(), array(), array(), 'es');
 
         $return = $model->getBirthdayRangeFromAgeRange($ageMin, $ageMax, $now);
 

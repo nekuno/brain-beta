@@ -19,6 +19,7 @@ class QuestionComparePaginatedModel implements PaginatedInterface
     protected $graphManager;
 
     /**
+     * @param GraphManager $graphManager
      * @param AnswerManager $am
      */
     public function __construct(GraphManager $graphManager, AnswerManager $am)

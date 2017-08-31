@@ -1,8 +1,8 @@
 <?php
 
-namespace Model\User;
+namespace Model\Metadata;
 
-class UserFilterModel extends FilterModel
+class UserFilterMetadataManager extends MetadataManager
 {
     /**
      * @param $userId
@@ -46,9 +46,9 @@ class UserFilterModel extends FilterModel
     }
 
     //TODO: Move common uses to FilterModel
-    protected function modifyPublicFieldByType($publicField, $name, $values, $locale)
+    protected function modifyPublicField($publicField, $name, $values)
     {
-        $publicField = parent::modifyPublicFieldByType($publicField, $name, $values, $locale);
+        $publicField = parent::modifyPublicField($publicField, $name, $values);
         switch($values['type']) {
             default:
                 break;

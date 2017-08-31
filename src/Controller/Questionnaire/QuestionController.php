@@ -85,23 +85,6 @@ class QuestionController
     /**
      * @param Request $request
      * @param Application $app
-     * @return JsonResponse
-     */
-    public function validateAction(Request $request, Application $app)
-    {
-        $data = $request->request->all();
-        $data['locale'] = $this->getLocale($request, $app['locale.options']['default']);
-
-        /* @var $model QuestionModel */
-        $model = $app['questionnaire.questions.model'];
-        $model->validate($data);
-
-        return $app->json(array(), 200);
-    }
-
-    /**
-     * @param Request $request
-     * @param Application $app
      * @param User $user
      * @return JsonResponse
      * @throws \Exception
@@ -138,7 +121,7 @@ class QuestionController
 
         $model->skip($id, $user->getId());
 
-        return $app->json($question);
+        return $app->json($question, 201);
     }
 
     /**
@@ -161,7 +144,7 @@ class QuestionController
 
         $model->report($id, $user->getId(), $reason);
 
-        return $app->json($question);
+        return $app->json($question, 201);
     }
 
     /**

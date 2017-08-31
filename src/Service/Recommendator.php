@@ -6,7 +6,6 @@ namespace Service;
 use Model\User\Group\GroupModel;
 use Model\User\Recommendation\ContentPopularRecommendationPaginatedModel;
 use Model\User\Recommendation\ContentRecommendationPaginatedModel;
-use Model\User\Recommendation\SocialUserRecommendationPaginatedModel;
 use Model\User\Recommendation\UserPopularRecommendationPaginatedModel;
 use Model\User\Recommendation\UserRecommendationPaginatedModel;
 use Model\User\Thread\ContentThread;
@@ -28,8 +27,6 @@ class Recommendator
     protected $groupModel;
     /** @var  $userRecommendationPaginatedModel UserRecommendationPaginatedModel */
     protected $userRecommendationPaginatedModel;
-    /** @var  $socialUserRecommendationPaginatedModel SocialUserRecommendationPaginatedModel */
-    protected $socialUserRecommendationPaginatedModel;
     /** @var  $contentRecommendationPaginatedModel ContentRecommendationPaginatedModel */
     protected $contentRecommendationPaginatedModel;
     /** @var $contentPopularRecommendationPaginatedModel ContentPopularRecommendationPaginatedModel */
@@ -47,7 +44,6 @@ class Recommendator
      * @param GroupModel $groupModel
      * @param UserManager $userManager
      * @param UserRecommendationPaginatedModel $userRecommendationPaginatedModel
-     * @param SocialUserRecommendationPaginatedModel $socialUserRecommendationPaginatedModel
      * @param ContentRecommendationPaginatedModel $contentRecommendationPaginatedModel
      * @param UserPopularRecommendationPaginatedModel $userPopularRecommendationPaginatedModel
      * @param ContentPopularRecommendationPaginatedModel $contentPopularRecommendationPaginatedModel
@@ -57,7 +53,6 @@ class Recommendator
                                 GroupModel $groupModel,
                                 UserManager $userManager,
                                 UserRecommendationPaginatedModel $userRecommendationPaginatedModel,
-                                SocialUserRecommendationPaginatedModel $socialUserRecommendationPaginatedModel,
                                 ContentRecommendationPaginatedModel $contentRecommendationPaginatedModel,
                                 UserPopularRecommendationPaginatedModel $userPopularRecommendationPaginatedModel,
                                 ContentPopularRecommendationPaginatedModel $contentPopularRecommendationPaginatedModel)
@@ -67,7 +62,6 @@ class Recommendator
         $this->groupModel = $groupModel;
         $this->userManager = $userManager;
         $this->userRecommendationPaginatedModel = $userRecommendationPaginatedModel;
-        $this->socialUserRecommendationPaginatedModel = $socialUserRecommendationPaginatedModel;
         $this->contentRecommendationPaginatedModel = $contentRecommendationPaginatedModel;
         $this->contentPopularRecommendationPaginatedModel = $contentPopularRecommendationPaginatedModel;
         $this->userPopularRecommendationPaginatedModel = $userPopularRecommendationPaginatedModel;
@@ -212,10 +206,9 @@ class Recommendator
     /**
      * @param Request $request
      * @param integer $id userId
-     * @param bool $social Whether the Request comes from Social
      * @return array
      */
-    public function getUserRecommendationFromRequest(Request $request, $id, $social = false)
+    public function getUserRecommendationFromRequest(Request $request, $id)
     {
 
         //TODO: Validate
@@ -241,11 +234,11 @@ class Recommendator
             $filters['ignored'] = urldecode($ignored);
         }
 
-        if (!$social && $this->userManager->getById($id)->isGuest()) {
+        if ($this->userManager->getById($id)->isGuest()) {
             return $this->getPopularUserRecommendation($filters);
         }
 
-        return $this->getUserRecommendation($filters, $request, $social);
+        return $this->getUserRecommendation($filters, $request);
     }
 
     public function getContentRecommendationFromRequest(Request $request, $id)
@@ -283,10 +276,9 @@ class Recommendator
     /**
      * @param $filters
      * @param null $request
-     * @param bool $social
      * @return array
      */
-    private function getUserRecommendation($filters, $request = null, $social = false)
+    private function getUserRecommendation($filters, $request = null)
     {
         $request = $this->getRequest($request);
         //TODO: Move to userRecommendationPaginatedModel->validate($filters)
@@ -298,11 +290,7 @@ class Recommendator
             }
         }
 
-        $model = $social ? $this->socialUserRecommendationPaginatedModel : $this->userRecommendationPaginatedModel;
-        $paginator = $social ? $this->paginator : $this->contentPaginator;
-
-        $result = $paginator->paginate($filters, $model, $request);
-        return $result;
+        return $this->contentPaginator->paginate($filters, $this->userRecommendationPaginatedModel, $request);
     }
 
     private function getContentRecommendation($filters, $request = null)

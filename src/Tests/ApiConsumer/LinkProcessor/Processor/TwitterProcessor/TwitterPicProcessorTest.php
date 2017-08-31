@@ -7,6 +7,7 @@ use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\AbstractTwitterProcesso
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterPicProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
+use Model\Link\Link;
 use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
 class TwitterPicProcessorTest extends AbstractProcessorTest
@@ -101,22 +102,11 @@ class TwitterPicProcessorTest extends AbstractProcessorTest
 
     public function getResponseHydration()
     {
+        $expected = new Link();
         return array(
             array(
                 $this->getStatusUrl(),
-                array(
-                    'title' => null,
-                    'description' => null,
-                    'thumbnail' => null,
-                    'url' => null,
-                    'id' => null,
-                    'tags' => array(),
-                    'created' => null,
-                    'processed' => true,
-                    'language' => null,
-                    'synonymous' => array(),
-                    'imageProcessed' => null,
-                )
+                $expected->toArray(),
             )
         );
     }

@@ -8,6 +8,7 @@ use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\AbstractSpotifyProcesso
 use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\SpotifyArtistProcessor;
 use ApiConsumer\ResourceOwner\SpotifyResourceOwner;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
+use Model\Link\Link;
 use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
 class SpotifyArtistProcessorTest extends AbstractProcessorTest
@@ -119,23 +120,13 @@ class SpotifyArtistProcessorTest extends AbstractProcessorTest
 
     public function getResponseHydration()
     {
+        $expected = new Link();
+        $expected->setTitle('Charlie Parker');
         return array(
             array(
                 $this->getArtistUrl(),
                 $this->getArtistResponse(),
-                array(
-                    'title' => 'Charlie Parker',
-                    'description' => null,
-                    'thumbnail' => null,
-                    'url' => null,
-                    'id' => null,
-                    'tags' => array(),
-                    'created' => null,
-                    'processed' => true,
-                    'language' => null,
-                    'synonymous' => array(),
-                    'imageProcessed' => null,
-                )
+                $expected->toArray(),
             )
         );
     }

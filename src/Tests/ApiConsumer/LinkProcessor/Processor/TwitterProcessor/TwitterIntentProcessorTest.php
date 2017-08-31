@@ -8,6 +8,7 @@ use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\AbstractTwitterProcesso
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterIntentProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
+use Model\Link\Link;
 use Model\User\Token\TokensModel;
 use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
@@ -99,6 +100,9 @@ class TwitterIntentProcessorTest extends AbstractProcessorTest
 
     public function getResponseHydration()
     {
+        $expected = new Link();
+        $expected->setDescription('Tool developer & data junkie');
+        $expected->setId(34529134);
         return array(
             array(
                 $this->getProfileUrl(),

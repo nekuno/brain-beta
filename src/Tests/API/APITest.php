@@ -2,19 +2,23 @@
 
 namespace Tests\API;
 
-use Console\Command\Neo4jProfileOptionsCommand;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\Tools\SchemaTool;
-use Everyman\Neo4j\Cypher\Query;
+use Model\User\Token\Token;
+use Model\User\Token\TokensModel;
 use Silex\Application;
 use Silex\WebTestCase;
-use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\HttpFoundation\Response;
 use Service\AuthService;
-use Symfony\Component\Console\Application as ConsoleApplication;
+use Tests\API\MockUp\AuthServiceMockUp;
+use Tests\API\MockUp\TokensModelMockUp;
 
 abstract class APITest extends WebTestCase
 {
+    const OWN_USER_ID = 1;
+    const OTHER_USER_ID = 2;
+    const UNDEFINED_USER_ID = 3;
+
     protected $app;
 
     public function createApplication()
@@ -25,6 +29,7 @@ abstract class APITest extends WebTestCase
         $app['debug'] = true;
         unset($app['exception_handler']);
         $app['session.test'] = true;
+        $app = $this->loadMockUps($app);
 
         return $app;
     }
@@ -34,12 +39,6 @@ abstract class APITest extends WebTestCase
         parent::setUp();
         /* @var $app Application */
         $app = $this->app;
-        // Clean the database
-        $query = new Query($app['neo4j.client'], 'MATCH (n) OPTIONAL MATCH (n)-[r]-(m) DELETE r, n, m');
-        $query->getResultSet();
-        // Create default invitation
-        $query = new Query($app['neo4j.client'], 'CREATE (i:Invitation) SET i.token = "join", i.consumed = 0, i.available = 1000, i.expiresAt = 9999999999999999, i.createdAt = 11111111');
-        $query->getResultSet();
         // Create brain DB
         $em = $app['orm.ems']['mysql_brain'];
         $schemaTool = new SchemaTool($em);
@@ -51,15 +50,47 @@ abstract class APITest extends WebTestCase
         $bm = $app['dbs']['mysql_brain'];
         $bm->executeQuery('DROP TABLE IF EXISTS chat_message');
         $bm->executeQuery('CREATE TABLE chat_message (id INTEGER PRIMARY KEY NOT NULL, text VARCHAR(255) NOT NULL, createdAt DATETIME NOT NULL, readed TINYINT(1) NOT NULL, user_from INT DEFAULT NULL, user_to INT DEFAULT NULL)');
+
+        $app->boot();
+        $fixtures = new TestingFixtures($this->app);
+        $fixtures->load();
     }
 
-    protected function getResponseByRoute($route, $method = 'GET', $data = array(), $userId = null)
+    protected function loadMockUps(Application $app)
     {
-        $headers = array('CONTENT_TYPE' => 'application/json');
+        $app['auth.service'] = $app->share(
+            function (Application $app) {
+                return new AuthServiceMockUp($app['users.manager'], $app['security.password_encoder'], $app['security.jwt.encoder'], $app['oauth.service'], $app['dispatcher.service'], $app['users.tokens.model']);
+            }
+        );
+        $app['users.tokens.model'] = $app->share(
+            function ($app) {
+                $validator = $app['validator.factory']->build('tokens');
+                return new TokensModelMockUp($app['dispatcher'], $app['neo4j.graph_manager'], $app['users.tokenStatus.manager'], $validator);
+            }
+        );
+
+        return $app;
+    }
+
+    protected function getResponseByRouteWithCredentials($route, $method = 'GET', $data = array(), $userId = self::OWN_USER_ID)
+    {
+        $headers = array();
         if ($userId) {
-            $headers += $this->tryToGetJwtByUserId($userId);
+            $headers = $this->tryToGetJwtByUserId($userId);
         }
 
+        return $this->getResponseByRoute($route, $method, $data, $headers);
+    }
+
+    protected function getResponseByRouteWithoutCredentials($route, $method = 'GET', $data = array())
+    {
+        return $this->getResponseByRoute($route, $method, $data);
+    }
+
+    private function getResponseByRoute($route, $method = 'GET', $data = array(), $headers = array())
+    {
+        $headers += array('CONTENT_TYPE' => 'application/json');
         $client = static::createClient();
         $client->request($method, $route, array(), array(), $headers, json_encode($data));
 
@@ -91,171 +122,19 @@ abstract class APITest extends WebTestCase
         $this->assertEquals('Validation error', $exception['error'], "error key is not Validation error");
     }
 
-    protected function runCommand($commandString)
+    protected function assertArrayOfType($type, $array, $message)
     {
-        $application = new ConsoleApplication();
-        $application->add(new Neo4jProfileOptionsCommand($this->app));
-
-        $command = $application->find($commandString);
-        $commandTester = new CommandTester($command);
-        $commandTester->execute(array('command' => $command->getName()));
-
-        return $commandTester->getDisplay();
-    }
-
-    protected function runProfileOptionsCommand()
-    {
-        return $this->runCommand('neo4j:profile-options');
-    }
-
-    protected function loginUser($userData)
-    {
-        return $this->getResponseByRoute('/login', 'OPTIONS', $userData);
-    }
-
-    protected function createUser($userData)
-    {
-        return $this->getResponseByRoute('/register', 'POST', $userData);
-    }
-
-    protected function createAndLoginUserA()
-    {
-        $userData = $this->getUserARegisterFixtures();
-        $this->createUser($userData);
-        $this->loginUser($userData);
-    }
-
-    protected function createAndLoginUserB()
-    {
-        $userData = $this->getUserBRegisterFixtures();
-        $this->createUser($userData);
-        $this->loginUser($userData);
-    }
-
-    protected function getUserAFixtures()
-    {
-        return array(
-            'resourceOwner' => 'facebook',
-            'accessToken' => $this->app['userA.access_token'],
-        );
-    }
-
-    protected function getUserBFixtures()
-    {
-        return array(
-            'resourceOwner' => 'facebook',
-            'accessToken' => $this->app['userB.access_token'],
-        );
-    }
-
-    protected function getUserARegisterFixtures()
-    {
-        return array(
-            'user' => array(
-                'username' => 'JohnDoe',
-                'email' => 'nekuno-johndoe@gmail.com',
-            ),
-            'profile' => array(),
-            'token' => 'join',
-            'oauth' => array(
-                'resourceOwner' => $this->app['userA.resource'],
-                'oauthToken' => $this->app['userA.access_token'],
-                'resourceId' => $this->app['userA.resource_id'],
-                'expireTime' => strtotime("+1 week"),
-                'refreshToken' => null
-            ),
-            'trackingData' => '',
-        );
-    }
-
-    protected function getUserBRegisterFixtures()
-    {
-        return array(
-            'user' => array(
-                'username' => 'JaneDoe',
-                'email' => 'nekuno-janedoe@gmail.com',
-            ),
-            'profile' => array(),
-            'token' => 'join',
-            'oauth' => array(
-                'resourceOwner' => $this->app['userB.resource'],
-                'oauthToken' => $this->app['userB.access_token'],
-                'resourceId' => $this->app['userB.resource_id'],
-                'expireTime' => strtotime("+1 week"),
-                'refreshToken' => null
-            ),
-            'trackingData' => '',
-        );
-    }
-
-    protected function getBadTokenUserRegisterFixtures()
-    {
-        $user = $this->getUserARegisterFixtures();
-        $user['token'] = 'nonExistantToken';
-
-        return $user;
-    }
-
-    protected function getNotProfileUserRegisterFixtures()
-    {
-        $user = $this->getUserARegisterFixtures();
-        unset($user['profile']);
-
-        return $user;
-    }
-
-    protected function getIncompleteOAuthUserRegisterFixtures()
-    {
-        $fixtures = array();
-        foreach (array('resourceOwner', 'oauthToken', 'resourceId') as $field) {
-            $user = $this->getUserARegisterFixtures();
-            unset($user['oauth'][$field]);
-
-            $fixtures[] = $user;
+        $this->isType('array')->evaluate($array, 'Is not an array when '. $message);
+        foreach ($array as $item)
+        {
+            $this->isType($type)->evaluate($item, 'Is not an item of type ' . $type . ' when ' .$message);
         }
-
-        return $fixtures;
-    }
-
-    protected function getBadProfileUserRegisterFixtures()
-    {
-        $fixtures = array();
-        $wrongData = array(
-            array('birthday' => '20-01-2015'),
-            array('birthday' => '01-01-2017'),
-            array('birthday' => '01-01-2099'),
-            array('height' => '100'),
-            array('height' => 20),
-            array('height' => 500),
-            array('gender' => 'nonExistantGender'),
-            array('descriptiveGender' => 'nonExistantGender'),
-            array('religion' => array('choice' => 'agnosticism')),
-            array('religion' => array('detail' => 'important')),
-            array('religion' => array('choice' => 'agnosticism', 'detail' => 'wrongDetail')),
-            array('religion' => array('choice' => 'wrongReligion', 'detail' => 'important'))
-        );
-
-        foreach ($wrongData as $wrongField) {
-            $user = $this->getUserARegisterFixtures();
-            $user['profile'] += $wrongField;
-            $fixtures[] = $user;
-        }
-
-        return $fixtures;
-    }
-
-    protected function getUserAEditionFixtures()
-    {
-        return array(
-            'username' => 'JohnDoe',
-            'email' => 'nekuno-johndoe@gmail.com',
-        );
     }
 
     private function tryToGetJwtByUserId($userId)
     {
         try {
-            /** @var AuthService $authService */
+            /** @var AuthServiceMockUp $authService */
             $authService = $this->app['auth.service'];
             $jwt = $authService->getToken($userId);
 

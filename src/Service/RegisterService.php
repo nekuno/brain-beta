@@ -70,10 +70,10 @@ class RegisterService
      */
     public function register($userData, $profileData, $invitationToken, $oauth, $trackingData)
     {
-        $this->im->validateToken($invitationToken);
+        $this->im->validateTokenAvailable($invitationToken);
         $this->um->validate($userData);
-        $this->pm->validate($profileData);
-        $this->tm->validate($oauth);
+        $this->pm->validateOnCreate($profileData);
+        $this->tm->validateOnCreate($oauth);
 
         $user = $this->um->create($userData);
         if (isset($userData['enabled']) && $userData['enabled'] === false) {

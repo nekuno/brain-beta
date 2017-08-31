@@ -1,12 +1,13 @@
 <?php
 
-namespace Tests\ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
+namespace Tests\ApiConsumer\LinkProcessor\Processor\FacebookProcessor;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\AbstractFacebookProcessor;
 use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookProfileProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;
+use Model\Link\Link;
 use Model\User\Token\TokensModel;
 use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
@@ -108,23 +109,14 @@ class FacebookProfileProcessorTest extends AbstractProcessorTest
 
     public function getResponseHydration()
     {
+        $expectedLink = new Link();
+        $expectedLink->setTitle($this->getTitle());
+        $expectedLink->setDescription($this->getTitle());
         return array(
             array(
                 $this->getProfileUrl(),
                 $this->getProfileItemResponse(),
-                array(
-                    'title' => $this->getTitle(),
-                    'description' => $this->getTitle(),
-                    'thumbnail' => null,
-                    'url' => null,
-                    'id' => null,
-                    'tags' => array(),
-                    'created' => null,
-                    'processed' => true,
-                    'language' => null,
-                    'synonymous' => array(),
-                    'imageProcessed' => null,
-                )
+                $expectedLink->toArray()
             )
         );
     }

@@ -2,7 +2,8 @@
 
 namespace Controller\User;
 
-use Model\User\ProfileFilterModel;
+use Model\Metadata\CategoryMetadataManager;
+use Model\Metadata\ProfileMetadataManager;
 use Model\User\ProfileModel;
 use Model\User\ProfileTagModel;
 use Model\User;
@@ -88,9 +89,9 @@ class ProfileController
     {
         $locale = $request->query->get('locale');
 
-        /* @var $model ProfileFilterModel */
-        $model = $app['users.profileFilter.model'];
-        $metadata = $model->getProfileMetadata($locale);
+        /* @var $model ProfileMetadataManager */
+        $model = $app['users.profileMetadata.manager'];
+        $metadata = $model->getMetadata($locale);
 
         return $app->json($metadata);
     }
@@ -104,9 +105,9 @@ class ProfileController
     {
         $locale = $request->query->get('locale');
 
-        /* @var $model ProfileFilterModel */
-        $model = $app['users.profileFilter.model'];
-        $categories = $model->getProfileCategories($locale);
+        /* @var $model CategoryMetadataManager */
+        $model = $app['users.profileCategories.manager'];
+        $categories = $model->getMetadata($locale);
 
         return $app->json($categories);
     }
@@ -120,26 +121,11 @@ class ProfileController
     {
         $locale = $request->query->get('locale');
 
-        /* @var $model ProfileFilterModel */
+        /* @var $model ProfileMetadataManager */
         $model = $app['users.profileFilter.model'];
-        $filters = $model->getFilters($locale);
+        $filters = $model->getMetadata($locale);
 
         return $app->json($filters);
-    }
-
-    /**
-     * @param Request $request
-     * @param Application $app
-     * @return JsonResponse
-     */
-    public function validateAction(Request $request, Application $app)
-    {
-        /* @var $model ProfileModel */
-        $model = $app['users.profile.model'];
-
-        $model->validate($request->request->all());
-
-        return $app->json();
     }
 
     /**

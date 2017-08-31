@@ -10,6 +10,7 @@ use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
 use ApiConsumer\ResourceOwner\SpotifyResourceOwner;
 use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\SpotifyTrackProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
+use Model\Link\Audio;
 use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
 class SpotifyTrackProcessorTest extends AbstractProcessorTest
@@ -161,28 +162,17 @@ class SpotifyTrackProcessorTest extends AbstractProcessorTest
 
     public function getResponseHydration()
     {
+        $expected = new Audio();
+        $expected->setTitle('So What');
+        $expected->setDescription('Kind Of Blue (Legacy Edition) : Miles Davis');
+        $expected->setEmbedType('spotify');
+        $expected->setEmbedId('spotify:track:4vLYewWIvqHfKtJDk8c8tq');
+
         return array(
             array(
                 'https://open.spotify.com/track/4vLYewWIvqHfKtJDk8c8tq',
                 $this->getTrackResponse(),
-                array(
-                    'title' => 'So What',
-                    'description' => 'Kind Of Blue (Legacy Edition) : Miles Davis',
-                    'thumbnail' => null,
-                    'url' => null,
-                    'id' => null,
-                    'tags' => array(),
-                    'created' => null,
-                    'processed' => true,
-                    'language' => null,
-                    'synonymous' => array(),
-                    'imageProcessed' => null,
-                    'additionalLabels' => array('Audio'),
-                    'additionalFields' => array(
-                        'embed_type' => 'spotify',
-                        'embed_id' => 'spotify:track:4vLYewWIvqHfKtJDk8c8tq',
-                    )
-                )
+                $expected->toArray()
             )
         );
     }

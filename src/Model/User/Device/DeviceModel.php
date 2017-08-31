@@ -4,9 +4,8 @@ namespace Model\User\Device;
 
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
-use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
-use Service\Validator;
+use Service\Validator\DeviceValidator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class DeviceModel
@@ -23,11 +22,11 @@ class DeviceModel
     protected $applicationServerKey;
 
     /**
-     * @var Validator
+     * @var DeviceValidator
      */
     protected $validator;
 
-    public function __construct(GraphManager $gm, $applicationServerKey, $validator)
+    public function __construct(GraphManager $gm, $applicationServerKey, DeviceValidator $validator)
     {
         $this->gm = $gm;
         $this->applicationServerKey = $applicationServerKey;
@@ -120,11 +119,7 @@ class DeviceModel
 
     public function create(array $data)
     {
-        $this->validate($data);
-
-        if ($this->exists($data['registrationId'])) {
-            throw new ValidationException(array('device' => array(sprintf('Device with registrationId "%s" already exists', $data['registrationId']))));
-        }
+        $this->validator->validateOnCreate($data);
 
         $qb = $this->gm->createQueryBuilder();
 
@@ -157,11 +152,7 @@ class DeviceModel
 
     public function update(array $data)
     {
-        $this->validate($data);
-
-        if (!$this->exists($data['registrationId'])) {
-            throw new ValidationException(array('device' => array(sprintf('Device with registrationId "%s" does not exist', $data['registrationId']))));
-        }
+        $this->validator->validateOnUpdate($data);
 
         $qb = $this->gm->createQueryBuilder();
 
@@ -200,7 +191,7 @@ class DeviceModel
 
     public function delete(array $data)
     {
-        $this->validate($data);
+        $this->validator->validateOnDelete($data);
         $device = $this->getByRegistrationId($data['registrationId']);
 
         $qb = $this->gm->createQueryBuilder();
@@ -218,12 +209,6 @@ class DeviceModel
         }
 
         return $device;
-
-    }
-
-    public function validate(array $data)
-    {
-        $this->validator->validateDevice($data);
     }
 
     /**

@@ -16,10 +16,4 @@ neo4j.options:
     user: %db.neo4j.testing.user%
     pass: %db.neo4j.testing.pass%
 
-userA.resource: %userA.resource%
-userA.access_token: %userA.access_token%
-userA.resource_id: %userA.resource_id%
-userB.resource: %userB.resource%
-userB.access_token: %userB.access_token%
-userB.resource_id: %userB.resource_id%
 

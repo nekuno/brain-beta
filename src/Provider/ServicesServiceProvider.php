@@ -18,7 +18,8 @@ use Service\RegisterService;
 use Service\SocialNetwork;
 use Service\TokenGenerator;
 use Service\UserAggregator;
-use Service\Validator;
+use Service\Validator\Validator;
+use Service\Validator\ValidatorFactory;
 use Silex\Application;
 use Silex\ServiceProviderInterface;
 use Silex\Translator;
@@ -86,8 +87,8 @@ class ServicesServiceProvider implements ServiceProviderInterface
                 return new Recommendator(
                     $app['paginator'], $app['paginator.content'], $app['users.groups.model'],
                     $app['users.manager'], $app['users.recommendation.users.model'],
-                    $app['users.socialRecommendation.users.model'], $app['users.recommendation.content.model'],
-                    $app['users.recommendation.popularusers.model'], $app['users.recommendation.popularcontent.model']
+                    $app['users.recommendation.content.model'], $app['users.recommendation.popularusers.model'],
+                    $app['users.recommendation.popularcontent.model']
                 );
             }
         );
@@ -103,7 +104,13 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['validator.service'] = $app->share(
             function (Application $app) {
-                return new Validator($app['neo4j.graph_manager'], $app['users.profileFilter.model'], $app['users.userFilter.model'], $app['users.contentFilter.model'], $app['fields']);
+                return new Validator($app['neo4j.graph_manager'], $app['fields']);
+            }
+        );
+
+        $app['validator.factory'] = $app->share(
+            function (Application $app) {
+                return new ValidatorFactory($app['neo4j.graph_manager'], $app['users.metadataManager.factory'], $app['validator.config']);
             }
         );
 

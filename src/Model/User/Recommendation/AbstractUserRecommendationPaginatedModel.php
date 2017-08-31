@@ -6,9 +6,9 @@ use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
 use Manager\PhotoManager;
 use Model\Neo4j\GraphManager;
-use Model\User\ProfileFilterModel;
+use Model\Metadata\ProfileMetadataManager;
 use Model\User\ProfileModel;
-use Model\User\UserFilterModel;
+use Model\Metadata\UserFilterMetadataManager;
 use Paginator\PaginatedInterface;
 
 abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInterface
@@ -19,12 +19,12 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
     protected $gm;
 
     /**
-     * @var ProfileFilterModel
+     * @var ProfileMetadataManager
      */
     protected $profileFilterModel;
 
     /**
-     * @var UserFilterModel
+     * @var UserFilterMetadataManager
      */
     protected $userFilterModel;
 
@@ -38,7 +38,7 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
      */
     protected $profileModel;
 
-    public function __construct(GraphManager $gm, ProfileFilterModel $profileFilterModel, UserFilterModel $userFilterModel, PhotoManager $pm, ProfileModel $profileModel)
+    public function __construct(GraphManager $gm, ProfileMetadataManager $profileFilterModel, UserFilterMetadataManager $userFilterModel, PhotoManager $pm, ProfileModel $profileModel)
     {
         $this->gm = $gm;
         $this->profileFilterModel = $profileFilterModel;
@@ -307,7 +307,7 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
 
     protected function getProfileFilterMetadata()
     {
-        return $this->profileFilterModel->getFilters();
+        return $this->profileFilterModel->getMetadata();
     }
 
     /**
@@ -378,7 +378,7 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
 
     protected function getUserFilterMetadata()
     {
-        return $this->userFilterModel->getFilters();
+        return $this->userFilterModel->getMetadata();
     }
 
     /**
