@@ -24,27 +24,6 @@ class UserStats
 
     protected $available_invitations;
 
-    function __construct($numberOfContentLikes,
-                         $numberOfVideoLikes,
-                         $numberOfAudioLikes,
-                         $numberOfImageLikes,
-                         $numberOfReceivedLikes,
-                         $numberOfUserLikes,
-                         $groupsBelonged,
-                         $numberOfQuestionsAnswered,
-                         $available_invitations)
-    {
-        $this->numberOfContentLikes = $numberOfContentLikes;
-        $this->numberOfVideoLikes = $numberOfVideoLikes;
-        $this->numberOfAudioLikes = $numberOfAudioLikes;
-        $this->numberOfImageLikes = $numberOfImageLikes;
-        $this->numberOfReceivedLikes = $numberOfReceivedLikes;
-        $this->numberOfUserLikes = $numberOfUserLikes;
-        $this->groupsBelonged = $groupsBelonged;
-        $this->numberOfQuestionsAnswered = $numberOfQuestionsAnswered;
-        $this->available_invitations = $available_invitations;
-    }
-
     /**
      * @return mixed
      */
@@ -115,6 +94,78 @@ class UserStats
     public function getAvailableInvitations()
     {
         return $this->available_invitations;
+    }
+
+    /**
+     * @param mixed $numberOfContentLikes
+     */
+    public function setNumberOfContentLikes($numberOfContentLikes)
+    {
+        $this->numberOfContentLikes = $numberOfContentLikes;
+    }
+
+    /**
+     * @param mixed $numberOfVideoLikes
+     */
+    public function setNumberOfVideoLikes($numberOfVideoLikes)
+    {
+        $this->numberOfVideoLikes = $numberOfVideoLikes;
+    }
+
+    /**
+     * @param mixed $numberOfAudioLikes
+     */
+    public function setNumberOfAudioLikes($numberOfAudioLikes)
+    {
+        $this->numberOfAudioLikes = $numberOfAudioLikes;
+    }
+
+    /**
+     * @param mixed $numberOfImageLikes
+     */
+    public function setNumberOfImageLikes($numberOfImageLikes)
+    {
+        $this->numberOfImageLikes = $numberOfImageLikes;
+    }
+
+    /**
+     * @param mixed $numberOfReceivedLikes
+     */
+    public function setNumberOfReceivedLikes($numberOfReceivedLikes)
+    {
+        $this->numberOfReceivedLikes = $numberOfReceivedLikes;
+    }
+
+    /**
+     * @param mixed $numberOfUserLikes
+     */
+    public function setNumberOfUserLikes($numberOfUserLikes)
+    {
+        $this->numberOfUserLikes = $numberOfUserLikes;
+    }
+
+    /**
+     * @param mixed $groupsBelonged
+     */
+    public function setGroupsBelonged($groupsBelonged)
+    {
+        $this->groupsBelonged = $groupsBelonged;
+    }
+
+    /**
+     * @param mixed $numberOfQuestionsAnswered
+     */
+    public function setNumberOfQuestionsAnswered($numberOfQuestionsAnswered)
+    {
+        $this->numberOfQuestionsAnswered = $numberOfQuestionsAnswered;
+    }
+
+    /**
+     * @param mixed $available_invitations
+     */
+    public function setAvailableInvitations($available_invitations)
+    {
+        $this->available_invitations = $available_invitations;
     }
 
     public function toArray(){

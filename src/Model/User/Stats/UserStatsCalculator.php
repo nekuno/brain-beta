@@ -2,17 +2,14 @@
 
 namespace Model\User\Stats;
 
+use ApiConsumer\Images\ImageAnalyzer;
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
-use Model\User\Content\ContentPaginatedModel;
 use Model\User\Group\Group;
-use Model\User\Group\GroupModel;
-use Model\User\RelationsModel;
-use Model\User\Stats\UserStats;
 use Model\User\UserComparedStats;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-class UserStatsManager
+class UserStatsCalculator
 {
     /**
      * @var GraphManager
@@ -20,30 +17,17 @@ class UserStatsManager
     protected $graphManager;
 
     /**
-     * @var RelationsModel
+     * @var ImageAnalyzer
      */
-    protected $relationsModel;
+    protected $imageAnalyzer;
 
-    /**
-     * @var GroupModel
-     */
-    protected $groupModel;
-
-    protected $contentPaginatedModel;
-
-    function __construct(GraphManager $graphManager,
-                         GroupModel $groupModel,
-                         RelationsModel $relationsModel,
-                         ContentPaginatedModel $contentPaginatedModel)
+    function __construct(GraphManager $graphManager, ImageAnalyzer $imageAnalyzer)
     {
         $this->graphManager = $graphManager;
-        $this->groupModel = $groupModel;
-        $this->relationsModel = $relationsModel;
-        $this->contentPaginatedModel = $contentPaginatedModel;
+        $this->imageAnalyzer = $imageAnalyzer;
     }
 
-    //TODO: If we can get this from respective managers, and not be slower, this would be UserStatsService
-    public function getStats($id)
+    public function calculateStats($id)
     {
         $qb = $this->graphManager->createQueryBuilder();
 
@@ -64,24 +48,9 @@ class UserStatsManager
         /* @var $row Row */
         $row = $result->current();
 
-        $numberOfReceivedLikes = $this->relationsModel->countTo($id, RelationsModel::LIKES);
-        $numberOfUserLikes = $this->relationsModel->countFrom($id, RelationsModel::LIKES);
-
-        $groups = $this->groupModel->getAllByUserId($id);
-
-        $contentLikes = $this->contentPaginatedModel->countAll($id);
-
-        $userStats = new UserStats(
-            $contentLikes['Link'],
-            $contentLikes['Video'],
-            $contentLikes['Audio'],
-            $contentLikes['Image'],
-            (integer)$numberOfReceivedLikes,
-            (integer)$numberOfUserLikes,
-            $groups,
-            $row->offsetGet('questionsAnswered'),
-            $row->offsetGet('available_invitations')
-        );
+        $userStats = new UserStats();
+        $userStats->setNumberOfQuestionsAnswered($row->offsetGet('questionsAnswered'));
+        $userStats->setAvailableInvitations($row->offsetGet('available_invitations'));
 
         return $userStats;
 
@@ -93,7 +62,7 @@ class UserStatsManager
      * @return UserComparedStats
      * @throws \Exception
      */
-    public function getComparedStats($id1, $id2)
+    public function calculateComparedStats($id1, $id2)
     {
         $qb = $this->graphManager->createQueryBuilder();
 
@@ -153,5 +122,78 @@ class UserStatsManager
         return $userStats;
     }
 
+    public function calculateTopLinks($userId1, $userId2)
+    {
+        $amountDesired = 3;
+        $excluded = array();
+        $workingThumbnails = array();
+        do {
+            list($newThumbnails, $linkIds) = $this->getTopLinks($userId1, $userId2, $excluded);
 
+            $workingThumbnails += $this->getWorkingThumbnails($newThumbnails);
+            $excluded += $linkIds;
+
+            $enoughResults = count($workingThumbnails) >= $amountDesired;
+            $moreResultsAvailable = count($newThumbnails) !== 0;
+        } while (!$enoughResults && $moreResultsAvailable);
+
+        $workingThumbnails = array_slice($workingThumbnails, 0, $amountDesired);
+
+        return $workingThumbnails;
+    }
+
+    /**
+     * @param $userId1
+     * @param $userId2
+     * @param array $excludedIds
+     * @return array
+     */
+    protected function getTopLinks($userId1, $userId2, $excludedIds)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(u1:User{qnoow_id: {id1}})', '(u2:User{qnoow_id: {id2}})')
+            ->setParameter('id1', (integer)$userId1)
+            ->setParameter('id2', (integer)$userId2)
+            ->with('u1', 'u2');
+
+        $qb->match('(u1)-[:LIKES]->(video:Video)<-[:LIKES]-(u2)')
+            ->with('u1', 'u2', 'collect(video) AS links');
+        $qb->match('(u1)-[:LIKES]->(audio:Audio)<-[:LIKES]-(u2)')
+            ->with('u1', 'u2', 'links', 'collect(audio) AS audios')
+            ->with('u1', 'u2', 'links + audios AS links');
+        $qb->match('(u1)-[:LIKES]->(creator:Creator)<-[:LIKES]-(u2)')
+            ->with('u1', 'u2', 'links', 'collect(creator) AS creators')
+            ->with('u1', 'u2', 'links + creators AS links');
+
+        $qb->unwind('links AS link')
+            ->match('(link)-[:HAS_POPULARITY]->(p:Popularity)')
+            ->where('link.processed = 1', 'EXISTS link.thumbnail', 'EXISTS p.popularity', 'p.popularity > 0', 'NOT id(link) IN {excluded}')
+            ->setParameter('excluded', $excludedIds)
+            ->with('link.thumbnail AS thumbnail', 'id(link) AS linkId', 'p.popularity AS popularity');
+
+        $qb->returns('collect(thumbnail) AS thumbnails', 'collect(linkId) AS linkIds')
+            ->orderBy('popularity ASC')
+            ->limit(3);
+
+        $result = $qb->getQuery()->getResultSet();
+
+        $thumbnails = $result->offsetGet('thumbnails');
+        $linkIds = $result->offsetGet('linkIds');
+
+        return array($thumbnails, $linkIds);
+    }
+
+    protected function getWorkingThumbnails(array $thumbnails)
+    {
+        $workingThumbnails = array();
+        foreach ($thumbnails as $key => $thumbnail) {
+            $imageResponse = $this->imageAnalyzer->buildResponse($thumbnail);
+            if (!$imageResponse->isValid()) {
+                $workingThumbnails[] = $thumbnail;
+            }
+        }
+
+        return $workingThumbnails;
+    }
 }

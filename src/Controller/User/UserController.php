@@ -8,7 +8,7 @@ use Model\Metadata\ProfileMetadataManager;
 use Model\Metadata\UserFilterMetadataManager;
 use Model\User\RateModel;
 use Model\User\Content\ContentReportModel;
-use Model\User\Stats\UserStatsManager;
+use Model\User\Stats\UserStatsCalculator;
 use Manager\UserManager;
 use Model\User;
 use Service\AuthService;

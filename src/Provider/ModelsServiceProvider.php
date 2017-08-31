@@ -44,6 +44,7 @@ use Model\User\Recommendation\UserPopularRecommendationPaginatedModel;
 use Model\User\Recommendation\UserRecommendationPaginatedModel;
 use Model\User\RelationsModel;
 use Model\User\RelationsPaginatedModel;
+use Model\User\Shares\SharesManager;
 use Model\User\Similarity\SimilarityModel;
 use Model\User\SocialNetwork\LinkedinSocialNetworkModel;
 use Model\User\SocialNetwork\SocialProfileManager;
@@ -54,7 +55,7 @@ use Model\User\Thread\UsersThreadManager;
 use Model\User\Token\TokensModel;
 use Model\User\Token\TokenStatus\TokenStatusManager;
 use Model\User\UserDisabledPaginatedModel;
-use Model\User\Stats\UserStatsManager;
+use Model\User\Stats\UserStatsCalculator;
 use Manager\UserManager;
 use Model\User\UserTrackingModel;
 use Security\UserProvider;
@@ -342,7 +343,13 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.stats.manager'] = $app->share(
             function ($app) {
 
-                return new UserStatsManager($app['neo4j.graph_manager'], $app['users.groups.model'], $app['users.relations.model'], $app['users.content.model']);
+                return new UserStatsCalculator($app['neo4j.graph_manager'], $app['api_consumer.link_processor.image_analyzer']);
+            }
+        );
+
+        $app['users.shares.manager'] = $app->share(
+            function ($app) {
+                return new SharesManager($app['neo4j.graph_manager']);
             }
         );
 
