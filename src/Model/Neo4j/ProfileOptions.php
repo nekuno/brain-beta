@@ -220,6 +220,11 @@ class ProfileOptions implements LoggerAwareInterface
                     'name_en' => 'Green',
                     'name_es' => 'Verdes',
                 ),
+                array(
+                    'id' => 'other',
+                    'name_en' => 'Other',
+                    'name_es' => 'Otro',
+                ),
             ),
             'Gender' => array(
                 array(
