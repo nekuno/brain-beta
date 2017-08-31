@@ -374,18 +374,63 @@ class ProfileOptions implements LoggerAwareInterface
             'Orientation' => array(
                 array(
                     'id' => 'heterosexual',
-                    'name_en' => 'Heterosexual',
-                    'name_es' => 'Heterosexual',
+                    'name_en' => 'Straight',
+                    'name_es' => 'Hetero',
                 ),
                 array(
                     'id' => 'homosexual',
-                    'name_en' => 'Homosexual',
-                    'name_es' => 'Homosexual',
+                    'name_en' => 'Gay',
+                    'name_es' => 'Homo',
                 ),
                 array(
                     'id' => 'bisexual',
                     'name_en' => 'Bisexual',
                     'name_es' => 'Bisexual',
+                ),
+                array(
+                    'id' => 'asexual',
+                    'name_en' => 'Asexual',
+                    'name_es' => 'Asexual',
+                ),
+                array(
+                    'id' => 'demisexual',
+                    'name_en' => 'Demisexual',
+                    'name_es' => 'Demisexual',
+                ),
+                array(
+                    'id' => 'heteroflexible',
+                    'name_en' => 'Heteroflexible',
+                    'name_es' => 'Heteroflexible',
+                ),
+                array(
+                    'id' => 'homoflexible',
+                    'name_en' => 'Homoflexible',
+                    'name_es' => 'Homoflexible',
+                ),
+                array(
+                    'id' => 'lesbian',
+                    'name_en' => 'Lesbian',
+                    'name_es' => 'Lesbi',
+                ),
+                array(
+                    'id' => 'pansexual',
+                    'name_en' => 'Pansexual',
+                    'name_es' => 'Pansexual',
+                ),
+                array(
+                    'id' => 'queer',
+                    'name_en' => 'Queer',
+                    'name_es' => 'Queer',
+                ),
+                array(
+                    'id' => 'questioning',
+                    'name_en' => 'Questioning',
+                    'name_es' => 'Cuestionandomelo',
+                ),
+                array(
+                    'id' => 'sapiosexual',
+                    'name_en' => 'Sapiosexual',
+                    'name_es' => 'Sapiosexual',
                 ),
             ),
             'Pets' => array(
