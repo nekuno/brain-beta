@@ -278,8 +278,8 @@ profile:
     complexion:
         type: choice
         label: &complexionLabel
-            en: 'Complexion'
-            es: 'Complexión'
+            en: 'Body type'
+            es: 'Tipo de cuerpo'
         labelEdit: *complexionLabel
     eyeColor:
         type: choice

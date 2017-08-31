@@ -94,18 +94,53 @@ class ProfileOptions implements LoggerAwareInterface
             'Complexion' => array(
                 array(
                     'id' => 'slim',
-                    'name_en' => 'Slim',
-                    'name_es' => 'Flaco',
+                    'name_en' => 'Thin',
+                    'name_es' => 'Delgado',
                 ),
                 array(
                     'id' => 'normal',
-                    'name_en' => 'Normal',
-                    'name_es' => 'Normal',
+                    'name_en' => 'Average build',
+                    'name_es' => 'Promedio',
                 ),
                 array(
                     'id' => 'fat',
-                    'name_en' => 'Fat',
-                    'name_es' => 'Gordo',
+                    'name_en' => 'Full-figured',
+                    'name_es' => 'Voluptuoso',
+                ),
+                array(
+                    'id' => 'overweight',
+                    'name_en' => 'Overweight',
+                    'name_es' => 'Con sobrepeso',
+                ),
+                array(
+                    'id' => 'fit',
+                    'name_en' => 'Fit',
+                    'name_es' => 'En forma',
+                ),
+                array(
+                    'id' => 'jacked',
+                    'name_en' => 'Jacked',
+                    'name_es' => 'Musculado',
+                ),
+                array(
+                    'id' => 'little-extra',
+                    'name_en' => 'A little extra',
+                    'name_es' => 'Rellenito',
+                ),
+                array(
+                    'id' => 'curvy',
+                    'name_en' => 'Curvy',
+                    'name_es' => 'Con curvas',
+                ),
+                array(
+                    'id' => 'used-up',
+                    'name_en' => 'Used up',
+                    'name_es' => 'Huesudo',
+                ),
+                array(
+                    'id' => 'rather-not-say',
+                    'name_en' => 'Rather not say',
+                    'name_es' => 'Prefiero no decir',
                 ),
             ),
             'Diet' => array(
