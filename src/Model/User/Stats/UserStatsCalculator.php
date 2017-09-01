@@ -124,31 +124,17 @@ class UserStatsCalculator
 
     public function calculateTopLinks($userId1, $userId2)
     {
-        $amountDesired = 3;
-        $excluded = array();
-        $workingThumbnails = array();
-        do {
-            list($newThumbnails, $linkIds) = $this->getTopLinks($userId1, $userId2, $excluded);
+        $newThumbnails = $this->getTopLinks($userId1, $userId2);
 
-            $workingThumbnails += $this->getWorkingThumbnails($newThumbnails);
-            $excluded += $linkIds;
-
-            $enoughResults = count($workingThumbnails) >= $amountDesired;
-            $moreResultsAvailable = count($newThumbnails) !== 0;
-        } while (!$enoughResults && $moreResultsAvailable);
-
-        $workingThumbnails = array_slice($workingThumbnails, 0, $amountDesired);
-
-        return $workingThumbnails;
+        return $this->getWorkingThumbnails($newThumbnails);
     }
 
     /**
      * @param $userId1
      * @param $userId2
-     * @param array $excludedIds
      * @return array
      */
-    protected function getTopLinks($userId1, $userId2, $excludedIds)
+    protected function getTopLinks($userId1, $userId2)
     {
         $qb = $this->graphManager->createQueryBuilder();
 
@@ -157,40 +143,46 @@ class UserStatsCalculator
             ->setParameter('id2', (integer)$userId2)
             ->with('u1', 'u2');
 
-        $qb->match('(u1)-[:LIKES]->(video:Video)<-[:LIKES]-(u2)')
+        $qb->optionalMatch('(u1)-[:LIKES]->(video:Video)<-[:LIKES]-(u2)')
             ->with('u1', 'u2', 'collect(video) AS links');
-        $qb->match('(u1)-[:LIKES]->(audio:Audio)<-[:LIKES]-(u2)')
+        $qb->optionalMatch('(u1)-[:LIKES]->(audio:Audio)<-[:LIKES]-(u2)')
             ->with('u1', 'u2', 'links', 'collect(audio) AS audios')
             ->with('u1', 'u2', 'links + audios AS links');
-        $qb->match('(u1)-[:LIKES]->(creator:Creator)<-[:LIKES]-(u2)')
+        $qb->optionalMatch('(u1)-[:LIKES]->(creator:Creator)<-[:LIKES]-(u2)')
             ->with('u1', 'u2', 'links', 'collect(creator) AS creators')
             ->with('u1', 'u2', 'links + creators AS links');
 
         $qb->unwind('links AS link')
             ->match('(link)-[:HAS_POPULARITY]->(p:Popularity)')
-            ->where('link.processed = 1', 'EXISTS link.thumbnail', 'EXISTS p.popularity', 'p.popularity > 0', 'NOT id(link) IN {excluded}')
-            ->setParameter('excluded', $excludedIds)
-            ->with('link.thumbnail AS thumbnail', 'id(link) AS linkId', 'p.popularity AS popularity');
+            ->where('link.processed = 1', 'EXISTS (link.thumbnail)', 'EXISTS (p.popularity)', 'p.popularity > 0')
+            ->with('link.thumbnail AS thumbnail', 'id(link) AS linkId', 'p.popularity AS popularity')
+            ->orderBy('popularity ASC');
 
-        $qb->returns('collect(thumbnail) AS thumbnails', 'collect(linkId) AS linkIds')
-            ->orderBy('popularity ASC')
-            ->limit(3);
+        $qb->returns('thumbnail', 'linkId');
 
         $result = $qb->getQuery()->getResultSet();
 
-        $thumbnails = $result->offsetGet('thumbnails');
-        $linkIds = $result->offsetGet('linkIds');
+        $thumbnails = array();
+        foreach ($result as $row ) {
+            $thumbnails[] = $row->offsetGet('thumbnail');
+        }
 
-        return array($thumbnails, $linkIds);
+        return $thumbnails;
     }
 
-    protected function getWorkingThumbnails(array $thumbnails)
+    protected function getWorkingThumbnails(array $thumbnails, $limit = 3)
     {
         $workingThumbnails = array();
-        foreach ($thumbnails as $key => $thumbnail) {
+
+        foreach ($thumbnails as $thumbnail) {
             $imageResponse = $this->imageAnalyzer->buildResponse($thumbnail);
-            if (!$imageResponse->isValid()) {
+
+            if ($imageResponse->isImage()) {
                 $workingThumbnails[] = $thumbnail;
+            }
+
+            if (count($workingThumbnails) >= $limit) {
+                break;
             }
         }
 

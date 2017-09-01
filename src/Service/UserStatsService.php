@@ -49,6 +49,7 @@ class UserStatsService
         $this->groupModel = $groupModel;
         $this->relationsModel = $relationsModel;
         $this->contentPaginatedModel = $contentPaginatedModel;
+        $this->sharesManager = $sharesManager;
     }
 
     public function getStats($userId)

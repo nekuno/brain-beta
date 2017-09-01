@@ -53,7 +53,7 @@ class SharesManager
 
         foreach ($shares->toArray() as $parameter => $value)
         {
-            $qb->set("shares.$parameter = {$parameter}")
+            $qb->set("shares.$parameter = { $parameter }")
                 ->setParameter($parameter, $value);
         }
 
@@ -67,7 +67,7 @@ class SharesManager
             throw new NotFoundHttpException($errorMessage);
         }
 
-        $sharesId = $result->offsetGet('shares');
+        $sharesId = $result->current()->offsetGet('shares');
         $shares->setId($sharesId);
 
         return $shares;
@@ -92,7 +92,7 @@ class SharesManager
     protected function buildOne(ResultSet $resultSet)
     {
         /** @var Relationship $sharesRelationship */
-        $sharesRelationship = $resultSet->offsetGet('shares');
+        $sharesRelationship = $resultSet->current()->offsetGet('shares');
 
         $shares = new Shares();
         $shares->setId($sharesRelationship->getId());
