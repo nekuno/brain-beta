@@ -195,7 +195,15 @@ class ThreadsTest extends ThreadsAPITest
     {
         $threadId = $this->getFirstThreadId();
         $response = $this->getRecommendations($threadId);
-        $this->assertJsonResponse($response, 200, 'Correctly get recommendation from created thread');
+        $formattedResponse = $this->assertJsonResponse($response, 200, 'Correctly get recommendation from created thread');
+        $this->assertArrayHasKey('items', $formattedResponse, 'Recommendation list has items key');
+        $this->assertArrayOfType('array', $formattedResponse['items'], 'Recommendation items is an array of arrays');
+
+        foreach ($formattedResponse['items'] as $recommendation)
+        {
+            $this->assertArrayHasKey('topLinks', $recommendation, 'Each recommendation has topLinks key');
+            $this->assertArrayOfType('strings', $recommendation['topLinks'], 'Each topLinks is an array of strings');
+        }
     }
 
     public function assertDeleteThread()
