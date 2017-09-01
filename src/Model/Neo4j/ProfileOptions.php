@@ -94,18 +94,53 @@ class ProfileOptions implements LoggerAwareInterface
             'Complexion' => array(
                 array(
                     'id' => 'slim',
-                    'name_en' => 'Slim',
-                    'name_es' => 'Flaco',
+                    'name_en' => 'Thin',
+                    'name_es' => 'Delgado',
                 ),
                 array(
                     'id' => 'normal',
-                    'name_en' => 'Normal',
-                    'name_es' => 'Normal',
+                    'name_en' => 'Average build',
+                    'name_es' => 'Promedio',
                 ),
                 array(
                     'id' => 'fat',
-                    'name_en' => 'Fat',
-                    'name_es' => 'Gordo',
+                    'name_en' => 'Full-figured',
+                    'name_es' => 'Voluptuoso',
+                ),
+                array(
+                    'id' => 'overweight',
+                    'name_en' => 'Overweight',
+                    'name_es' => 'Con sobrepeso',
+                ),
+                array(
+                    'id' => 'fit',
+                    'name_en' => 'Fit',
+                    'name_es' => 'En forma',
+                ),
+                array(
+                    'id' => 'jacked',
+                    'name_en' => 'Jacked',
+                    'name_es' => 'Musculado',
+                ),
+                array(
+                    'id' => 'little-extra',
+                    'name_en' => 'A little extra',
+                    'name_es' => 'Rellenito',
+                ),
+                array(
+                    'id' => 'curvy',
+                    'name_en' => 'Curvy',
+                    'name_es' => 'Con curvas',
+                ),
+                array(
+                    'id' => 'used-up',
+                    'name_en' => 'Used up',
+                    'name_es' => 'Huesudo',
+                ),
+                array(
+                    'id' => 'rather-not-say',
+                    'name_en' => 'Rather not say',
+                    'name_es' => 'Prefiero no decir',
                 ),
             ),
             'Diet' => array(
@@ -150,18 +185,48 @@ class ProfileOptions implements LoggerAwareInterface
             'EthnicGroup' => array(
                 array(
                     'id' => 'oriental',
-                    'name_en' => 'Oriental',
-                    'name_es' => 'Oriental',
+                    'name_en' => 'Asian',
+                    'name_es' => 'Asiática',
                 ),
                 array(
                     'id' => 'afro-american',
-                    'name_en' => 'Afro-American',
-                    'name_es' => 'Afro-Americano',
+                    'name_en' => 'Black',
+                    'name_es' => 'Negra',
                 ),
                 array(
                     'id' => 'caucasian',
-                    'name_en' => 'Caucasian',
-                    'name_es' => 'Caucasico',
+                    'name_en' => 'White',
+                    'name_es' => 'Blanca',
+                ),
+                array(
+                    'id' => 'indian',
+                    'name_en' => 'Indian',
+                    'name_es' => 'India',
+                ),
+                array(
+                    'id' => 'middle-eastern',
+                    'name_en' => 'Middle Eastern',
+                    'name_es' => 'Medio Oriente',
+                ),
+                array(
+                    'id' => 'native-american',
+                    'name_en' => 'Native American',
+                    'name_es' => 'Indígena Americana',
+                ),
+                array(
+                    'id' => 'pacific-islander',
+                    'name_en' => 'Pacific Islander',
+                    'name_es' => 'Isleño del Pacífico',
+                ),
+                array(
+                    'id' => 'gypsy',
+                    'name_en' => 'Romani/Gypsy',
+                    'name_es' => 'Romaní/Gitana',
+                ),
+                array(
+                    'id' => 'hispanic-latin',
+                    'name_en' => 'Hispanic/Latin',
+                    'name_es' => 'Hispana/Latina',
                 ),
             ),
             'EyeColor' => array(
@@ -184,6 +249,11 @@ class ProfileOptions implements LoggerAwareInterface
                     'id' => 'green',
                     'name_en' => 'Green',
                     'name_es' => 'Verdes',
+                ),
+                array(
+                    'id' => 'other',
+                    'name_en' => 'Other',
+                    'name_es' => 'Otro',
                 ),
             ),
             'Gender' => array(
@@ -374,18 +444,63 @@ class ProfileOptions implements LoggerAwareInterface
             'Orientation' => array(
                 array(
                     'id' => 'heterosexual',
-                    'name_en' => 'Heterosexual',
-                    'name_es' => 'Heterosexual',
+                    'name_en' => 'Straight',
+                    'name_es' => 'Hetero',
                 ),
                 array(
                     'id' => 'homosexual',
-                    'name_en' => 'Homosexual',
-                    'name_es' => 'Homosexual',
+                    'name_en' => 'Gay',
+                    'name_es' => 'Homo',
                 ),
                 array(
                     'id' => 'bisexual',
                     'name_en' => 'Bisexual',
                     'name_es' => 'Bisexual',
+                ),
+                array(
+                    'id' => 'asexual',
+                    'name_en' => 'Asexual',
+                    'name_es' => 'Asexual',
+                ),
+                array(
+                    'id' => 'demisexual',
+                    'name_en' => 'Demisexual',
+                    'name_es' => 'Demisexual',
+                ),
+                array(
+                    'id' => 'heteroflexible',
+                    'name_en' => 'Heteroflexible',
+                    'name_es' => 'Heteroflexible',
+                ),
+                array(
+                    'id' => 'homoflexible',
+                    'name_en' => 'Homoflexible',
+                    'name_es' => 'Homoflexible',
+                ),
+                array(
+                    'id' => 'lesbian',
+                    'name_en' => 'Lesbian',
+                    'name_es' => 'Lesbi',
+                ),
+                array(
+                    'id' => 'pansexual',
+                    'name_en' => 'Pansexual',
+                    'name_es' => 'Pansexual',
+                ),
+                array(
+                    'id' => 'queer',
+                    'name_en' => 'Queer',
+                    'name_es' => 'Queer',
+                ),
+                array(
+                    'id' => 'questioning',
+                    'name_en' => 'Questioning',
+                    'name_es' => 'Cuestionandomelo',
+                ),
+                array(
+                    'id' => 'sapiosexual',
+                    'name_en' => 'Sapiosexual',
+                    'name_es' => 'Sapiosexual',
                 ),
             ),
             'Pets' => array(

@@ -22,34 +22,6 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class UserController
 {
-    /**
-     * @param Application $app
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function indexAction(Application $app, Request $request)
-    {
-        $filters = array();
-
-        $referenceUserId = $request->get('referenceUserId');
-        if (null != $referenceUserId) {
-            $filters['referenceUserId'] = $referenceUserId;
-        }
-
-        $profile = $request->get('profile');
-        if (null != $profile) {
-            $filters['profile'] = $profile;
-        }
-
-        /* @var $paginator \Paginator\Paginator */
-        $paginator = $app['paginator'];
-
-        $model = $app['users.manager'];
-
-        $result = $paginator->paginate($filters, $model, $request);
-
-        return $app->json($result);
-    }
 
     /**
      * @param Application $app

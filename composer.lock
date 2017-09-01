@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "1c97d1086524e7ab94c3ddb2c4d81c87",
+    "content-hash": "47db27c176c12a9ddca3fa47ce29b5b4",
     "packages": [
         {
             "name": "cnam/security-jwt-service-provider",
@@ -1441,7 +1441,7 @@
         },
         {
             "name": "knplabs/console-service-provider",
-            "version": "dev-master",
+            "version": "1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/KnpLabs/ConsoleServiceProvider.git",
@@ -1469,7 +1469,7 @@
             ],
             "authors": [
                 {
-                    "name": "KnpLabs",
+                    "name": "Knplabs",
                     "homepage": "http://knplabs.com"
                 }
             ],
@@ -1479,7 +1479,7 @@
                 "console",
                 "silex"
             ],
-            "time": "2016-02-01 15:38:27"
+            "time": "2016-02-01T15:38:27+00:00"
         },
         {
             "name": "kriswallsmith/buzz",
@@ -4936,7 +4936,6 @@
         "dflydev/doctrine-orm-service-provider": 20,
         "everyman/neo4jphp": 20,
         "igorw/config-service-provider": 20,
-        "knplabs/console-service-provider": 20,
         "fabpot/goutte": 20,
         "swiftmailer/swiftmailer": 20,
         "google/apiclient": 20

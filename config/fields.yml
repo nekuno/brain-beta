@@ -270,16 +270,16 @@ profile:
             es: 'Color de pelo'
         labelEdit: *hairColorLabel
     ethnicGroup:
-        type: choice
+        type: multiple_choices
         label: &ethnicGroupLabel
-            en: 'Ethnic group'
-            es: 'Grupo Étnico'
+            en: 'Ethnicity'
+            es: 'Étnia'
         labelEdit: *ethnicGroupLabel
     complexion:
         type: choice
         label: &complexionLabel
-            en: 'Complexion'
-            es: 'Complexión'
+            en: 'Body type'
+            es: 'Tipo de cuerpo'
         labelEdit: *complexionLabel
     eyeColor:
         type: choice
@@ -340,7 +340,7 @@ profile:
             en: 'Are you on a special diet?'
             es: '¿Sigues alguna dieta especial?'
     orientation:
-        type: choice
+        type: multiple_choices
         label: &orientationLabel
             en: 'Orientation'
             es: 'Orientación'

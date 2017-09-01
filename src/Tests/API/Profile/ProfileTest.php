@@ -157,7 +157,7 @@ class ProfileTest extends ProfileAPITest
         $this->assertEquals(40.4167754, $profile['location']['latitude'], "latitude is not 40.4167754");
         $this->assertEquals('capricorn', $profile['zodiacSign'], "zodiacSign is not capricorn");
         $this->assertEquals('male', $profile['gender'], "gender is not male");
-        $this->assertEquals('heterosexual', $profile['orientation'], "orientation is not heterosexual");
+        $this->assertContains('heterosexual', $profile['orientation'], "orientation is not heterosexual");
         $this->assertEquals('es', $profile['interfaceLanguage'], "interfaceLanguage is not es");
     }
 
@@ -182,7 +182,7 @@ class ProfileTest extends ProfileAPITest
         $this->assertEquals(39.577383, $profile['location']['latitude'], "latitude is not 40.4167754");
         $this->assertEquals('scorpio', $profile['zodiacSign'], "zodiacSign is not scorpio");
         $this->assertEquals('female', $profile['gender'], "gender is not female");
-        $this->assertEquals('homosexual', $profile['orientation'], "orientation is not homosexual");
+        $this->assertContains('homosexual', $profile['orientation'], "orientation is not homosexual");
         $this->assertEquals('en', $profile['interfaceLanguage'], "interfaceLanguage is not en");
     }
 
@@ -229,7 +229,7 @@ class ProfileTest extends ProfileAPITest
         $this->assertEquals(40.4167754, $profile['location']['latitude'], "latitude is not 40.4167754");
         $this->assertEquals('capricorn', $profile['zodiacSign'], "zodiacSign is not capricorn");
         $this->assertEquals('male', $profile['gender'], "gender is not male");
-        $this->assertEquals('heterosexual', $profile['orientation'], "orientation is not heterosexual");
+        $this->assertContains('heterosexual', $profile['orientation'], "orientation is not heterosexual");
         $this->assertEquals('es', $profile['interfaceLanguage'], "interfaceLanguage is not es");
         $this->assertEquals('atheism', $profile['religion']['choice'], "religion choice is not atheism");
         $this->assertEquals('not_important', $profile['religion']['detail'], "religion detail is not not_important");
@@ -288,7 +288,7 @@ class ProfileTest extends ProfileAPITest
         $this->assertEquals(40.4167754, $profile['location']['latitude'], "latitude is not 40.4167754");
         $this->assertEquals('capricorn', $profile['zodiacSign'], "zodiacSign is not capricorn");
         $this->assertEquals('male', $profile['gender'], "gender is not male");
-        $this->assertEquals('heterosexual', $profile['orientation'], "orientation is not heterosexual");
+        $this->assertContains('heterosexual', $profile['orientation'], "orientation is not heterosexual");
         $this->assertEquals('es', $profile['interfaceLanguage'], "interfaceLanguage is not es");
         $this->assertEquals('agnosticism', $profile['religion']['choice'], "religion choice is not agnosticism");
         $this->assertEquals('important', $profile['religion']['detail'], "religion detail is not important");
@@ -416,7 +416,7 @@ class ProfileTest extends ProfileAPITest
                 "latitude" => 40.4167754
             ),
             "gender" => "male",
-            "orientation" => "heterosexual",
+            "orientation" => array("heterosexual"),
             "interfaceLanguage" => "es"
         );
     }
@@ -433,7 +433,7 @@ class ProfileTest extends ProfileAPITest
                 "latitude" => 39.577383
             ),
             "gender" => "female",
-            "orientation" => "homosexual",
+            "orientation" => array("homosexual"),
             "interfaceLanguage" => "en"
         );
     }
@@ -462,7 +462,7 @@ class ProfileTest extends ProfileAPITest
             "civilStatus" => "married",
             "hairColor" => "brown",
             "relationshipInterest" => "friendship",
-            "orientation" => "heterosexual",
+            "orientation" => array("heterosexual"),
             "language" => array(
                 array(
                     "tag" => "English",
@@ -509,7 +509,7 @@ class ProfileTest extends ProfileAPITest
             "civilStatus" => "married",
             "hairColor" => "black",
             "relationshipInterest" => "friendship",
-            "orientation" => "heterosexual",
+            "orientation" => array("heterosexual"),
             "language" => array(
                 array(
                     "tag" => "German",
@@ -540,7 +540,7 @@ class ProfileTest extends ProfileAPITest
                 "latitude" => 40.4167754
             ),
             "gender" => "male",
-            "orientation" => "heterosexual",
+            "orientation" => array("heterosexual"),
             "interfaceLanguage" => "es"
         );
     }
@@ -557,7 +557,7 @@ class ProfileTest extends ProfileAPITest
                 "latitude" => 40.4167754
             ),
             "gender" => "male",
-            "orientation" => "heterosexual",
+            "orientation" => array("heterosexual"),
             "interfaceLanguage" => "es"
         );
     }
@@ -574,7 +574,7 @@ class ProfileTest extends ProfileAPITest
                 "latitude" => 40.4167754
             ),
             "gender" => "none-existent",
-            "orientation" => "heterosexual",
+            "orientation" => array("heterosexual"),
             "interfaceLanguage" => "es"
         );
     }
@@ -591,7 +591,7 @@ class ProfileTest extends ProfileAPITest
                 "latitude" => 40.4167754
             ),
             "gender" => "male",
-            "orientation" => "none-existent",
+            "orientation" => array("none-existent"),
             "interfaceLanguage" => "es"
         );
     }
@@ -608,7 +608,7 @@ class ProfileTest extends ProfileAPITest
                 "latitude" => 40.4167754
             ),
             "gender" => "male",
-            "orientation" => "heterosexual",
+            "orientation" => array("heterosexual"),
             "interfaceLanguage" => "none-existent"
         );
     }

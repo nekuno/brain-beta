@@ -182,7 +182,7 @@ class Fixtures
             $profileData = array(
                 'birthday' => '1970-01-01',
                 'gender' => 'male',
-                'orientation' => 'heterosexual',
+                'orientation' => array('heterosexual'),
                 'interfaceLanguage' => 'es',
                 'location' => array(
                     'latitude' => 40.4167754,

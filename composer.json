@@ -1,6 +1,6 @@
 {
     "name": "nekuno/brain",
-    "version": "0.66.2",
+    "version": "0.67.1",
     "description": "Nekuno brain",
     "license": "AGPL-3.0",
     "type": "project",
@@ -28,7 +28,7 @@
         "igorw/config-service-provider": "1.2.*@dev",
         "guzzlehttp/guzzle": "5.3.1",
         "guzzlehttp/oauth-subscriber": "0.2",
-        "knplabs/console-service-provider": "dev-master",
+        "knplabs/console-service-provider": "1.1",
         "fabpot/goutte": "2.0.*@dev",
         "swiftmailer/swiftmailer": "5.2.*@dev",
         "google/apiclient": "dev-v1-master",
