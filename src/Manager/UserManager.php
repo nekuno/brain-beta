@@ -669,9 +669,10 @@ class UserManager implements PaginatedInterface
         $qb->setParameters(array('limit' => (integer)$limit));
 
         $qb->match('(ref:User {qnoow_id: { id }})')
+            ->where('NOT ref:GhostUser')
             ->setParameter('id', (integer)$id)
             ->match('(ref)-[:LIKES|DISLIKES]->(:Link)<-[l:LIKES]-(u:User)')
-            ->where('NOT (ref.qnoow_id = u.qnoow_id)')
+            ->where('NOT (ref.qnoow_id = u.qnoow_id)', 'NOT u:GhostUser')
             ->with('u', 'count(l) as amount')
             ->orderBy('amount DESC')
             ->limit('{limit}')
