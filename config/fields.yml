@@ -270,10 +270,10 @@ profile:
             es: 'Color de pelo'
         labelEdit: *hairColorLabel
     ethnicGroup:
-        type: choice
+        type: multiple_choices
         label: &ethnicGroupLabel
-            en: 'Ethnic group'
-            es: 'Grupo Étnico'
+            en: 'Ethnicity'
+            es: 'Étnia'
         labelEdit: *ethnicGroupLabel
     complexion:
         type: choice

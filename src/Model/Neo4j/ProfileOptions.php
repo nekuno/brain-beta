@@ -185,18 +185,48 @@ class ProfileOptions implements LoggerAwareInterface
             'EthnicGroup' => array(
                 array(
                     'id' => 'oriental',
-                    'name_en' => 'Oriental',
-                    'name_es' => 'Oriental',
+                    'name_en' => 'Asian',
+                    'name_es' => 'Asiática',
                 ),
                 array(
                     'id' => 'afro-american',
-                    'name_en' => 'Afro-American',
-                    'name_es' => 'Afro-Americano',
+                    'name_en' => 'Black',
+                    'name_es' => 'Negra',
                 ),
                 array(
                     'id' => 'caucasian',
-                    'name_en' => 'Caucasian',
-                    'name_es' => 'Caucasico',
+                    'name_en' => 'White',
+                    'name_es' => 'Blanca',
+                ),
+                array(
+                    'id' => 'indian',
+                    'name_en' => 'Indian',
+                    'name_es' => 'India',
+                ),
+                array(
+                    'id' => 'middle-eastern',
+                    'name_en' => 'Middle Eastern',
+                    'name_es' => 'Medio Oriente',
+                ),
+                array(
+                    'id' => 'native-american',
+                    'name_en' => 'Native American',
+                    'name_es' => 'Indígena Americana',
+                ),
+                array(
+                    'id' => 'pacific-islander',
+                    'name_en' => 'Pacific Islander',
+                    'name_es' => 'Isleño del Pacífico',
+                ),
+                array(
+                    'id' => 'gypsy',
+                    'name_en' => 'Romani/Gypsy',
+                    'name_es' => 'Romaní/Gitana',
+                ),
+                array(
+                    'id' => 'hispanic-latin',
+                    'name_en' => 'Hispanic/Latin',
+                    'name_es' => 'Hispana/Latina',
                 ),
             ),
             'EyeColor' => array(
