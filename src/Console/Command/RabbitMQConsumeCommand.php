@@ -189,6 +189,7 @@ class RabbitMQConsumeCommand extends ApplicationAwareCommand
             $this->app['users.manager'],
             $this->app['users.matching.model'],
             $this->app['users.similarity.model'],
+            $this->app['userStats.service'],
             $this->app['questionnaire.questions.model'],
             $this->app['affinityRecalculations.service'],
             $this->app['dbs']['mysql_brain'],

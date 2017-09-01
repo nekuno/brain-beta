@@ -3,7 +3,7 @@
 namespace Model\User;
 
 
-class UserComparedStatsModel
+class UserComparedStats
 {
     protected $groupsBelonged;
 

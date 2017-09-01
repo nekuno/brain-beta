@@ -5,7 +5,7 @@ namespace Controller\User;
 use Model\User\Thread\ThreadPaginatedModel;
 use Model\User;
 use Paginator\Paginator;
-use Service\Recommendator;
+use Service\RecommendatorService;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -118,7 +118,7 @@ class ThreadController
      * @throws \Exception
      */
     protected function getRecommendations($app, $thread, Request $request) {
-        /** @var Recommendator $recommendator */
+        /** @var RecommendatorService $recommendator */
         $recommendator = $app['recommendator.service'];
         try {
             $result = $recommendator->getRecommendationFromThreadAndRequest($thread, $request);
