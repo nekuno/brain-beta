@@ -8,6 +8,8 @@ class Shares implements \JsonSerializable
 
     protected $topLinks = array();
 
+    protected $sharedLinks = 0;
+
     /**
      * @return mixed
      */
@@ -40,15 +42,27 @@ class Shares implements \JsonSerializable
         $this->topLinks = $topLinks;
     }
 
-    public function addTopLink($topLink)
+    /**
+     * @return mixed
+     */
+    public function getSharedLinks()
     {
-        $this->topLinks[] = $topLink;
+        return $this->sharedLinks;
+    }
+
+    /**
+     * @param mixed $sharedLinks
+     */
+    public function setSharedLinks($sharedLinks)
+    {
+        $this->sharedLinks = $sharedLinks;
     }
 
     public function toArray()
     {
         return array(
             'topLinks' => $this->topLinks,
+            'sharedLinks' => $this->sharedLinks,
         );
     }
 
