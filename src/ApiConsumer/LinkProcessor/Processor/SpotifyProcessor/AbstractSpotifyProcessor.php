@@ -3,11 +3,11 @@
 namespace ApiConsumer\LinkProcessor\Processor\SpotifyProcessor;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use ApiConsumer\LinkProcessor\Processor\AbstractProcessor;
+use ApiConsumer\LinkProcessor\Processor\AbstractAPIProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
 use ApiConsumer\ResourceOwner\SpotifyResourceOwner;
 
-abstract class AbstractSpotifyProcessor extends AbstractProcessor
+abstract class AbstractSpotifyProcessor extends AbstractAPIProcessor
 {
     const DEFAULT_IMAGE_PATH = 'default_images/spotify.png';
 

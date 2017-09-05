@@ -3,12 +3,12 @@
 namespace ApiConsumer\LinkProcessor\Processor\YoutubeProcessor;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use ApiConsumer\LinkProcessor\Processor\AbstractProcessor;
+use ApiConsumer\LinkProcessor\Processor\AbstractAPIProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
 use ApiConsumer\ResourceOwner\GoogleResourceOwner;
 use Model\User\Token\Token;
 
-abstract class AbstractYoutubeProcessor extends AbstractProcessor
+abstract class AbstractYoutubeProcessor extends AbstractAPIProcessor
 {
     const DEFAULT_IMAGE_PATH = 'default_images/youtube.png';
 

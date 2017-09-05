@@ -3,11 +3,11 @@
 namespace ApiConsumer\LinkProcessor\Processor\FacebookProcessor;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use ApiConsumer\LinkProcessor\Processor\AbstractProcessor;
+use ApiConsumer\LinkProcessor\Processor\AbstractAPIProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;
 
-abstract class AbstractFacebookProcessor extends AbstractProcessor
+abstract class AbstractFacebookProcessor extends AbstractAPIProcessor
 {
     const DEFAULT_IMAGE_PATH = 'default_images/facebook.png';
 

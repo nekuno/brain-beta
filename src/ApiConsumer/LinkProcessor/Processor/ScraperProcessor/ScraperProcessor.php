@@ -5,6 +5,7 @@ namespace ApiConsumer\LinkProcessor\Processor\ScraperProcessor;
 use ApiConsumer\Exception\CannotProcessException;
 use ApiConsumer\Factory\GoutteClientFactory;
 use ApiConsumer\Images\ImageResponse;
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\MetadataParser\BasicMetadataParser;
 use ApiConsumer\LinkProcessor\MetadataParser\FacebookMetadataParser;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
@@ -50,11 +51,7 @@ class ScraperProcessor extends AbstractScraperProcessor
             throw new CannotProcessException($url);
         }
 
-        $imageResponse = new ImageResponse($url, 200, $this->client->getResponse()->getHeader('Content-Type'));
-        if ($imageResponse->isImage()) {
-            $image = Image::buildFromArray($preprocessedLink->getFirstLink()->toArray());
-            $preprocessedLink->setFirstLink($image);
-        }
+        $this->checkImageType($preprocessedLink, $url);
 
         return array('html' => $crawler->html());
     }
@@ -84,7 +81,16 @@ class ScraperProcessor extends AbstractScraperProcessor
         $this->fixRelativeUrls($images, $url);
         $this->fixSchemeUrls($images, $url);
 
-        return $images;
+        return $this->buildProcessingImages($images);
+    }
+
+    protected function checkImageType(PreprocessedLink $preprocessedLink, $url)
+    {
+        $imageResponse = new ImageResponse($url, 200, $this->client->getResponse()->getHeader('Content-Type'));
+        if ($imageResponse->isImage()) {
+            $image = Image::buildFromArray($preprocessedLink->getFirstLink()->toArray());
+            $preprocessedLink->setFirstLink($image);
+        }
     }
 
     private function fixRelativeUrls(array &$images, $url)
@@ -140,6 +146,17 @@ class ScraperProcessor extends AbstractScraperProcessor
             $setter = 'set' . ucfirst($field);
             $link->$setter($scrapedData[$field]);
         }
+    }
+
+    protected function buildProcessingImages(array $urls)
+    {
+        $processingImages = array();
+        foreach ($urls as $url)
+        {
+            $processingImages[] = new ProcessingImage($url);
+        }
+
+        return $processingImages;
     }
 
     public function addTags(PreprocessedLink $preprocessedLink, array $data)

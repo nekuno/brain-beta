@@ -10,15 +10,40 @@ class ImageAnalyzer
 {
     protected $client;
 
+    protected $responses = array();
+
     public function __construct(Client $client)
     {
         $this->client = $client;
     }
 
-    public function selectImage(array $imageUrls)
+    /**
+     * @param ImageResponse[] $imageResponses
+     * @return string|null
+     */
+    public function selectSmallThumbnail(array $imageResponses)
+    {
+        return $this->selectLargeThumbnail($imageResponses);
+    }
+
+    /**
+     * @param ImageResponse[] $imageResponses
+     * @return string|null
+     */
+    public function selectMediumThumbnail(array $imageResponses)
+    {
+        return $this->selectLargeThumbnail($imageResponses);
+    }
+
+    /**
+     * @param ImageResponse[] $imageResponses
+     * @return string|null
+     */
+    public function selectLargeThumbnail(array $imageResponses)
     {
         $selectedImage = null;
-        foreach ($imageUrls as $imageUrl) {
+        foreach ($imageResponses as $imageResponse) {
+            $imageUrl = $imageResponse->getUrl();
             $image = $this->buildResponse($imageUrl);
             if ($image->isValid()) {
                 $selectedImage = $image;
@@ -87,6 +112,10 @@ class ImageAnalyzer
 
     public function buildResponse($imageUrl)
     {
+        if (isset($this->responses[$imageUrl])) {
+            return $this->responses[$imageUrl];
+        }
+
         try {
             $head = $this->client->head($imageUrl);
         } catch (\Exception $e) {
@@ -96,6 +125,8 @@ class ImageAnalyzer
         $length = $this->getLength($head, $imageUrl);
 
         $response = new ImageResponse($imageUrl, $head->getStatusCode(), $head->getHeader('Content-Type'), $length);
+
+        $this->responses[$imageUrl] = $response;
 
         return $response;
     }

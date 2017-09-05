@@ -2,13 +2,14 @@
 
 namespace Model\Link;
 
-
 class Link implements \JsonSerializable
 {
     protected $id;
     protected $url;
     protected $title;
     protected $thumbnail;
+    protected $thumbnailMedium;
+    protected $thumbnailSmall;
     protected $description;
     protected $tags = array();
     protected $created;
@@ -21,42 +22,50 @@ class Link implements \JsonSerializable
     /** @var Link[] */
     protected $synonymous = array();
 
-    public static function buildFromArray(array $array){
+    public static function buildFromArray(array $array)
+    {
 
         $link = new static();
 
-        if (isset($array['id'])){
+        if (isset($array['id'])) {
             $link->setId($array['id']);
         }
-        if (isset($array['url'])){
+        if (isset($array['url'])) {
             $link->setUrl($array['url']);
         }
-        if (isset($array['title'])){
+        if (isset($array['title'])) {
             $link->setTitle($array['title']);
         }
-        if (isset($array['description'])){
+        if (isset($array['description'])) {
             $link->setDescription($array['description']);
         }
         if (isset($array['tags'])) {
             $link->setTags($array['tags']);
         }
-        if (isset($array['thumbnail'])){
-            $link->setThumbnail($array['thumbnail']);
+        if (isset($array['thumbnail'])) {
+            $link->setThumbnailLarge($array['thumbnail']);
         }
-        if (isset($array['processed'])){
+        if (isset($array['thumbnailSmall'])) {
+            $link->setThumbnailSmall($array['thumbnailSmall']);
+        }
+        if (isset($array['thumbnailMedium'])) {
+            $link->setThumbnailMedium($array['thumbnailMedium']);
+        }
+        if (isset($array['processed'])) {
             $link->setProcessed((boolean)$array['processed']);
         }
-        if (isset($array['imageProcessed'])){
+        if (isset($array['imageProcessed'])) {
             $link->setImageProcessed($array['imageProcessed']);
         }
-        if (isset($array['timestamp'])){
+        if (isset($array['timestamp'])) {
             $link->setCreated($array['timestamp']);
         }
 
         return $link;
     }
 
-    public function toArray() {
+    public function toArray()
+    {
         $array = array();
         foreach ($this as $attribute => $value) {
             $array[$attribute] = $value;
@@ -116,7 +125,7 @@ class Link implements \JsonSerializable
     /**
      * @return mixed
      */
-    public function getThumbnail()
+    public function getThumbnailLarge()
     {
         return $this->thumbnail;
     }
@@ -124,9 +133,41 @@ class Link implements \JsonSerializable
     /**
      * @param mixed $thumbnail
      */
-    public function setThumbnail($thumbnail)
+    public function setThumbnailLarge($thumbnail)
     {
         $this->thumbnail = $thumbnail;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getThumbnailMedium()
+    {
+        return $this->thumbnailMedium;
+    }
+
+    /**
+     * @param mixed $thumbnailMedium
+     */
+    public function setThumbnailMedium($thumbnailMedium)
+    {
+        $this->thumbnailMedium = $thumbnailMedium;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getThumbnailSmall()
+    {
+        return $this->thumbnailSmall;
+    }
+
+    /**
+     * @param mixed $thumbnailSmall
+     */
+    public function setThumbnailSmall($thumbnailSmall)
+    {
+        $this->thumbnailSmall = $thumbnailSmall;
     }
 
     /**
@@ -299,8 +340,9 @@ class Link implements \JsonSerializable
         $this->synonymous[] = $synonymous;
     }
 
-    public function isComplete() {
-        return $this->getUrl() && ($this->getTitle() || $this->getThumbnail());
+    public function isComplete()
+    {
+        return $this->getUrl() && ($this->getTitle() || $this->getThumbnailLarge());
     }
 
     /**
