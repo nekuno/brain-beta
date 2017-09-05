@@ -162,24 +162,49 @@ class ProfileOptions implements LoggerAwareInterface
             ),
             'Drugs' => array(
                 array(
-                    'id' => 'yes',
-                    'name_en' => 'Yes',
-                    'name_es' => 'Sí',
+                    'id' => 'antidepressants',
+                    'name_en' => 'Antidepressants',
+                    'name_es' => 'Antidepresivos',
                 ),
                 array(
-                    'id' => 'no',
-                    'name_en' => 'No',
-                    'name_es' => 'No',
+                    'id' => 'cannabis',
+                    'name_en' => 'Cannabis',
+                    'name_es' => 'Cannabis',
                 ),
                 array(
-                    'id' => 'occasionally',
-                    'name_en' => 'Occasionally',
-                    'name_es' => 'Occasionalmente',
+                    'id' => 'caffeine',
+                    'name_en' => 'Caffeine',
+                    'name_es' => 'Cafeína',
                 ),
                 array(
-                    'id' => 'socially-on-parties',
-                    'name_en' => 'Socially/On parties',
-                    'name_es' => 'Socialmente/En fiestas',
+                    'id' => 'dissociatives',
+                    'name_en' => 'Dissociatives',
+                    'name_es' => 'Disociativos',
+                ),
+                array(
+                    'id' => 'empathogens',
+                    'name_en' => 'Empathogens',
+                    'name_es' => 'Empatógenos',
+                ),
+                array(
+                    'id' => 'stimulants',
+                    'name_en' => 'Stimulants',
+                    'name_es' => 'Estimulantes',
+                ),
+                array(
+                    'id' => 'psychedelics',
+                    'name_en' => 'Psychedelics',
+                    'name_es' => 'Psicodélicos',
+                ),
+                array(
+                    'id' => 'opiates',
+                    'name_en' => 'Opiates',
+                    'name_es' => 'Opiáceos',
+                ),
+                array(
+                    'id' => 'others',
+                    'name_en' => 'Others',
+                    'name_es' => 'Otros',
                 ),
             ),
             'EthnicGroup' => array(
@@ -550,8 +575,8 @@ class ProfileOptions implements LoggerAwareInterface
                 ),
                 array(
                     'id' => 'no-and-i-hate-it',
-                    'name_en' => 'No, and I hate it',
-                    'name_es' => 'No, y lo odio',
+                    'name_en' => 'No, and cannot stand it',
+                    'name_es' => 'No, y no lo soporto',
                 ),
             ),
             'InterfaceLanguage' => array(

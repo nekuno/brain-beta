@@ -47,9 +47,9 @@ categories:
             es: Cultura
           fields: [interfaceLanguage, language, education, religion, ideology]
         - label:
-            en: Vices
-            es: Vicios
-          fields: [alcohol, drugs, smoke]
+            en: Drugs
+            es: Drogas
+          fields: [alcohol, smoke, drugs]
         - label:
             en: Others
             es: Otros
@@ -72,9 +72,9 @@ categories:
             es: Cultura
           fields: [interfaceLanguage, language, education, religion, ideology]
         - label:
-            en: Vices
-            es: Vicios
-          fields: [alcohol, drugs, smoke]
+            en: Drugs
+            es: Drogas
+          fields: [alcohol, smoke, drugs]
         - label:
             en: Others
             es: Otros
@@ -324,13 +324,11 @@ profile:
             en: 'Do you drink alcohol?'
             es: '¿Bebes Alcohol?'
     drugs:
-        type: choice
+        type: multiple_choices
         label: &drugsLabel
-            en: 'Drugs'
-            es: 'Drogas'
-        labelEdit:
-            en: 'Do you take drugs?'
-            es: '¿Tomas drogas?'
+            en: 'Other'
+            es: 'Otras'
+        labelEdit: *drugsLabel
     diet:
         type: choice
         label: &dietLabel
