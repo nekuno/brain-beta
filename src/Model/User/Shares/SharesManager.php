@@ -25,7 +25,7 @@ class SharesManager
 
         $qb->match('(u1:User{qnoow_id: {id1}})', '(u2:User{qnoow_id: {id2}})')
             ->setParameter('id1', (integer)$userId1)
-            ->setParameter('id2', (integer) $userId2);
+            ->setParameter('id2', (integer)$userId2);
 
         $qb->match('(u1)-[shares:SHARES_WITH]-(u2)');
 
@@ -33,8 +33,7 @@ class SharesManager
 
         $result = $qb->getQuery()->getResultSet();
 
-        if ($result->count() === 0)
-        {
+        if ($result->count() === 0) {
             return null;
         }
 
@@ -47,12 +46,11 @@ class SharesManager
 
         $qb->match('(u1:User{qnoow_id: {id1}})', '(u2:User{qnoow_id: {id2}})')
             ->setParameter('id1', (integer)$userId1)
-            ->setParameter('id2', (integer) $userId2);
+            ->setParameter('id2', (integer)$userId2);
 
         $qb->merge('(u1)-[shares:SHARES_WITH]-(u2)');
 
-        foreach ($shares->toArray() as $parameter => $value)
-        {
+        foreach ($shares->toArray() as $parameter => $value) {
             $qb->set("shares.$parameter = { $parameter }")
                 ->setParameter($parameter, $value);
         }
@@ -61,8 +59,7 @@ class SharesManager
 
         $result = $qb->getQuery()->getResultSet();
 
-        if ($result->count() === 0)
-        {
+        if ($result->count() === 0) {
             $errorMessage = sprintf('Trying to share with nonexistant user %d or %d', $userId1, $userId2);
             throw new NotFoundHttpException($errorMessage);
         }
@@ -79,7 +76,7 @@ class SharesManager
 
         $qb->match('(u1:User{qnoow_id: {id1}})', '(u2:User{qnoow_id: {id2}})')
             ->setParameter('id1', (integer)$userId1)
-            ->setParameter('id2', (integer) $userId2);
+            ->setParameter('id2', (integer)$userId2);
 
         $qb->match('(u1)-[shares:SHARES_WITH]-(u2)');
         $qb->delete('shares');
@@ -97,6 +94,7 @@ class SharesManager
         $shares = new Shares();
         $shares->setId($sharesRelationship->getId());
         $shares->setTopLinks($sharesRelationship->getProperty('topLinks'));
+        $shares->setSharedLinks($sharesRelationship->getProperty('sharedLinks'));
 
         return $shares;
     }

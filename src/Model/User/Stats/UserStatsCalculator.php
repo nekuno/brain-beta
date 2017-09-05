@@ -163,7 +163,7 @@ class UserStatsCalculator
         $result = $qb->getQuery()->getResultSet();
 
         $thumbnails = array();
-        foreach ($result as $row ) {
+        foreach ($result as $row) {
             $thumbnails[] = $row->offsetGet('thumbnail');
         }
 
@@ -187,5 +187,37 @@ class UserStatsCalculator
         }
 
         return $workingThumbnails;
+    }
+
+    /**
+     * @param $userId1
+     * @param $userId2
+     * @return integer
+     */
+    public function calculateSharedLinksAmount($userId1, $userId2)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(u1:User{qnoow_id: {id1}})', '(u2:User{qnoow_id: {id2}})')
+            ->setParameter('id1', (integer)$userId1)
+            ->setParameter('id2', (integer)$userId2)
+            ->with('u1', 'u2');
+
+        $qb->optionalMatch('(u1)-[:LIKES]->(video:Video)<-[:LIKES]-(u2)')
+            ->with('u1', 'u2', 'count(video) AS links');
+        $qb->optionalMatch('(u1)-[:LIKES]->(audio:Audio)<-[:LIKES]-(u2)')
+            ->with('u1', 'u2', 'links', 'count(audio) AS audios')
+            ->with('u1', 'u2', 'links + audios AS links');
+        $qb->optionalMatch('(u1)-[:LIKES]->(creator:Creator)<-[:LIKES]-(u2)')
+            ->with('u1', 'u2', 'links', 'count(creator) AS creators')
+            ->with('u1', 'u2', 'links + creators AS links');
+
+        $qb->returns('links');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        $sharedLinksAmount = $result->current()->offsetGet('links');
+
+        return $sharedLinksAmount;
     }
 }

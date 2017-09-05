@@ -108,12 +108,14 @@ class UserStatsService
         return $this->userStatsCalculator->calculateComparedStats($userId, $otherUserId);
     }
 
-    public function updateTopLinks($userId1, $userId2)
+    public function updateShares($userId1, $userId2)
     {
         $topLinks = $this->userStatsCalculator->calculateTopLinks($userId1, $userId2);
+        $sharedLinksAmount = $this->userStatsCalculator->calculateSharedLinksAmount($userId1, $userId2);
 
         $shares = new Shares();
         $shares->setTopLinks($topLinks);
+        $shares->setSharedLinks($sharedLinksAmount);
 
         return $this->sharesManager->merge($userId1, $userId2, $shares);
     }

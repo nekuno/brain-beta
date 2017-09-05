@@ -298,7 +298,9 @@ class RecommendatorService
         foreach ($result['items'] as $user) {
             $shares = $this->sharesManager->get($userId, $user->getId());
             $topLinks = null == $shares ? array() : $shares->getTopLinks();
+            $sharedLinks = null == $shares ? 0 : $shares->getSharedLinks();
             $user->setTopLinks($topLinks);
+            $user->setSharedLinks($sharedLinks);
         }
 
         return $result;

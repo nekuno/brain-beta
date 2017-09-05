@@ -124,7 +124,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                             $this->dispatcher->dispatch(\AppEvents::SIMILARITY_PROCESS_STEP, $similarityProcessStepEvent);
                             $prevPercentage = $percentage;
                         }
-                        $this->userStatsService->updateTopLinks($userA, $userB);
+                        $this->userStatsService->updateShares($userA, $userB);
                     }
                     $this->dispatcher->dispatch(\AppEvents::SIMILARITY_PROCESS_FINISH, $similarityProcessEvent);
 
@@ -207,7 +207,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                     $matching = $this->matchingModel->calculateMatchingBetweenTwoUsersBasedOnAnswers($user1, $user2);
                     $this->logger->info(sprintf('   Similarity between users %d - %d: %s', $user1, $user2, $similarity['similarity']));
                     $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $user1, $user2, $matching));
-                    $this->userStatsService->updateTopLinks($user1, $user2);
+                    $this->userStatsService->updateShares($user1, $user2);
                 } catch (\Exception $e) {
                     $this->logger->error(sprintf('Worker: Error calculating similarity and matching between user %d and user %d with message %s on file %s, line %d', $user1, $user2, $e->getMessage(), $e->getFile(), $e->getLine()));
                     if ($e instanceof Neo4jException) {
