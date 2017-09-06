@@ -18,40 +18,83 @@ class ImageAnalyzer
     }
 
     /**
-     * @param ImageResponse[] $imageResponses
+     * @param ProcessingImage[] $processingImages
      * @return string|null
      */
-    public function selectSmallThumbnail(array $imageResponses)
+    public function selectSmallThumbnail(array $processingImages)
     {
-        return $this->selectLargeThumbnail($imageResponses);
+        return $this->selectThumbnail($processingImages, ProcessingImage::LABEL_SMALL, 100);
     }
 
     /**
-     * @param ImageResponse[] $imageResponses
+     * @param ProcessingImage[] $processingImages
      * @return string|null
      */
-    public function selectMediumThumbnail(array $imageResponses)
+    public function selectMediumThumbnail(array $processingImages)
     {
-        return $this->selectLargeThumbnail($imageResponses);
+        return $this->selectThumbnail($processingImages, ProcessingImage::LABEL_MEDIUM, 300);
     }
 
     /**
-     * @param ImageResponse[] $imageResponses
+     * @param ProcessingImage[] $processingImages
      * @return string|null
      */
-    public function selectLargeThumbnail(array $imageResponses)
+    public function selectLargeThumbnail(array $processingImages)
     {
-        $selectedImage = null;
-        foreach ($imageResponses as $imageResponse) {
-            $imageUrl = $imageResponse->getUrl();
+        $thumbnail = $this->selectThumbnail($processingImages, ProcessingImage::LABEL_LARGE, 500);
+
+        if (null === $thumbnail) {
+            $thumbnail = $this->selectAnyValidImage($processingImages);
+        }
+
+        return $thumbnail;
+    }
+
+    /**
+     * @param ProcessingImage[] $processingImages
+     * @return string|null
+     */
+    protected function selectAnyValidImage(array $processingImages)
+    {
+        foreach ($processingImages as $processingImage) {
+            $imageUrl = $processingImage->getUrl();
             $image = $this->buildResponse($imageUrl);
             if ($image->isValid()) {
-                $selectedImage = $image;
-                break;
+                return $image->getUrl();
             }
         }
 
-        return null == $selectedImage ? null : $selectedImage->getUrl();
+        return null;
+    }
+
+    /**
+     * @param ProcessingImage[] $processingImages
+     * @param $targetLabel
+     * @param $targetWidth
+     * @return null|string
+     */
+    protected function selectThumbnail(array $processingImages, $targetLabel, $targetWidth)
+    {
+        $currentImage = null;
+        $currentDifference = 999999;
+        foreach ($processingImages as $processingImage) {
+            if ($processingImage->getLabel() === $targetLabel) {
+                return $processingImage;
+            }
+
+            $hasBetterWidth = $processingImage->getWidth() && $this->getWidthDifference($processingImage, $targetWidth) < $currentDifference;
+            if ($hasBetterWidth) {
+                $currentImage = $processingImage;
+                $currentDifference = $this->getWidthDifference($processingImage, $targetWidth);
+            }
+        }
+
+        return $currentImage->getUrl();
+    }
+
+    protected function getWidthDifference(ProcessingImage $processingImage, $desiredWidth)
+    {
+        return abs($processingImage->getWidth() - $desiredWidth);
     }
 
     private function isValidImage($url)

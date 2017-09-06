@@ -142,11 +142,13 @@ class LinkProcessor
 
     protected function chooseThumbnails(array $images)
     {
-        return array(
+        $thumbnails = array(
             'small' => $this->imageAnalyzer->selectSmallThumbnail($images),
             'medium' => $this->imageAnalyzer->selectMediumThumbnail($images),
             'large' => $this->imageAnalyzer->selectLargeThumbnail($images),
         );
+
+        return array_filter($thumbnails);
     }
 
     protected function executeProcessing(PreprocessedLink $preprocessedLink, ProcessorInterface $processor)
