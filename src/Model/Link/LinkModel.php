@@ -952,6 +952,14 @@ class LinkModel
         $link = $node->getProperties();
         $link['id'] = $node->getId();
 
+        $link = $this->fixMandatoryKeys($link);
+        $link = $this->fixThumbnails($link);
+
+        return $link;
+    }
+
+    private function fixMandatoryKeys($link)
+    {
         $mandatoryKeys = array('title', 'description', 'url');
 
         foreach ($mandatoryKeys as $mandatoryKey) {
@@ -959,6 +967,15 @@ class LinkModel
                 $link[$mandatoryKey] = null;
             }
         }
+
+        return $link;
+    }
+
+    private function fixThumbnails($link)
+    {
+        $thumbnail = isset($link['thumbnail']) ? $link['thumbnail'] : null;
+        $link['thumbnailMedium'] = isset($link['thumbnailMedium']) ? $link['thumbnailMedium'] : $thumbnail;
+        $link['thumbnailSmall'] = isset($link['thumbnailSmall']) ? $link['thumbnailSmall'] : $link['thumbnailMedium'];
 
         return $link;
     }
