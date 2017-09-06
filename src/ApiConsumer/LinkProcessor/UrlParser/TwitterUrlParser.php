@@ -12,6 +12,8 @@ class TwitterUrlParser extends UrlParser
     const TWITTER_PIC = 'twitter_pic';
     const TWITTER_TWEET = 'twitter_tweet';
 
+    const DEFAULT_IMAGE_PATH = 'default_images/twitter.png';
+
     public function getUrlType($url)
     {
         if ($this->isTwitterImageUrl($url)) {
@@ -220,4 +222,29 @@ class TwitterUrlParser extends UrlParser
         return LookUp::TWITTER_BASE_URL . $screenName;
     }
 
+    public function getOriginalProfileUrl($data, $default)
+    {
+       return $this->getProfileUrl($data, $default, '');
+    }
+
+    public function getSmallProfileUrl($data, $default)
+    {
+        return $this->getProfileUrl($data, $default);
+    }
+
+    public function getMediumProfileUrl($data, $default)
+    {
+        return $this->getProfileUrl($data, $default, '_bigger');
+    }
+
+    protected function getProfileUrl($data, $default, $replacement = null)
+    {
+        $url =  isset($data['profile_image_url']) ? $data['profile_image_url'] : $default;
+        if (null !== $replacement)
+        {
+            $url = str_replace('_normal', '_bigger', $url);
+        }
+
+        return $url;
+    }
 }

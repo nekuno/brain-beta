@@ -2,6 +2,7 @@
 
 namespace ApiConsumer\LinkProcessor\Processor\FacebookProcessor;
 
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\AbstractAPIProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
@@ -9,8 +10,6 @@ use ApiConsumer\ResourceOwner\FacebookResourceOwner;
 
 abstract class AbstractFacebookProcessor extends AbstractAPIProcessor
 {
-    const DEFAULT_IMAGE_PATH = 'default_images/facebook.png';
-
     /**
      * @var FacebookResourceOwner
      */
@@ -23,8 +22,10 @@ abstract class AbstractFacebookProcessor extends AbstractAPIProcessor
 
     public function getImages(PreprocessedLink $preprocessedLink, array $data)
     {
-        return isset($data['picture']) && isset($data['picture']['data']['url']) ? array($data['picture']['data']['url'])
-            : array($this->brainBaseUrl . self::DEFAULT_IMAGE_PATH);
+        $url = isset($data['picture']) && isset($data['picture']['data']['url']) ? array($data['picture']['data']['url'])
+            : array($this->brainBaseUrl . FacebookUrlParser::DEFAULT_IMAGE_PATH);
+
+        return array(new ProcessingImage($url));
     }
 
     public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)

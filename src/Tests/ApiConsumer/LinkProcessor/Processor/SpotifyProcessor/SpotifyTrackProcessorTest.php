@@ -39,7 +39,7 @@ class SpotifyTrackProcessorTest extends AbstractProcessorTest
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser')
             ->getMock();
 
-        $this->processor = new SpotifyTrackProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . AbstractSpotifyProcessor::DEFAULT_IMAGE_PATH);
+        $this->processor = new SpotifyTrackProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . SpotifyUrlParser::DEFAULT_IMAGE_PATH);
     }
 
     /**

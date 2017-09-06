@@ -2,6 +2,7 @@
 
 namespace ApiConsumer\LinkProcessor\Processor\YoutubeProcessor;
 
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use Model\User\Token\Token;
 use Model\Link\Video;
@@ -25,20 +26,56 @@ class YoutubeVideoProcessor extends AbstractYoutubeProcessor
     public function getImages(PreprocessedLink $preprocessedLink, array $data)
     {
         $itemId = $preprocessedLink->getResourceItemId();
+        $images = $this->buildAPIImages($itemId);
 
-        $imageUrls = array();
-        foreach ($this->imageResolutions() as $resolution) {
-            $imageUrls[] = 'https://img.youtube.com/vi/' . $itemId . '/' . $resolution;
+        if (empty($imageUrls) || null === $itemId) {
+            $images = $this->buildDefaultImage();
         }
 
-        if (empty($imageUrls)) {
-            $imageUrls = array($this->brainBaseUrl . self::DEFAULT_IMAGE_PATH);
-        }
-
-        return $imageUrls;
+        return $images;
     }
 
-    public function getItemIdFromParser($url)
+    /**
+     * @param $itemId
+     * @return array
+     */
+    protected function buildAPIImages($itemId)
+    {
+        $images = array();
+        foreach ($this->imageData() as $label => $data) {
+            $imageUrl = 'https://img.youtube.com/vi/' . $itemId . '/' . $data['resolution'];
+            $image = new ProcessingImage($imageUrl);
+            $image->setLabel($label);
+            $image->setHeight($data['height']);
+            $image->setWidth($data['width']);
+
+            $images[] = $image;
+        }
+
+        return $images;
+    }
+
+    protected function imageData()
+    {
+        return array(
+            ProcessingImage::LABEL_SMALL => array('extension' => 'default.jpg', 'height' => 90, 'width' => 120),
+            ProcessingImage::LABEL_MEDIUM => array('extension' => 'mqdefault.jpg', 'height' => 180, 'width' => 320),
+            ProcessingImage::LABEL_LARGE => array('extension' => 'maxresdefault.jpg', 'height' => 720, 'width' => 1280),
+        );
+    }
+
+    /**
+     * @return array
+     */
+    protected function buildDefaultImage()
+    {
+        $imageUrl = array($this->brainBaseUrl . self::DEFAULT_IMAGE_PATH);
+        $images = array(new ProcessingImage($imageUrl));
+
+        return $images;
+    }
+
+    protected function getItemIdFromParser($url)
     {
         return $this->parser->getVideoId($url);
     }
@@ -62,10 +99,5 @@ class YoutubeVideoProcessor extends AbstractYoutubeProcessor
     protected function requestSpecificItem($id, Token $token = null)
     {
         return $this->resourceOwner->requestVideo($id, $token);
-    }
-
-    private function imageResolutions()
-    {
-        return array('default.jpg', 'mqdefault.jpg', 'hqdefault.jpg', 'sddefault.jpg', 'maxresdefault.jpg');
     }
 }

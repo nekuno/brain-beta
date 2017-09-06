@@ -3,6 +3,7 @@
 namespace ApiConsumer\LinkProcessor\Processor\FacebookProcessor;
 
 use ApiConsumer\Exception\UrlChangedException;
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use Model\Link\Creator\CreatorFacebook;
@@ -36,6 +37,22 @@ class FacebookPageProcessor extends AbstractFacebookProcessor
     protected function isProfileResponse(array $response)
     {
         return isset($response['error']) && isset($response['error']['code']) && $response['error']['code'] == 803;
+    }
+
+    public function getImages(PreprocessedLink $preprocessedLink, array $data)
+    {
+        $imagesArray = isset($data['images']) && is_array($data['images']) ? $data['images'] : array();
+
+        $images = array();
+        foreach ($imagesArray as $imageArray)
+        {
+            $image = new ProcessingImage($imageArray['source']);
+            $image->setHeight($imageArray['height']);
+            $image->setWidth($imageArray['width']);
+            $images[] = $image;
+        }
+
+        return $images;
     }
 
 }

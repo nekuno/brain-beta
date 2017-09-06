@@ -6,6 +6,7 @@ use ApiConsumer\Exception\CannotProcessException;
 use ApiConsumer\Exception\UrlChangedException;
 use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 
 class TwitterTweetProcessor extends AbstractTwitterProcessor
 {
@@ -82,7 +83,8 @@ class TwitterTweetProcessor extends AbstractTwitterProcessor
     {
         $profileAvatar = null;
         if (isset($data['user'])){
-            $profileAvatar = isset($data['user']['profile_image_url_https']) ? $data['user']['profile_image_url_https'] : ( isset($data['user']['profile_image_url']) ? $data['user']['profile_image_url'] : $this->brainBaseUrl . self::DEFAULT_IMAGE_PATH);
+            $default = $this->brainBaseUrl . TwitterUrlParser::DEFAULT_IMAGE_PATH;
+            $profileAvatar = isset($data['user']['profile_image_url_https']) ? $data['user']['profile_image_url_https'] : $this->parser->getOriginalProfileUrl($data['user'], $default);
         }
 
         return array($profileAvatar);

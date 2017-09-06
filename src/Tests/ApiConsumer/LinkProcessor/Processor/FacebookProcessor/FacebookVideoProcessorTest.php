@@ -37,7 +37,7 @@ class FacebookVideoProcessorTest extends AbstractProcessorTest
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser')
             ->getMock();
 
-        $this->processor = new FacebookVideoProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . AbstractFacebookProcessor::DEFAULT_IMAGE_PATH);
+        $this->processor = new FacebookVideoProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . FacebookUrlParser::DEFAULT_IMAGE_PATH);
     }
 
     /**
