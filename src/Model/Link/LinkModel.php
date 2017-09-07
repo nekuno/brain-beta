@@ -252,7 +252,7 @@ class LinkModel
             );
 
         if (isset($data['thumbnail']) && $data['thumbnail']) {
-            $qb->set('l.thumbnail = { thumbnail }');
+            $qb->set('l.thumbnail = { thumbnail }', 'l.thumbnailSmall = { thumbnailSmall }', 'l.thumbnailMedium = { thumbnailMedium }');
         }
         if (isset($data['additionalFields'])) {
             foreach ($data['additionalFields'] as $field => $value) {
@@ -269,6 +269,8 @@ class LinkModel
                 'url' => $data['url'],
                 'language' => isset($data['language']) ? $data['language'] : null,
                 'thumbnail' => isset($data['thumbnail']) ? $data['thumbnail'] : null,
+                'thumbnailSmall' => isset($data['thumbnailSmall']) ? $data['thumbnailSmall'] : null,
+                'thumbnailMedium' => isset($data['thumbnailMedium']) ? $data['thumbnailMedium'] : null,
                 'processed' => (integer)$processed,
             )
         );

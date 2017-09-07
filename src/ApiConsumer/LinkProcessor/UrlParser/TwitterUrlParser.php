@@ -242,7 +242,7 @@ class TwitterUrlParser extends UrlParser
         $url =  isset($data['profile_image_url']) ? $data['profile_image_url'] : $default;
         if (null !== $replacement)
         {
-            $url = str_replace('_normal', '_bigger', $url);
+            $url = str_replace('_normal', $replacement, $url);
         }
 
         return $url;

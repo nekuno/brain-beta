@@ -10,8 +10,6 @@ use Model\User\Token\Token;
 
 abstract class AbstractYoutubeProcessor extends AbstractAPIProcessor
 {
-    const DEFAULT_IMAGE_PATH = 'default_images/youtube.png';
-
     /**
      * @var YoutubeUrlParser
      */

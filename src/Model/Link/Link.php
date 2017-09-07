@@ -24,7 +24,6 @@ class Link implements \JsonSerializable
 
     public static function buildFromArray(array $array)
     {
-
         $link = new static();
 
         if (isset($array['id'])) {
@@ -43,7 +42,7 @@ class Link implements \JsonSerializable
             $link->setTags($array['tags']);
         }
         if (isset($array['thumbnail'])) {
-            $link->setThumbnailLarge($array['thumbnail']);
+            $link->setThumbnail($array['thumbnail']);
         }
         if (isset($array['thumbnailSmall'])) {
             $link->setThumbnailSmall($array['thumbnailSmall']);
@@ -133,7 +132,7 @@ class Link implements \JsonSerializable
     /**
      * @param mixed $thumbnail
      */
-    public function setThumbnailLarge($thumbnail)
+    public function setThumbnail($thumbnail)
     {
         $this->thumbnail = $thumbnail;
     }

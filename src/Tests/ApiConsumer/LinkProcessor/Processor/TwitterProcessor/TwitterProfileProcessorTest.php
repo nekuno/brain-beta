@@ -129,7 +129,7 @@ class TwitterProfileProcessorTest extends AbstractProcessorTest
         $expected = new CreatorTwitter();
         $expected->setTitle('yawmoght');
         $expected->setDescription('Tool developer & data junkie');
-        $expected->setThumbnailLarge('http://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png');
+        $expected->setThumbnail('http://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png');
         $expected->setUrl('https://twitter.com/yawmoght');
         $expected->setCreated(time() * 1000);
         return array(

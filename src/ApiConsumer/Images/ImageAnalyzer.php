@@ -79,7 +79,7 @@ class ImageAnalyzer
         $currentDifference = 999999;
         foreach ($processingImages as $processingImage) {
             if ($processingImage->getLabel() === $targetLabel) {
-                return $processingImage;
+                return $processingImage->getUrl();
             }
 
             $hasBetterWidth = $processingImage->getWidth() && $this->getWidthDifference($processingImage, $targetWidth) < $currentDifference;
@@ -89,7 +89,7 @@ class ImageAnalyzer
             }
         }
 
-        return $currentImage->getUrl();
+        return null !== $currentImage ? $currentImage->getUrl() : null;
     }
 
     protected function getWidthDifference(ProcessingImage $processingImage, $desiredWidth)

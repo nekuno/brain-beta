@@ -4,6 +4,7 @@ namespace ApiConsumer\LinkProcessor\Processor\YoutubeProcessor;
 
 use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
 use Model\User\Token\Token;
 use Model\Link\Video;
 
@@ -28,7 +29,7 @@ class YoutubeVideoProcessor extends AbstractYoutubeProcessor
         $itemId = $preprocessedLink->getResourceItemId();
         $images = $this->buildAPIImages($itemId);
 
-        if (empty($imageUrls) || null === $itemId) {
+        if (true) {
             $images = $this->buildDefaultImage();
         }
 
@@ -43,7 +44,7 @@ class YoutubeVideoProcessor extends AbstractYoutubeProcessor
     {
         $images = array();
         foreach ($this->imageData() as $label => $data) {
-            $imageUrl = 'https://img.youtube.com/vi/' . $itemId . '/' . $data['resolution'];
+            $imageUrl = 'https://img.youtube.com/vi/' . $itemId . '/' . $data['extension'];
             $image = new ProcessingImage($imageUrl);
             $image->setLabel($label);
             $image->setHeight($data['height']);
@@ -60,7 +61,7 @@ class YoutubeVideoProcessor extends AbstractYoutubeProcessor
         return array(
             ProcessingImage::LABEL_SMALL => array('extension' => 'default.jpg', 'height' => 90, 'width' => 120),
             ProcessingImage::LABEL_MEDIUM => array('extension' => 'mqdefault.jpg', 'height' => 180, 'width' => 320),
-            ProcessingImage::LABEL_LARGE => array('extension' => 'maxresdefault.jpg', 'height' => 720, 'width' => 1280),
+            ProcessingImage::LABEL_LARGE => array('extension' => 'hqdefault.jpg', 'height' => 720, 'width' => 1280),
         );
     }
 
@@ -69,7 +70,7 @@ class YoutubeVideoProcessor extends AbstractYoutubeProcessor
      */
     protected function buildDefaultImage()
     {
-        $imageUrl = array($this->brainBaseUrl . self::DEFAULT_IMAGE_PATH);
+        $imageUrl = $this->brainBaseUrl . YoutubeUrlParser::DEFAULT_IMAGE_PATH;
         $images = array(new ProcessingImage($imageUrl));
 
         return $images;

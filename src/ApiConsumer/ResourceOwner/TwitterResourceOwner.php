@@ -121,6 +121,7 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
      * @param $content array[]
      * @return array[]
      */
+    //TODO: Move this to Processor and use getImages. Is it really necessary in TwitterFollowingFetcher? Are we doing this multiple times?
     public function buildProfilesFromLookup(array $content)
     {
         foreach ($content as &$user) {
@@ -143,14 +144,16 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
         $profile = array(
             'description' => isset($user['description']) ? $user['description'] : $user['name'],
             'url' => $this->getUserUrl($user),
-            'thumbnail' => isset($user['profile_image_url']) ? str_replace('_normal', '', $user['profile_image_url']) : null,
+            'thumbnail' => $this->urlParser->getOriginalProfileUrl($user, null),
+            'thumbnailSmall' => $this->urlParser->getSmallProfileUrl($user, null),
+            'thumbnailMedium' => $this->urlParser->getMediumProfileUrl($user, null),
             'additionalLabels' => array('Creator', 'CreatorTwitter'),
             'resource' => TokensModel::TWITTER,
             'timestamp' => 1000 * time(),
             'processed' => 1
         );
         $profile['title'] = isset($user['name']) ? $user['name'] : $profile['url'];
-
+var_dump($profile);
         return $profile;
     }
 

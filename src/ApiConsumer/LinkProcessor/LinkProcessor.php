@@ -148,7 +148,7 @@ class LinkProcessor
             'large' => $this->imageAnalyzer->selectLargeThumbnail($images),
         );
 
-        return array_filter($thumbnails);
+        return $thumbnails;
     }
 
     protected function executeProcessing(PreprocessedLink $preprocessedLink, ProcessorInterface $processor)
@@ -164,7 +164,7 @@ class LinkProcessor
         if (!$preprocessedLink->getFirstLink()->getThumbnailLarge()) {
             $thumbnails = $this->getThumbnails($preprocessedLink, $processor, $response);
 
-            $preprocessedLink->getFirstLink()->setThumbnailLarge($thumbnails['large']);
+            $preprocessedLink->getFirstLink()->setThumbnail($thumbnails['large']);
             $preprocessedLink->getFirstLink()->setThumbnailMedium($thumbnails['medium']);
             $preprocessedLink->getFirstLink()->setThumbnailSmall($thumbnails['small']);
         }
