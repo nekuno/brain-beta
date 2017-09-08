@@ -119,7 +119,12 @@ class UserStatsService
     public function updateShares($userId1, $userId2)
     {
         $topLinks = $this->userStatsCalculator->calculateTopLinks($userId1, $userId2);
-        $sharedLinksAmount = $this->contentComparePaginatedModel->countAll($userId1, $userId2, true);
+        $filters = array(
+            'id' => (integer)$userId1,
+            'id2' => (integer)$userId2,
+            'showOnlyCommon' => true
+        );
+        $sharedLinksAmount = $this->contentComparePaginatedModel->countTotal($filters);
 
         $shares = new Shares();
         $shares->setTopLinks($topLinks);
