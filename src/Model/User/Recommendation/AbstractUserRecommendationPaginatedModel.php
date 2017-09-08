@@ -214,18 +214,28 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
                         $profileLabelName = $this->profileFilterModel->typeToLabel($name);
                         $matchQuery = "(p)<-[rel$name:OPTION_OF]-(option$name:$profileLabelName)";
                         $whereQueries = array();
-                        foreach ($value as $dataValue) {
-                            $choice = $dataValue['choice'];
-                            $detail = isset($dataValue['detail']) ? $dataValue['detail'] : null;
-
+                        $choices = $value['choices'];
+                        $details = isset($value['details']) ? $value['details'] : array();
+                        foreach ($choices as $choice) {
                             $whereQuery = " option$name.id = '$choice'";
-                            if (!(null == $detail)) {
-                                $whereQuery .= " AND rel$name.detail = '$detail'";
+                            if (null !== $details) {
+                                $whereQuery .= " AND rel$name.details = '" . json_encode($details) . "'";
                             }
-
                             $whereQueries[] = $whereQuery;
                         }
-
+                        $matches[] = $matchQuery . ' WHERE (' . implode('OR', $whereQueries) . ')';
+                        break;
+                    case 'choice_and_multiple_choices':
+                        $profileLabelName = $this->profileFilterModel->typeToLabel($name);
+                        $matchQuery = "(p)<-[rel$name:OPTION_OF]-(option$name:$profileLabelName)";
+                        $whereQueries = array();
+                        $choice = $value['choice'];
+                        $details = isset($value['details']) ? $value['details'] : array();
+                        $whereQuery = " option$name.id = '$choice'";
+                        if (null !== $details) {
+                            $whereQuery .= " AND rel$name.details = '" . json_encode($details) . "'";
+                        }
+                        $whereQueries[] = $whereQuery;
                         $matches[] = $matchQuery . ' WHERE (' . implode('OR', $whereQueries) . ')';
                         break;
                     case 'tags':
