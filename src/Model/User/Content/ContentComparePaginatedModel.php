@@ -131,6 +131,7 @@ class ContentComparePaginatedModel extends AbstractContentPaginatedModel
         return $count;
     }
 
+    //TODO: Merge with countTotal
     public function countAll($userId, $ownUserId, $showOnlyCommon = false)
     {
         $types = LinkModel::getValidTypes();
