@@ -155,7 +155,7 @@ class UserStatsCalculator
         $qb->unwind('links AS link')
             ->match('(link)-[:HAS_POPULARITY]->(p:Popularity)')
             ->where('link.processed = 1', 'EXISTS (link.thumbnail)', 'EXISTS (p.popularity)', 'p.popularity > 0')
-            ->with('link.thumbnail AS thumbnail', 'id(link) AS linkId', 'p.popularity AS popularity')
+            ->with('link.thumbnail AS thumbnail', 'link.thumbnailSmall AS thumbnailSmall', 'link.thumbnailMedium AS thumbnailMedium', 'id(link) AS linkId', 'p.popularity AS popularity')
             ->orderBy('popularity ASC');
 
         $qb->returns('thumbnail', 'linkId');
@@ -164,7 +164,10 @@ class UserStatsCalculator
 
         $thumbnails = array();
         foreach ($result as $row) {
-            $thumbnails[] = $row->offsetGet('thumbnail');
+            $thumbnail = $row->offsetGet('thumbnail');
+            $thumbnailSmall = $row->offsetGet('thumbnailSmall');
+            $thumbnailMedium = $row->offsetGet('thumbnailMedium');
+            $thumbnails[] = $thumbnailSmall ?: ($thumbnailMedium ?: $thumbnail);
         }
 
         return $thumbnails;

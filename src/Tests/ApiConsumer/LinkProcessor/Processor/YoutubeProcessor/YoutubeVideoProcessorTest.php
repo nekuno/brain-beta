@@ -3,6 +3,7 @@
 namespace Tests\ApiConsumer\LinkProcessor\Processor\YoutubeProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\AbstractYoutubeProcessor;
 use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\YoutubeVideoProcessor;
@@ -104,6 +105,17 @@ class YoutubeVideoProcessorTest extends AbstractProcessorTest
         $this->assertEquals($tags, $resultTags);
     }
 
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
+    }
+
     public function getBadUrls()
     {
         return array(
@@ -147,6 +159,17 @@ class YoutubeVideoProcessorTest extends AbstractProcessorTest
                 $this->getVideoUrl(),
                 $this->getVideoItemResponse(),
                 $this->getVideoTags(),
+            )
+        );
+    }
+
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getVideoUrl(),
+                $this->getVideoResponse(),
+                $this->getProcessingImages()
             )
         );
     }
@@ -272,5 +295,10 @@ class YoutubeVideoProcessorTest extends AbstractProcessorTest
                         ),
                 ),
         );
+    }
+
+    public function getProcessingImages()
+    {
+        return array (new ProcessingImage('https://i.scdn.co/image/d3a5855bc9c50767090e4e29f2d207061114888d'));
     }
 }

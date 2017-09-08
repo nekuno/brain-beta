@@ -3,6 +3,7 @@
 namespace Tests\ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\AbstractTwitterProcessor;
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterProfileProcessor;
@@ -106,6 +107,17 @@ class TwitterProfileProcessorTest extends AbstractProcessorTest
         $this->assertEquals($tags, $resultTags);
     }
 
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
+    }
+
     public function getBadUrls()
     {
         return array(
@@ -158,6 +170,17 @@ class TwitterProfileProcessorTest extends AbstractProcessorTest
     {
         return array(
             $this->getProfileItemResponse(),
+        );
+    }
+
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getProfileUrl(),
+                $this->getProfileItemResponse(),
+                $this->getProcessingImages()
+            )
         );
     }
 
@@ -284,6 +307,11 @@ class TwitterProfileProcessorTest extends AbstractProcessorTest
     public function getProfileTags()
     {
         return array();
+    }
+
+    public function getProcessingImages()
+    {
+        return array (new ProcessingImage('https://i.scdn.co/image/d3a5855bc9c50767090e4e29f2d207061114888d'));
     }
 
 }

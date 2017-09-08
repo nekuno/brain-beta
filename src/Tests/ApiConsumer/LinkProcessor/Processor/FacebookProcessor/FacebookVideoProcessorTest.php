@@ -2,6 +2,7 @@
 
 namespace Tests\ApiConsumer\LinkProcessor\Processor\FacebookProcessor;
 
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\AbstractFacebookProcessor;
 use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookVideoProcessor;
@@ -87,6 +88,25 @@ class FacebookVideoProcessorTest extends AbstractProcessorTest
         $this->assertEquals($tags, $resultTags);
     }
 
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $this->resourceOwner->expects($this->once())
+            ->method('requestLargePicture')
+            ->will($this->returnValue($this->getThumbnailUrl()));
+
+        $this->resourceOwner->expects($this->once())
+            ->method('requestSmallPicture')
+            ->will($this->returnValue($this->getThumbnailUrl()));
+
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
+    }
+
     public function getBadUrls()
     {
         return array(
@@ -134,6 +154,17 @@ class FacebookVideoProcessorTest extends AbstractProcessorTest
         );
     }
 
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getVideoUrl(),
+                $this->getVideoItemResponse(),
+                $this->getProcessingImages()
+            )
+        );
+    }
+
     public function getVideoResponse()
     {
         return $this->getVideoItemResponse();
@@ -167,6 +198,11 @@ class FacebookVideoProcessorTest extends AbstractProcessorTest
     public function getThumbnailUrl()
     {
         return "https://scontent.xx.fbcdn.net/v/t15.0-10/p160x160/14510760_1184087194980692_2357859444034895872_n.jpg?oh=33727306f052fcee096c281c15c429bf&oe=586D5F95";
+    }
+
+    public function getProcessingImages()
+    {
+        return array (new ProcessingImage($this->getThumbnailUrl()));
     }
 
 }

@@ -3,8 +3,8 @@
 namespace Tests\ApiConsumer\LinkProcessor\Processor\SpotifyProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\AbstractSpotifyProcessor;
 use ApiConsumer\LinkProcessor\SynonymousParameters;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
 use ApiConsumer\ResourceOwner\SpotifyResourceOwner;
@@ -122,6 +122,17 @@ class SpotifyTrackProcessorTest extends AbstractProcessorTest
     }
 
     /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
+    }
+
+    /**
      * @dataProvider getResponseSynonymous
      */
     public function testSynonymousParameters($url, $response, $expectedParameters)
@@ -184,6 +195,17 @@ class SpotifyTrackProcessorTest extends AbstractProcessorTest
                 'https://open.spotify.com/track/4vLYewWIvqHfKtJDk8c8tq',
                 $this->getTrackResponse(),
                 $this->getTrackTags(),
+            )
+        );
+    }
+
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getTrackUrl(),
+                $this->getTrackResponse(),
+                $this->getProcessingImages()
             )
         );
     }
@@ -349,5 +371,10 @@ class SpotifyTrackProcessorTest extends AbstractProcessorTest
                         ),
                 ),
         );
+    }
+
+    public function getProcessingImages()
+    {
+        return array (new ProcessingImage('https://i.scdn.co/image/d3a5855bc9c50767090e4e29f2d207061114888d'));
     }
 }

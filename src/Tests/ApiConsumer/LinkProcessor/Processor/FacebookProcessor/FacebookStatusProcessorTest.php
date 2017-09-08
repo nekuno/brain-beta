@@ -2,6 +2,7 @@
 
 namespace Tests\ApiConsumer\LinkProcessor\Processor\FacebookProcessor;
 
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\AbstractFacebookProcessor;
 use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookStatusProcessor;
@@ -88,6 +89,17 @@ class FacebookStatusProcessorTest extends AbstractProcessorTest
         $this->assertEquals($tags, $resultTags);
     }
 
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
+    }
+
     public function getBadUrls()
     {
         return array(
@@ -129,6 +141,17 @@ class FacebookStatusProcessorTest extends AbstractProcessorTest
                 $this->getStatusUrl(),
                 $this->getStatusItemResponse(),
                 $this->getProfileTags(),
+            )
+        );
+    }
+
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getStatusUrl(),
+                $this->getStatusItemResponse(),
+                $this->getProcessingImages()
             )
         );
     }
@@ -183,4 +206,8 @@ class FacebookStatusProcessorTest extends AbstractProcessorTest
         return "https://external.xx.fbcdn.net/safe_image.php?d=AQACtmgJeS0HzivW&w=130&h=130&url=http%3A%2F%2Fwww.blogoff.es%2Fwp-content%2Fuploads%2F2017%2F02%2Flacie-3.jpg&cfs=1&sx=497&sy=0&sw=994&sh=994&_nc_hash=AQBOtGIg5toSeT1_";
     }
 
+    public function getProcessingImages()
+    {
+        return array (new ProcessingImage($this->getThumbnailUrl()));
+    }
 }

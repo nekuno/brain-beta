@@ -22,8 +22,7 @@ abstract class AbstractFacebookProcessor extends AbstractAPIProcessor
 
     public function getImages(PreprocessedLink $preprocessedLink, array $data)
     {
-        $url = isset($data['picture']) && isset($data['picture']['data']['url']) ? array($data['picture']['data']['url'])
-            : array($this->brainBaseUrl . FacebookUrlParser::DEFAULT_IMAGE_PATH);
+        $url = isset($data['picture']) && isset($data['picture']['data']['url']) ? $data['picture']['data']['url'] : $this->brainBaseUrl . FacebookUrlParser::DEFAULT_IMAGE_PATH;
 
         return array(new ProcessingImage($url));
     }
@@ -38,7 +37,7 @@ abstract class AbstractFacebookProcessor extends AbstractAPIProcessor
     //TODO: Move to Link? Can be done without dependency?
     protected function buildTitleFromDescription(array $response)
     {
-        if (!isset($response['description'])){
+        if (!isset($response['description'])) {
             return null;
         }
         $description = $response['description'];
@@ -48,7 +47,7 @@ abstract class AbstractFacebookProcessor extends AbstractAPIProcessor
 
     protected function buildDescriptionFromTitle(array $response)
     {
-        return isset($response['name'])? $response['name'] : null;
+        return isset($response['name']) ? $response['name'] : null;
     }
 
     protected function isValidResponse(array $response)

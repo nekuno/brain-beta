@@ -29,7 +29,7 @@ class YoutubeVideoProcessor extends AbstractYoutubeProcessor
         $itemId = $preprocessedLink->getResourceItemId();
         $images = $this->buildAPIImages($itemId);
 
-        if (true) {
+        if (empty($images) || null === $itemId) {
             $images = $this->buildDefaultImage();
         }
 
@@ -70,7 +70,7 @@ class YoutubeVideoProcessor extends AbstractYoutubeProcessor
      */
     protected function buildDefaultImage()
     {
-        $imageUrl = $this->brainBaseUrl . YoutubeUrlParser::DEFAULT_IMAGE_PATH;
+        $imageUrl = array($this->brainBaseUrl . YoutubeUrlParser::DEFAULT_IMAGE_PATH);
         $images = array(new ProcessingImage($imageUrl));
 
         return $images;

@@ -2,6 +2,7 @@
 
 namespace Tests\ApiConsumer\LinkProcessor\Processor\FacebookProcessor;
 
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\AbstractFacebookProcessor;
 use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookProfileProcessor;
@@ -88,6 +89,17 @@ class FacebookProfileProcessorTest extends AbstractProcessorTest
         $this->assertEquals($tags, $resultTags);
     }
 
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
+    }
+
     public function getBadUrls()
     {
         return array(
@@ -132,6 +144,17 @@ class FacebookProfileProcessorTest extends AbstractProcessorTest
         );
     }
 
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getProfileUrl(),
+                $this->getProfileItemResponse(),
+                $this->getProcessingImages()
+            )
+        );
+    }
+
     public function getProfileResponse()
     {
         return $this->getProfileItemResponse();
@@ -169,6 +192,11 @@ class FacebookProfileProcessorTest extends AbstractProcessorTest
     public function getThumbnailUrl()
     {
         return "https://scontent.xx.fbcdn.net/v/t1.0-1/p200x200/1936476_10154428007884307_1240327335205953613_n.jpg?oh=2f4b121a7b7baf85328495f15ebd368e&oe=594A6F24";
+    }
+
+    public function getProcessingImages()
+    {
+        return array (new ProcessingImage($this->getThumbnailUrl()));
     }
 
     public function getTitle()

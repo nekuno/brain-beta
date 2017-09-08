@@ -189,7 +189,7 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 
     public function requestPage($id, $token)
     {
-        $fields = array('name', 'description', 'picture.type(large)', 'images');
+        $fields = array('name', 'description', 'picture.type(large)');
         $query = array('fields' => implode(',', $fields));
 
         return $this->request($id, $query, $token);

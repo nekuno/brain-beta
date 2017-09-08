@@ -47,7 +47,12 @@ class FacebookVideoProcessor extends AbstractFacebookProcessor
         $pictureSmall = $this->resourceOwner->requestSmallPicture($itemId, $token);
         $imageSmall = new ProcessingImage($pictureSmall?: $default);
 
-        return array($imageLarge, $imageSmall);
+        $images = array($imageLarge);
+        if ($pictureSmall !== $pictureLarge) {
+            $images[] = $imageSmall;
+        }
+
+        return $images;
     }
 
     protected function getItemIdFromParser($url)
