@@ -3,6 +3,7 @@
 namespace Tests\ApiConsumer\Images;
 
 use ApiConsumer\Images\ImageAnalyzer;
+use ApiConsumer\Images\ProcessingImage;
 use GuzzleHttp\Message\Response;
 
 class ImageAnalyzerTest extends \PHPUnit_Framework_TestCase
@@ -14,7 +15,7 @@ class ImageAnalyzerTest extends \PHPUnit_Framework_TestCase
     {
         $imageUrls = array();
         foreach ($imageData as $url => $response) {
-            $imageUrls[] = $url;
+            $imageUrls[] = new ProcessingImage($url);
         }
 
         $client = $this->getMockBuilder('GuzzleHttp\Client')->getMock();
@@ -30,7 +31,7 @@ class ImageAnalyzerTest extends \PHPUnit_Framework_TestCase
             );
         $imageAnalyzer = new ImageAnalyzer($client);
 
-        $selected = $imageAnalyzer->selectImage($imageUrls);
+        $selected = $imageAnalyzer->selectLargeThumbnail($imageUrls);
 
         $this->assertEquals($expectedSelected, $selected, $message);
     }

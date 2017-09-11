@@ -3,7 +3,9 @@
 namespace ApiConsumer\LinkProcessor\Processor\FacebookProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use Model\User\Token\TokensModel;
 use Model\Link\Video;
 
@@ -36,8 +38,21 @@ class FacebookVideoProcessor extends AbstractFacebookProcessor
 
     public function getImages(PreprocessedLink $preprocessedLink, array $data)
     {
-        $picture = $this->resourceOwner->requestPicture($preprocessedLink->getResourceItemId(), $preprocessedLink->getToken());
-        return $picture ? array($picture) : array($this->brainBaseUrl . self::DEFAULT_IMAGE_PATH);
+        $default = $this->brainBaseUrl . FacebookUrlParser::DEFAULT_IMAGE_PATH;
+        $itemId = $preprocessedLink->getResourceItemId();
+        $token = $preprocessedLink->getToken();
+
+        $pictureLarge = $this->resourceOwner->requestLargePicture($itemId, $token);
+        $imageLarge = new ProcessingImage($pictureLarge?: $default);
+        $pictureSmall = $this->resourceOwner->requestSmallPicture($itemId, $token);
+        $imageSmall = new ProcessingImage($pictureSmall?: $default);
+
+        $images = array($imageLarge);
+        if ($pictureSmall !== $pictureLarge) {
+            $images[] = $imageSmall;
+        }
+
+        return $images;
     }
 
     protected function getItemIdFromParser($url)

@@ -2,15 +2,14 @@
 
 namespace ApiConsumer\LinkProcessor\Processor\SpotifyProcessor;
 
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use ApiConsumer\LinkProcessor\Processor\AbstractProcessor;
+use ApiConsumer\LinkProcessor\Processor\AbstractAPIProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
 use ApiConsumer\ResourceOwner\SpotifyResourceOwner;
 
-abstract class AbstractSpotifyProcessor extends AbstractProcessor
+abstract class AbstractSpotifyProcessor extends AbstractAPIProcessor
 {
-    const DEFAULT_IMAGE_PATH = 'default_images/spotify.png';
-
     /**
      * @var SpotifyUrlParser
      */
@@ -80,13 +79,16 @@ abstract class AbstractSpotifyProcessor extends AbstractProcessor
     public function getImages(PreprocessedLink $preprocessedLink, array $data)
     {
         if (!isset($data['images'])) {
-            return array($this->brainBaseUrl . self::DEFAULT_IMAGE_PATH);
+            return array($this->brainBaseUrl . SpotifyUrlParser::DEFAULT_IMAGE_PATH);
         }
 
         $images = array();
         foreach ($data['images'] as $imageArray) {
             if (isset($imageArray['url'])) {
-                $images[] = $imageArray['url'];
+                $image = new ProcessingImage($imageArray['url']);
+                $image->setWidth($imageArray['width']);
+                $image->setHeight($imageArray['height']);
+                $images[] = $image;
             }
         }
 

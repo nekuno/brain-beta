@@ -2,6 +2,7 @@
 
 namespace Tests\ApiConsumer\LinkProcessor\Processor\FacebookProcessor;
 
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\AbstractFacebookProcessor;
 use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookPageProcessor;
@@ -37,7 +38,7 @@ class FacebookPageProcessorTest extends AbstractProcessorTest
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser')
             ->getMock();
 
-        $this->processor = new FacebookPageProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . AbstractFacebookProcessor::DEFAULT_IMAGE_PATH);
+        $this->processor = new FacebookPageProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . FacebookUrlParser::DEFAULT_IMAGE_PATH);
     }
 
     /**
@@ -88,6 +89,17 @@ class FacebookPageProcessorTest extends AbstractProcessorTest
         $this->assertEquals($tags, $resultTags);
     }
 
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
+    }
+
     public function getBadUrls()
     {
         return array(
@@ -99,8 +111,8 @@ class FacebookPageProcessorTest extends AbstractProcessorTest
     {
         return array(
             array(
-                $this->getProfileUrl(),
-                $this->getProfileId(),
+                $this->getPageUrl(),
+                $this->getPageId(),
                 false,
                 $this->getProfileResponse(),
             )
@@ -115,7 +127,7 @@ class FacebookPageProcessorTest extends AbstractProcessorTest
 
         return array(
             array(
-                $this->getProfileUrl(),
+                $this->getPageUrl(),
                 $this->getProfileItemResponse(),
                 $expectedLink->toArray()
             )
@@ -126,9 +138,20 @@ class FacebookPageProcessorTest extends AbstractProcessorTest
     {
         return array(
             array(
-                $this->getProfileUrl(),
+                $this->getPageUrl(),
                 $this->getProfileItemResponse(),
-                $this->getProfileTags(),
+                $this->getPageTags(),
+            )
+        );
+    }
+
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getPageUrl(),
+                $this->getProfileItemResponse(),
+                $this->getProcessingImages()
             )
         );
     }
@@ -169,17 +192,17 @@ class FacebookPageProcessorTest extends AbstractProcessorTest
         return "VIPS";
     }
 
-    public function getProfileUrl()
+    public function getPageUrl()
     {
         return 'https://www.facebook.com/vips';
     }
 
-    public function getProfileId()
+    public function getPageId()
     {
         return array('vips');
     }
 
-    public function getProfileTags()
+    public function getPageTags()
     {
         return array();
     }
@@ -187,6 +210,11 @@ class FacebookPageProcessorTest extends AbstractProcessorTest
     public function getThumbnailUrl()
     {
         return "https://scontent.xx.fbcdn.net/v/t1.0-1/p200x200/14462778_1189395474449864_8356688914233163542_n.png?oh=7896407a8bda6664154139d74b76892c&oe=5862D54B";
+    }
+
+    public function getProcessingImages()
+    {
+        return array (new ProcessingImage($this->getThumbnailUrl()));
     }
 
 }

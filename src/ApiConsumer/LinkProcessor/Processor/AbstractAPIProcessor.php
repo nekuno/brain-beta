@@ -9,7 +9,7 @@ use ApiConsumer\LinkProcessor\UrlParser\UrlParserInterface;
 use ApiConsumer\ResourceOwner\AbstractResourceOwnerTrait;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwnerInterface;
 
-abstract class AbstractProcessor implements ProcessorInterface
+abstract class AbstractAPIProcessor implements ProcessorInterface
 {
     /** @var  ResourceOwnerInterface | AbstractResourceOwnerTrait */
     protected $resourceOwner;

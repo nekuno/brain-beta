@@ -144,7 +144,17 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 		$this->addOauthData($data, $token);
 	}
 
-	public function requestPicture($id, Token $token = null, $size = 'large')
+	public function requestSmallPicture($id, Token $token = null)
+    {
+        return $this->requestPicture($id, $token, 'small');
+    }
+
+    public function requestLargePicture($id, Token $token = null)
+    {
+        return $this->requestPicture($id, $token, 'large');
+    }
+
+	protected function requestPicture($id, Token $token = null, $size = 'large')
 	{
 	    //TODO: Try to move out of here
 		if ($this->urlParser->isStatusId($id)){

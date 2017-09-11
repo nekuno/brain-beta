@@ -2,6 +2,7 @@
 
 namespace Tests\ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
 
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\AbstractTwitterProcessor;
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterPicProcessor;
@@ -36,7 +37,7 @@ class TwitterPicProcessorTest extends AbstractProcessorTest
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser')
             ->getMock();
 
-        $this->processor = new TwitterPicProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . AbstractTwitterProcessor::DEFAULT_IMAGE_PATH);
+        $this->processor = new TwitterPicProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . TwitterUrlParser::DEFAULT_IMAGE_PATH);
     }
 
     /**
@@ -73,6 +74,17 @@ class TwitterPicProcessorTest extends AbstractProcessorTest
         $resultTags = $link->getFirstLink()->getTags();
         sort($resultTags);
         $this->assertEquals($tags, $resultTags);
+    }
+
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
     }
 
     public function getBadUrls()
@@ -122,6 +134,17 @@ class TwitterPicProcessorTest extends AbstractProcessorTest
         );
     }
 
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getStatusUrl(),
+                $this->getStatusResponse(),
+                $this->getProcessingImages()
+            )
+        );
+    }
+
     public function getStatusUrl()
     {
         return 'https://twitter.com/yawmoght/status/782909345961050112';
@@ -135,6 +158,11 @@ class TwitterPicProcessorTest extends AbstractProcessorTest
     public function getStatusTags()
     {
         return array();
+    }
+
+    public function getProcessingImages()
+    {
+        return array ();
     }
 
 }
