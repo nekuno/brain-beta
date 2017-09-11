@@ -153,7 +153,6 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
             'processed' => 1
         );
         $profile['title'] = isset($user['name']) ? $user['name'] : $profile['url'];
-var_dump($profile);
         return $profile;
     }
 

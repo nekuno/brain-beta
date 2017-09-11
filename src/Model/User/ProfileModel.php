@@ -413,7 +413,6 @@ class ProfileModel
                         $qbMultipleChoices->returns('profile');
 
                         $query = $qbMultipleChoices->getQuery();
-                        //var_dump($query->getExecutableQuery());
                         $query->getResultSet();
                         break;
                     case 'tags':

@@ -113,7 +113,6 @@ class YoutubeVideoProcessorTest extends AbstractProcessorTest
         $link = new PreprocessedLink($url);
         $link->setResourceItemId($id);
         $images = $this->processor->getImages($link, $response);
-var_dump($images);
         $this->assertEquals($expectedImages, $images, 'Images gotten from response');
     }
 
