@@ -2,6 +2,7 @@
 
 namespace Service;
 
+use Model\User\Content\ContentComparePaginatedModel;
 use Model\User\Content\ContentPaginatedModel;
 use Model\User\Group\GroupModel;
 use Model\User\RelationsModel;
@@ -34,6 +35,11 @@ class UserStatsService
     protected $contentPaginatedModel;
 
     /**
+     * @var ContentComparePaginatedModel
+     */
+    protected $contentComparePaginatedModel;
+
+    /**
      * @var SharesManager
      */
     protected $sharesManager;
@@ -43,12 +49,14 @@ class UserStatsService
         GroupModel $groupModel,
         RelationsModel $relationsModel,
         ContentPaginatedModel $contentPaginatedModel,
+        ContentComparePaginatedModel $contentComparePaginatedModel,
         SharesManager $sharesManager
     ) {
         $this->userStatsCalculator = $userStatsManager;
         $this->groupModel = $groupModel;
         $this->relationsModel = $relationsModel;
         $this->contentPaginatedModel = $contentPaginatedModel;
+        $this->contentComparePaginatedModel = $contentComparePaginatedModel;
         $this->sharesManager = $sharesManager;
     }
 
@@ -111,7 +119,12 @@ class UserStatsService
     public function updateShares($userId1, $userId2)
     {
         $topLinks = $this->userStatsCalculator->calculateTopLinks($userId1, $userId2);
-        $sharedLinksAmount = $this->userStatsCalculator->calculateSharedLinksAmount($userId1, $userId2);
+        $filters = array(
+            'id' => (integer)$userId1,
+            'id2' => (integer)$userId2,
+            'showOnlyCommon' => true
+        );
+        $sharedLinksAmount = $this->contentComparePaginatedModel->countTotal($filters);
 
         $shares = new Shares();
         $shares->setTopLinks($topLinks);

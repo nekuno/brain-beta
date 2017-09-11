@@ -180,7 +180,7 @@ class UserStatsCalculator
         foreach ($thumbnails as $thumbnail) {
             $imageResponse = $this->imageAnalyzer->buildResponse($thumbnail);
 
-            if ($imageResponse->isImage()) {
+            if (!in_array($thumbnail, $workingThumbnails) && $imageResponse->isImage()) {
                 $workingThumbnails[] = $thumbnail;
             }
 
