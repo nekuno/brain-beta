@@ -140,6 +140,7 @@ class YoutubeChannelProcessorTest extends AbstractProcessorTest
         $expected = new Link();
         $expected->setTitle('Efecto Pasillo');
         $expected->setDescription('Canal Oficial de Youtube de Efecto Pasillo.');
+
         return array(
             array(
                 $this->getChannelUrl(),
@@ -335,6 +336,21 @@ class YoutubeChannelProcessorTest extends AbstractProcessorTest
 
     public function getProcessingImages()
     {
-        return array (new ProcessingImage('https://i.scdn.co/image/d3a5855bc9c50767090e4e29f2d207061114888d'));
+        $smallProcessingImage = new ProcessingImage('https://yt3.ggpht.com/-a3qMwcBYLnY/AAAAAAAAAAI/AAAAAAAAAAA/9b8qMAiJUjU/s88-c-k-no/photo.jpg');
+        $smallProcessingImage->setHeight(88);
+        $smallProcessingImage->setWidth(88);
+        $smallProcessingImage->setLabel(ProcessingImage::LABEL_SMALL);
+
+        $mediumProcessingImage = new ProcessingImage('https://yt3.ggpht.com/-a3qMwcBYLnY/AAAAAAAAAAI/AAAAAAAAAAA/9b8qMAiJUjU/s240-c-k-no/photo.jpg');
+        $mediumProcessingImage->setHeight(240);
+        $mediumProcessingImage->setWidth(240);
+        $mediumProcessingImage->setLabel(ProcessingImage::LABEL_MEDIUM);
+
+        $largeProcessingImage = new ProcessingImage('https://yt3.ggpht.com/-a3qMwcBYLnY/AAAAAAAAAAI/AAAAAAAAAAA/9b8qMAiJUjU/s240-c-k-no/photo.jpg');
+        $largeProcessingImage->setHeight(240);
+        $largeProcessingImage->setWidth(240);
+        $largeProcessingImage->setLabel(ProcessingImage::LABEL_LARGE);
+
+        return array($smallProcessingImage, $mediumProcessingImage, $largeProcessingImage);
     }
 }

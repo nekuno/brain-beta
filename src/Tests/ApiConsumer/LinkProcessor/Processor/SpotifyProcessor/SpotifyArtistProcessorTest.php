@@ -254,6 +254,9 @@ class SpotifyArtistProcessorTest extends AbstractProcessorTest
 
     public function getProcessingImages()
     {
-        return array (new ProcessingImage('https://i.scdn.co/image/e2bd9ef3de6d7fa43ed877388249c6415e76a9c4'));
+        $processingImage = new ProcessingImage('https://i.scdn.co/image/e2bd9ef3de6d7fa43ed877388249c6415e76a9c4');
+        $processingImage->setWidth(1000);
+        $processingImage->setHeight(1198);
+        return array ($processingImage);
     }
 }

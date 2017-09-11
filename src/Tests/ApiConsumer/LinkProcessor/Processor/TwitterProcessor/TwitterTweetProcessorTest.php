@@ -258,7 +258,7 @@ class TwitterTweetProcessorTest extends AbstractProcessorTest
                 "profile_background_image_url_https" => "https=>//pbs.twimg.com/profile_background_images/364366364/Tardis_background.JPG",
                 "profile_background_tile" => true,
                 "profile_image_url" => "http://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW_normal.png",
-                "profile_image_url_https" => "https=>//pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW_normal.png",
+                "profile_image_url_https" => "https://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW_normal.png",
                 "profile_banner_url" => "https=>//pbs.twimg.com/profile_banners/34529134/1452345615",
                 "profile_link_color" => "0084B4",
                 "profile_sidebar_border_color" => "FFFFFF",
@@ -403,7 +403,7 @@ class TwitterTweetProcessorTest extends AbstractProcessorTest
 
     public function getProcessingImages()
     {
-        return array (new ProcessingImage('https://i.scdn.co/image/d3a5855bc9c50767090e4e29f2d207061114888d'));
+        return array (new ProcessingImage('https://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW_normal.png'));
     }
 
 }

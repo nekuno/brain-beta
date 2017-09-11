@@ -39,22 +39,25 @@ class TwitterProfileProcessor extends AbstractTwitterProcessor implements BatchP
         $default = $this->brainBaseUrl . TwitterUrlParser::DEFAULT_IMAGE_PATH;
 
         $largeThumbnailUrl = $this->parser->getOriginalProfileUrl($data, $default);
-        $largeImage = new ProcessingImage($largeThumbnailUrl);
-        $largeImage->setLabel(ProcessingImage::LABEL_LARGE);
+        $largeImage = $this->buildSquareImage($largeThumbnailUrl, ProcessingImage::LABEL_LARGE);
 
         $mediumThumbnailUrl = $this->parser->getMediumProfileUrl($data, $default);
-        $mediumImage = new ProcessingImage($mediumThumbnailUrl);
-        $mediumImage->setLabel(ProcessingImage::LABEL_MEDIUM);
-        $mediumImage->setWidth(73);
-        $mediumImage->setHeight(73);
+        $mediumImage = $this->buildSquareImage($mediumThumbnailUrl, ProcessingImage::LABEL_MEDIUM, 73);
 
         $smallThumbnailUrl = $this->parser->getSmallProfileUrl($data, $default);
-        $smallImage = new ProcessingImage($smallThumbnailUrl);
-        $smallImage->setLabel(ProcessingImage::LABEL_SMALL);
-        $smallImage->setWidth(48);
-        $smallImage->setHeight(48);
+        $smallImage = $this->buildSquareImage($smallThumbnailUrl, ProcessingImage::LABEL_SMALL, 48);
 
         return array($smallImage, $mediumImage, $largeImage);
+    }
+
+    protected function buildSquareImage($url, $label, $size = null)
+    {
+        $image = new ProcessingImage($url);
+        $image->setLabel($label);
+        $image->setWidth($size);
+        $image->setHeight($size);
+
+        return $image;
     }
 
     protected function getUserId(PreprocessedLink $preprocessedLink)

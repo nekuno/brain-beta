@@ -162,7 +162,7 @@ class TwitterPicProcessorTest extends AbstractProcessorTest
 
     public function getProcessingImages()
     {
-        return array (new ProcessingImage('https://i.scdn.co/image/d3a5855bc9c50767090e4e29f2d207061114888d'));
+        return array ();
     }
 
 }

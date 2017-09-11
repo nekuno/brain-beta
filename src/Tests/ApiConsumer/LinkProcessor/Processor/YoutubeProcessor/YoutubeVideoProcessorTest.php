@@ -108,11 +108,12 @@ class YoutubeVideoProcessorTest extends AbstractProcessorTest
     /**
      * @dataProvider getResponseImages
      */
-    public function testGetImages($url, $response, $expectedImages)
+    public function testGetImages($url, $id, $response, $expectedImages)
     {
         $link = new PreprocessedLink($url);
+        $link->setResourceItemId($id);
         $images = $this->processor->getImages($link, $response);
-
+var_dump($images);
         $this->assertEquals($expectedImages, $images, 'Images gotten from response');
     }
 
@@ -168,6 +169,7 @@ class YoutubeVideoProcessorTest extends AbstractProcessorTest
         return array(
             array(
                 $this->getVideoUrl(),
+                $this->getVideoId(),
                 $this->getVideoResponse(),
                 $this->getProcessingImages()
             )
@@ -299,6 +301,21 @@ class YoutubeVideoProcessorTest extends AbstractProcessorTest
 
     public function getProcessingImages()
     {
-        return array (new ProcessingImage('https://i.scdn.co/image/d3a5855bc9c50767090e4e29f2d207061114888d'));
+        $smallProcessingImage = new ProcessingImage('https://img.youtube.com/vi/zLgY05beCnY/default.jpg');
+        $smallProcessingImage->setHeight(90);
+        $smallProcessingImage->setWidth(120);
+        $smallProcessingImage->setLabel(ProcessingImage::LABEL_SMALL);
+
+        $mediumProcessingImage = new ProcessingImage('https://img.youtube.com/vi/zLgY05beCnY/mqdefault.jpg');
+        $mediumProcessingImage->setHeight(180);
+        $mediumProcessingImage->setWidth(320);
+        $mediumProcessingImage->setLabel(ProcessingImage::LABEL_MEDIUM);
+
+        $largeProcessingImage = new ProcessingImage('https://img.youtube.com/vi/zLgY05beCnY/hqdefault.jpg');
+        $largeProcessingImage->setHeight(720);
+        $largeProcessingImage->setWidth(1280);
+        $largeProcessingImage->setLabel(ProcessingImage::LABEL_LARGE);
+
+        return array($smallProcessingImage, $mediumProcessingImage, $largeProcessingImage);
     }
 }
