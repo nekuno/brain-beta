@@ -4,6 +4,7 @@ namespace ApiConsumer\LinkProcessor\Processor;
 
 use ApiConsumer\Exception\CannotProcessException;
 use ApiConsumer\Exception\UrlChangedException;
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\SynonymousParameters;
 use ApiConsumer\ResourceOwner\AbstractResourceOwnerTrait;
@@ -30,7 +31,7 @@ interface ProcessorInterface
     /**
      * @param PreprocessedLink $preprocessedLink
      * @param array $data
-     * @return array of image urls
+     * @return ProcessingImage[]
      */
     public function getImages(PreprocessedLink $preprocessedLink, array $data);
 

@@ -3,6 +3,7 @@
 namespace Tests\ApiConsumer\LinkProcessor\Processor\YoutubeProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\AbstractYoutubeProcessor;
 use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\YoutubeVideoProcessor;
@@ -39,7 +40,7 @@ class YoutubeVideoProcessorTest extends AbstractProcessorTest
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser')
             ->getMock();
 
-        $this->processor = new YoutubeVideoProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . AbstractYoutubeProcessor::DEFAULT_IMAGE_PATH);
+        $this->processor = new YoutubeVideoProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . YoutubeUrlParser::DEFAULT_IMAGE_PATH);
     }
 
     /**
@@ -104,6 +105,17 @@ class YoutubeVideoProcessorTest extends AbstractProcessorTest
         $this->assertEquals($tags, $resultTags);
     }
 
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $id, $response, $expectedImages)
+    {
+        $link = new PreprocessedLink($url);
+        $link->setResourceItemId($id);
+        $images = $this->processor->getImages($link, $response);
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
+    }
+
     public function getBadUrls()
     {
         return array(
@@ -147,6 +159,18 @@ class YoutubeVideoProcessorTest extends AbstractProcessorTest
                 $this->getVideoUrl(),
                 $this->getVideoItemResponse(),
                 $this->getVideoTags(),
+            )
+        );
+    }
+
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getVideoUrl(),
+                $this->getVideoId(),
+                $this->getVideoResponse(),
+                $this->getProcessingImages()
             )
         );
     }
@@ -272,5 +296,25 @@ class YoutubeVideoProcessorTest extends AbstractProcessorTest
                         ),
                 ),
         );
+    }
+
+    public function getProcessingImages()
+    {
+        $smallProcessingImage = new ProcessingImage('https://img.youtube.com/vi/zLgY05beCnY/default.jpg');
+        $smallProcessingImage->setHeight(90);
+        $smallProcessingImage->setWidth(120);
+        $smallProcessingImage->setLabel(ProcessingImage::LABEL_SMALL);
+
+        $mediumProcessingImage = new ProcessingImage('https://img.youtube.com/vi/zLgY05beCnY/mqdefault.jpg');
+        $mediumProcessingImage->setHeight(180);
+        $mediumProcessingImage->setWidth(320);
+        $mediumProcessingImage->setLabel(ProcessingImage::LABEL_MEDIUM);
+
+        $largeProcessingImage = new ProcessingImage('https://img.youtube.com/vi/zLgY05beCnY/hqdefault.jpg');
+        $largeProcessingImage->setHeight(720);
+        $largeProcessingImage->setWidth(1280);
+        $largeProcessingImage->setLabel(ProcessingImage::LABEL_LARGE);
+
+        return array($smallProcessingImage, $mediumProcessingImage, $largeProcessingImage);
     }
 }

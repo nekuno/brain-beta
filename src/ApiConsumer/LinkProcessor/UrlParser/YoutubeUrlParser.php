@@ -11,6 +11,7 @@ class YoutubeUrlParser extends UrlParser
     const CHANNEL_URL = 'youtube_channel';
     const PLAYLIST_URL = 'youtube_playlist';
     const GENERAL_URL = 'youtube';
+    const DEFAULT_IMAGE_PATH = 'default_images/youtube.png';
 
     public function getUrlType($url)
     {

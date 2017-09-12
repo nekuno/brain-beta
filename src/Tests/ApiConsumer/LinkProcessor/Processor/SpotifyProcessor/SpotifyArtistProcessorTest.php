@@ -3,8 +3,8 @@
 namespace Tests\ApiConsumer\LinkProcessor\Processor\SpotifyProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\AbstractSpotifyProcessor;
 use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\SpotifyArtistProcessor;
 use ApiConsumer\ResourceOwner\SpotifyResourceOwner;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
@@ -37,7 +37,7 @@ class SpotifyArtistProcessorTest extends AbstractProcessorTest
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser')
             ->getMock();
 
-        $this->processor = new SpotifyArtistProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . AbstractSpotifyProcessor::DEFAULT_IMAGE_PATH);
+        $this->processor = new SpotifyArtistProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . SpotifyUrlParser::DEFAULT_IMAGE_PATH);
     }
 
     /**
@@ -100,6 +100,17 @@ class SpotifyArtistProcessorTest extends AbstractProcessorTest
         $this->assertEquals($tags, $resultTags);
     }
 
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
+    }
+
     public function getBadUrls()
     {
         return array(
@@ -138,6 +149,17 @@ class SpotifyArtistProcessorTest extends AbstractProcessorTest
                 $this->getArtistUrl(),
                 $this->getArtistResponse(),
                 $this->getArtistTags(),
+            )
+        );
+    }
+
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getArtistUrl(),
+                $this->getArtistResponse(),
+                $this->getProcessingImages()
             )
         );
     }
@@ -228,5 +250,13 @@ class SpotifyArtistProcessorTest extends AbstractProcessorTest
                         ),
                 ),
         );
+    }
+
+    public function getProcessingImages()
+    {
+        $processingImage = new ProcessingImage('https://i.scdn.co/image/e2bd9ef3de6d7fa43ed877388249c6415e76a9c4');
+        $processingImage->setWidth(1000);
+        $processingImage->setHeight(1198);
+        return array ($processingImage);
     }
 }

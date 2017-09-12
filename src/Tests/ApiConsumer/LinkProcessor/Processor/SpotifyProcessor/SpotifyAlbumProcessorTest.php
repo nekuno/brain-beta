@@ -3,8 +3,8 @@
 namespace Tests\ApiConsumer\LinkProcessor\Processor\SpotifyProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\AbstractSpotifyProcessor;
 use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\SpotifyAlbumProcessor;
 use ApiConsumer\ResourceOwner\SpotifyResourceOwner;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
@@ -37,7 +37,7 @@ class SpotifyAlbumProcessorTest extends AbstractProcessorTest
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser')
             ->getMock();
 
-        $this->processor = new SpotifyAlbumProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . AbstractSpotifyProcessor::DEFAULT_IMAGE_PATH);
+        $this->processor = new SpotifyAlbumProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . SpotifyUrlParser::DEFAULT_IMAGE_PATH);
     }
 
     /**
@@ -98,6 +98,17 @@ class SpotifyAlbumProcessorTest extends AbstractProcessorTest
         $resultTags = $link->getFirstLink()->getTags();
         sort($resultTags);
         $this->assertEquals($tags, $resultTags);
+    }
+
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
     }
 
     public function getBadUrls()
@@ -161,6 +172,17 @@ class SpotifyAlbumProcessorTest extends AbstractProcessorTest
                 $this->getAlbumUrl(),
                 $this->getAlbumResponse(),
                 $this->getAlbumTags(),
+            )
+        );
+    }
+
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getAlbumUrl(),
+                $this->getAlbumResponse(),
+                $this->getProcessingImages()
             )
         );
     }
@@ -356,6 +378,14 @@ class SpotifyAlbumProcessorTest extends AbstractProcessorTest
     public function getArtistUrl()
     {
         return 'https://open.spotify.com/artist/4Ww5mwS7BWYjoZTUIrMHfC';
+    }
+
+    public function getProcessingImages()
+    {
+        $processingImage = new ProcessingImage('https://i.scdn.co/image/d3a5855bc9c50767090e4e29f2d207061114888d');
+        $processingImage->setWidth(640);
+        $processingImage->setHeight(640);
+        return array ($processingImage);
     }
 
 }

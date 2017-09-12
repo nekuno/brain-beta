@@ -3,6 +3,7 @@
 namespace Tests\ApiConsumer\LinkProcessor\Processor\YoutubeProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\AbstractYoutubeProcessor;
 use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\YoutubeChannelProcessor;
@@ -39,7 +40,7 @@ class YoutubeChannelProcessorTest extends AbstractProcessorTest
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser')
             ->getMock();
 
-        $this->processor = new YoutubeChannelProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . AbstractYoutubeProcessor::DEFAULT_IMAGE_PATH);
+        $this->processor = new YoutubeChannelProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . YoutubeUrlParser::DEFAULT_IMAGE_PATH);
     }
 
     /**
@@ -105,6 +106,17 @@ class YoutubeChannelProcessorTest extends AbstractProcessorTest
         $this->assertEquals($tags, $resultTags);
     }
 
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
+    }
+
     public function getBadUrls()
     {
         return array(
@@ -128,6 +140,7 @@ class YoutubeChannelProcessorTest extends AbstractProcessorTest
         $expected = new Link();
         $expected->setTitle('Efecto Pasillo');
         $expected->setDescription('Canal Oficial de Youtube de Efecto Pasillo.');
+
         return array(
             array(
                 $this->getChannelUrl(),
@@ -145,6 +158,17 @@ class YoutubeChannelProcessorTest extends AbstractProcessorTest
                 $this->getChannelUrl(),
                 $this->getChannelItemResponse(),
                 $this->getChannelTags(),
+            )
+        );
+    }
+
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getChannelUrl(),
+                $this->getChannelItemResponse(),
+                $this->getProcessingImages()
             )
         );
     }
@@ -308,5 +332,25 @@ class YoutubeChannelProcessorTest extends AbstractProcessorTest
             1 => array('name' => '"pan y mantequilla"'),
             2 => array('name' => '"no importa que llueva"'),
         );
+    }
+
+    public function getProcessingImages()
+    {
+        $smallProcessingImage = new ProcessingImage('https://yt3.ggpht.com/-a3qMwcBYLnY/AAAAAAAAAAI/AAAAAAAAAAA/9b8qMAiJUjU/s88-c-k-no/photo.jpg');
+        $smallProcessingImage->setHeight(88);
+        $smallProcessingImage->setWidth(88);
+        $smallProcessingImage->setLabel(ProcessingImage::LABEL_SMALL);
+
+        $mediumProcessingImage = new ProcessingImage('https://yt3.ggpht.com/-a3qMwcBYLnY/AAAAAAAAAAI/AAAAAAAAAAA/9b8qMAiJUjU/s240-c-k-no/photo.jpg');
+        $mediumProcessingImage->setHeight(240);
+        $mediumProcessingImage->setWidth(240);
+        $mediumProcessingImage->setLabel(ProcessingImage::LABEL_MEDIUM);
+
+        $largeProcessingImage = new ProcessingImage('https://yt3.ggpht.com/-a3qMwcBYLnY/AAAAAAAAAAI/AAAAAAAAAAA/9b8qMAiJUjU/s240-c-k-no/photo.jpg');
+        $largeProcessingImage->setHeight(240);
+        $largeProcessingImage->setWidth(240);
+        $largeProcessingImage->setLabel(ProcessingImage::LABEL_LARGE);
+
+        return array($smallProcessingImage, $mediumProcessingImage, $largeProcessingImage);
     }
 }
