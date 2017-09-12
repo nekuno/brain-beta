@@ -133,11 +133,22 @@ class LinkProcessor
         return $this->processorFactory->build($processorName);
     }
 
-    protected function getThumbnail(PreprocessedLink $preprocessedLink, ProcessorInterface $processor, array $response)
+    protected function getThumbnails(PreprocessedLink $preprocessedLink, ProcessorInterface $processor, array $response)
     {
         $images = $processor->getImages($preprocessedLink, $response);
 
-        return $this->imageAnalyzer->selectImage($images);
+        return $thumbnails = $this->chooseThumbnails($images);
+    }
+
+    protected function chooseThumbnails(array $images)
+    {
+        $thumbnails = array(
+            'small' => $this->imageAnalyzer->selectSmallThumbnail($images),
+            'medium' => $this->imageAnalyzer->selectMediumThumbnail($images),
+            'large' => $this->imageAnalyzer->selectLargeThumbnail($images),
+        );
+
+        return $thumbnails;
     }
 
     protected function executeProcessing(PreprocessedLink $preprocessedLink, ProcessorInterface $processor)
@@ -150,9 +161,12 @@ class LinkProcessor
         $processor->addTags($preprocessedLink, $response);
         $processor->getSynonymousParameters($preprocessedLink, $response);
 
-        if (!$preprocessedLink->getFirstLink()->getThumbnail()) {
-            $image = $this->getThumbnail($preprocessedLink, $processor, $response);
-            $preprocessedLink->getFirstLink()->setThumbnail($image);
+        if (!$preprocessedLink->getFirstLink()->getThumbnailLarge()) {
+            $thumbnails = $this->getThumbnails($preprocessedLink, $processor, $response);
+
+            $preprocessedLink->getFirstLink()->setThumbnail($thumbnails['large']);
+            $preprocessedLink->getFirstLink()->setThumbnailMedium($thumbnails['medium']);
+            $preprocessedLink->getFirstLink()->setThumbnailSmall($thumbnails['small']);
         }
     }
 

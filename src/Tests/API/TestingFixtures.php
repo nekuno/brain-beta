@@ -426,7 +426,7 @@ class TestingFixtures
                 "latitude" => 40.4167754
             ),
             "gender" => "male",
-            "orientation" => "heterosexual",
+            "orientation" => array("heterosexual"),
             "interfaceLanguage" => "es"
         );
     }
@@ -467,7 +467,7 @@ class TestingFixtures
                 "latitude" => 40.4167754
             ),
             "gender" => "male",
-            "orientation" => "heterosexual",
+            "orientation" => array("heterosexual"),
             "interfaceLanguage" => "es"
         );
     }

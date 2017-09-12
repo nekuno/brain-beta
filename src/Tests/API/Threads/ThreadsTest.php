@@ -147,9 +147,8 @@ class ThreadsTest extends ThreadsAPITest
         $this->assertContains('occasionally', $formattedResponse['filters']['userFilters']['alcohol'], 'filters["userFilters"]["alcohol"] contains "black"');
         $this->assertArrayHasKey('drugs', $formattedResponse['filters']['userFilters'], 'Create thread response has filters["userFilters"]["drugs"] key');
         $this->assertArrayHasKey(0, $formattedResponse['filters']['userFilters']['drugs'], 'Create thread response has filters["userFilters"]["drugs"][0] key');
-        $this->assertArrayHasKey(1, $formattedResponse['filters']['userFilters']['drugs'], 'Create thread response has filters["userFilters"]["drugs"][1] key');
-        $this->assertContains('socially-on-parties', $formattedResponse['filters']['userFilters']['drugs'], 'filters["userFilters"]["drugs"] contains "socially-on-parties"');
-        $this->assertContains('occasionally', $formattedResponse['filters']['userFilters']['drugs'], 'filters["userFilters"]["drugs"] contains "occasionally"');
+        $this->assertContains('cannabis', $formattedResponse['filters']['userFilters']['drugs'], 'filters["userFilters"]["drugs"] contains "cannabis"');
+        $this->assertContains('stimulants', $formattedResponse['filters']['userFilters']['drugs'], 'filters["userFilters"]["drugs"] contains "stimulants"');
         $this->assertArrayHasKey('ethnicGroup', $formattedResponse['filters']['userFilters'], 'Create thread response has filters["userFilters"]["ethnicGroup"] key');
         $this->assertArrayHasKey(0, $formattedResponse['filters']['userFilters']['ethnicGroup'], 'Create thread response has filters["userFilters"]["ethnicGroup"][0] key');
         $this->assertArrayHasKey(1, $formattedResponse['filters']['userFilters']['ethnicGroup'], 'Create thread response has filters["userFilters"]["ethnicGroup"][1] key');
@@ -169,16 +168,18 @@ class ThreadsTest extends ThreadsAPITest
         $this->assertArrayHasKey(0, $formattedResponse['filters']['userFilters']['interfaceLanguage'], 'Create thread response has filters["userFilters"]["interfaceLanguage"][0] key');
         $this->assertContains('es', $formattedResponse['filters']['userFilters']['interfaceLanguage'], 'filters["userFilters"]["interfaceLanguage"] contains "es"');
         $this->assertArrayHasKey('religion', $formattedResponse['filters']['userFilters'], 'Create thread response has filters["userFilters"]["religion"] key');
-        $this->assertArrayHasKey(0, $formattedResponse['filters']['userFilters']['religion'], 'Create thread response has filters["userFilters"]["religion"][0] key');
-        $this->assertArrayHasKey(1, $formattedResponse['filters']['userFilters']['religion'], 'Create thread response has filters["userFilters"]["religion"][1] key');
-        // TODO: Fix cannot select more than one detail
-        //$this->assertArrayHasKey(2, $formattedResponse['filters']['userFilters']['religion'], 'Create thread response has filters["userFilters"]["religion"][2] key');
+        $this->assertArrayHasKey('choices', $formattedResponse['filters']['userFilters']['religion'], 'Create thread response has filters["userFilters"]["religion"]["choices"] key');
+        $this->assertArrayHasKey('details', $formattedResponse['filters']['userFilters']['religion'], 'Create thread response has filters["userFilters"]["religion"]["details"] key');
+        $this->assertContains('agnosticism', $formattedResponse['filters']['userFilters']['religion']['choices'], 'filters["userFilters"]["religion"]["choices"] contains "agnosticism"');
+        $this->assertContains('atheism', $formattedResponse['filters']['userFilters']['religion']['choices'], 'filters["userFilters"]["religion"]["choices"] contains "atheism"');
+        $this->assertContains('not_important', $formattedResponse['filters']['userFilters']['religion']['details'], 'filters["userFilters"]["religion"]["details"] contains "not_important"');
+        $this->assertContains('laughing_about_it', $formattedResponse['filters']['userFilters']['religion']['details'], 'filters["userFilters"]["religion"]["details"] contains "laughing_about_it"');
         $this->assertArrayNotHasKey(3, $formattedResponse['filters']['userFilters']['religion'], 'Create thread response has not filters["userFilters"]["religion"][3] key');
         $this->assertArrayHasKey('sons', $formattedResponse['filters']['userFilters'], 'Create thread response has filters["userFilters"]["sons"] key');
-        $this->assertArrayHasKey(0, $formattedResponse['filters']['userFilters']['sons'], 'Create thread response has filters["userFilters"]["sons"][0] key');
-        // TODO: Fix cannot select more than one detail
-        //$this->assertArrayHasKey(1, $formattedResponse['filters']['userFilters']['sons'], 'Create thread response has filters["userFilters"]["sons"][1] key');
-        $this->assertArrayNotHasKey(2, $formattedResponse['filters']['userFilters']['sons'], 'Create thread response has not filters["userFilters"]["sons"][2] key');
+        $this->assertArrayHasKey('choice', $formattedResponse['filters']['userFilters']['sons'], 'Create thread response has filters["userFilters"]["sons"]["choice"] key');
+        $this->assertArrayHasKey('details', $formattedResponse['filters']['userFilters']['sons'], 'Create thread response has filters["userFilters"]["sons"]["details"] key');
+        $this->assertEquals('no', $formattedResponse['filters']['userFilters']['sons']['choice'], 'filters["userFilters"]["sons"]["choice"] is equal to "no"');
+        $this->assertContains('not_want', $formattedResponse['filters']['userFilters']['sons']['details'], 'filters["userFilters"]["sons"]["details"] contains "not_want"');
         $this->assertArrayHasKey('pets', $formattedResponse['filters']['userFilters'], 'Create thread response has filters["userFilters"]["pets"] key');
         $this->assertArrayHasKey(0, $formattedResponse['filters']['userFilters']['pets'], 'Create thread response has filters["userFilters"]["pets"][0] key');
         $this->assertArrayHasKey(1, $formattedResponse['filters']['userFilters']['pets'], 'Create thread response has filters["userFilters"]["pets"][1] key');
@@ -195,7 +196,15 @@ class ThreadsTest extends ThreadsAPITest
     {
         $threadId = $this->getFirstThreadId();
         $response = $this->getRecommendations($threadId);
-        $this->assertJsonResponse($response, 200, 'Correctly get recommendation from created thread');
+        $formattedResponse = $this->assertJsonResponse($response, 200, 'Correctly get recommendation from created thread');
+        $this->assertArrayHasKey('items', $formattedResponse, 'Recommendation list has items key');
+        $this->assertArrayOfType('array', $formattedResponse['items'], 'Recommendation items is an array of arrays');
+
+        foreach ($formattedResponse['items'] as $recommendation)
+        {
+            $this->assertArrayHasKey('topLinks', $recommendation, 'Each recommendation has topLinks key');
+            $this->assertArrayOfType('strings', $recommendation['topLinks'], 'Each topLinks is an array of strings');
+        }
     }
 
     public function assertDeleteThread()
@@ -341,8 +350,8 @@ class ThreadsTest extends ThreadsAPITest
                         'occasionally',
                     ),
                     'drugs' => array(
-                        'socially-on-parties',
-                        'occasionally',
+                        'cannabis',
+                        'stimulants',
                     ),
                     'ethnicGroup' => array(
                         'oriental',
@@ -360,28 +369,18 @@ class ThreadsTest extends ThreadsAPITest
                         'es',
                     ),
                     'religion' => array(
-                        0 => array(
-                            'choice' => 'agnosticism',
-                            'detail' => '',
+                        'choices' => array(
+                            'agnosticism',
+                            'atheism',
                         ),
-                        1 => array(
-                            'choice' => 'atheism',
-                            'detail' => 'not_important',
-                        ),
-                        2 => array(
-                            'choice' => 'atheism',
-                            'detail' => 'laughing_about_it',
-                        ),
+                        'details' => array(
+                            'not_important',
+                            'laughing_about_it',
+                        )
                     ),
                     'sons' => array(
-                        0 => array(
-                            'choice' => 'no',
-                            'detail' => 'not_want',
-                        ),
-                        1 => array(
-                            'choice' => 'no',
-                            'detail' => 'might_want',
-                        ),
+                        'choice' => 'no',
+                        'details' => array('not_want'),
                     ),
                     'pets' => array(
                         'cat',

@@ -8,11 +8,12 @@ use Model\Metadata\ProfileMetadataManager;
 use Model\Metadata\UserFilterMetadataManager;
 use Model\User\RateModel;
 use Model\User\Content\ContentReportModel;
-use Model\User\UserStatsManager;
+use Model\User\Stats\UserStatsCalculator;
 use Manager\UserManager;
 use Model\User;
 use Service\AuthService;
-use Service\Recommendator;
+use Service\RecommendatorService;
+use Service\UserStatsService;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -21,34 +22,6 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class UserController
 {
-    /**
-     * @param Application $app
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function indexAction(Application $app, Request $request)
-    {
-        $filters = array();
-
-        $referenceUserId = $request->get('referenceUserId');
-        if (null != $referenceUserId) {
-            $filters['referenceUserId'] = $referenceUserId;
-        }
-
-        $profile = $request->get('profile');
-        if (null != $profile) {
-            $filters['profile'] = $profile;
-        }
-
-        /* @var $paginator \Paginator\Paginator */
-        $paginator = $app['paginator'];
-
-        $model = $app['users.manager'];
-
-        $result = $paginator->paginate($filters, $model, $request);
-
-        return $app->json($result);
-    }
 
     /**
      * @param Application $app
@@ -487,7 +460,7 @@ class UserController
      */
     public function getUserRecommendationAction(Request $request, Application $app, User $user)
     {
-        /** @var Recommendator $recommendator */
+        /** @var RecommendatorService $recommendator */
         $recommendator = $app['recommendator.service'];
 
         try {
@@ -544,7 +517,7 @@ class UserController
     public function getContentRecommendationAction(Request $request, Application $app, User $user)
     {
 
-        /* @var $recommendator Recommendator */
+        /* @var $recommendator RecommendatorService */
         $recommendator = $app['recommendator.service'];
 
         try {
@@ -693,10 +666,9 @@ class UserController
      */
     public function statsAction(Application $app, User $user)
     {
-        /* @var $manager UserStatsManager */
-        $manager = $app['users.stats.manager'];
-
-        $stats = $manager->getStats($user->getId());
+        /** @var UserStatsService $statsService */
+        $statsService = $app['userStats.service'];
+        $stats = $statsService->getStats($user->getId());
 
         return $app->json($stats->toArray());
     }
@@ -711,16 +683,10 @@ class UserController
     public function statsCompareAction(Request $request, Application $app, User $user)
     {
         $otherUserId = $request->get('userId');
-        if (null === $otherUserId) {
-            throw new NotFoundHttpException('User not found');
-        }
-        if ($user->getId() === $otherUserId) {
-            return $app->json(array(), 400);
-        }
-        /* @var $model UserManager */
-        $model = $app['users.manager'];
 
-        $stats = $model->getComparedStats($user->getId(), $otherUserId);
+        /** @var UserStatsService $statsService */
+        $statsService = $app['userStats.service'];
+        $stats = $statsService->getComparedStats($user->getId(), $otherUserId);
 
         return $app->json($stats->toArray());
     }

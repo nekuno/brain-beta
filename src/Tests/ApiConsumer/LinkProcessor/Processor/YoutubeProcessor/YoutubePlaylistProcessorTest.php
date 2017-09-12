@@ -3,6 +3,7 @@
 namespace Tests\ApiConsumer\LinkProcessor\Processor\YoutubeProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\AbstractYoutubeProcessor;
 use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\YoutubePlaylistProcessor;
@@ -40,7 +41,7 @@ class YoutubePlaylistProcessorTest extends AbstractProcessorTest
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser')
             ->getMock();
 
-        $this->processor = new YoutubePlaylistProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . AbstractYoutubeProcessor::DEFAULT_IMAGE_PATH);
+        $this->processor = new YoutubePlaylistProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . YoutubeUrlParser::DEFAULT_IMAGE_PATH);
     }
 
     /**
@@ -105,6 +106,17 @@ class YoutubePlaylistProcessorTest extends AbstractProcessorTest
         $this->assertEquals($tags, $resultTags);
     }
 
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
+    }
+
     public function getBadUrls()
     {
         return array(
@@ -147,6 +159,17 @@ class YoutubePlaylistProcessorTest extends AbstractProcessorTest
                 $this->getPlaylistUrl(),
                 $this->getPlaylistItemResponse(),
                 $this->getPlaylistTags(),
+            )
+        );
+    }
+
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getPlaylistUrl(),
+                $this->getPlaylistItemResponse(),
+                $this->getProcessingImages()
             )
         );
     }
@@ -231,4 +254,8 @@ class YoutubePlaylistProcessorTest extends AbstractProcessorTest
         return array();
     }
 
+    public function getProcessingImages()
+    {
+        return array ();
+    }
 }

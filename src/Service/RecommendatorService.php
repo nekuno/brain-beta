@@ -7,7 +7,9 @@ use Model\User\Group\GroupModel;
 use Model\User\Recommendation\ContentPopularRecommendationPaginatedModel;
 use Model\User\Recommendation\ContentRecommendationPaginatedModel;
 use Model\User\Recommendation\UserPopularRecommendationPaginatedModel;
+use Model\User\Recommendation\UserRecommendation;
 use Model\User\Recommendation\UserRecommendationPaginatedModel;
+use Model\User\Shares\SharesManager;
 use Model\User\Thread\ContentThread;
 use Model\User\Thread\Thread;
 use Model\User\Thread\UsersThread;
@@ -17,7 +19,7 @@ use Paginator\Paginator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
-class Recommendator
+class RecommendatorService
 {
     /** @var  $paginator Paginator */
     protected $paginator;
@@ -31,23 +33,14 @@ class Recommendator
     protected $contentRecommendationPaginatedModel;
     /** @var $contentPopularRecommendationPaginatedModel ContentPopularRecommendationPaginatedModel */
     protected $contentPopularRecommendationPaginatedModel;
+    /** @var $sharesManager SharesManager */
+    protected $sharesManager;
 
     //TODO: Check if user can be passed as argument and remove this dependency
     /** @var  $userManager UserManager */
     protected $userManager;
     protected $userPopularRecommendationPaginatedModel;
 
-    /**
-     * Recommendator constructor.
-     * @param Paginator $paginator
-     * @param ContentPaginator $contentPaginator
-     * @param GroupModel $groupModel
-     * @param UserManager $userManager
-     * @param UserRecommendationPaginatedModel $userRecommendationPaginatedModel
-     * @param ContentRecommendationPaginatedModel $contentRecommendationPaginatedModel
-     * @param UserPopularRecommendationPaginatedModel $userPopularRecommendationPaginatedModel
-     * @param ContentPopularRecommendationPaginatedModel $contentPopularRecommendationPaginatedModel
-     */
     public function __construct(Paginator $paginator,
                                 ContentPaginator $contentPaginator,
                                 GroupModel $groupModel,
@@ -55,7 +48,8 @@ class Recommendator
                                 UserRecommendationPaginatedModel $userRecommendationPaginatedModel,
                                 ContentRecommendationPaginatedModel $contentRecommendationPaginatedModel,
                                 UserPopularRecommendationPaginatedModel $userPopularRecommendationPaginatedModel,
-                                ContentPopularRecommendationPaginatedModel $contentPopularRecommendationPaginatedModel)
+                                ContentPopularRecommendationPaginatedModel $contentPopularRecommendationPaginatedModel,
+                                SharesManager $sharesManager)
     {
         $this->paginator = $paginator;
         $this->contentPaginator = $contentPaginator;
@@ -65,6 +59,7 @@ class Recommendator
         $this->contentRecommendationPaginatedModel = $contentRecommendationPaginatedModel;
         $this->contentPopularRecommendationPaginatedModel = $contentPopularRecommendationPaginatedModel;
         $this->userPopularRecommendationPaginatedModel = $userPopularRecommendationPaginatedModel;
+        $this->sharesManager = $sharesManager;
     }
 
     public function getRecommendationFromThread(Thread $thread)
@@ -281,16 +276,34 @@ class Recommendator
     private function getUserRecommendation($filters, $request = null)
     {
         $request = $this->getRequest($request);
+        $requestingUserId = $filters['id'];
         //TODO: Move to userRecommendationPaginatedModel->validate($filters)
         if (isset($filters['userFilters']['groups']) && null !== $filters['userFilters']['groups']) {
             foreach ($filters['userFilters']['groups'] as $group) {
-                if (!$this->groupModel->isUserFromGroup($group, $filters['id'])) {
+                if (!$this->groupModel->isUserFromGroup($group, $requestingUserId)) {
                     throw new AccessDeniedHttpException(sprintf('Not allowed to filter on group "%s"', $group));
                 }
             }
         }
 
-        return $this->contentPaginator->paginate($filters, $this->userRecommendationPaginatedModel, $request);
+        $result = $this->contentPaginator->paginate($filters, $this->userRecommendationPaginatedModel, $request);
+        $result = $this->addTopLinks($result, $requestingUserId);
+
+        return $result;
+    }
+
+    protected function addTopLinks($result, $userId)
+    {
+        /** @var UserRecommendation $user */
+        foreach ($result['items'] as $user) {
+            $shares = $this->sharesManager->get($userId, $user->getId());
+            $topLinks = null == $shares ? array() : $shares->getTopLinks();
+            $sharedLinks = null == $shares ? 0 : $shares->getSharedLinks();
+            $user->setTopLinks($topLinks);
+            $user->setSharedLinks($sharedLinks);
+        }
+
+        return $result;
     }
 
     private function getContentRecommendation($filters, $request = null)

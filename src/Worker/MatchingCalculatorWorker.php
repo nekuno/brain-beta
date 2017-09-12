@@ -18,6 +18,7 @@ use PhpAmqpLib\Channel\AMQPChannel;
 use Service\AffinityRecalculations;
 use Service\AMQPManager;
 use Service\EventDispatcher;
+use Service\UserStatsService;
 
 class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQConsumerInterface
 {
@@ -43,6 +44,10 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
      */
     protected $similarityModel;
     /**
+     * @var UserStatsService
+     */
+    protected $userStatsService;
+    /**
      * @var QuestionModel
      */
     protected $questionModel;
@@ -55,12 +60,22 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
      */
     protected $connectionBrain;
 
-    public function __construct(AMQPChannel $channel, UserManager $userManager, MatchingModel $matchingModel, SimilarityModel $similarityModel, QuestionModel $questionModel, AffinityRecalculations $affinityRecalculations, Connection $connectionBrain, EventDispatcher $dispatcher)
-    {
+    public function __construct(
+        AMQPChannel $channel,
+        UserManager $userManager,
+        MatchingModel $matchingModel,
+        SimilarityModel $similarityModel,
+        UserStatsService $userStatsService,
+        QuestionModel $questionModel,
+        AffinityRecalculations $affinityRecalculations,
+        Connection $connectionBrain,
+        EventDispatcher $dispatcher
+    ) {
         parent::__construct($dispatcher, $channel);
         $this->userManager = $userManager;
         $this->matchingModel = $matchingModel;
         $this->similarityModel = $similarityModel;
+        $this->userStatsService = $userStatsService;
         $this->questionModel = $questionModel;
         $this->affinityRecalculations = $affinityRecalculations;
         $this->connectionBrain = $connectionBrain;
@@ -109,6 +124,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                             $this->dispatcher->dispatch(\AppEvents::SIMILARITY_PROCESS_STEP, $similarityProcessStepEvent);
                             $prevPercentage = $percentage;
                         }
+                        $this->userStatsService->updateShares($userA, $userB);
                     }
                     $this->dispatcher->dispatch(\AppEvents::SIMILARITY_PROCESS_FINISH, $similarityProcessEvent);
 
@@ -191,6 +207,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                     $matching = $this->matchingModel->calculateMatchingBetweenTwoUsersBasedOnAnswers($user1, $user2);
                     $this->logger->info(sprintf('   Similarity between users %d - %d: %s', $user1, $user2, $similarity['similarity']));
                     $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $user1, $user2, $matching));
+                    $this->userStatsService->updateShares($user1, $user2);
                 } catch (\Exception $e) {
                     $this->logger->error(sprintf('Worker: Error calculating similarity and matching between user %d and user %d with message %s on file %s, line %d', $user1, $user2, $e->getMessage(), $e->getFile(), $e->getLine()));
                     if ($e instanceof Neo4jException) {
@@ -218,7 +235,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
             if ($userA <> $userB) {
                 $similarity = $this->similarityModel->getSimilarityBy(SimilarityModel::QUESTIONS, $userA, $userB);
                 $matching = $this->matchingModel->calculateMatchingBetweenTwoUsersBasedOnAnswers($userA, $userB);
-                $percentage = round(($userIndex + 1)/$usersCount * 100);
+                $percentage = round(($userIndex + 1) / $usersCount * 100);
                 $this->logger->info(sprintf('   Similarity by questions between users %d - %d: %s', $userA, $userB, $similarity['questions']));
                 $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $userA, $userB, $matching));
                 if ($percentage > $prevPercentage) {
@@ -231,7 +248,8 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
         $this->dispatcher->dispatch(\AppEvents::MATCHING_PROCESS_FINISH, $matchingProcessEvent);
     }
 
-    private function processUserAffinities($userId) {
+    private function processUserAffinities($userId)
+    {
         $this->logger->info(sprintf('   Recalculating affinities for user %d', $userId));
         $this->affinityRecalculations->recalculateAffinities($userId, 100, 20);
         $this->logger->info(sprintf('   Finished recalculating affinities for user %d', $userId));

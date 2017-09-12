@@ -304,15 +304,32 @@ class FilterUsersManager
                     $qb->optionalMatch("(filter)-[old_po_rel:FILTERS_BY]->(:$profileLabelName)")
                         ->delete("old_po_rel");
                     if (isset($profileFilters[$fieldName])) {
-                        $counter = 0;
-                        foreach ($profileFilters[$fieldName] as $value) {
-                            $choice = $value['choice'];
-                            $detail = isset($value['detail']) ? $value['detail'] : '';
-                            $qb->merge(" (option$fieldName$counter:$profileLabelName{id:'$choice'})");
-                            $qb->merge(" (filter)-[po_rel$fieldName$counter:FILTERS_BY]->(option$fieldName$counter)")
-                                ->set(" po_rel$fieldName$counter.detail = {detail$fieldName$counter}");
-                            $qb->setParameter("detail$fieldName$counter", $detail);
-                            $counter++;
+                        $details = isset($profileFilters[$fieldName]['details']) ? $profileFilters[$fieldName]['details'] : array();
+
+                        if (isset($profileFilters[$fieldName]['choices'])) {
+                            foreach ($profileFilters[$fieldName]['choices'] as $index => $choice) {
+                                $qb->merge(" (option$fieldName$index:$profileLabelName{id:'$choice'})");
+                                $qb->merge(" (filter)-[po_rel$fieldName$index:FILTERS_BY]->(option$fieldName$index)")
+                                    ->set(" po_rel$fieldName$index.details = {details$fieldName$index}");
+                                $qb->setParameter("details$fieldName$index", $details);
+                            }
+                        }
+                    }
+                    $qb->with('filter');
+                    break;
+                case 'choice_and_multiple_choices':
+                    $profileLabelName = $this->profileFilterModel->typeToLabel($fieldName);
+                    $qb->optionalMatch("(filter)-[old_po_rel:FILTERS_BY]->(:$profileLabelName)")
+                        ->delete("old_po_rel");
+                    if (isset($profileFilters[$fieldName])) {
+                        $details = isset($profileFilters[$fieldName]['details']) ? $profileFilters[$fieldName]['details'] : array();
+
+                        if (isset($profileFilters[$fieldName]['choice'])) {
+                            $choice = $profileFilters[$fieldName]['choice'];
+                            $qb->merge(" (option$fieldName:$profileLabelName{id:'$choice'})");
+                            $qb->merge(" (filter)-[po_rel$fieldName:FILTERS_BY]->(option$fieldName)")
+                                ->set(" po_rel$fieldName.details = {details$fieldName}");
+                            $qb->setParameter("details$fieldName", $details);
                         }
                     }
                     $qb->with('filter');
@@ -564,11 +581,13 @@ class FilterUsersManager
 
                     switch ($metadataValues['type']) {
                         case 'double_multiple_choices':
-                            $detail = $relationship->getProperty('detail');
-                            $choiceArray = array('choice' => $option->getProperty('id'), 'detail' => $detail ?: null);
                             $optionsResult[$typeName] = isset($optionsResult[$typeName]) && is_array($optionsResult[$typeName]) ?
-                                array_merge($optionsResult[$typeName], array($choiceArray))
-                                : array($choiceArray);
+                                $optionsResult[$typeName] : array('choices' => array(), 'details' => array());
+                            $optionsResult[$typeName]['choices'][] = $option->getProperty('id');
+                            $optionsResult[$typeName]['details'] = $relationship->getProperty('details');
+                            break;
+                        case 'choice_and_multiple_choices':
+                            $optionsResult[$typeName] = array('choice' => $option->getProperty('id'), 'details' => $relationship->getProperty('details'));
                             break;
                         case 'double_choice':
                             $detail = $relationship->getProperty('detail');

@@ -2,8 +2,10 @@
 
 namespace ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
 
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\BatchProcessorInterface;
+use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 use Model\Link\Creator\CreatorTwitter;
 use Model\User\Token\Token;
@@ -34,7 +36,28 @@ class TwitterProfileProcessor extends AbstractTwitterProcessor implements BatchP
 
     public function getImages(PreprocessedLink $preprocessedLink, array $data)
     {
-        return isset($data['profile_image_url']) ? array(str_replace('_normal', '', $data['profile_image_url'])) : array($this->brainBaseUrl . self::DEFAULT_IMAGE_PATH);
+        $default = $this->brainBaseUrl . TwitterUrlParser::DEFAULT_IMAGE_PATH;
+
+        $largeThumbnailUrl = $this->parser->getOriginalProfileUrl($data, $default);
+        $largeImage = $this->buildSquareImage($largeThumbnailUrl, ProcessingImage::LABEL_LARGE);
+
+        $mediumThumbnailUrl = $this->parser->getMediumProfileUrl($data, $default);
+        $mediumImage = $this->buildSquareImage($mediumThumbnailUrl, ProcessingImage::LABEL_MEDIUM, 73);
+
+        $smallThumbnailUrl = $this->parser->getSmallProfileUrl($data, $default);
+        $smallImage = $this->buildSquareImage($smallThumbnailUrl, ProcessingImage::LABEL_SMALL, 48);
+
+        return array($smallImage, $mediumImage, $largeImage);
+    }
+
+    protected function buildSquareImage($url, $label, $size = null)
+    {
+        $image = new ProcessingImage($url);
+        $image->setLabel($label);
+        $image->setWidth($size);
+        $image->setHeight($size);
+
+        return $image;
     }
 
     protected function getUserId(PreprocessedLink $preprocessedLink)
@@ -127,10 +150,10 @@ class TwitterProfileProcessor extends AbstractTwitterProcessor implements BatchP
     {
         $linkArrays = $this->resourceOwner->buildProfilesFromLookup($userArrays);
         $links = array();
-        foreach ($linkArrays as $linkArray)
-        {
+        foreach ($linkArrays as $linkArray) {
             $links[] = CreatorTwitter::buildFromArray($linkArray);
         }
+
         return $links;
     }
 

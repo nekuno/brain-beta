@@ -2,7 +2,7 @@
 
 define('IS_WINDOWS', strtoupper(substr(PHP_OS, 0, 3)) === 'WIN');
 define('NEO4J_VERSION', '3.0.7');
-define('NEO4J_PATH', 'vendor/neo4j' . DIRECTORY_SEPARATOR . 'neo4j-community-' . NEO4J_VERSION);
+define('NEO4J_PATH', 'vendor' . DIRECTORY_SEPARATOR . 'neo4j' . DIRECTORY_SEPARATOR . 'neo4j-community-' . NEO4J_VERSION);
 define('NEO4J_BIN', NEO4J_PATH . DIRECTORY_SEPARATOR . 'bin');
 define('NEO4J_FILE', IS_WINDOWS ? 'windows.zip' : 'unix.tar.gz');
 

@@ -3,6 +3,7 @@
 namespace Tests\ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\AbstractTwitterProcessor;
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterIntentProcessor;
@@ -38,7 +39,7 @@ class TwitterIntentProcessorTest extends AbstractProcessorTest
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser')
             ->getMock();
 
-        $this->processor = new TwitterIntentProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . AbstractTwitterProcessor::DEFAULT_IMAGE_PATH);
+        $this->processor = new TwitterIntentProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . TwitterUrlParser::DEFAULT_IMAGE_PATH);
     }
 
     /**
@@ -77,6 +78,17 @@ class TwitterIntentProcessorTest extends AbstractProcessorTest
 
         $preprocessedLink = new PreprocessedLink($url);
         $this->processor->getResponse($preprocessedLink);
+    }
+
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
     }
 
     public function getBadUrls()
@@ -139,6 +151,17 @@ class TwitterIntentProcessorTest extends AbstractProcessorTest
     {
         return array(
             $this->getProfileItemResponse(),
+        );
+    }
+
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getProfileUrl(),
+                $this->getProfileItemResponse(),
+                $this->getProcessingImages()
+            )
         );
     }
 
@@ -265,6 +288,11 @@ class TwitterIntentProcessorTest extends AbstractProcessorTest
     public function getProfileTags()
     {
         return array();
+    }
+
+    public function getProcessingImages()
+    {
+        return array ();
     }
 
 }

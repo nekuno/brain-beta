@@ -5,6 +5,7 @@ namespace Tests\ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
 use ApiConsumer\Exception\CannotProcessException;
 use ApiConsumer\Exception\UrlChangedException;
 use ApiConsumer\Exception\UrlNotValidException;
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\AbstractTwitterProcessor;
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterTweetProcessor;
@@ -39,7 +40,7 @@ class TwitterTweetProcessorTest extends AbstractProcessorTest
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser')
             ->getMock();
 
-        $this->processor = new TwitterTweetProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . AbstractTwitterProcessor::DEFAULT_IMAGE_PATH);
+        $this->processor = new TwitterTweetProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . TwitterUrlParser::DEFAULT_IMAGE_PATH);
     }
 
     /**
@@ -121,6 +122,17 @@ class TwitterTweetProcessorTest extends AbstractProcessorTest
         $this->assertEquals($tags, $resultTags);
     }
 
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
+    }
+
     public function getBadUrls()
     {
         return array(
@@ -170,6 +182,17 @@ class TwitterTweetProcessorTest extends AbstractProcessorTest
                 $this->getStatusUrl(),
                 $this->getStatusResponse(),
                 $this->getStatusTags(),
+            )
+        );
+    }
+
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getStatusUrl(),
+                $this->getStatusResponse(),
+                $this->getProcessingImages()
             )
         );
     }
@@ -235,7 +258,7 @@ class TwitterTweetProcessorTest extends AbstractProcessorTest
                 "profile_background_image_url_https" => "https=>//pbs.twimg.com/profile_background_images/364366364/Tardis_background.JPG",
                 "profile_background_tile" => true,
                 "profile_image_url" => "http://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW_normal.png",
-                "profile_image_url_https" => "https=>//pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW_normal.png",
+                "profile_image_url_https" => "https://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW_normal.png",
                 "profile_banner_url" => "https=>//pbs.twimg.com/profile_banners/34529134/1452345615",
                 "profile_link_color" => "0084B4",
                 "profile_sidebar_border_color" => "FFFFFF",
@@ -376,6 +399,11 @@ class TwitterTweetProcessorTest extends AbstractProcessorTest
     public function getThumbnail()
     {
         return 'https://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png';
+    }
+
+    public function getProcessingImages()
+    {
+        return array (new ProcessingImage('https://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW_normal.png'));
     }
 
 }

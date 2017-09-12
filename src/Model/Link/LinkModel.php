@@ -252,7 +252,7 @@ class LinkModel
             );
 
         if (isset($data['thumbnail']) && $data['thumbnail']) {
-            $qb->set('l.thumbnail = { thumbnail }');
+            $qb->set('l.thumbnail = { thumbnail }', 'l.thumbnailSmall = { thumbnailSmall }', 'l.thumbnailMedium = { thumbnailMedium }');
         }
         if (isset($data['additionalFields'])) {
             foreach ($data['additionalFields'] as $field => $value) {
@@ -269,6 +269,8 @@ class LinkModel
                 'url' => $data['url'],
                 'language' => isset($data['language']) ? $data['language'] : null,
                 'thumbnail' => isset($data['thumbnail']) ? $data['thumbnail'] : null,
+                'thumbnailSmall' => isset($data['thumbnailSmall']) ? $data['thumbnailSmall'] : null,
+                'thumbnailMedium' => isset($data['thumbnailMedium']) ? $data['thumbnailMedium'] : null,
                 'processed' => (integer)$processed,
             )
         );
@@ -952,6 +954,14 @@ class LinkModel
         $link = $node->getProperties();
         $link['id'] = $node->getId();
 
+        $link = $this->fixMandatoryKeys($link);
+        $link = $this->fixThumbnails($link);
+
+        return $link;
+    }
+
+    private function fixMandatoryKeys($link)
+    {
         $mandatoryKeys = array('title', 'description', 'url');
 
         foreach ($mandatoryKeys as $mandatoryKey) {
@@ -959,6 +969,15 @@ class LinkModel
                 $link[$mandatoryKey] = null;
             }
         }
+
+        return $link;
+    }
+
+    private function fixThumbnails($link)
+    {
+        $thumbnail = isset($link['thumbnail']) ? $link['thumbnail'] : null;
+        $link['thumbnailMedium'] = isset($link['thumbnailMedium']) ? $link['thumbnailMedium'] : $thumbnail;
+        $link['thumbnailSmall'] = isset($link['thumbnailSmall']) ? $link['thumbnailSmall'] : $link['thumbnailMedium'];
 
         return $link;
     }

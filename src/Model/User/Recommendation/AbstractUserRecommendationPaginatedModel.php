@@ -214,19 +214,37 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
                         $profileLabelName = $this->profileFilterModel->typeToLabel($name);
                         $matchQuery = "(p)<-[rel$name:OPTION_OF]-(option$name:$profileLabelName)";
                         $whereQueries = array();
-                        foreach ($value as $dataValue) {
-                            $choice = $dataValue['choice'];
-                            $detail = isset($dataValue['detail']) ? $dataValue['detail'] : null;
-
+                        $choices = $value['choices'];
+                        $details = isset($value['details']) ? $value['details'] : null;
+                        foreach ($choices as $choice) {
                             $whereQuery = " option$name.id = '$choice'";
-                            if (!(null == $detail)) {
-                                $whereQuery .= " AND rel$name.detail = '$detail'";
+                            if ($details) {
+                                $whereQuery .= " AND (";
+                                foreach ($details as $detail) {
+                                    $whereQuery .= "rel$name.detail = '" . $detail . "' OR ";
+                                }
+                                $whereQuery = trim($whereQuery, 'OR ') . ')';
                             }
-
                             $whereQueries[] = $whereQuery;
                         }
-
-                        $matches[] = $matchQuery . ' WHERE (' . implode('OR', $whereQueries) . ')';
+                        $matches[] = $matchQuery . ' WHERE (' . implode(' OR ', $whereQueries) . ')';
+                        break;
+                    case 'choice_and_multiple_choices':
+                        $profileLabelName = $this->profileFilterModel->typeToLabel($name);
+                        $matchQuery = "(p)<-[rel$name:OPTION_OF]-(option$name:$profileLabelName)";
+                        $whereQueries = array();
+                        $choice = $value['choice'];
+                        $details = isset($value['details']) ? $value['details'] : null;
+                        $whereQuery = " option$name.id = '$choice'";
+                        if ($details) {
+                            $whereQuery .= " AND (";
+                            foreach ($details as $detail) {
+                                $whereQuery .= "rel$name.detail = '" . $detail . "' OR ";
+                            }
+                            $whereQuery = trim($whereQuery, 'OR ') . ')';
+                        }
+                        $whereQueries[] = $whereQuery;
+                        $matches[] = $matchQuery . ' WHERE (' . implode(' OR ', $whereQueries) . ')';
                         break;
                     case 'tags':
                         $tagLabelName = $this->profileFilterModel->typeToLabel($name);

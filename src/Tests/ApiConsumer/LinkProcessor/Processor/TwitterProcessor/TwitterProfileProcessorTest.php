@@ -3,8 +3,8 @@
 namespace Tests\ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\AbstractTwitterProcessor;
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterProfileProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
@@ -38,7 +38,7 @@ class TwitterProfileProcessorTest extends AbstractProcessorTest
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser')
             ->getMock();
 
-        $this->processor = new TwitterProfileProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . AbstractTwitterProcessor::DEFAULT_IMAGE_PATH);
+        $this->processor = new TwitterProfileProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . TwitterUrlParser::DEFAULT_IMAGE_PATH);
     }
 
     /**
@@ -106,6 +106,30 @@ class TwitterProfileProcessorTest extends AbstractProcessorTest
         $this->assertEquals($tags, $resultTags);
     }
 
+    /**
+     * @dataProvider getResponseImages
+     * @param $expectedImages ProcessingImage[]
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $this->parser->expects($this->once())
+            ->method('getSmallProfileUrl')
+            ->will($this->returnValue($expectedImages[0]->getUrl()));
+
+        $this->parser->expects($this->once())
+            ->method('getMediumProfileUrl')
+            ->will($this->returnValue($expectedImages[1]->getUrl()));
+
+        $this->parser->expects($this->once())
+            ->method('getOriginalProfileUrl')
+            ->will($this->returnValue($expectedImages[2]->getUrl()));
+
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
+    }
+
     public function getBadUrls()
     {
         return array(
@@ -158,6 +182,17 @@ class TwitterProfileProcessorTest extends AbstractProcessorTest
     {
         return array(
             $this->getProfileItemResponse(),
+        );
+    }
+
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getProfileUrl(),
+                $this->getProfileItemResponse(),
+                $this->getProcessingImages()
+            )
         );
     }
 
@@ -284,6 +319,24 @@ class TwitterProfileProcessorTest extends AbstractProcessorTest
     public function getProfileTags()
     {
         return array();
+    }
+
+    public function getProcessingImages()
+    {
+        $smallProcessingImage = new ProcessingImage('https://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW_normal.png');
+        $smallProcessingImage->setHeight(48);
+        $smallProcessingImage->setWidth(48);
+        $smallProcessingImage->setLabel(ProcessingImage::LABEL_SMALL);
+
+        $mediumProcessingImage = new ProcessingImage('https://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW_bigger.png');
+        $mediumProcessingImage->setHeight(73);
+        $mediumProcessingImage->setWidth(73);
+        $mediumProcessingImage->setLabel(ProcessingImage::LABEL_MEDIUM);
+
+        $largeProcessingImage = new ProcessingImage('https://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png');
+        $largeProcessingImage->setLabel(ProcessingImage::LABEL_LARGE);
+
+        return array($smallProcessingImage, $mediumProcessingImage, $largeProcessingImage);
     }
 
 }

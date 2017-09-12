@@ -19,6 +19,8 @@ class UserRecommendation implements \JsonSerializable
     protected $location;
     protected $like;
     protected $profile;
+    protected $topLinks = array();
+    protected $sharedLinks;
 
     /**
      * @return mixed
@@ -181,6 +183,38 @@ class UserRecommendation implements \JsonSerializable
     }
 
     /**
+     * @return array
+     */
+    public function getTopLinks()
+    {
+        return $this->topLinks;
+    }
+
+    /**
+     * @param array $topLinks
+     */
+    public function setTopLinks($topLinks)
+    {
+        $this->topLinks = $topLinks;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getSharedLinks()
+    {
+        return $this->sharedLinks;
+    }
+
+    /**
+     * @param mixed $sharedLinks
+     */
+    public function setSharedLinks($sharedLinks)
+    {
+        $this->sharedLinks = $sharedLinks;
+    }
+
+    /**
      * Specify data which should be serialized to JSON
      * @link http://php.net/manual/en/jsonserializable.jsonserialize.php
      * @return mixed data which can be serialized by <b>json_encode</b>,
@@ -200,6 +234,8 @@ class UserRecommendation implements \JsonSerializable
             'location' => $this->getLocation(),
             'like' => $this->getLike(),
             'profile' => $this->getProfile(),
+            'topLinks' => $this->getTopLinks(),
+            'sharedLinks' => $this->getSharedLinks(),
         );
     }
 }

@@ -8,7 +8,7 @@ use Model\Neo4j\Neo4jException;
 use Model\User\Group\GroupModel;
 use Model\User\Thread\ThreadManager;
 use Manager\UserManager;
-use Service\Recommendator;
+use Service\RecommendatorService;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -63,7 +63,7 @@ class UsersThreadsCreateCommand extends ApplicationAwareCommand
 
         /* @var $threadManager ThreadManager */
         $threadManager = $this->app['users.threads.manager'];
-        /* @var $recommendator Recommendator */
+        /* @var $recommendator RecommendatorService */
         $recommendator = $this->app['recommendator.service'];
         /* @var $groupModel GroupModel */
         $groupModel = $this->app['users.groups.model'];

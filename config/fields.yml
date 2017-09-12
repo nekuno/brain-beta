@@ -47,9 +47,9 @@ categories:
             es: Cultura
           fields: [interfaceLanguage, language, education, religion, ideology]
         - label:
-            en: Vices
-            es: Vicios
-          fields: [alcohol, drugs, smoke]
+            en: Drugs
+            es: Drogas
+          fields: [alcohol, smoke, drugs]
         - label:
             en: Others
             es: Otros
@@ -72,9 +72,9 @@ categories:
             es: Cultura
           fields: [interfaceLanguage, language, education, religion, ideology]
         - label:
-            en: Vices
-            es: Vicios
-          fields: [alcohol, drugs, smoke]
+            en: Drugs
+            es: Drogas
+          fields: [alcohol, smoke, drugs]
         - label:
             en: Others
             es: Otros
@@ -270,16 +270,16 @@ profile:
             es: 'Color de pelo'
         labelEdit: *hairColorLabel
     ethnicGroup:
-        type: choice
+        type: multiple_choices
         label: &ethnicGroupLabel
-            en: 'Ethnic group'
-            es: 'Grupo Étnico'
+            en: 'Ethnicity'
+            es: 'Étnia'
         labelEdit: *ethnicGroupLabel
     complexion:
         type: choice
         label: &complexionLabel
-            en: 'Complexion'
-            es: 'Complexión'
+            en: 'Body type'
+            es: 'Tipo de cuerpo'
         labelEdit: *complexionLabel
     eyeColor:
         type: choice
@@ -324,13 +324,11 @@ profile:
             en: 'Do you drink alcohol?'
             es: '¿Bebes Alcohol?'
     drugs:
-        type: choice
+        type: multiple_choices
         label: &drugsLabel
-            en: 'Drugs'
-            es: 'Drogas'
-        labelEdit:
-            en: 'Do you take drugs?'
-            es: '¿Tomas drogas?'
+            en: 'Other'
+            es: 'Otras'
+        labelEdit: *drugsLabel
     diet:
         type: choice
         label: &dietLabel
@@ -340,7 +338,7 @@ profile:
             en: 'Are you on a special diet?'
             es: '¿Sigues alguna dieta especial?'
     orientation:
-        type: choice
+        type: multiple_choices
         label: &orientationLabel
             en: 'Orientation'
             es: 'Orientación'
@@ -680,7 +678,7 @@ profile_filter:
         max: 300
         label: *heightLabel
     sons:
-        type: double_multiple_choices
+        type: choice_and_multiple_choices
         label: *sonsLabel
         doubleChoices: *sonsDoubleChoices
     language:

@@ -56,7 +56,7 @@ class LinksCheckWorker extends LoggerAwareWorker implements RabbitMQConsumerInte
 
                 return false;
             }
-            $thumbnail = $link->getThumbnail();
+            $thumbnail = $link->getThumbnailLarge();
             if (!$thumbnail) {
                 $this->linkModel->setProcessed($url, false);
                 $checkEvent->setError(sprintf('No thumbnail for url "%s"', $url));

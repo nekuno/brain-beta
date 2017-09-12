@@ -7,26 +7,22 @@ use Event\UserEvent;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
-use Everyman\Neo4j\Relationship;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 use Model\Neo4j\Neo4jException;
 use Model\User;
 use Model\User\GhostUser\GhostUserManager;
-use Model\User\Group\Group;
 use Model\User\LookUpModel;
 use Model\User\SocialNetwork\SocialProfile;
 use Model\User\Token\TokensModel;
-use Model\User\UserComparedStatsModel;
 use Model\User\UserStatusModel;
-use Paginator\PaginatedInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
-class UserManager implements PaginatedInterface
+class UserManager
 {
 
     /**
@@ -671,9 +667,10 @@ class UserManager implements PaginatedInterface
         $qb->setParameters(array('limit' => (integer)$limit));
 
         $qb->match('(ref:User {qnoow_id: { id }})')
+            ->where('NOT ref:GhostUser')
             ->setParameter('id', (integer)$id)
             ->match('(ref)-[:LIKES|DISLIKES]->(:Link)<-[l:LIKES]-(u:User)')
-            ->where('NOT (ref.qnoow_id = u.qnoow_id)')
+            ->where('NOT (ref.qnoow_id = u.qnoow_id)', 'NOT u:GhostUser')
             ->with('u', 'count(l) as amount')
             ->orderBy('amount DESC')
             ->limit('{limit}')
@@ -912,72 +909,6 @@ class UserManager implements PaginatedInterface
     }
 
     /**
-     * @param $id1
-     * @param $id2
-     * @return UserComparedStatsModel
-     * @throws \Exception
-     */
-    public function getComparedStats($id1, $id2)
-    {
-        $qb = $this->gm->createQueryBuilder();
-
-        $qb->setParameters(
-            array(
-                'id1' => (integer)$id1,
-                'id2' => (integer)$id2
-            )
-        );
-
-        $qb->match('(u:User {qnoow_id: { id1 }}), (u2:User {qnoow_id: { id2 }})')
-            ->optionalMatch('(u)-[:BELONGS_TO]->(g:Group)<-[:BELONGS_TO]-(u2)')
-            ->with('u', 'u2', 'collect(distinct g) AS groupsBelonged')
-            ->optionalMatch('(u)-[:TOKEN_OF]-(token:Token)')
-            ->with('u', 'u2', 'groupsBelonged', 'collect(distinct token.resourceOwner) as resourceOwners')
-            ->optionalMatch('(u2)-[:TOKEN_OF]-(token2:Token)');
-        $qb->with('u, u2', 'groupsBelonged', 'resourceOwners', 'collect(distinct token2.resourceOwner) as resourceOwners2')
-            ->optionalMatch('(u)-[:LIKES]->(link:Link)')
-            ->where('(u2)-[:LIKES]->(link)', 'link.processed = 1', 'NOT link:LinkDisabled')
-            ->with('u', 'u2', 'groupsBelonged', 'resourceOwners', 'resourceOwners2', 'count(distinct(link)) AS commonContent')
-            ->optionalMatch('(u)-[:ANSWERS]->(answer:Answer)')
-            ->where('(u2)-[:ANSWERS]->(answer)')
-            ->returns('groupsBelonged, resourceOwners, resourceOwners2, commonContent, count(distinct(answer)) as commonAnswers');
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        /* @var $row Row */
-        $row = $result->current();
-
-        $groups = array();
-        foreach ($row->offsetGet('groupsBelonged') as $groupNode) {
-            $groups[] = Group::createFromNode($groupNode);
-        }
-
-        $resourceOwners = array();
-        foreach ($row->offsetGet('resourceOwners') as $resourceOwner) {
-            $resourceOwners[] = $resourceOwner;
-        }
-        $resourceOwners2 = array();
-        foreach ($row->offsetGet('resourceOwners2') as $resourceOwner2) {
-            $resourceOwners2[] = $resourceOwner2;
-        }
-
-        $commonContent = $row->offsetGet('commonContent') ?: 0;
-        $commonAnswers = $row->offsetGet('commonAnswers') ?: 0;
-
-        $userStats = new UserComparedStatsModel(
-            $groups,
-            $resourceOwners,
-            $resourceOwners2,
-            $commonContent,
-            $commonAnswers
-        );
-
-        return $userStats;
-    }
-
-    /**
      * @param integer $id
      * @param bool $set
      * @return UserStatusModel
@@ -1026,148 +957,6 @@ class UserManager implements PaginatedInterface
         }
 
         return $status;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function validateFilters(array $filters)
-    {
-        return true;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function slice(array $filters, $offset, $limit)
-    {
-        $response = array();
-
-        $parameters = array(
-            'offset' => (integer)$offset,
-            'limit' => (integer)$limit
-        );
-
-        $profileQuery = "";
-        if (isset($filters['profile'])) {
-            $profileQuery = " MATCH (user)-[:PROFILE_OF]-(profile:Profile) ";
-            if (isset($filters['profile']['zodiacSign'])) {
-                $profileQuery .= "
-                    MATCH (profile)-[:OPTION_OF]-(zodiacSign:ZodiacSign)
-                    WHERE id(zodiacSign) = {zodiacSign}
-                ";
-                $parameters['zodiacSign'] = $filters['profile']['zodiacSign'];
-            }
-            if (isset($filters['profile']['gender'])) {
-                $profileQuery .= "
-                    MATCH (profile)-[:OPTION_OF]-(gender:Gender)
-                    WHERE id(gender) = {gender}
-                ";
-                $parameters['gender'] = $filters['profile']['gender'];
-            }
-            if (isset($filters['profile']['orientation'])) {
-                $profileQuery .= "
-                    MATCH (profile)-[:OPTION_OF]-(orientation:Orientation)
-                    WHERE id(orientation) = {orientation}
-                ";
-                $parameters['orientation'] = $filters['profile']['orientation'];
-            }
-        }
-
-        $referenceUserQuery = "";
-        $resultQuery = " RETURN user ";
-        if (isset($filters['referenceUserId'])) {
-            $parameters['referenceUserId'] = (integer)$filters['referenceUserId'];
-            $referenceUserQuery = "
-                MATCH
-                (referenceUser:User)
-                WHERE
-                referenceUser.qnoow_id = {referenceUserId} AND
-                user.qnoow_id <> {referenceUserId}
-                OPTIONAL MATCH
-                (user)-[match:MATCHES]-(referenceUser)
-                OPTIONAL MATCH
-                (user)-[similarity:SIMILARITY]-(referenceUser)
-             ";
-            $resultQuery .= ", match, similarity ";
-        }
-
-        $query = "
-            MATCH
-            (user:User)"
-            . $profileQuery
-            . $referenceUserQuery
-            . $resultQuery
-            . "
-            SKIP {offset}
-            LIMIT {limit}
-            ;
-         ";
-
-        $contentQuery = $this->gm->createQuery($query, $parameters);
-
-        $result = $contentQuery->getResultSet();
-
-        foreach ($result as $row) {
-
-            $user = $this->build($row);
-
-            $user['matching'] = 0;
-            if (isset($row['match'])) {
-                /** @var Relationship $matchRelationship */
-                $matchRelationship = $row['match'];
-                $matchingByQuestions = $matchRelationship->getProperty('matching_questions');
-                $user['matching'] = null === $matchingByQuestions ? 0 : $matchingByQuestions;
-            }
-
-            $user['similarity'] = 0;
-            if (isset($row['similarity'])) {
-                /** @var Relationship $similarityRelationship */
-                $similarityRelationship = $row['similarity'];
-                $similarity = $similarityRelationship->getProperty('similarity');
-                $user['similarity'] = null === $similarity ? 0 : $similarity;
-            }
-
-            $response[] = $user;
-        }
-
-        return $response;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function countTotal(array $filters)
-    {
-
-        $parameters = array();
-
-        $queryWhere = '';
-        if (isset($filters['referenceUserId'])) {
-            $parameters['referenceUserId'] = (integer)$filters['referenceUserId'];
-            $queryWhere .= " WHERE user.qnoow_id <> {referenceUserId} ";
-        }
-
-        if (isset($filters['profile'])) {
-            //TODO: Profile filters
-        }
-
-        $query = "
-            MATCH
-            (user:User)
-            " . $queryWhere . "
-            RETURN
-            count(user) as total
-            ;
-        ";
-
-        $contentQuery = $this->gm->createQuery($query, $parameters);
-
-        $result = $contentQuery->getResultSet();
-        $row = $result->current();
-        $count = $row['total'];
-
-        return $count;
     }
 
     protected function getMetadata($isUpdate = false)
@@ -1592,22 +1381,6 @@ class UserManager implements PaginatedInterface
             ->where('NOT u:' . GhostUserManager::LABEL_GHOST_USER);
 
         $qb->returns('u');
-        $query = $qb->getQuery();
-
-        return $query->getResultSet();
-    }
-
-    private function createSlug($slug)
-    {
-        $usernameCanonical = urldecode($slug);
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(u:User{usernameCanonical: { usernameCanonical }})')
-            ->setParameter('usernameCanonical', $usernameCanonical)
-            ->where('NOT u:' . GhostUserManager::LABEL_GHOST_USER)
-            ->set('u.slug = { slug }')
-            ->setParameter('slug', $slug)
-            ->returns('u');
-
         $query = $qb->getQuery();
 
         return $query->getResultSet();
