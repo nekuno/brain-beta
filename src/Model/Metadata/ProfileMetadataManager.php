@@ -46,6 +46,7 @@ class ProfileMetadataManager extends MetadataManager
                 break;
             case 'double_choice':
             case 'double_multiple_choices':
+            case 'choice_and_multiple_choices':
                 $publicField = $this->addChoices($publicField, $name, $choiceOptions);
                 $publicField = $this->addDoubleChoices($publicField, $values);
                 break;

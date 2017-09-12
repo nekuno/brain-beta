@@ -678,7 +678,7 @@ profile_filter:
         max: 300
         label: *heightLabel
     sons:
-        type: double_multiple_choices
+        type: choice_and_multiple_choices
         label: *sonsLabel
         doubleChoices: *sonsDoubleChoices
     language:
