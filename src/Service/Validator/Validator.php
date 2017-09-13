@@ -306,6 +306,11 @@ class Validator implements ValidatorInterface
                                 $fieldErrors[] = sprintf('Option length "%s" is too long. "%s" is the maximum', count($dataValue), $fieldData['max_choices']);
                             }
                         }
+                        if (isset($fieldData['min_choices'])) {
+                            if (count($dataValue) < $fieldData['min_choices']) {
+                                $fieldErrors[] = sprintf('Option length "%s" is too short. "%s" is the minimum', count($dataValue), $fieldData['min_choices']);
+                            }
+                        }
                         foreach ($dataValue as $singleValue) {
                             if (!in_array($singleValue, $multipleChoices)) {
                                 $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $singleValue, implode("', '", $multipleChoices));

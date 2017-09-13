@@ -33,7 +33,7 @@ categories:
         - label:
             en: Basic
             es: Básicos
-          fields: [birthday, gender, descriptiveGender, location, orientation]
+          fields: [objective, birthday, gender, descriptiveGender, location, orientation]
         - label:
             en: Availability
             es: Disponibilidad
@@ -58,7 +58,7 @@ categories:
         - label:
             en: Basic
             es: Básicos
-          fields: [birthday, gender, descriptiveGender, location, orientation, groups, compatibility, similarity]
+          fields: [objective, birthday, gender, descriptiveGender, location, orientation, groups, compatibility, similarity]
         - label:
             en: Availability
             es: Disponibilidad
@@ -263,6 +263,14 @@ profile:
             es: 'Género'
         labelEdit: *descriptiveGenderLabel
         max_choices: 5
+    objective:
+        type: multiple_choices
+        label: &objectiveLabel
+            en: 'Objectives'
+            es: 'Objectivos'
+        labelEdit: *objectiveLabel
+        min_choices: 1
+        notErasable: true
     hairColor:
         type: choice
         label: &hairColorLabel
@@ -692,6 +700,9 @@ profile_filter:
     descriptiveGender:
         type: multiple_choices
         label: *descriptiveGenderLabel
+    objective:
+        type: multiple_choices
+        label: *objectiveLabel
     hairColor:
         type: multiple_choices
         label: *hairColorLabel

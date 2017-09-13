@@ -53,6 +53,7 @@ class ProfileMetadataManager extends MetadataManager
             case 'multiple_choices':
                 $publicField = $this->addChoices($publicField, $name, $choiceOptions);
                 $publicField['max_choices'] = isset($values['max_choices']) ? $values['max_choices'] : 999;
+                $publicField['min_choices'] = isset($values['min_choices']) ? $values['min_choices'] : 0;
                 break;
             case 'tags_and_choice':
                 $publicField['choices'] = array();

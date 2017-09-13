@@ -405,6 +405,33 @@ class ProfileOptions implements LoggerAwareInterface
                     'name_es' => 'Otros',
                 ),
             ),
+            'Objective' => array(
+                array(
+                    'id' => 'work',
+                    'name_en' => 'Work',
+                    'name_es' => 'Trabajo',
+                ),
+                array(
+                    'id' => 'play',
+                    'name_en' => 'Play',
+                    'name_es' => 'Jugar',
+                ),
+                array(
+                    'id' => 'human-contact',
+                    'name_en' => 'Human contact',
+                    'name_es' => 'Contacto humano',
+                ),
+                array(
+                    'id' => 'share-space',
+                    'name_en' => 'Share space',
+                    'name_es' => 'Compartir espacio',
+                ),
+                array(
+                    'id' => 'travel',
+                    'name_en' => 'Travel',
+                    'name_es' => 'Viajar',
+                ),
+            ),
             'Sons' => array(
                 array(
                     'id' => 'yes',
