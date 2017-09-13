@@ -46,6 +46,7 @@ $admin->put('/enterpriseUsers/{enterpriseUserId}/invitations/{id}', 'admin.enter
 $admin->post('/enterpriseUsers/{enterpriseUserId}/invitations/{id}', 'admin.enterpriseUsers.invitations.controller:validateAction');
 
 /** User tracking events */
+$admin->get('/users/jwt/{id}', 'admin.users.controller:jwtAction');
 $admin->get('/users/tracking', 'admin.userTracking.controller:getAllAction');
 $admin->get('/users/{id}/tracking', 'admin.userTracking.controller:getAction');
 $admin->get('/users/csv', 'admin.userTracking.controller:getCsvAction');
