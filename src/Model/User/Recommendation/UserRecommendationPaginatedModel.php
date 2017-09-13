@@ -50,9 +50,11 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
                 $objectives[] = $objective;
             }
             $query = $this->getUserRecommendationsQuery($profileFilters, $userFilters, $parameters, $orderQuery, $objectives, true);
-            $result = $query->getResultSet();
-            $response = $this->buildResponseFromResult($result);
-            $return['items'] = $response['items'];
+            if ($query) {
+                $result = $query->getResultSet();
+                $response = $this->buildResponseFromResult($result);
+                $return['items'] = $response['items'];
+            }
         }
 
         if ($this->needMoreContent($limit, $return)) {
@@ -176,7 +178,7 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
 
         if ($onlyCommonObjectives) {
             if (!isset($objectives) || count($objectives) == 0) {
-                return array();
+                return null;
             }
 
             $objectivesCondition = '(';
