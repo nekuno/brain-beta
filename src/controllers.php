@@ -175,6 +175,13 @@ $app['admin.enterpriseUsers.invitations.controller'] = $app->share(
     }
 );
 
+$app['admin.users.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Admin\UserController;
+    }
+);
+
 $app['admin.userTracking.controller'] = $app->share(
     function () {
 
