@@ -267,7 +267,7 @@ profile:
         type: multiple_choices
         label: &objectiveLabel
             en: 'Objectives'
-            es: 'Objectivos'
+            es: 'Objetivos'
         labelEdit: *objectiveLabel
         min_choices: 1
         notErasable: true
