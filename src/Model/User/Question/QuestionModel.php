@@ -293,6 +293,24 @@ class QuestionModel
         return $this->getById($data['questionId'], $locale);
     }
 
+    public function delete(array $data)
+    {
+        $this->validator->validateOnDelete($data);
+
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(question:Question)')
+            ->where('id(question) = { questionId }')
+            ->setParameter('questionId', (integer)$data['questionId']);
+
+        $qb->optionalMatch('(answer:Answer)-[:IS_ANSWER_OF]->(question)');
+        $qb->detachDelete('question', 'answer');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        return $result->count();
+    }
+
     /**
      * @param $id
      * @param $userId

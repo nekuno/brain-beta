@@ -210,6 +210,11 @@ $app['admin.developers.controller'] = $app->share(
     }
 );
 
+$app['admin.questions.controller'] = $app->share(
+    function() {
+        return new \Controller\Admin\QuestionController;
+    }
+);
 
 $app['instant.users.controller'] = $app->share(
     function () {
