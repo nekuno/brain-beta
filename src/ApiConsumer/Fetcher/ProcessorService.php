@@ -12,6 +12,7 @@ use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\LinkProcessor;
 use ApiConsumer\LinkProcessor\LinkResolver;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Resolution;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use Event\ConsistencyEvent;
 use Event\ProcessLinkEvent;
@@ -82,7 +83,7 @@ class ProcessorService implements LoggerAwareInterface
                 $this->removeToken($preprocessedLinks);
 
                 $message = sprintf('Processing with the token for user %d and resource %s', $e->getToken()->getUserId(), $e->getToken()->getResourceOwner());
-                $this->manageError($e, $message);
+                $this->logError($e, $message);
 
                 $processedLinks = $this->fullProcessSingle($preprocessedLink, $userId);
                 $links = array_merge($links, $processedLinks);
@@ -146,7 +147,7 @@ class ProcessorService implements LoggerAwareInterface
         try {
             $this->resolve($preprocessedLink);
         } catch (CouldNotResolveException $e) {
-            $this->manageUrlUnprocessed($e, sprintf('resolving url %s while processing for user %d', $preprocessedLink->getUrl(), $userId), $preprocessedLink->getUrl());
+            $this->logUrlUnprocessed($e, sprintf('resolving url %s while processing for user %d', $preprocessedLink->getUrl(), $userId), $preprocessedLink->getUrl());
 
             $links = $this->save($preprocessedLink);
             $this->like($userId, $links, $preprocessedLink);
@@ -177,7 +178,7 @@ class ProcessorService implements LoggerAwareInterface
         } catch (TokenException $e) {
             throw $e;
         } catch (\Exception $e) {
-            $this->manageError($e, sprintf('processing url %s for user %d', $preprocessedLink->getUrl(), $userId));
+            $this->logError($e, sprintf('processing url %s for user %d', $preprocessedLink->getUrl(), $userId));
 
             return array();
         }
@@ -235,7 +236,7 @@ class ProcessorService implements LoggerAwareInterface
                 $this->removeToken($preprocessedLinks);
 
                 $message = sprintf('Reprocessing with the token for user %d and resource %s', $e->getToken()->getUserId(), $e->getToken()->getResourceOwner());
-                $this->manageError($e, $message);
+                $this->logError($e, $message);
 
                 $reprocessedLinks = $this->fullReprocessSingle($preprocessedLink);
                 $links = array_merge($links, $reprocessedLinks);
@@ -260,12 +261,12 @@ class ProcessorService implements LoggerAwareInterface
         try {
             $this->resolve($preprocessedLink);
         } catch (CouldNotResolveException $e) {
-            $this->manageError($e, sprintf('resolving url %s while reprocessing', $preprocessedLink->getUrl()));
+            $this->logError($e, sprintf('resolving url %s while reprocessing', $preprocessedLink->getUrl()));
             $links = $this->overwrite($preprocessedLink);
 
             return $links;
         } catch (UrlChangedException $e) {
-            $this->manageChangedUrl($e->getOldUrl(), $e->getNewUrl());
+            $this->replaceUrlInDatabase($e->getOldUrl(), $e->getNewUrl());
         }
 
         try {
@@ -277,7 +278,7 @@ class ProcessorService implements LoggerAwareInterface
 
             $oldUrl = $e->getOldUrl();
             $newUrl = $e->getNewUrl();
-            $this->manageChangedUrl($oldUrl, $newUrl);
+            $this->replaceUrlInDatabase($oldUrl, $newUrl);
 
             $preprocessedLink->setUrl($newUrl);
 
@@ -286,13 +287,13 @@ class ProcessorService implements LoggerAwareInterface
         } catch (TokenException $e) {
             throw $e;
         } catch (\Exception $e) {
-            $this->manageError($e, sprintf('reprocessing link %s', $preprocessedLink->getUrl()));
+            $this->logError($e, sprintf('reprocessing link %s', $preprocessedLink->getUrl()));
 
             return array();
         }
     }
 
-    private function manageChangedUrl($oldUrl, $newUrl)
+    private function replaceUrlInDatabase($oldUrl, $newUrl)
     {
         if ($this->linkModel->findLinkByUrl($newUrl)) {
             $fusedLink = $this->linkModel->fuseLinks($oldUrl, $newUrl);
@@ -328,14 +329,22 @@ class ProcessorService implements LoggerAwareInterface
 
         $preprocessedLink->setUrl($resolution->getFinalUrl());
 
-        if ($resolution->getStartingUrl() !== $resolution->getFinalUrl()) {
+        if ($this->hasUrlChangedOnResolve($resolution)) {
             throw new UrlChangedException($resolution->getStartingUrl(), $resolution->getFinalUrl());
         }
     }
 
+    private function hasUrlChangedOnResolve(Resolution $resolution)
+    {
+        $startingUrl = LinkAnalyzer::cleanUrl($resolution->getStartingUrl());
+        $finalUrl = LinkAnalyzer::cleanUrl($resolution->getFinalUrl());
+
+        return $startingUrl !== $finalUrl;
+    }
+
     private function processLink(PreprocessedLink $preprocessedLink)
     {
-        if (!$this->manageUrl($preprocessedLink)) {
+        if (!$this->prepareUrl($preprocessedLink)) {
             return;
         }
 
@@ -344,29 +353,33 @@ class ProcessorService implements LoggerAwareInterface
         } catch (CannotProcessException $e) {
             $links = $this->scrape($preprocessedLink);
         } catch (RequestException $e) {
-            $this->manageError($e, 'requesting while processing from linkProcessor');
+            $this->logError($e, 'requesting while processing from linkProcessor');
             $links = $this->scrape($preprocessedLink);
         }
 
         $preprocessedLink->setLinks($links);
     }
 
-    private function manageUrl(PreprocessedLink $preprocessedLink)
+    private function prepareUrl(PreprocessedLink $preprocessedLink)
     {
         try {
-            $cleanURL = LinkAnalyzer::cleanUrl($preprocessedLink->getUrl());
+            $url = $preprocessedLink->getUrl();
+            $cleanURL = LinkAnalyzer::cleanUrl($url);
+            if ($url !== $cleanURL) {
+                $this->replaceUrlInDatabase($url, $cleanURL);
+            }
             $preprocessedLink->setUrl($cleanURL);
 
             $type = LinkAnalyzer::getProcessorName($preprocessedLink);
             $preprocessedLink->setType($type);
         } catch (UrlNotValidException $e) {
             $url = $preprocessedLink->getUrl();
-            $this->manageUrlUnprocessed($e, sprintf('managing url while processing %s', $url), $url);
+            $this->logUrlUnprocessed($e, sprintf('managing url while processing %s', $url), $url);
             $this->getUnprocessedLinks($preprocessedLink);
 
             return false;
         } catch (\Exception $e) {
-            $this->manageError($e, sprintf('managing url while processing %s', $preprocessedLink->getUrl()));
+            $this->logError($e, sprintf('managing url while processing %s', $preprocessedLink->getUrl()));
             $this->getUnprocessedLinks($preprocessedLink);
 
             return false;
@@ -380,7 +393,7 @@ class ProcessorService implements LoggerAwareInterface
         try {
             return $this->linkProcessor->scrape($preprocessedLink);
         } catch (CannotProcessException $e) {
-            $this->manageError($e, sprintf('scraping %s', $preprocessedLink->getUrl()));
+            $this->logError($e, sprintf('scraping %s', $preprocessedLink->getUrl()));
 
             return $this->getUnprocessedLinks($preprocessedLink);
         }
@@ -395,7 +408,7 @@ class ProcessorService implements LoggerAwareInterface
             return $storedLink && isset($storedLink['processed']) && $storedLink['processed'] == '1';
 
         } catch (\Exception $e) {
-            $this->manageError($e, sprintf('checking saved and processed for %s', $preprocessedLink->getUrl()));
+            $this->logError($e, sprintf('checking saved and processed for %s', $preprocessedLink->getUrl()));
 
             return false;
         }
@@ -409,7 +422,7 @@ class ProcessorService implements LoggerAwareInterface
                     $username = (new TwitterUrlParser())->getProfileId($link->getUrl());
                     $this->dispatcher->dispatch(\AppEvents::CHANNEL_ADDED, new ChannelEvent(TokensModel::TWITTER, $link->getUrl(), $username));
                 } catch (\Exception $e) {
-                    $this->manageError($e, sprintf('checking creator for url %s', $link->getUrl()));
+                    $this->logError($e, sprintf('checking creator for url %s', $link->getUrl()));
                 }
             }
         }
@@ -425,7 +438,7 @@ class ProcessorService implements LoggerAwareInterface
                 $preprocessedLink->getFirstLink()->addSynonymous($singleSynonymous->getFirstLink());
             }
         } catch (\Exception $e) {
-            $this->manageError($e, sprintf('fetching synonymous for %s', $preprocessedLink->getUrl()));
+            $this->logError($e, sprintf('fetching synonymous for %s', $preprocessedLink->getUrl()));
 
             return;
         }
@@ -445,7 +458,7 @@ class ProcessorService implements LoggerAwareInterface
                 $linkCreated = $this->linkModel->addOrUpdateLink($link->toArray());
                 $links[] = $linkCreated;
             } catch (\Exception $e) {
-                $this->manageError($e, sprintf('saving link %s from resource %s', $preprocessedLink->getUrl(), $preprocessedLink->getSource()));
+                $this->logError($e, sprintf('saving link %s from resource %s', $preprocessedLink->getUrl(), $preprocessedLink->getSource()));
 
                 continue;
             }
@@ -499,7 +512,7 @@ class ProcessorService implements LoggerAwareInterface
                 $like = $this->rateModel->userRateLink($userId, $linkId, $source, null, RateModel::LIKE, false);
                 $likes[] = $like;
             } catch (\Exception $e) {
-                $this->manageError($e, sprintf('liking while processing link with id %d for user $d', $linkId, $userId));
+                $this->logError($e, sprintf('liking while processing link with id %d for user $d', $linkId, $userId));
             }
         }
 
@@ -528,7 +541,7 @@ class ProcessorService implements LoggerAwareInterface
         return false;
     }
 
-    private function manageError(\Exception $e, $process)
+    private function logError(\Exception $e, $process)
     {
         $this->dispatcher->dispatchError($e, $process);
 
@@ -545,7 +558,7 @@ class ProcessorService implements LoggerAwareInterface
         return false;
     }
 
-    private function manageUrlUnprocessed(\Exception $e, $process, $url)
+    private function logUrlUnprocessed(\Exception $e, $process, $url)
     {
         $this->logNotice(sprintf('Error processing url %s while %s', $url, $process));
         $this->dispatcher->dispatchUrlUnprocessed($e, $process);

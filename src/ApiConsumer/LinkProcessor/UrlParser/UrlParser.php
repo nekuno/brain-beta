@@ -13,10 +13,22 @@ class UrlParser implements UrlParserInterface
 
     public function checkUrlValid($url, $urlDecoded = null)
     {
+        $toCheck = $this->removeSpecialCharacters($url);
         //TODO: Check https://mathiasbynens.be/demo/url-regex for improvements
-        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+        if (!filter_var($toCheck, FILTER_VALIDATE_URL)) {
             throw new UrlNotValidException($urlDecoded ?: $url);
         }
+    }
+
+//    protec
+
+    protected function removeSpecialCharacters($url)
+    {
+        $path = parse_url($url, PHP_URL_PATH);
+        $encoded_path = array_map('urlencode', explode('/', $path));
+        $url = str_replace($path, implode('/', $encoded_path), $url);
+
+        return $url;
     }
 
     public function cleanURL($url)
@@ -29,6 +41,7 @@ class UrlParser implements UrlParserInterface
     }
 
     // Regex from https://gist.github.com/gruber/8891611
+
     /**
      * @param $string
      * @return array

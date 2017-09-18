@@ -20,7 +20,7 @@ class ConsistencyChecker
      * @param Node $node
      * @param $relationshipRules
      */
-    private function checkNodeRelationships(Node $node, $relationshipRules)
+    protected function checkNodeRelationships(Node $node, $relationshipRules)
     {
         $totalRelationships = $node->getRelationships();
 
@@ -36,11 +36,11 @@ class ConsistencyChecker
             $errors = array('relationships' => array());
 
             if (count($relationships) < $rule->getMinimum()) {
-                $errors['relationships'][$rule->getType()] = sprintf('Amount of relationships %d is less than %d allowed for node with id %d', count($relationships), $rule->getMinimum(), $node->getId());
+                $errors['relationships'][$rule->getType()] = sprintf('Amount of relationships %d is less than %d allowed', count($relationships), $rule->getMinimum());
             }
 
             if (count($relationships) > $rule->getMaximum()) {
-                $errors['relationships'][$rule->getType()] = sprintf('Amount of relationships %d is more than %d allowed for node with id %d', count($relationships), $rule->getMaximum(), $node->getId());
+                $errors['relationships'][$rule->getType()] = sprintf('Amount of relationships %d is more than %d allowed', count($relationships), $rule->getMaximum());
             }
 
             foreach ($relationships as $relationship) {
@@ -68,7 +68,7 @@ class ConsistencyChecker
         }
     }
 
-    private function checkProperties(PropertyContainer $propertyContainer, array $propertyRules)
+    protected function checkProperties(PropertyContainer $propertyContainer, array $propertyRules)
     {
         $properties = $propertyContainer->getProperties();
 

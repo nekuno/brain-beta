@@ -2,7 +2,6 @@
 
 namespace Service\Consistency;
 
-
 use Event\ExceptionEvent;
 use Everyman\Neo4j\Label;
 use Everyman\Neo4j\Node;
@@ -29,17 +28,25 @@ class ConsistencyCheckerService
         $this->consistency = $consistency;
     }
 
-    public function checkDatabase()
+    public function checkDatabase($label = null)
     {
         //dispatch consistency start
         $this->dispatcher->dispatch(\AppEvents::CONSISTENCY_START);
         $paginationSize = 1000;
         $offset = 0;
 
-        do{
+        $errors = array();
+        do {
+            var_dump($offset);
+            var_dump(count($errors));
+
             $qb = $this->graphManager->createQueryBuilder();
 
-            $qb->match('(a)');
+            if (null !== $label) {
+                $qb->match("(a:$label)");
+            } else {
+                $qb->match('(a)');
+            }
 
             $qb->returns('a')
                 ->skip('{offset}')
@@ -49,19 +56,26 @@ class ConsistencyCheckerService
             $result = $qb->getQuery()->getResultSet();
             foreach ($result as $row) {
                 $node = $row->offsetGet('a');
-                $this->checkNode($node);
+                $newErrors = $this->checkNode($node);
+                foreach ($newErrors as $field =>$id) {
+                    $errors[$field][] = $id;
+                }
             }
 
             $offset += $paginationSize;
-        } while ($result->count() >= $paginationSize);
+            $moreResultsAvailable = $result->count() >= $paginationSize;
+
+        } while ($moreResultsAvailable);
 
         //dispatch consistency end
         $this->dispatcher->dispatch(\AppEvents::CONSISTENCY_END);
 
+        return $errors;
     }
 
     /**
      * @param Node $node
+     * @return array
      */
     public function checkNode(Node $node)
     {
@@ -69,26 +83,34 @@ class ConsistencyCheckerService
         $labelNames = $this->getLabelNames($node);
 
         $rules = $this->consistency;
+        $errors = array();
         foreach ($rules['nodes'] as $rule) {
             if (!in_array($rule['label'], $labelNames)) {
                 continue;
             }
 
-            if (isset($rule['class'])){
+            if (isset($rule['class'])) {
                 $checker = new $rule['class']();
             } else {
                 $checker = new ConsistencyChecker();
             }
 
             $nodeRule = new ConsistencyNodeRule($rule);
-            try{
+            try {
                 $checker->check($node, $nodeRule);
             } catch (ValidationException $e) {
-                $this->dispatcher->dispatch(\AppEvents::CONSISTENCY_ERROR, new ExceptionEvent($e, 'Checking node '.$node->getId()));
+                foreach ($e->getErrors() as $field => $messages) {
+                    foreach ($messages as $type => $message) {
+                        $key = $field . '-' . $type . ' -> ' . $message;
+                        $errors[$key] = $node->getId();
+                    }
+                }
+                $this->dispatcher->dispatch(\AppEvents::CONSISTENCY_ERROR, new ExceptionEvent($e, 'Checking node ' . $node->getId()));
             }
         }
-    }
 
+        return $errors;
+    }
 
     static function getLabelNames(Node $node)
     {
