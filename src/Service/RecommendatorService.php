@@ -172,6 +172,10 @@ class RecommendatorService
                     $filters['order'] = $order;
                 }
 
+                if ($request->get('noCommonObjectives')) {
+                    $filters['noCommonObjectives'] = urldecode($request->get('noCommonObjectives'));
+                }
+
                 if ($request->get('foreign')) {
                     $filters['foreign'] = urldecode($request->get('foreign'));
                 }
@@ -208,6 +212,7 @@ class RecommendatorService
 
         //TODO: Validate
         $order = $request->get('order', false);
+        $noCommonObjectives = $request->get('noCommonObjectives', null);
         $ignored = $request->get('ignored', null);
         $foreign = $request->get('foreign', null);
 
@@ -219,6 +224,10 @@ class RecommendatorService
 
         if ($order) {
             $filters['order'] = $order;
+        }
+
+        if ($noCommonObjectives) {
+            $filters['noCommonObjectives'] = urldecode($noCommonObjectives);
         }
 
         if ($foreign) {
