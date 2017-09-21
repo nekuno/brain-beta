@@ -20,12 +20,6 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
     {
         $id = $filters['id'];
 
-        $parameters = array(
-            'offset' => (integer)$offset,
-            'limit' => (integer)$limit,
-            'userId' => (integer)$id
-        );
-
         $orderQuery = ' matching_questions DESC, similarity DESC, id ';
         if (isset($filters['userFilters']['order']) && $filters['userFilters']['order'] == 'similarity') {
             $orderQuery = '  similarity DESC, matching_questions DESC, id ';
@@ -39,30 +33,75 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
 
         $return = array('items' => array());
 
+        $profile = $this->profileModel->getById($id);
+        $objectives = isset($profile['objective']) ? $profile['objective'] : array();
+
+        $parameters = array(
+            'offset' => (integer)$offset,
+            'limit' => (integer)$limit,
+            'userId' => (integer)$id,
+            'objectives' => $objectives,
+        );
         $qb = $this->gm->createQueryBuilder();
-        $qb->match("(u:User {qnoow_id: $id})<-[:PROFILE_OF]-(p:Profile)<-[:OPTION_OF]-(o:Objective)")
-            ->returns('COLLECT(o.id) as objectives');
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
-        if ($result->count() > 0) {
-            $objectives = array();
-            foreach ($result->current()->offsetGet('objectives') as $objective) {
-                $objectives[] = $objective;
-            }
-            $query = $this->getUserRecommendationsQuery($profileFilters, $userFilters, $parameters, $orderQuery, $objectives, true);
-            if ($query) {
-                $result = $query->getResultSet();
-                $response = $this->buildResponseFromResult($result);
-                $return['items'] = $response['items'];
-            }
+        $qb->setParameters($parameters);
+
+        $qb->match('(u:User {qnoow_id: {userId}})-[:MATCHES|:SIMILARITY]-(anyUser:UserEnabled)')
+            ->where('u <> anyUser', 'NOT (u)-[:DISLIKES|:IGNORES]->(anyUser)', 'NOT (u)<-[:BLOCKS]-(anyUser)')
+            ->optionalMatch('(anyUser)<-[:PROFILE_OF]-(:Profile)<-[:OPTION_OF]-(o:Objective)')
+            ->with('DISTINCT anyUser', 'u', "CASE WHEN EXISTS(o.id) AND ANY (x IN { objectives } WHERE x = o.id) THEN 1 ELSE 0 END as hasCommonObjectives")
+            ->limit(self::USER_SAFETY_LIMIT)
+            ->with('u', 'anyUser', 'hasCommonObjectives')
+            ->optionalMatch('(u)-[m:MATCHES]-(anyUser)')
+            ->with('u', 'anyUser', 'hasCommonObjectives', '(CASE WHEN EXISTS(m.matching_questions) THEN m.matching_questions ELSE 0.01 END) AS matching_questions')
+            ->optionalMatch('(u)-[s:SIMILARITY]-(anyUser)')
+            ->with('u', 'anyUser', 'hasCommonObjectives', 'matching_questions', '(CASE WHEN EXISTS(s.similarity) THEN s.similarity ELSE 0.01 END) AS similarity')
+            ->match('(anyUser)<-[:PROFILE_OF]-(p:Profile)');
+
+        $qb->optionalMatch('(p)-[:LOCATION]->(l:Location)');
+
+        $qb->with('u, anyUser, hasCommonObjectives, matching_questions, similarity, p, l');
+        $qb->where($profileFilters['conditions'])
+            ->with('u', 'anyUser', 'hasCommonObjectives', 'matching_questions', 'similarity', 'p', 'l');
+        $qb->where( $userFilters['conditions'])
+            ->with('u', 'anyUser', 'hasCommonObjectives', 'matching_questions', 'similarity', 'p', 'l');
+
+        foreach ($profileFilters['matches'] as $match) {
+            $qb->match($match);
+        }
+        foreach ($userFilters['matches'] as $match) {
+            $qb->match($match);
         }
 
-        if ($this->needMoreContent($limit, $return)) {
-            $query = $this->getUserRecommendationsQuery($profileFilters, $userFilters, $parameters, $orderQuery);
-            $result = $query->getResultSet();
-            $response = $this->buildResponseFromResult($result);
-            $return['items'] = array_merge($return['items'], $response['items']);
-        }
+        $qb->with('anyUser, u, hasCommonObjectives, matching_questions, similarity, p, l')
+            ->optionalMatch('(u)-[likes:LIKES]->(anyUser)')
+            ->with('anyUser, u, hasCommonObjectives, matching_questions, similarity, p, l, (CASE WHEN likes IS NULL THEN 0 ELSE 1 END) AS like')
+            ->optionalMatch('(p)<-[optionOf:OPTION_OF]-(option:ProfileOption)')
+            ->optionalMatch('(p)-[tagged:TAGGED]-(tag:ProfileTag)');
+
+        $qb->returns(
+            'anyUser.qnoow_id AS id,
+             anyUser.username AS username,
+             anyUser.slug AS slug,
+             anyUser.photo AS photo,
+             p.birthday AS birthday,
+             p AS profile,
+             collect(distinct {option: option, detail: (CASE WHEN EXISTS(optionOf.detail) THEN optionOf.detail ELSE null END)}) AS options,
+             collect(distinct {tag: tag, tagged: tagged}) AS tags,
+             l AS location,
+             matching_questions,
+             similarity,
+             like,
+             hasCommonObjectives'
+        )
+            ->orderBy('hasCommonObjectives DESC', $orderQuery)
+            ->skip('{ offset }')
+            ->limit('{ limit }');
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+        $response = $this->buildResponseFromResult($result);
+        $return['items'] = array_merge($return['items'], $response['items']);
+
 
         $needContent = $this->needMoreContent($limit, $return);
         if ($needContent) {
@@ -168,81 +207,6 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
         }
 
         return $moreContent;
-    }
-
-    protected function getUserRecommendationsQuery($profileFilters, $userFilters, $parameters, $orderQuery, $objectives = array(), $onlyCommonObjectives = false)
-    {
-        $qb = $this->gm->createQueryBuilder();
-
-        $qb->setParameters($parameters);
-
-        if ($onlyCommonObjectives) {
-            if (!isset($objectives) || count($objectives) == 0) {
-                return null;
-            }
-
-            $objectivesCondition = '(';
-            foreach ($objectives as $objective) {
-                $objectivesCondition .= "o.id = '$objective' OR ";
-            }
-            $objectivesCondition = trim($objectivesCondition, 'OR ') . ') ';
-
-            $qb->match('(u:User {qnoow_id: {userId}})-[:MATCHES|:SIMILARITY]-(anyUser:UserEnabled)<-[:PROFILE_OF]-(:Profile)<-[:OPTION_OF]-(o:Objective)')
-                ->where($objectivesCondition, 'u <> anyUser', 'NOT (u)-[:DISLIKES|:IGNORES]->(anyUser)', 'NOT (u)<-[:BLOCKS]-(anyUser)');
-        } else {
-            $qb->match('(u:User {qnoow_id: {userId}})-[:MATCHES|:SIMILARITY]-(anyUser:UserEnabled)')
-                ->where('u <> anyUser', 'NOT (u)-[:DISLIKES|:IGNORES]->(anyUser)', 'NOT (u)<-[:BLOCKS]-(anyUser)');
-        }
-
-        $qb->with('DISTINCT anyUser', 'u')
-            ->limit(self::USER_SAFETY_LIMIT)
-            ->with('u', 'anyUser')
-            ->optionalMatch('(u)-[m:MATCHES]-(anyUser)')
-            ->with('u', 'anyUser', '(CASE WHEN EXISTS(m.matching_questions) THEN m.matching_questions ELSE 0.01 END) AS matching_questions')
-            ->optionalMatch('(u)-[s:SIMILARITY]-(anyUser)')
-            ->with('u', 'anyUser', 'matching_questions', '(CASE WHEN EXISTS(s.similarity) THEN s.similarity ELSE 0.01 END) AS similarity')
-            ->match('(anyUser)<-[:PROFILE_OF]-(p:Profile)');
-
-        $qb->optionalMatch('(p)-[:LOCATION]->(l:Location)');
-
-        $qb->with('u, anyUser, matching_questions, similarity, p, l');
-        $qb->where($profileFilters['conditions'])
-            ->with('u', 'anyUser', 'matching_questions', 'similarity', 'p', 'l');
-        $qb->where( $userFilters['conditions'])
-            ->with('u', 'anyUser', 'matching_questions', 'similarity', 'p', 'l');
-
-        foreach ($profileFilters['matches'] as $match) {
-            $qb->match($match);
-        }
-        foreach ($userFilters['matches'] as $match) {
-            $qb->match($match);
-        }
-
-        $qb->with('anyUser, u, matching_questions, similarity, p, l')
-            ->optionalMatch('(u)-[likes:LIKES]->(anyUser)')
-            ->with('anyUser, u, matching_questions, similarity, p, l, (CASE WHEN likes IS NULL THEN 0 ELSE 1 END) AS like')
-            ->optionalMatch('(p)<-[optionOf:OPTION_OF]-(option:ProfileOption)')
-            ->optionalMatch('(p)-[tagged:TAGGED]-(tag:ProfileTag)');
-
-        $qb->returns(
-            'anyUser.qnoow_id AS id,
-             anyUser.username AS username,
-             anyUser.slug AS slug,
-             anyUser.photo AS photo,
-             p.birthday AS birthday,
-             p AS profile,
-             collect(distinct {option: option, detail: (CASE WHEN EXISTS(optionOf.detail) THEN optionOf.detail ELSE null END)}) AS options,
-             collect(distinct {tag: tag, tagged: tagged}) AS tags,
-             l AS location,
-             matching_questions,
-             similarity,
-             like'
-        )
-            ->orderBy($orderQuery)
-            ->skip('{ offset }')
-            ->limit('{ limit }');
-
-        return $qb->getQuery();
     }
 
     /**
