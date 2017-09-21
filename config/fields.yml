@@ -271,6 +271,7 @@ profile:
         labelEdit: *objectiveLabel
         min_choices: 1
         notErasable: true
+        required: true
     hairColor:
         type: choice
         label: &hairColorLabel
