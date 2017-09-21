@@ -31,14 +31,6 @@ class ContentPaginator extends Paginator
         $slice = $paginated->slice($filters, $offset, $limit);
         $total = $paginated->countTotal($filters);
 
-
-        $noCommonObjectives = 0;
-        if (isset($filters['noCommonObjectives'])) {
-            $noCommonObjectives = $filters['noCommonObjectives'];
-        }
-
-        $newNoCommonObjectives = isset($slice['newNoCommonObjectives']) ? $slice['newNoCommonObjectives'] : $noCommonObjectives;
-
         $foreign = 0;
         if (isset($filters['foreign'])) {
             $foreign = $filters['foreign'];
@@ -53,11 +45,11 @@ class ContentPaginator extends Paginator
 
         $newIgnored = isset($slice['newIgnored']) ? $slice['newIgnored'] : $ignored;
 
-        $prevLink = $this->createContentPrevLink($request, $offset, $limit, $noCommonObjectives, $newNoCommonObjectives, $foreign, $newForeign, $newIgnored);
+        $prevLink = $this->createContentPrevLink($request, $offset, $limit, $foreign, $newForeign, $newIgnored);
         if (count($slice['items']) < $limit) {
             $nextLink = null;
         } else {
-            $nextLink = $this->createContentNextLink($request, $offset, $limit, $total, $noCommonObjectives, $newNoCommonObjectives, $foreign, $newForeign, $ignored, $newIgnored);
+            $nextLink = $this->createContentNextLink($request, $offset, $limit, $total, $foreign, $newForeign, $ignored, $newIgnored);
         }
         $pagination = array();
         $pagination['total'] = $total;
@@ -77,18 +69,15 @@ class ContentPaginator extends Paginator
      * @param Request $request
      * @param $offset
      * @param $limit
-     * @param $noCommonObjectives
-     * @param $noCommonObjectivesContent
      * @param $foreign
      * @param $foreignContent
      * @param $ignored
      * @return string
      */
-    protected function createContentPrevLink(Request $request, $offset, $limit, $noCommonObjectives, $noCommonObjectivesContent, $foreign, $foreignContent, $ignored)
+    protected function createContentPrevLink(Request $request, $offset, $limit, $foreign, $foreignContent, $ignored)
     {
         $parentPrev = parent::createPrevLink($request, $offset, $limit);
-        $prevLink = $this->addNoCommonObjectives($parentPrev, $noCommonObjectives, false, $noCommonObjectivesContent);
-        $prevLink = $this->addForeign($prevLink, $foreign, false, $foreignContent);
+        $prevLink = $this->addForeign($parentPrev, $foreign, false, $foreignContent);
 
         return $this->addIgnored($prevLink, $ignored, false);
     }
@@ -98,57 +87,18 @@ class ContentPaginator extends Paginator
      * @param $offset
      * @param $limit
      * @param $total
-     * @param $noCommonObjectives
-     * @param $noCommonObjectivesContent
      * @param $foreign
      * @param $foreignContent
      * @param $ignored
      * @param $newIgnored
      * @return string
      */
-    protected function createContentNextLink(Request $request, $offset, $limit, $total, $noCommonObjectives, $noCommonObjectivesContent, $foreign, $foreignContent, $ignored, $newIgnored)
+    protected function createContentNextLink(Request $request, $offset, $limit, $total, $foreign, $foreignContent, $ignored, $newIgnored)
     {
         $parentNext = parent::createNextLink($request, $offset, $limit, $total);
-        $nextLink = $this->addNoCommonObjectives($parentNext, $noCommonObjectives, true, $noCommonObjectivesContent);
-        $nextLink = $this->addForeign($nextLink, $foreign, true, $foreignContent - $foreign);
+        $nextLink = $this->addForeign($parentNext, $foreign, true, $foreignContent - $foreign);
 
         return $this->addIgnored($nextLink, $ignored, true, $newIgnored - $ignored);
-    }
-
-    /**
-     * @param $url
-     * @param $noCommonObjectives
-     * @param bool $next
-     * @param int $newNoCommonObjectives
-     * @return string
-     */
-    protected function addNoCommonObjectives($url, $noCommonObjectives, $next = false, $newNoCommonObjectives = 0)
-    {
-        if (!$url || $newNoCommonObjectives === 0) {
-            return $url;
-        }
-
-        if ($next && $noCommonObjectives < 0) {
-            return null; //database completely searched
-        }
-
-        $url_parts = parse_url($url);
-        parse_str($url_parts['query'], $params);
-
-        $params['offset'] = isset($params['offset']) ? $params['offset'] : 0;
-        if ($next) {
-            $params['offset'] -= $newNoCommonObjectives;
-            $params['noCommonObjectives'] = $noCommonObjectives + $newNoCommonObjectives;
-        } else {
-            if (isset($params['noCommonObjectives']) && $params['noCommonObjectives']) {
-                $params['noCommonObjectives'] = $noCommonObjectives;
-                $params['offset'] += $params['limit'];
-            }
-        }
-
-        $url_parts['query'] = http_build_query($params);
-
-        return http_build_url($url_parts);
     }
 
     /**

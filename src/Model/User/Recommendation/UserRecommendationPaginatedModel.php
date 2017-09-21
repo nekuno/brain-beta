@@ -20,6 +20,12 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
     {
         $id = $filters['id'];
 
+        $parameters = array(
+            'offset' => (integer)$offset,
+            'limit' => (integer)$limit,
+            'userId' => (integer)$id
+        );
+
         $orderQuery = ' matching_questions DESC, similarity DESC, id ';
         if (isset($filters['userFilters']['order']) && $filters['userFilters']['order'] == 'similarity') {
             $orderQuery = '  similarity DESC, matching_questions DESC, id ';
@@ -30,7 +36,7 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
 
         $profileFilters = $this->getProfileFilters($filters['profileFilters']);
         $userFilters = $this->getUserFilters($filters['userFilters']);
-        $objectives = array();
+
         $return = array('items' => array());
 
         $qb = $this->gm->createQueryBuilder();
@@ -38,26 +44,29 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
             ->returns('COLLECT(o.id) as objectives');
         $query = $qb->getQuery();
         $result = $query->getResultSet();
-
         if ($result->count() > 0) {
+            $objectives = array();
             foreach ($result->current()->offsetGet('objectives') as $objective) {
                 $objectives[] = $objective;
             }
-            $response = $this->getUserRecommendations($profileFilters, $userFilters, $id, $limit, $offset, $orderQuery, $objectives, true);
-            $return['items'] = isset($response['items']) ? $response['items'] : array();
-        }
-
-        if ($needContent = $this->needMoreContent($limit, $return)) {
-            $noCommonObjectives = 0;
-            if (isset($filters['noCommonObjectives'])) {
-                $noCommonObjectives = $filters['noCommonObjectives'];
+            $query = $this->getUserRecommendationsQuery($profileFilters, $userFilters, $parameters, $orderQuery, $objectives, true);
+            if ($query) {
+                $result = $query->getResultSet();
+                $response = $this->buildResponseFromResult($result);
+                $return['items'] = $response['items'];
             }
-            $noCommonObjectivesResponse = $this->getUserRecommendations($profileFilters, $userFilters, $id, $needContent, $noCommonObjectives, $orderQuery, $objectives);
-            $return['items'] = isset($noCommonObjectivesResponse['items']) ? array_merge($return['items'], $noCommonObjectivesResponse['items']) : array();
-            $return['newNoCommonObjectives'] = isset($noCommonObjectivesResponse['items']) ? count($noCommonObjectivesResponse['items']) : 0;
         }
 
-        if ($needContent = $this->needMoreContent($limit, $return)) {
+        if ($this->needMoreContent($limit, $return)) {
+            $query = $this->getUserRecommendationsQuery($profileFilters, $userFilters, $parameters, $orderQuery);
+            $result = $query->getResultSet();
+            $response = $this->buildResponseFromResult($result);
+            $return['items'] = array_merge($return['items'], $response['items']);
+        }
+
+        $needContent = $this->needMoreContent($limit, $return);
+        if ($needContent) {
+
             $foreign = 0;
             if (isset($filters['foreign'])) {
                 $foreign = $filters['foreign'];
@@ -67,7 +76,8 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
             $return['newForeign'] = $foreignResult['foreign'];
         }
 
-        if ($needContent = $this->needMoreContent($limit, $return)) {
+        $needContent = $this->needMoreContent($limit, $return);
+        if ($needContent) {
             $ignored = 0;
             if (isset($filters['ignored'])) {
                 $ignored = $filters['ignored'];
@@ -160,38 +170,28 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
         return $moreContent;
     }
 
-    protected function getUserRecommendations($profileFilters, $userFilters, $userId, $limit, $offset, $orderQuery, $objectives = array(), $onlyCommonObjectives = false)
+    protected function getUserRecommendationsQuery($profileFilters, $userFilters, $parameters, $orderQuery, $objectives = array(), $onlyCommonObjectives = false)
     {
         $qb = $this->gm->createQueryBuilder();
 
-        $qb->setParameters(array(
-            'userId' => (int) $userId,
-            'offset' => (int) $offset,
-            'limit' => (int) $limit,
-        ));
+        $qb->setParameters($parameters);
 
-        $objectivesCondition = null;
-        if (isset($objectives) & count($objectives) > 0) {
+        if ($onlyCommonObjectives) {
+            if (!isset($objectives) || count($objectives) == 0) {
+                return null;
+            }
+
             $objectivesCondition = '(';
             foreach ($objectives as $objective) {
                 $objectivesCondition .= "o.id = '$objective' OR ";
             }
             $objectivesCondition = trim($objectivesCondition, 'OR ') . ') ';
-        }
-        if ($onlyCommonObjectives) {
-            if (!isset($objectives) || count($objectives) == 0) {
-                return null;
-            }
+
             $qb->match('(u:User {qnoow_id: {userId}})-[:MATCHES|:SIMILARITY]-(anyUser:UserEnabled)<-[:PROFILE_OF]-(:Profile)<-[:OPTION_OF]-(o:Objective)')
                 ->where($objectivesCondition, 'u <> anyUser', 'NOT (u)-[:DISLIKES|:IGNORES]->(anyUser)', 'NOT (u)<-[:BLOCKS]-(anyUser)');
         } else {
             $qb->match('(u:User {qnoow_id: {userId}})-[:MATCHES|:SIMILARITY]-(anyUser:UserEnabled)')
-                ->where('u <> anyUser', 'NOT (u)-[:DISLIKES|:IGNORES]->(anyUser)', 'NOT (u)<-[:BLOCKS]-(anyUser)')
-                ->optionalMatch('(anyUser)<-[:PROFILE_OF]-(:Profile)<-[:OPTION_OF]-(o:Objective)')
-                ->with('anyUser', 'u', 'o');
-            if ($objectivesCondition) {
-                $qb->where("NOT (anyUser)<-[:PROFILE_OF]-(:Profile)<-[:OPTION_OF]-(:Objective) OR NOT $objectivesCondition");
-            }
+                ->where('u <> anyUser', 'NOT (u)-[:DISLIKES|:IGNORES]->(anyUser)', 'NOT (u)<-[:BLOCKS]-(anyUser)');
         }
 
         $qb->with('DISTINCT anyUser', 'u')
@@ -242,10 +242,7 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
             ->skip('{ offset }')
             ->limit('{ limit }');
 
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
-
-        return $this->buildResponseFromResult($result);
+        return $qb->getQuery();
     }
 
     /**
