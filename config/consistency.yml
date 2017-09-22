@@ -193,3 +193,12 @@ nodes:
             age_max:
                 type: integer
 
+    link:
+        label: Link
+
+        relationships:
+            popularity:
+                type: HAS_POPULARITY
+                direction: outgoing
+                otherNode: Popularity
+                maximum: 1

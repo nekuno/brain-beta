@@ -4,6 +4,7 @@ namespace ApiConsumer\Fetcher;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
+use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
 use Model\Link\Link;
 
 abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
@@ -97,8 +98,8 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
 
                     $thisId = $id . '-' . $counter;
 
-                    $parsed[] = $this->build(trim($websiteUrl), $thisId, $item);
-
+                    $new = $this->build(trim($websiteUrl), $thisId, $item);
+                    $new->setType(UrlParser::SCRAPPER);
                     $counter++;
                 }
             }

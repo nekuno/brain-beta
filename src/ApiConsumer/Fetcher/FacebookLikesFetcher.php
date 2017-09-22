@@ -32,7 +32,9 @@ class FacebookLikesFetcher extends AbstractFacebookFetcher
 
         // this endpoint only gives back Facebook Page likes
         foreach ($parsed as $preprocessedLink) {
-            $preprocessedLink->setType(FacebookUrlParser::FACEBOOK_PAGE);
+            if (null == $preprocessedLink->getType()){
+                $preprocessedLink->setType(FacebookUrlParser::FACEBOOK_PAGE);
+            }
         }
 
         return $parsed;

@@ -22,6 +22,16 @@ class QuestionValidator extends Validator
         $this->validateUserInData($data, false);
     }
 
+    public function validateOnDelete($data)
+    {
+        $errors = array();
+        if (!isset($data['questionId'])) {
+            $errors['questionId'] = 'Question Id is not set when deleting question';
+        }
+
+        $this->throwException($errors);
+    }
+
     protected function getChoices()
     {
         return array(

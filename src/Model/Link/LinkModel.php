@@ -418,19 +418,6 @@ class LinkModel
         }
     }
 
-    private function partialUpdate(array $oldLink, array $newLink)
-    {
-        $changedCount = 0;
-        foreach (array('title', 'description', 'thumbnail') as $field) {
-            if (!isset($oldLink[$field]) && isset($newLink[$field]) && null != $newLink[$field]) {
-                $hasChanged = $this->setLinkProperty($newLink['url'], $field, $newLink[$field]);
-                $changedCount += (integer)$hasChanged;
-            }
-        }
-
-        return $changedCount;
-    }
-
     private function setLinkProperty($url, $key, $value)
     {
         $qb = $this->gm->createQueryBuilder();
@@ -563,7 +550,13 @@ class LinkModel
         $oldLink = $this->findLinkByUrl($oldUrl);
         $newLink = $this->findLinkByUrl($newUrl);
 
+//        var_dump('fusing');
+        var_dump($oldUrl);
+//        var_dump($oldLink);
+        var_dump($newUrl);
+//        var_dump($newLink);
         $this->gm->fuseNodes($oldLink['id'], $newLink['id']);
+
         $this->changeUrl($oldUrl, $newUrl);
 
         return $newLink['id'];
