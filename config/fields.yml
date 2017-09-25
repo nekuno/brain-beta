@@ -381,7 +381,7 @@ profile:
             es: 'Religión'
         labelEdit: *religionLabel
         doubleChoices: &religionDoubleChoices
-            agnosticism:
+            agnosticism: &religionDetails
                 important:
                     en: "and it's important"
                     es: "y es importante"
@@ -391,106 +391,16 @@ profile:
                 laughing_about_it:
                     en: "and laughing about it"
                     es: "y me río de ello"
-            atheism:
-                important:
-                    en: "and it's important"
-                    es: "y es importante"
-                not_important:
-                    en: "and it's not important"
-                    es: "y no es importante"
-                laughing_about_it:
-                    en: "and laughing about it"
-                    es: "y me río de ello"
-            christianity:
-                important:
-                    en: "and it's important"
-                    es: "y es importante"
-                not_important:
-                    en: "and it's not important"
-                    es: "y no es importante"
-                laughing_about_it:
-                    en: "and laughing about it"
-                    es: "y me río de ello"
-            judaism:
-                important:
-                    en: "and it's important"
-                    es: "y es importante"
-                not_important:
-                    en: "and it's not important"
-                    es: "y no es importante"
-                laughing_about_it:
-                    en: "and laughing about it"
-                    es: "y me río de ello"
-            catholicism:
-                important:
-                    en: "and it's important"
-                    es: "y es importante"
-                not_important:
-                    en: "and it's not important"
-                    es: "y no es importante"
-                laughing_about_it:
-                    en: "and laughing about it"
-                    es: "y me río de ello"
-            islam:
-                important:
-                    en: "and it's important"
-                    es: "y es importante"
-                not_important:
-                    en: "and it's not important"
-                    es: "y no es importante"
-                laughing_about_it:
-                    en: "and laughing about it"
-                    es: "y me río de ello"
-            hinduism:
-                important:
-                    en: "and it's important"
-                    es: "y es importante"
-                not_important:
-                    en: "and it's not important"
-                    es: "y no es importante"
-                laughing_about_it:
-                    en: "and laughing about it"
-                    es: "y me río de ello"
-            buddhism:
-                important:
-                    en: "and it's important"
-                    es: "y es importante"
-                not_important:
-                    en: "and it's not important"
-                    es: "y no es importante"
-                laughing_about_it:
-                    en: "and laughing about it"
-                    es: "y me río de ello"
-            sikh:
-                important:
-                    en: "and it's important"
-                    es: "y es importante"
-                not_important:
-                    en: "and it's not important"
-                    es: "y no es importante"
-                laughing_about_it:
-                    en: "and laughing about it"
-                    es: "y me río de ello"
-            kopimism:
-                important:
-                    en: "and it's important"
-                    es: "y es importante"
-                not_important:
-                    en: "and it's not important"
-                    es: "y no es importante"
-                laughing_about_it:
-                    en: "and laughing about it"
-                    es: "y me río de ello"
-            other:
-                important:
-                    en: "and it's important"
-                    es: "y es importante"
-                not_important:
-                    en: "and it's not important"
-                    es: "y no es importante"
-                laughing_about_it:
-                    en: "and laughing about it"
-                    es: "y me río de ello"
+            atheism: *religionDetails
+            christianity: *religionDetails
+            judaism: *religionDetails
+            catholicism: *religionDetails
+            islam: *religionDetails
+            hinduism: *religionDetails
+            buddhism: *religionDetails
+            sikh: *religionDetails
+            kopimism: *religionDetails
+            other: *religionDetails
     handicap:
         type: tags
         label: &handicapLabel
