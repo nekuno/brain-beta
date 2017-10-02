@@ -4,7 +4,7 @@ namespace Controller\User;
 
 use Event\AnswerEvent;
 use Model\User\Question\QuestionModel;
-use Model\User\Question\QuestionPaginatedModel;
+use Model\User\Question\UserAnswerPaginatedModel;
 use Model\User;
 use Silex\Application;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -29,7 +29,7 @@ class AnswerController
         $paginator = $app['paginator'];
 
         $filters = array('id' => $user->getId(), 'locale' => $locale);
-        /* @var $model QuestionPaginatedModel */
+        /* @var $model UserAnswerPaginatedModel */
         $model = $app['users.questions.model'];
 
         $result = $paginator->paginate($filters, $model, $request);
