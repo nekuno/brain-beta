@@ -419,7 +419,7 @@ class ProfileOptions implements LoggerAwareInterface
                 array(
                     'id' => 'work',
                     'name_en' => 'Work',
-                    'name_es' => 'Trabajo',
+                    'name_es' => 'Trabajar',
                 ),
                 array(
                     'id' => 'explore',
