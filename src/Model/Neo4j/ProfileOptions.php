@@ -407,19 +407,24 @@ class ProfileOptions implements LoggerAwareInterface
             ),
             'Objective' => array(
                 array(
+                    'id' => 'human-contact',
+                    'name_en' => 'Contact',
+                    'name_es' => 'Contacto',
+                ),
+                array(
+                    'id' => 'talk',
+                    'name_en' => 'Talk',
+                    'name_es' => 'Hablar',
+                ),
+                array(
                     'id' => 'work',
                     'name_en' => 'Work',
                     'name_es' => 'Trabajo',
                 ),
                 array(
-                    'id' => 'play',
-                    'name_en' => 'Play',
-                    'name_es' => 'Jugar',
-                ),
-                array(
-                    'id' => 'human-contact',
-                    'name_en' => 'Human contact',
-                    'name_es' => 'Contacto humano',
+                    'id' => 'explore',
+                    'name_en' => 'Explore',
+                    'name_es' => 'Explorar',
                 ),
                 array(
                     'id' => 'share-space',
@@ -427,9 +432,9 @@ class ProfileOptions implements LoggerAwareInterface
                     'name_es' => 'Compartir espacio',
                 ),
                 array(
-                    'id' => 'travel',
-                    'name_en' => 'Travel',
-                    'name_es' => 'Viajar',
+                    'id' => 'hobbies',
+                    'name_en' => 'Hobbies',
+                    'name_es' => 'Aficiones',
                 ),
             ),
             'Sons' => array(
