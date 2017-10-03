@@ -9,7 +9,7 @@ use Model\Popularity\PopularityManager;
 use Model\User\Content\ContentPaginatedModel;
 use Model\User\Group\GroupModel;
 use Model\User\ProfileModel;
-use Model\User\Question\QuestionPaginatedModel;
+use Model\User\Question\UserAnswerPaginatedModel;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
@@ -39,7 +39,7 @@ class SimilarityModel
     protected $popularityManager;
 
     /**
-     * @var QuestionPaginatedModel
+     * @var UserAnswerPaginatedModel
      */
     protected $questionPaginatedModel;
 
@@ -59,7 +59,7 @@ class SimilarityModel
         EventDispatcher $dispatcher,
         GraphManager $gm,
         PopularityManager $popularityManager,
-        QuestionPaginatedModel $questionPaginatedModel,
+        UserAnswerPaginatedModel $questionPaginatedModel,
         ContentPaginatedModel $contentPaginatedModel,
         ProfileModel $profileModel,
         GroupModel $groupModel
