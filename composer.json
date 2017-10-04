@@ -35,7 +35,7 @@
         "jakeasmith/http_build_url": "0.1.*",
         "cnam/security-jwt-service-provider": "1.*",
         "sorien/silex-pimple-dumper": "~1.0",
-        "hwi/oauth-bundle": "^0.5.3",
+        "hwi/oauth-bundle": "0.4.3",
         "cocur/slugify": "^2.3",
         "guzzlehttp/streams": "3.0",
         "php-amqplib/php-amqplib": "^2.6"
