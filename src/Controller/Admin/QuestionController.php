@@ -10,20 +10,29 @@ class QuestionController
 {
     public function getQuestionsAction(Request $request, Application $app)
     {
-        $locale = $request->get('locale');
-        $offset = $request->get('offset', 0);
-        $limit = $request->get('limit', 20);
+        $locale = $request->get('locale', 'es');
+        $filters = array('locale' => $locale);
 
+        $paginator = $app['paginator'];
+        $model = $app['users.questions.paginated.model'];
+
+        $result = $paginator->paginate($filters, $model, $request);
+
+        return $app->json($result);
+    }
+
+    public function getQuestionAction(Request $request, Application $app, $questionId)
+    {
         /** @var QuestionService $questionService */
         $questionService = $app['question.service'];
+        $question = $questionService->getOneMultilanguage($questionId);
 
-        $questions = $questionService->getQuestions($locale, $offset, $limit);
-
-        return $app->json($questions);
+        return $app->json($question);
     }
 
     public function createQuestionAction(Request $request, Application $app)
     {
+//        $data = $request->query->all();
         $data = $request->request->all();
 
         /** @var QuestionService $questionService */
@@ -42,7 +51,7 @@ class QuestionController
         /** @var QuestionService $questionService */
         $questionService = $app['question.service'];
 
-        $updated = $questionService->updateQuestion($data);
+        $updated = $questionService->updateMultilanguage($data);
 
         return $app->json($updated);
     }

@@ -64,8 +64,9 @@ $admin->post('/content/enable/{id}', 'admin.content.controller:enableAction');
 /** Question routes */
 $admin->get('/questions', 'admin.questions.controller:getQuestionsAction');
 $admin->post('/questions', 'admin.questions.controller:createQuestionAction');
-$admin->put('/questions/{questionId}', 'admin.questions.controller.updateQuestionAction');
-$admin->delete('/questions/{questionId}', 'admin.questions.controller.deleteQuestionAction');
+$admin->get('/questions/{questionId}', 'admin.questions.controller:getQuestionAction');
+$admin->put('/questions/{questionId}', 'admin.questions.controller:updateQuestionAction');
+$admin->delete('/questions/{questionId}', 'admin.questions.controller:deleteQuestionAction');
 
 /** Push notification */
 $admin->post('notifications/push/{id}', 'admin.developers.controller:pushNotificationAction');

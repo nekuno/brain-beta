@@ -33,42 +33,6 @@ class QuestionModel
         $this->validator = $validator;
     }
 
-    public function getAll($locale, $skip = null, $limit = null)
-    {
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(q:Question)')
-            ->where("EXISTS(q.text_$locale)")
-            ->match('(q)<-[:IS_ANSWER_OF]-(a:Answer)')
-            ->with('q', 'a')
-            ->orderBy('id(a)')
-            ->with('q, collect(a) AS answers')
-            ->optionalMatch('(q)<-[s:SKIPS]-(u:User)')
-            ->with('q', 'answers', 'COUNT(s) as count')
-            ->where('count <= 3')
-            ->returns('q AS question', 'answers')
-            ->orderBy('q.ranking DESC');
-
-        if (!is_null($skip)) {
-            $qb->skip($skip);
-        }
-
-        if (!is_null($limit)) {
-            $qb->limit($limit);
-        }
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        $return = array();
-
-        foreach ($result as $row) {
-            $return[] = $this->build($row, $locale);
-        }
-
-        return $return;
-    }
-
     public function getNextByUser($userId, $locale, $sortByRanking = true)
     {
         $divisiveQuestion = $this->getNextDivisiveQuestionByUserId($userId, $locale);
@@ -120,10 +84,12 @@ class QuestionModel
 
         $qb->match('(user:User {qnoow_id: { userId }}), (otherUser:User {qnoow_id: { otherUserId }})')
             ->match('(otherUser)-[:ANSWERS]->(a:Answer)-[:IS_ANSWER_OF]->(answeredOther:Question)')
-            ->setParameters(array(
-                'userId' => (int)$userId,
-                'otherUserId' => (int)$otherUserId,
-            ))
+            ->setParameters(
+                array(
+                    'userId' => (int)$userId,
+                    'otherUserId' => (int)$otherUserId,
+                )
+            )
             ->optionalMatch('(user)-[:ANSWERS]->(:Answer)-[:IS_ANSWER_OF]->(answered:Question)')
             ->optionalMatch('(user)-[:REPORTS]->(report:Question)')
             ->with('user', 'a', 'collect(answered) + collect(report) AS excluded')
@@ -151,24 +117,24 @@ class QuestionModel
         return $this->build($row, $locale);
     }
 
-	public function userHasCompletedRegisterQuestions($userId)
-	{
-		$qb = $this->gm->createQueryBuilder();
+    public function userHasCompletedRegisterQuestions($userId)
+    {
+        $qb = $this->gm->createQueryBuilder();
 
-		$qb->match('(user:User {qnoow_id: { userId }})', '(a:Answer)-[:IS_ANSWER_OF]->(:RegisterQuestion)')
-		   ->setParameter('userId', (int)$userId)
-		   ->where('NOT (user)-[:ANSWERS]->(a)')
-		   ->returns('COUNT(a)');
+        $qb->match('(user:User {qnoow_id: { userId }})', '(a:Answer)-[:IS_ANSWER_OF]->(:RegisterQuestion)')
+            ->setParameter('userId', (int)$userId)
+            ->where('NOT (user)-[:ANSWERS]->(a)')
+            ->returns('COUNT(a)');
 
-		$query = $qb->getQuery();
-		$result = $query->getResultSet();
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
 
-		if ($result->count() > 0) {
-			return true;
-		}
+        if ($result->count() > 0) {
+            return true;
+        }
 
-		return false;
-	}
+        return false;
+    }
 
     /**
      * @return bool
@@ -184,9 +150,9 @@ class QuestionModel
         return false;
     }
 
+    //TODO: Make answer existence optionalMatch
     public function getById($id, $locale)
     {
-
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(q:Question)<-[:IS_ANSWER_OF]-(a:Answer)')
             ->where('id(q) = { id }', "EXISTS(q.text_$locale)")
@@ -538,7 +504,6 @@ class QuestionModel
 
         $return = array(
             'questionId' => $question->getId(),
-            'text' => $question->getProperty('text_' . $locale),
             'maleAnswersCount' => $stats['maleAnswersCount'],
             'femaleAnswersCount' => $stats['femaleAnswersCount'],
             'youngAnswersCount' => $stats['youngAnswersCount'],
@@ -547,17 +512,32 @@ class QuestionModel
             'isRegisterQuestion' => $isRegisterQuestion,
         );
 
+        if (null !== $locale) {
+            $return['text'] = $question->getProperty('text_' . $locale);
+        } else {
+            $return['textEs'] = $question->getProperty('text_es');
+            $return['textEn'] = $question->getProperty('text_en');
+        }
+
         foreach ($row->offsetGet('answers') as $answer) {
 
             /* @var $answer Node */
-            $return['answers'][] = array(
+            $answerArray = array(
                 'answerId' => $answer->getId(),
-                'text' => $answer->getProperty('text_' . $locale),
                 'maleAnswersCount' => $maleAnswersStats[$answer->getId()],
                 'femaleAnswersCount' => $femaleAnswersStats[$answer->getId()],
                 'youngAnswersCount' => $youngAnswersStats[$answer->getId()],
                 'oldAnswersCount' => $oldAnswersStats[$answer->getId()],
             );
+
+            if (null !== $locale) {
+                $answerArray['text'] = $answer->getProperty('text_' . $locale);
+            } else {
+                $answerArray['textEs'] = $answer->getProperty('text_es');
+                $answerArray['textEn'] = $answer->getProperty('text_en');
+            }
+
+            $return['answers'][] = $answerArray;
         }
 
         $return['locale'] = $locale;
