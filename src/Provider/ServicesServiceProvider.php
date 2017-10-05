@@ -13,6 +13,7 @@ use Service\EventDispatcher;
 use Service\ImageTransformations;
 use Service\Links\EnqueueLinksService;
 use Service\NotificationManager;
+use Service\QuestionService;
 use Service\RecommendatorService;
 use Service\RegisterService;
 use Service\SocialNetwork;
@@ -168,6 +169,12 @@ class ServicesServiceProvider implements ServiceProviderInterface
         $app['dispatcher.service'] = $app->share(
             function (Application $app) {
                 return new EventDispatcher($app['dispatcher']);
+            }
+        );
+
+        $app['question.service'] = $app->share(
+            function (Application $app) {
+                return new QuestionService($app['questionnaire.questions.model']);
             }
         );
 

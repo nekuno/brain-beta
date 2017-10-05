@@ -36,7 +36,7 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 
 		$resolver->setDefaults(
 			array(
-				'base_url' => 'https://graph.facebook.com/v2.4/',
+				'base_url' => 'https://graph.facebook.com/v2.9/',
 			)
 		);
 

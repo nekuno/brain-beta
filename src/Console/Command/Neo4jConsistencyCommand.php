@@ -3,7 +3,7 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
-use Model\Exception\ValidationException;
+use EventListener\ExceptionLoggerSubscriber;
 use Model\User;
 use Model\User\ProfileModel;
 use Manager\UserManager;
@@ -13,15 +13,15 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-class Neo4jConsistencyUsersCommand extends ApplicationAwareCommand
+class Neo4jConsistencyCommand extends ApplicationAwareCommand
 {
 
     protected function configure()
     {
-        $this->setName('neo4j:consistency:users')
-            ->setDescription('Ensures users database consistency')
+        $this->setName('neo4j:consistency')
+            ->setDescription('Detects database consistency')
             ->addOption('status', null, InputOption::VALUE_NONE, 'Check users status', null)
-            ->addOption('profile', null, InputOption::VALUE_NONE, 'Solve profile-related problems', null)
+            ->addOption('label', null, InputOption::VALUE_REQUIRED, 'Check only nodes with that label', null)
             ->addOption('force', null, InputOption::VALUE_NONE, 'Solve problems where possible', null);
     }
 
@@ -29,14 +29,14 @@ class Neo4jConsistencyUsersCommand extends ApplicationAwareCommand
     {
         $force = $input->getOption('force');
         $status = $input->getOption('status');
-        $profile = $input->getOption('profile');
+        $label = $input->getOption('label');
 
-        $output->writeln('Getting user list.');
-        /** @var UserManager $userManager */
-        $userManager = $this->app['users.manager'];
+//        $output->writeln('Getting user list.');
+//        /** @var UserManager $userManager */
+//        $userManager = $this->app['users.manager'];
 
-        $users = $userManager->getAll();
-        $output->writeln('Got ' . count($users) . ' users.');
+//        $users = $userManager->getAll();
+//        $output->writeln('Got ' . count($users) . ' users.');
 
         //checking status
 
@@ -48,10 +48,19 @@ class Neo4jConsistencyUsersCommand extends ApplicationAwareCommand
 //            $this->checkProfile($users, $force, $output);
 //        }
 
+//        $dispatcher = $this->app['dispatcher.service'];
+//        $dispatcher->addSubscriber(new ExceptionLoggerSubscriber($this->app['monolog']));
+
         /** @var ConsistencyCheckerService $consistencyChecker */
         $consistencyChecker = $this->app['consistency.service'];
 
-        $consistencyChecker->checkDatabase();
+        $errors = $consistencyChecker->checkDatabase($label);
+
+        foreach ($errors as $message => $ids)
+        {
+            $output->writeln($message);
+            $output->writeln(json_encode($ids));
+        }
 //        foreach ($users as $user){
 //            try{
 //                $this->checkUser($user);
@@ -126,19 +135,22 @@ class Neo4jConsistencyUsersCommand extends ApplicationAwareCommand
                 $output->writeln(sprintf('Profile for user with id %d not found.', $user->getId()));
                 if ($force) {
                     $output->writeln(sprintf('Creating profile for user %d.', $user->getId()));
-                    $profile = $profileModel->create($user->getId(), array(
-                        'birthday' => '1970-01-01',
-                        'gender' => 'male',
-                        'orientation' => array('heterosexual'),
-                        'interfaceLanguage' => 'es',
-                        'location' => array(
-                            'latitude' => 40.4167754,
-                            'longitude' => -3.7037902,
-                            'address' => 'Madrid',
-                            'locality' => 'Madrid',
-                            'country' => 'Spain'
+                    $profile = $profileModel->create(
+                        $user->getId(),
+                        array(
+                            'birthday' => '1970-01-01',
+                            'gender' => 'male',
+                            'orientation' => array('heterosexual'),
+                            'interfaceLanguage' => 'es',
+                            'location' => array(
+                                'latitude' => 40.4167754,
+                                'longitude' => -3.7037902,
+                                'address' => 'Madrid',
+                                'locality' => 'Madrid',
+                                'country' => 'Spain'
+                            )
                         )
-                    ));
+                    );
                     $output->writeln(sprintf('SUCCESS: Created profile for user %d.', $user->getId()));
                 }
             }
@@ -150,7 +162,8 @@ class Neo4jConsistencyUsersCommand extends ApplicationAwareCommand
         }
     }
 
-    public function checkUser(User $user) {
+    public function checkUser(User $user)
+    {
         $qb = $this->app['neo4j.graph_manager']->createQueryBuilder();
 
         $qb->match('(u:User{qnoow_id: {userId}})')

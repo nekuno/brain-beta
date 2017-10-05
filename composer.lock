@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "47db27c176c12a9ddca3fa47ce29b5b4",
+    "content-hash": "004c2d90b36df927b86bd8e2c69ef43c",
     "packages": [
         {
             "name": "cnam/security-jwt-service-provider",
@@ -174,7 +174,7 @@
                 "pimple",
                 "silex"
             ],
-            "time": "2015-09-07 12:16:54"
+            "time": "2015-09-07T12:16:54+00:00"
         },
         {
             "name": "doctrine/annotations",
@@ -822,7 +822,7 @@
                 "graph",
                 "neo4j"
             ],
-            "time": "2016-03-12 15:03:00"
+            "time": "2016-03-12T15:03:00+00:00"
         },
         {
             "name": "fabpot/goutte",
@@ -959,7 +959,7 @@
             "keywords": [
                 "google"
             ],
-            "time": "2017-01-09 19:33:08"
+            "time": "2017-01-09T19:33:08+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
@@ -1167,16 +1167,16 @@
         },
         {
             "name": "hwi/oauth-bundle",
-            "version": "0.4.1",
+            "version": "0.4.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/hwi/HWIOAuthBundle.git",
-                "reference": "ae741802c8e99d8fa52de927fd483d0299911293"
+                "reference": "8815fa226547471638efa8333bcaa8a80a5d64f3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hwi/HWIOAuthBundle/zipball/ae741802c8e99d8fa52de927fd483d0299911293",
-                "reference": "ae741802c8e99d8fa52de927fd483d0299911293",
+                "url": "https://api.github.com/repos/hwi/HWIOAuthBundle/zipball/8815fa226547471638efa8333bcaa8a80a5d64f3",
+                "reference": "8815fa226547471638efa8333bcaa8a80a5d64f3",
                 "shasum": ""
             },
             "require": {
@@ -1303,7 +1303,7 @@
                 "yandex",
                 "youtube"
             ],
-            "time": "2016-03-08T08:00:04+00:00"
+            "time": "2016-09-11T13:24:27+00:00"
         },
         {
             "name": "igorw/config-service-provider",
@@ -1359,7 +1359,7 @@
             "keywords": [
                 "silex"
             ],
-            "time": "2014-07-23 21:09:35"
+            "time": "2014-07-23T21:09:35+00:00"
         },
         {
             "name": "ircmaxell/password-compat",

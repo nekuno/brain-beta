@@ -35,7 +35,7 @@ use Model\User\PrivacyModel;
 use Model\User\ProfileModel;
 use Model\User\ProfileTagModel;
 use Model\User\Question\QuestionComparePaginatedModel;
-use Model\User\Question\QuestionPaginatedModel;
+use Model\User\Question\UserAnswerPaginatedModel;
 use Model\User\RateModel;
 use Model\User\Recommendation\ContentPopularRecommendationPaginatedModel;
 use Model\User\Recommendation\ContentRecommendationPaginatedModel;
@@ -195,7 +195,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.questions.model'] = $app->share(
             function ($app) {
 
-                return new QuestionPaginatedModel($app['neo4j.graph_manager'], $app['users.answers.model']);
+                return new UserAnswerPaginatedModel($app['neo4j.graph_manager'], $app['users.answers.model']);
             }
         );
 

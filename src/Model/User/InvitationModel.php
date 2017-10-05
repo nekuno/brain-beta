@@ -667,7 +667,7 @@ class InvitationModel
 
     public function validateUpdate(array $data)
     {
-        return $this->validator->validateOnUpdate($data);
+        $this->validator->validateOnUpdate($data);
     }
 
     /**
@@ -676,7 +676,7 @@ class InvitationModel
      */
     public function validateCreate(array $data)
     {
-        return $this->validator->validateOnCreate($data);
+        $this->validator->validateOnCreate($data);
     }
 
 

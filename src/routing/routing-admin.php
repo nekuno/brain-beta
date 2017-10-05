@@ -61,6 +61,12 @@ $admin->get('/content/reported/{id}', 'admin.content.controller:getReportedByIdA
 $admin->post('/content/disable/{id}', 'admin.content.controller:disableAction');
 $admin->post('/content/enable/{id}', 'admin.content.controller:enableAction');
 
+/** Question routes */
+$admin->get('/questions', 'admin.questions.controller:getQuestionsAction');
+$admin->post('/questions', 'admin.questions.controller:createQuestionAction');
+$admin->put('/questions/{questionId}', 'admin.questions.controller.updateQuestionAction');
+$admin->delete('/questions/{questionId}', 'admin.questions.controller.deleteQuestionAction');
+
 /** Push notification */
 $admin->post('notifications/push/{id}', 'admin.developers.controller:pushNotificationAction');
 

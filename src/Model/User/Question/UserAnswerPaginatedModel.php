@@ -6,7 +6,7 @@ use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
 use Paginator\PaginatedInterface;
 
-class QuestionPaginatedModel implements PaginatedInterface
+class UserAnswerPaginatedModel implements PaginatedInterface
 {
 
     /**
