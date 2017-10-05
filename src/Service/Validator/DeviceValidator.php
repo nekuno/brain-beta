@@ -27,7 +27,7 @@ class DeviceValidator extends Validator
         }
 
         if (isset($data['registrationId'])) {
-            $this->validateRegistrationId($data['registrationId']);
+            $this->validateRegistrationId($data['registrationId'], $registrationIdRequired);
         }
     }
 
