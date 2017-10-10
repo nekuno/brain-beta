@@ -135,6 +135,19 @@ class ProcessorService implements LoggerAwareInterface
         return $newPreprocessedLinks;
     }
 
+    /**
+     * @param PreprocessedLink $preprocessedLink
+     */
+    protected function cleanUrl(PreprocessedLink $preprocessedLink)
+    {
+        $url = $preprocessedLink->getUrl();
+        $cleanURL = LinkAnalyzer::cleanUrl($url);
+        if ($url !== $cleanURL && $this->linkModel->findLinkByUrl($url)) {
+            $this->replaceUrlInDatabase($url, $cleanURL);
+        }
+        $preprocessedLink->setUrl($cleanURL);
+    }
+
     private function separateUrls($url)
     {
         preg_match_all('~(?:https?://).*?(?=$|(?:https?://))~', $url, $matches);
@@ -155,6 +168,8 @@ class ProcessorService implements LoggerAwareInterface
             return $links;
         } catch (UrlChangedException $e) {
         }
+
+        $this->cleanUrl($preprocessedLink);
 
         if ($this->isLinkSavedAndProcessed($preprocessedLink)) {
             $link = $this->linkModel->findLinkByUrl($preprocessedLink->getUrl());
@@ -363,12 +378,7 @@ class ProcessorService implements LoggerAwareInterface
     private function prepareUrl(PreprocessedLink $preprocessedLink)
     {
         try {
-            $url = $preprocessedLink->getUrl();
-            $cleanURL = LinkAnalyzer::cleanUrl($url);
-            if ($url !== $cleanURL) {
-                $this->replaceUrlInDatabase($url, $cleanURL);
-            }
-            $preprocessedLink->setUrl($cleanURL);
+            $this->cleanUrl($preprocessedLink);
 
             $type = LinkAnalyzer::getProcessorName($preprocessedLink);
             $preprocessedLink->setType($type);

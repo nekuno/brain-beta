@@ -83,6 +83,10 @@ class RegisterService
         $token = $this->tm->create($user->getId(), $oauth['resourceOwner'], $oauth);
         $profile = $this->pm->create($user->getId(), $profileData);
         $invitation = $this->im->consume($invitationToken, $user->getId());
+        if (isset($invitation['invitation']['orientationRequired']) && $invitation['invitation']['orientationRequired']) {
+            $profileData['orientationRequired'] = true;
+            $profile = $this->pm->update($user->getId(), $profileData);
+        }
         if (isset($invitation['invitation']['group'])) {
             $this->gm->addUser($invitation['invitation']['group']->getId(), $user->getId());
         }
