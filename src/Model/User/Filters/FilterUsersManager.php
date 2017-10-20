@@ -9,6 +9,7 @@ use Everyman\Neo4j\Relationship;
 use Model\Neo4j\GraphManager;
 use Model\Metadata\ProfileMetadataManager;
 use Model\Metadata\UserFilterMetadataManager;
+use Model\Neo4j\QueryBuilder;
 use Service\Validator\FilterUsersValidator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -51,20 +52,10 @@ class FilterUsersManager
 
     public function updateFilterUsersByThreadId($id, $filtersArray)
     {
-        $filters = $this->buildFiltersUsers();
+        $filters = $this->buildFiltersUsers($filtersArray);
 
         $filterId = $this->getFilterUsersIdByThreadId($id);
         $filters->setId($filterId);
-
-        $splitFilters = $this->profileMetadataManager->splitFilters($filtersArray);
-
-        if (isset($splitFilters['profileFilters']) && !empty($splitFilters['profileFilters'])) {
-            $filters->setProfileFilters($splitFilters['profileFilters']);
-        }
-
-        if (isset($splitFilters['userFilters']) && !empty($splitFilters['userFilters'])) {
-            $filters->setUsersFilters($splitFilters['userFilters']);
-        }
 
         $this->updateFiltersUsers($filters);
 
@@ -73,18 +64,10 @@ class FilterUsersManager
 
     public function updateFilterUsersByGroupId($id, $filtersArray)
     {
-        $filters = $this->buildFiltersUsers();
+        $filters = $this->buildFiltersUsers($filtersArray);
 
         $filterId = $this->getFilterUsersIdByGroupId($id);
         $filters->setId($filterId);
-
-        if (isset($filtersArray['profileFilters'])) {
-            $filters->setProfileFilters($filtersArray['profileFilters']);
-        }
-
-        if (isset($filtersArray['userFilters'])) {
-            $filters->setUsersFilters($filtersArray['userFilters']);
-        }
 
         $this->updateFiltersUsers($filters);
 
@@ -97,8 +80,8 @@ class FilterUsersManager
      */
     public function getFilterUsersById($id)
     {
-        $filter = $this->buildFiltersUsers();
-        $filter->setUsersFilters(array_merge($this->getUserFilters($id), $this->getProfileFilters($id)));
+        $filtersArray = array_merge($this->getUserFilters($id), $this->getProfileFilters($id));
+        $filter = $this->buildFiltersUsers($filtersArray);
 
         return $filter;
     }
@@ -121,21 +104,254 @@ class FilterUsersManager
      */
     protected function updateFiltersUsers(FilterUsers $filters)
     {
-        $userFilters = $filters->getUserFilters();
-        $profileFilters = $filters->getProfileFilters();
+        $filterId = $filters->getId();
 
-        $this->saveUserFilters($userFilters, $filters->getId());
-        $this->saveProfileFilters($profileFilters, $filters->getId());
+//        $this->validateOnUpdate(array('profileFilters' => $profileFilters));
 
-        return true;
+        $metadata = $this->profileMetadataManager->getMetadata();
+
+        $qb = $this->graphManager->createQueryBuilder();
+        $qb->match('(filter:FilterUsers)')
+            ->where('id(filter) = {id}')
+            ->with('filter')
+            ->setParameter('id', (integer)$filterId);
+
+        $this->saveGroupFilter($qb, $filters);
+
+        foreach ($metadata as $fieldName => $fieldData) {
+            $value = $filters->get($fieldName);
+            switch ($fieldType = $metadata[$fieldName]['type']) {
+                case 'text':
+                case 'textarea':
+                    $qb->remove("filter.$fieldName");
+
+                    if ($value) {
+                        $qb->set("filter.$fieldName = '$value'");
+                    }
+                    $qb->with('filter');
+                    break;
+                //TODO: Refactor this and integer_range into saving and loading arrays to the Node
+                case 'birthday_range':
+
+                    $qb->remove("filter.age_min", "filter.age_max");
+                    if ($value) {
+                        if (isset($value['min']) && null !== $value['min']) {
+                            $qb->set('filter.age_min = ' . $value['min']);
+                        }
+                        if (isset($value['max']) && null !== $value['max']) {
+                            $qb->set('filter.age_max = ' . $value['max']);
+                        }
+                    }
+                    $qb->with('filter');
+                    break;
+                case 'integer_range':
+
+                    $fieldNameMin = $fieldName . '_min';
+                    $fieldNameMax = $fieldName . '_max';
+                    $qb->remove("filter.$fieldNameMin", "filter.$fieldNameMax");
+
+                    if ($value) {
+                        $min = isset($value['min']) ? (integer)$value['min'] : null;
+                        $max = isset($value['max']) ? (integer)$value['max'] : null;
+                        if ($min) {
+                            $qb->set('filter.' . $fieldNameMin . ' = ' . $min);
+                        }
+                        if ($max) {
+                            $qb->set('filter.' . $fieldNameMax . ' = ' . $max);
+                        }
+                    }
+                    $qb->with('filter');
+                    break;
+                case 'date':
+
+                    break;
+                case 'location_distance':
+                    //If Location node is shared, this fails (can't delete node with relationships)
+                    $qb->optionalMatch('(filter)-[old_loc_rel:FILTERS_BY]->(old_loc_node:Location)')
+                        ->delete('old_loc_rel', 'old_loc_node');
+
+                    if ($value) {
+                        $qb->setParameter('distance', (int)$value['distance']);
+                        $qb->setParameter('latitude', (float)$value['location']['latitude']);
+                        $qb->setParameter('longitude', (float)$value['location']['longitude']);
+                        $qb->setParameter('address', $value['location']['address']);
+                        $qb->setParameter('locality', $value['location']['locality']);
+                        $qb->setParameter('country', $value['location']['country']);
+                        $qb->merge("(filter)-[loc_rel:FILTERS_BY{distance:{distance} }]->(location:Location)");
+                        $qb->set("loc_rel.distance = {distance}");
+                        $qb->set("location.latitude = {latitude}");
+                        $qb->set("location.longitude = {longitude}");
+                        $qb->set("location.address = {address}");
+                        $qb->set("location.locality = {locality}");
+                        $qb->set("location.country = {country}");
+                    }
+                    $qb->with('filter');
+                    break;
+                case 'boolean':
+                    $qb->remove("filter.$fieldName");
+
+                    if ($value) {
+                        $qb->set("filter.$fieldName = true");
+                    }
+                    $qb->with('filter');
+                    break;
+                case 'choice':
+                    $profileLabelName = $this->profileMetadataManager->typeToLabel($fieldName);
+                    $qb->optionalMatch("(filter)-[old_po_rel:FILTERS_BY]->(:$profileLabelName)")
+                        ->delete("old_po_rel");
+
+                    if ($value) {
+                        $qb->merge(" (option$fieldName:$profileLabelName{id:'$value'})");
+                        $qb->merge(" (filter)-[:FILTERS_BY]->(option$fieldName)");
+                    }
+                    $qb->with('filter');
+                    break;
+                case 'double_multiple_choices':
+                    $profileLabelName = $this->profileMetadataManager->typeToLabel($fieldName);
+                    $qb->optionalMatch("(filter)-[old_po_rel:FILTERS_BY]->(:$profileLabelName)")
+                        ->delete("old_po_rel");
+                    if ($value) {
+                        $details = isset($value['details']) ? $value['details'] : array();
+
+                        if ($value && isset($value['choices'])) {
+                            foreach ($value['choices'] as $index => $choice) {
+                                $qb->merge(" (option$fieldName$index:$profileLabelName{id:'$choice'})");
+                                $qb->merge(" (filter)-[po_rel$fieldName$index:FILTERS_BY]->(option$fieldName$index)")
+                                    ->set(" po_rel$fieldName$index.details = {details$fieldName$index}");
+                                $qb->setParameter("details$fieldName$index", $details);
+                            }
+                        }
+                    }
+                    $qb->with('filter');
+                    break;
+                case 'choice_and_multiple_choices':
+                    $profileLabelName = $this->profileMetadataManager->typeToLabel($fieldName);
+                    $qb->optionalMatch("(filter)-[old_po_rel:FILTERS_BY]->(:$profileLabelName)")
+                        ->delete("old_po_rel");
+                    if ($value && isset($value['choice'])) {
+                        $choice = $value['choice'];
+                        $details = isset($value['details']) ? $value['details'] : array();
+
+                        $qb->merge(" (option$fieldName:$profileLabelName{id:'$choice'})");
+                        $qb->merge(" (filter)-[po_rel$fieldName:FILTERS_BY]->(option$fieldName)")
+                            ->set(" po_rel$fieldName.details = {details$fieldName}");
+                        $qb->setParameter("details$fieldName", $details);
+                    }
+                    $qb->with('filter');
+                    break;
+                case 'multiple_choices':
+                    $profileLabelName = $this->profileMetadataManager->typeToLabel($fieldName);
+                    $qb->optionalMatch("(filter)-[old_po_rel:FILTERS_BY]->(:$profileLabelName)")
+                        ->delete("old_po_rel");
+
+                    if ($value) {
+                        $counter = 0;
+                        foreach ($value as $singleValue) {
+                            $qb->merge(" (option$fieldName$counter:$profileLabelName{id:'$singleValue'})");
+                            $qb->merge(" (filter)-[:FILTERS_BY]->(option$fieldName$counter)");
+                            $counter++;
+                        }
+                    }
+                    $qb->with('filter');
+                    break;
+                case 'tags':
+                    $tagLabelName = ucfirst($fieldName);
+                    $qb->optionalMatch("(filter)-[old_tag_rel:FILTERS_BY]->(:$tagLabelName)")
+                        ->delete("old_tag_rel");
+                    if ($value) {
+                        foreach ($value as $singleValue) {
+                            $qb->merge("(tag$fieldName$singleValue:$tagLabelName{name:'$singleValue'})");
+                            $qb->merge("(filter)-[:FILTERS_BY]->(tag$fieldName$singleValue)");
+                        }
+                    }
+                    $qb->with('filter');
+                    break;
+                case 'tags_and_choice':
+                    $tagLabelName = ucfirst($fieldName);
+                    $qb->optionalMatch("(filter)-[old_tag_rel:FILTERS_BY]->(:$tagLabelName)")
+                        ->delete("old_tag_rel");
+
+                    if ($value) {
+                        foreach ($value as $singleValue) {
+                            $tag = $fieldName === 'language' ?
+                                $this->profileMetadataManager->getLanguageFromTag($singleValue['tag']) :
+                                $singleValue['tag'];
+                            $choice = isset($singleValue['choice']) ? $singleValue['choice'] : '';
+
+                            $qb->merge("(tag$fieldName$tag:$tagLabelName:ProfileTag{name:'$tag'})");
+                            $qb->merge("(filter)-[tag_rel$fieldName$tag:FILTERS_BY]->(tag$fieldName$tag)")
+                                ->set("tag_rel$fieldName$tag.detail = {detail$fieldName$tag}");
+                            $qb->setParameter("detail$fieldName$tag", $choice);
+                        }
+                    }
+                    $qb->with('filter');
+                    break;
+                case 'tags_and_multiple_choices':
+                    $tagLabelName = ucfirst($fieldName);
+                    $qb->optionalMatch("(filter)-[old_tag_rel:FILTERS_BY]->(:$tagLabelName)")
+                        ->delete("old_tag_rel");
+
+                    if ($value) {
+                        foreach ($value as $singleValue) {
+                            $tag = $fieldName === 'language' ?
+                                $this->profileMetadataManager->getLanguageFromTag($singleValue['tag']) :
+                                $singleValue['tag'];
+                            $choices = isset($singleValue['choices']) ? $singleValue['choices'] : '';
+                            $qb->merge("(tag$fieldName$tag:$tagLabelName:ProfileTag{name:'$tag'})");
+                            $qb->merge("(filter)-[tag_rel$fieldName$tag:FILTERS_BY]->(tag$fieldName$tag)")
+                                ->set("tag_rel$fieldName$tag.detail = {detail$fieldName$tag}");
+                            $qb->setParameter("detail$fieldName$tag", $choices);
+                        }
+                    }
+                    $qb->with('filter');
+                    break;
+                case 'order':
+                    $qb->remove("filter.$fieldName");
+
+                    if ($value) {
+                        $qb->set('filter.' . $fieldName . ' = "' . $value . '"');
+                    }
+                    $qb->with('filter');
+                    break;
+                case 'integer':
+                    $qb->remove("filter.$fieldName");
+
+                    if ($value) {
+                        $qb->set('filter.' . $fieldName . ' = ' . $value);
+                    }
+                    $qb->with('filter');
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        $qb->returns('filter');
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() == 0) {
+            return null;
+        }
+
+        return $result->current()->offsetGet('filter');
     }
 
     /**
+     * @param array $filtersArray
      * @return FilterUsers
      */
-    protected function buildFiltersUsers()
+    protected function buildFiltersUsers(array $filtersArray)
     {
-        return new FilterUsers();
+        $profileFilterMetadata = $this->profileMetadataManager->getMetadata();
+        $userFilterMetadata = $this->userFilterMetadataManager->getMetadata();
+        $metadata = $profileFilterMetadata + $userFilterMetadata;
+
+        $filters = new FilterUsers($metadata);
+        foreach ($filtersArray as $field => $value) {
+            $filters->set($field, $value);
+        }
+
+        return $filters;
     }
 
     protected function getFilterUsersIdByThreadId($id)
@@ -174,294 +390,22 @@ class FilterUsersManager
         return $result->current()->offsetGet('filterId');
     }
 
-    private function saveProfileFilters($profileFilters, $id)
+    private function saveGroupFilter(QueryBuilder $qb, FilterUsers $filters)
     {
-        $this->validateOnUpdate(array('profileFilters' => $profileFilters));
-
-        $metadata = $this->profileMetadataManager->getMetadata();
-
-        $qb = $this->graphManager->createQueryBuilder();
-        $qb->match('(filter:FilterUsers)')
-            ->where('id(filter) = {id}');
-
-        //TODO: More parameters
-        foreach ($metadata as $fieldName => $fieldData) {
-            switch ($fieldType = $metadata[$fieldName]['type']) {
-                case 'text':
-                case 'textarea':
-                    $qb->remove("filter.$fieldName");
-
-                    if (isset($profileFilters[$fieldName])) {
-                        $value = $profileFilters[$fieldName];
-                        $qb->set("filter.$fieldName = '$value'");
-                    }
-                    $qb->with('filter');
-                    break;
-                //TODO: Refactor this and integer_range into saving and loading arrays to the Node
-                case 'birthday_range':
-
-                    $qb->remove("filter.age_min", "filter.age_max");
-
-                    if (isset($profileFilters[$fieldName])) {
-                        $value = $profileFilters[$fieldName];
-                        if (isset($value['min']) && null !== $value['min']){
-                            $qb->set('filter.age_min = ' . $value['min']);
-                        }
-                        if (isset($value['max']) && null !== $value['max']){
-                            $qb->set('filter.age_max = ' . $value['max']);
-                        }
-                    }
-                    $qb->with('filter');
-                    break;
-                case 'integer_range':
-
-                    $fieldNameMin = $fieldName . '_min';
-                    $fieldNameMax = $fieldName . '_max';
-                    $qb->remove("filter.$fieldNameMin", "filter.$fieldNameMax");
-
-                    if (isset($profileFilters[$fieldName])) {
-                        $value = $profileFilters[$fieldName];
-                        $min = isset($value['min']) ? (integer)$value['min'] : null;
-                        $max = isset($value['max']) ? (integer)$value['max'] : null;
-                        if ($min) {
-                            $qb->set('filter.' . $fieldNameMin . ' = ' . $min);
-                        }
-                        if ($max) {
-                            $qb->set('filter.' . $fieldNameMax . ' = ' . $max);
-                        }
-                    }
-                    $qb->with('filter');
-                    break;
-                case 'date':
-
-                    break;
-                case 'location_distance':
-                    //If Location node is shared, this fails (can't delete node with relationships)
-                    $qb->optionalMatch('(filter)-[old_loc_rel:FILTERS_BY]->(old_loc_node:Location)')
-                        ->delete('old_loc_rel', 'old_loc_node');
-
-                    if (isset($profileFilters[$fieldName])) {
-                        $value = $profileFilters[$fieldName];
-                        $qb->setParameter('distance', (int)$value['distance']);
-                        $qb->setParameter('latitude', (float)$value['location']['latitude']);
-                        $qb->setParameter('longitude', (float)$value['location']['longitude']);
-                        $qb->setParameter('address', $value['location']['address']);
-                        $qb->setParameter('locality', $value['location']['locality']);
-                        $qb->setParameter('country', $value['location']['country']);
-                        $qb->merge("(filter)-[loc_rel:FILTERS_BY{distance:{distance} }]->(location:Location)");
-                        $qb->set("loc_rel.distance = {distance}");
-                        $qb->set("location.latitude = {latitude}");
-                        $qb->set("location.longitude = {longitude}");
-                        $qb->set("location.address = {address}");
-                        $qb->set("location.locality = {locality}");
-                        $qb->set("location.country = {country}");
-                    }
-                    $qb->with('filter');
-                    break;
-                case 'boolean':
-                    $qb->remove("filter.$fieldName");
-
-                    if (isset($profileFilters[$fieldName])) {
-                        $qb->set("filter.$fieldName = true");
-                    }
-                    $qb->with('filter');
-                    break;
-                case 'choice':
-                    $profileLabelName = $this->profileMetadataManager->typeToLabel($fieldName);
-                    $qb->optionalMatch("(filter)-[old_po_rel:FILTERS_BY]->(:$profileLabelName)")
-                        ->delete("old_po_rel");
-
-                    if (isset($profileFilters[$fieldName])) {
-                        $value = $profileFilters[$fieldName];
-                        $qb->merge(" (option$fieldName:$profileLabelName{id:'$value'})");
-                        $qb->merge(" (filter)-[:FILTERS_BY]->(option$fieldName)");
-                    }
-                    $qb->with('filter');
-                    break;
-                case 'double_multiple_choices':
-                    $profileLabelName = $this->profileMetadataManager->typeToLabel($fieldName);
-                    $qb->optionalMatch("(filter)-[old_po_rel:FILTERS_BY]->(:$profileLabelName)")
-                        ->delete("old_po_rel");
-                    if (isset($profileFilters[$fieldName])) {
-                        $details = isset($profileFilters[$fieldName]['details']) ? $profileFilters[$fieldName]['details'] : array();
-
-                        if (isset($profileFilters[$fieldName]['choices'])) {
-                            foreach ($profileFilters[$fieldName]['choices'] as $index => $choice) {
-                                $qb->merge(" (option$fieldName$index:$profileLabelName{id:'$choice'})");
-                                $qb->merge(" (filter)-[po_rel$fieldName$index:FILTERS_BY]->(option$fieldName$index)")
-                                    ->set(" po_rel$fieldName$index.details = {details$fieldName$index}");
-                                $qb->setParameter("details$fieldName$index", $details);
-                            }
-                        }
-                    }
-                    $qb->with('filter');
-                    break;
-                case 'choice_and_multiple_choices':
-                    $profileLabelName = $this->profileMetadataManager->typeToLabel($fieldName);
-                    $qb->optionalMatch("(filter)-[old_po_rel:FILTERS_BY]->(:$profileLabelName)")
-                        ->delete("old_po_rel");
-                    if (isset($profileFilters[$fieldName])) {
-                        $details = isset($profileFilters[$fieldName]['details']) ? $profileFilters[$fieldName]['details'] : array();
-
-                        if (isset($profileFilters[$fieldName]['choice'])) {
-                            $choice = $profileFilters[$fieldName]['choice'];
-                            $qb->merge(" (option$fieldName:$profileLabelName{id:'$choice'})");
-                            $qb->merge(" (filter)-[po_rel$fieldName:FILTERS_BY]->(option$fieldName)")
-                                ->set(" po_rel$fieldName.details = {details$fieldName}");
-                            $qb->setParameter("details$fieldName", $details);
-                        }
-                    }
-                    $qb->with('filter');
-                    break;
-                case 'multiple_choices':
-                    $profileLabelName = $this->profileMetadataManager->typeToLabel($fieldName);
-                    $qb->optionalMatch("(filter)-[old_po_rel:FILTERS_BY]->(:$profileLabelName)")
-                        ->delete("old_po_rel");
-
-                    if (isset($profileFilters[$fieldName])) {
-                        $counter = 0;
-                        foreach ($profileFilters[$fieldName] as $value) {
-                            $qb->merge(" (option$fieldName$counter:$profileLabelName{id:'$value'})");
-                            $qb->merge(" (filter)-[:FILTERS_BY]->(option$fieldName$counter)");
-                            $counter++;
-                        }
-                    }
-                    $qb->with('filter');
-                    break;
-                case 'tags':
-                    $tagLabelName = ucfirst($fieldName);
-                    $qb->optionalMatch("(filter)-[old_tag_rel:FILTERS_BY]->(:$tagLabelName)")
-                        ->delete("old_tag_rel");
-                    if (isset($profileFilters[$fieldName])) {
-                        foreach ($profileFilters[$fieldName] as $value) {
-                            $qb->merge("(tag$fieldName$value:$tagLabelName{name:'$value'})");
-                            $qb->merge("(filter)-[:FILTERS_BY]->(tag$fieldName$value)");
-                        }
-                    }
-                    $qb->with('filter');
-                    break;
-                case 'tags_and_choice':
-                    $tagLabelName = ucfirst($fieldName);
-                    $qb->optionalMatch("(filter)-[old_tag_rel:FILTERS_BY]->(:$tagLabelName)")
-                        ->delete("old_tag_rel");
-
-                    if (isset($profileFilters[$fieldName])) {
-                        foreach ($profileFilters[$fieldName] as $value) {
-                            $tag = $fieldName === 'language' ?
-                                $this->profileMetadataManager->getLanguageFromTag($value['tag']) :
-                                $value['tag'];
-                            $choice = isset($value['choice']) ? $value['choice'] : '';
-
-                            $qb->merge("(tag$fieldName$tag:$tagLabelName:ProfileTag{name:'$tag'})");
-                            $qb->merge("(filter)-[tag_rel$fieldName$tag:FILTERS_BY]->(tag$fieldName$tag)")
-                                ->set("tag_rel$fieldName$tag.detail = {detail$fieldName$tag}");
-                            $qb->setParameter("detail$fieldName$tag", $choice);
-                        }
-                    }
-                    $qb->with('filter');
-                    break;
-                case 'tags_and_multiple_choices':
-                    $tagLabelName = ucfirst($fieldName);
-                    $qb->optionalMatch("(filter)-[old_tag_rel:FILTERS_BY]->(:$tagLabelName)")
-                        ->delete("old_tag_rel");
-
-                    if (isset($profileFilters[$fieldName])) {
-                        foreach ($profileFilters[$fieldName] as $value) {
-                            $tag = $fieldName === 'language' ?
-                                $this->profileMetadataManager->getLanguageFromTag($value['tag']) :
-                                $value['tag'];
-                            $choices = isset($value['choices']) ? $value['choices'] : '';
-                            $qb->merge("(tag$fieldName$tag:$tagLabelName:ProfileTag{name:'$tag'})");
-                            $qb->merge("(filter)-[tag_rel$fieldName$tag:FILTERS_BY]->(tag$fieldName$tag)")
-                                ->set("tag_rel$fieldName$tag.detail = {detail$fieldName$tag}");
-                            $qb->setParameter("detail$fieldName$tag", $choices);
-                        }
-                    }
-                    $qb->with('filter');
-                    break;
-                case 'order':
-                    $qb->remove("filter.order");
-
-                    if (isset($profileFilters[$fieldName])) {
-                        $value = $profileFilters[$fieldName];
-                        if (isset($value['order']) && null !== $value['order']){
-                            $qb->set('filter.order = "' . $value['order'] . '"');
-                        }
-                    }
-                    $qb->with('filter');
-            }
-        }
-
-        $qb->returns('filter');
-        $qb->setParameter('id', (integer)$id);
-        $result = $qb->getQuery()->getResultSet();
-
-        if ($result->count() == 0) {
-            return null;
-        }
-
-        return $result->current()->offsetGet('filter');
-
-    }
-
-    private function saveUserFilters($userFilters, $id)
-    {
-        $qb = $this->graphManager->createQueryBuilder();
-        $qb->match('(filter:FilterUsers)')
-            ->where('id(filter) = {id}');
-
         $qb->optionalMatch('(filter)-[old_rel_group:FILTERS_BY]->(:Group)')
             ->delete('old_rel_group')
             ->with('filter');
 
-        if (isset($userFilters['groups'])) {
-            foreach ($userFilters['groups'] as $group) {
+        $value = $filters->get('groups');
+        if ($value) {
+            foreach ($value as $group) {
                 $qb->match("(group$group:Group)")
                     ->where("id(group$group) = $group")
                     ->merge("(filter)-[:FILTERS_BY]->(group$group)")
                     ->with('filter');
             }
-            unset($userFilters['groups']);
+            $filters->set('groups', null);
         }
-
-        $metadata = $this->userFilterMetadataManager->getMetadata();
-
-        foreach ($metadata as $fieldName => $fieldValue) {
-            switch ($fieldValue['type']) {
-                case 'order':
-                    $qb->remove("filter.$fieldName");
-
-                    if (isset($userFilters[$fieldName])) {
-                        $value = $userFilters[$fieldName];
-                        $qb->set('filter.' . $fieldName . ' = "' . $value . '"');
-                    }
-                    $qb->with('filter');
-                    break;
-                //single_integer used in Social
-                case 'single_integer':
-                case 'integer':
-                    $qb->remove("filter.$fieldName");
-
-                    if (isset($userFilters[$fieldName])) {
-                        $value = $userFilters[$fieldName];
-                        $qb->set('filter.' . $fieldName . ' = ' . $value);
-                    }
-                    $qb->with('filter');
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        $qb->setParameter('id', (integer)$id);
-        $qb->returns('filter');
-        $result = $qb->getQuery()->getResultSet();
-
-        if ($result->count() == 0) {
-            return null;
-        }
-
-        return;
     }
 
     /**
@@ -581,6 +525,7 @@ class FilterUsersManager
                 }
             }
         }
+
         return $optionsResult;
     }
 
@@ -623,6 +568,7 @@ class FilterUsersManager
                 }
             }
         }
+
         return $tagsResult;
     }
 
