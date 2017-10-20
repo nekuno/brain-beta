@@ -158,8 +158,8 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
                         $conditions[] = "p.$name =~ '(?i).*$value.*'";
                         break;
                     case 'integer_range':
-                        $min = isset($value['min']) ? (integer)$value['min'] : isset($filter['min']) ? $filter['min'] : null;
-                        $max = isset($value['max']) ? (integer)$value['min'] : isset($filter['max']) ? $filter['max'] : null;
+                        $min = isset($value['min']) ? (integer)$value['min'] : (isset($filter['min']) ? $filter['min'] : null);
+                        $max = isset($value['max']) ? (integer)$value['max'] : (isset($filter['max']) ? $filter['max'] : null);
                         if ($min) {
                             $conditions[] = "($min <= p.$name)";
                         }
