@@ -22,23 +22,23 @@ class FilterUsersManager
     /**
      * @var ProfileMetadataManager
      */
-    protected $profileFilterModel;
+    protected $profileMetadataManager;
 
     /**
      * @var UserFilterMetadataManager
      */
-    protected $userFilterModel;
+    protected $userFilterMetadataManager;
 
     /**
      * @var FilterUsersValidator
      */
     protected $validator;
 
-    public function __construct(GraphManager $graphManager, ProfileMetadataManager $profileFilterModel, UserFilterMetadataManager $userFilterModel, FilterUsersValidator $validator)
+    public function __construct(GraphManager $graphManager, ProfileMetadataManager $profileMetadataManager, UserFilterMetadataManager $userFilterMetadataManager, FilterUsersValidator $validator)
     {
         $this->graphManager = $graphManager;
-        $this->profileFilterModel = $profileFilterModel;
-        $this->userFilterModel = $userFilterModel;
+        $this->profileMetadataManager = $profileMetadataManager;
+        $this->userFilterMetadataManager = $userFilterMetadataManager;
         $this->validator = $validator;
     }
 
@@ -56,7 +56,7 @@ class FilterUsersManager
         $filterId = $this->getFilterUsersIdByThreadId($id);
         $filters->setId($filterId);
 
-        $splitFilters = $this->profileFilterModel->splitFilters($filtersArray);
+        $splitFilters = $this->profileMetadataManager->splitFilters($filtersArray);
 
         if (isset($splitFilters['profileFilters']) && !empty($splitFilters['profileFilters'])) {
             $filters->setProfileFilters($splitFilters['profileFilters']);
@@ -105,13 +105,13 @@ class FilterUsersManager
 
     public function validateOnCreate(array $filters, $userId = null)
     {
-        $filters = $this->profileFilterModel->splitFilters($filters);
+        $filters = $this->profileMetadataManager->splitFilters($filters);
         $this->validator->validateOnCreate($filters, $userId);
     }
 
     public function validateOnUpdate(array $filters, $userId = null)
     {
-        $filters = $this->profileFilterModel->splitFilters($filters);
+        $filters = $this->profileMetadataManager->splitFilters($filters);
         $this->validator->validateOnUpdate($filters, $userId);
     }
 
@@ -174,32 +174,11 @@ class FilterUsersManager
         return $result->current()->offsetGet('filterId');
     }
 
-    public function getByGroupAndUser($groupId, $userId)
-    {
-        $qb = $this->graphManager->createQueryBuilder();
-        $qb->match('(group:Group)')
-            ->where('id(group) = groupId}')
-            ->with('group')
-            ->setParameter('groupId', (int)$groupId);
-        $qb->match('(user:User{qnoow_id:{userId}})')
-            ->with('group', 'user')
-            ->setParameter('userId', (int)$userId);
-
-        $qb->match('(user)');
-        $result = $qb->getQuery()->getResultSet();
-
-        if ($result->count() == 0) {
-            return null;
-        }
-
-        return $result->current()->offsetGet('filterId');
-    }
-
     private function saveProfileFilters($profileFilters, $id)
     {
         $this->validateOnUpdate(array('profileFilters' => $profileFilters));
 
-        $metadata = $this->profileFilterModel->getMetadata();
+        $metadata = $this->profileMetadataManager->getMetadata();
 
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(filter:FilterUsers)')
@@ -288,7 +267,7 @@ class FilterUsersManager
                     $qb->with('filter');
                     break;
                 case 'choice':
-                    $profileLabelName = $this->profileFilterModel->typeToLabel($fieldName);
+                    $profileLabelName = $this->profileMetadataManager->typeToLabel($fieldName);
                     $qb->optionalMatch("(filter)-[old_po_rel:FILTERS_BY]->(:$profileLabelName)")
                         ->delete("old_po_rel");
 
@@ -300,7 +279,7 @@ class FilterUsersManager
                     $qb->with('filter');
                     break;
                 case 'double_multiple_choices':
-                    $profileLabelName = $this->profileFilterModel->typeToLabel($fieldName);
+                    $profileLabelName = $this->profileMetadataManager->typeToLabel($fieldName);
                     $qb->optionalMatch("(filter)-[old_po_rel:FILTERS_BY]->(:$profileLabelName)")
                         ->delete("old_po_rel");
                     if (isset($profileFilters[$fieldName])) {
@@ -318,7 +297,7 @@ class FilterUsersManager
                     $qb->with('filter');
                     break;
                 case 'choice_and_multiple_choices':
-                    $profileLabelName = $this->profileFilterModel->typeToLabel($fieldName);
+                    $profileLabelName = $this->profileMetadataManager->typeToLabel($fieldName);
                     $qb->optionalMatch("(filter)-[old_po_rel:FILTERS_BY]->(:$profileLabelName)")
                         ->delete("old_po_rel");
                     if (isset($profileFilters[$fieldName])) {
@@ -335,7 +314,7 @@ class FilterUsersManager
                     $qb->with('filter');
                     break;
                 case 'multiple_choices':
-                    $profileLabelName = $this->profileFilterModel->typeToLabel($fieldName);
+                    $profileLabelName = $this->profileMetadataManager->typeToLabel($fieldName);
                     $qb->optionalMatch("(filter)-[old_po_rel:FILTERS_BY]->(:$profileLabelName)")
                         ->delete("old_po_rel");
 
@@ -369,7 +348,7 @@ class FilterUsersManager
                     if (isset($profileFilters[$fieldName])) {
                         foreach ($profileFilters[$fieldName] as $value) {
                             $tag = $fieldName === 'language' ?
-                                $this->profileFilterModel->getLanguageFromTag($value['tag']) :
+                                $this->profileMetadataManager->getLanguageFromTag($value['tag']) :
                                 $value['tag'];
                             $choice = isset($value['choice']) ? $value['choice'] : '';
 
@@ -389,7 +368,7 @@ class FilterUsersManager
                     if (isset($profileFilters[$fieldName])) {
                         foreach ($profileFilters[$fieldName] as $value) {
                             $tag = $fieldName === 'language' ?
-                                $this->profileFilterModel->getLanguageFromTag($value['tag']) :
+                                $this->profileMetadataManager->getLanguageFromTag($value['tag']) :
                                 $value['tag'];
                             $choices = isset($value['choices']) ? $value['choices'] : '';
                             $qb->merge("(tag$fieldName$tag:$tagLabelName:ProfileTag{name:'$tag'})");
@@ -445,7 +424,7 @@ class FilterUsersManager
             unset($userFilters['groups']);
         }
 
-        $metadata = $this->userFilterModel->getMetadata();
+        $metadata = $this->userFilterMetadataManager->getMetadata();
 
         foreach ($metadata as $fieldName => $fieldValue) {
             switch ($fieldValue['type']) {
@@ -567,7 +546,7 @@ class FilterUsersManager
      */
     private function buildProfileOptions(\ArrayAccess $options, Node $filterNode)
     {
-        $filterMetadata = $this->profileFilterModel->getMetadata();
+        $filterMetadata = $this->profileMetadataManager->getMetadata();
         $optionsResult = array();
         /* @var Node $option */
         foreach ($options as $option) {
@@ -576,7 +555,7 @@ class FilterUsersManager
             /* @var Label $label */
             foreach ($labels as $label) {
                 if ($label->getName() && $label->getName() != 'ProfileOption') {
-                    $typeName = $this->profileFilterModel->labelToType($label->getName());
+                    $typeName = $this->profileMetadataManager->labelToType($label->getName());
                     $metadataValues = isset($filterMetadata[$typeName]) ? $filterMetadata[$typeName] : array();
 
                     switch ($metadataValues['type']) {
@@ -621,7 +600,7 @@ class FilterUsersManager
             /* @var Label $label */
             foreach ($labels as $label) {
                 if ($label->getName() && $label->getName() != 'ProfileTag') {
-                    $typeName = $this->profileFilterModel->labelToType($label->getName());
+                    $typeName = $this->profileMetadataManager->labelToType($label->getName());
                     $tagResult = $tag->getProperty('name');
                     $detail = $relationship->getProperty('detail');
                     if (!is_null($detail)) {

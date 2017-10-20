@@ -26,10 +26,10 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
             unset($filters['userFilters']['order']);
         }
 
-        $filters = $this->profileFilterModel->splitFilters($filters);
+        $filters = $this->profileMetadataManager->splitFilters($filters);
 
-        $profileFilters = $this->getProfileFilters($filters['profileFilters']);
-        $userFilters = $this->getUserFilters($filters['userFilters']);
+        $profileFilters = $this->applyProfileFilters($filters['profileFilters']);
+        $userFilters = $this->applyUserFilters($filters['userFilters']);
 
         $return = array('items' => array());
 
@@ -142,10 +142,10 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
         $id = $filters['id'];
         $count = 0;
 
-        $filters = $this->profileFilterModel->splitFilters($filters);
+        $filters = $this->profileMetadataManager->splitFilters($filters);
 
-        $profileFilters = $this->getProfileFilters($filters['profileFilters']);
-        $userFilters = $this->getUserFilters($filters['userFilters']);
+        $profileFilters = $this->applyProfileFilters($filters['profileFilters']);
+        $userFilters = $this->applyUserFilters($filters['userFilters']);
 
         $qb = $this->gm->createQueryBuilder();
 

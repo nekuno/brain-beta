@@ -29,10 +29,10 @@ class UserPopularRecommendationPaginatedModel extends AbstractUserRecommendation
         $id = $filters['id'];
         $count = 0;
 
-        $filters = $this->profileFilterModel->splitFilters($filters);
+        $filters = $this->profileMetadataManager->splitFilters($filters);
 
-        $profileFilters = $this->getProfileFilters($filters['profileFilters']);
-        $userFilters = $this->getUserFilters($filters['userFilters']);
+        $profileFilters = $this->applyProfileFilters($filters['profileFilters']);
+        $userFilters = $this->applyUserFilters($filters['userFilters']);
 
         $qb = $this->gm->createQueryBuilder();
 
