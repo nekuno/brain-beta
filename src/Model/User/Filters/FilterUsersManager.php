@@ -75,12 +75,12 @@ class FilterUsersManager
     }
 
     /**
-     * @param $id
+     * @param $filterId
      * @return FilterUsers
      */
-    public function getFilterUsersById($id)
+    public function getFilterUsersById($filterId)
     {
-        $filtersArray = array_merge($this->getUserFilters($id), $this->getProfileFilters($id));
+        $filtersArray = $this->getFilters($filterId);
         $filter = $this->buildFiltersUsers($filtersArray);
 
         return $filter;
@@ -414,16 +414,20 @@ class FilterUsersManager
      * @return array ready to use in recommendation
      * @throws \Model\Neo4j\Neo4jException
      */
-    private function getProfileFilters($id)
+    private function getFilters($id)
     {
         //TODO: Refactor this into metadata
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(filter:FilterUsers)')
             ->where('id(filter) = {id}')
             ->optionalMatch('(filter)-[:FILTERS_BY]->(po:ProfileOption)')
+            ->with('filter', 'collect(distinct po) as options')
             ->optionalMatch('(filter)-[:FILTERS_BY]->(pt:ProfileTag)')
+            ->with('filter', 'options', 'collect(distinct pt) as tags')
             ->optionalMatch('(filter)-[loc_rel:FILTERS_BY]->(loc:Location)')
-            ->returns('filter, collect(distinct po) as options, collect(distinct pt) as tags, loc, loc_rel');
+            ->with('filter', 'options', 'tags', 'loc', 'loc_rel')
+            ->optionalMatch('(filter)-[:FILTERS_BY]->(group:Group)')
+            ->returns('filter, options, tags, loc, loc_rel', 'collect(id(group)) AS groups');
         $qb->setParameter('id', (integer)$id);
         $result = $qb->getQuery()->getResultSet();
 
@@ -438,11 +442,11 @@ class FilterUsersManager
         $options = $row->offsetGet('options');
         $tags = $row->offsetGet('tags');
 
-        $profileFilters = $this->buildProfileOptions($options, $filterNode);
-        $profileFilters += $this->buildTags($tags, $filterNode);
+        $filters = $this->buildProfileOptions($options, $filterNode);
+        $filters += $this->buildTags($tags, $filterNode);
 
         if ($filterNode->getProperty('age_min') || $filterNode->getProperty('age_max')) {
-            $profileFilters += array(
+            $filters += array(
                 'birthday' => array(
                     'min' => $filterNode->getProperty('age_min'),
                     'max' => $filterNode->getProperty('age_max')
@@ -457,15 +461,37 @@ class FilterUsersManager
         );
         $height = array_filter($height);
         if (!empty($height)) {
-            $profileFilters['height'] = $height;
+            $filters['height'] = $height;
         }
+
+        if ($filterNode->getProperty('similarity')) {
+            $filters['similarity'] = $filterNode->getProperty('similarity');
+        }
+
+        if ($filterNode->getProperty('compatibility')) {
+            $filters['compatibility'] = $filterNode->getProperty('compatibility');
+        }
+
+        if ($filterNode->getProperty('order')) {
+            $filters['order'] = $filterNode->getProperty('order');
+        }
+
+        $filters['groups'] = array();
+        foreach ($row->offsetGet('groups') as $groupNode) {
+            $filters['groups'][] = $groupNode;
+        }
+
+        if (empty($filters['groups'])) {
+            unset($filters['groups']);
+        }
+
         /** @var Node $location */
         $location = $row->offsetGet('loc');
         if ($location instanceof Node) {
 
             /** @var Relationship $locationRelationship */
             $locationRelationship = $row->offsetGet('loc_rel');
-            $profileFilters += array(
+            $filters += array(
                 'location' => array(
                     'distance' => $locationRelationship->getProperty('distance'),
                     'location' => array(
@@ -479,7 +505,7 @@ class FilterUsersManager
             );
         }
 
-        return array_filter($profileFilters);
+        return array_filter($filters);
     }
 
     /**
@@ -592,60 +618,6 @@ class FilterUsersManager
         }
 
         return null;
-    }
-
-    /**
-     * Creates array ready to use as userFilter from neo4j
-     * @param $id
-     * @return array
-     * @throws \Model\Neo4j\Neo4jException
-     */
-    private function getUserFilters($id)
-    {
-        $qb = $this->graphManager->createQueryBuilder();
-        $qb->match('(filter:FilterUsers)')
-            ->where('id(filter) = {id}')
-            ->optionalMatch('(filter)-[:FILTERS_BY]->(group:Group)')
-            ->returns(
-                'filter.compatibility as compatibility,
-                        filter.similarity as similarity, 
-                        collect(id(group)) as groups,
-                        filter.order as order'
-            );
-        $qb->setParameter('id', (integer)$id);
-        $result = $qb->getQuery()->getResultSet();
-
-        if ($result->count() < 1) {
-            throw new NotFoundHttpException('filter with id ' . $id . ' not found');
-        }
-
-        $userFilters = array();
-
-        /** @var Row $row */
-        $row = $result->current();
-
-        $userFilters['groups'] = array();
-        foreach ($row->offsetGet('groups') as $groupNode) {
-            $userFilters['groups'][] = $groupNode;
-        }
-
-        if (empty($userFilters['groups'])) {
-            unset($userFilters['groups']);
-        }
-
-        if ($row->offsetGet('similarity')) {
-            $userFilters['similarity'] = $row->offsetGet('similarity');
-        }
-
-        if ($row->offsetGet('compatibility')) {
-            $userFilters['compatibility'] = $row->offsetGet('compatibility');
-        }
-
-        if ($row->offsetGet('order')) {
-            $userFilters['order'] = $row->offsetGet('order');
-        }
-
-        return $userFilters;
     }
 
 }
