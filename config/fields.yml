@@ -578,8 +578,6 @@ user_filter:
         label:
             en: 'Minimum similarity (%)'
             es: 'Similaridad mínima (%)'
-
-profile_filter:
     birthday:
         type: birthday_range
         label:

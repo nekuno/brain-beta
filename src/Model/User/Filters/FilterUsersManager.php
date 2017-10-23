@@ -88,13 +88,11 @@ class FilterUsersManager
 
     public function validateOnCreate(array $filters, $userId = null)
     {
-        $filters = $this->profileMetadataManager->splitFilters($filters);
         $this->validator->validateOnCreate($filters, $userId);
     }
 
     public function validateOnUpdate(array $filters, $userId = null)
     {
-        $filters = $this->profileMetadataManager->splitFilters($filters);
         $this->validator->validateOnUpdate($filters, $userId);
     }
 

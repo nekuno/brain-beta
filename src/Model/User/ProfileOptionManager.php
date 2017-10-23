@@ -9,15 +9,11 @@ use Model\Neo4j\GraphManager;
 
 class ProfileOptionManager
 {
-    /**
-     * @var GraphManager
-     */
     protected $graphManager;
-
-    /**
-     * @var ProfileMetadataManager
-     */
     protected $profileMetadataManager;
+
+    protected $options = array();
+    protected $tags = array();
 
     public function __construct(GraphManager $graphManager, ProfileMetadataManager $profileMetadataManager)
     {
@@ -30,7 +26,7 @@ class ProfileOptionManager
      * @return array
      * @throws \Model\Neo4j\Neo4jException
      */
-    public function getChoiceOptionIds()
+    public function getOptions()
     {
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(option:ProfileOption)')
@@ -50,6 +46,45 @@ class ProfileOptionManager
         }
 
         return $choiceOptions;
+    }
+
+    /**
+     * Output  choice options according to user language
+     * @param $locale
+     * @return array
+     */
+    public function getLocaleOptions($locale)
+    {
+        $translationField = $this->getTranslationField($locale);
+        if (isset($this->options[$translationField])) {
+            return $this->options[$translationField];
+        }
+        $qb = $this->graphManager->createQueryBuilder();
+        $qb->match('(option:ProfileOption)')
+            ->returns("head(filter(x IN labels(option) WHERE x <> 'ProfileOption')) AS labelName, option.id AS id, option." . $translationField . " AS name")
+            ->orderBy('labelName');
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        $choiceOptions = array();
+        /** @var Row $row */
+        foreach ($result as $row) {
+            $typeName = $this->profileMetadataManager->labelToType($row->offsetGet('labelName'));
+            $optionId = $row->offsetGet('id');
+            $optionName = $row->offsetGet('name');
+
+            $choiceOptions[$typeName][$optionId] = $optionName;
+        }
+
+        $this->options[$translationField] = $choiceOptions;
+
+        return $choiceOptions;
+    }
+
+    protected function getTranslationField($locale)
+    {
+        return 'name_' . $locale;
     }
 
     public function buildOptions(Row $row)
@@ -122,6 +157,31 @@ class ProfileOptionManager
     protected function getOptionDetailResult($optionId, $detail)
     {
         return array('choice' => $optionId, 'detail' => $detail);
+    }
+
+    public function getTopProfileTags($tagType)
+    {
+        $tagLabelName = $this->profileMetadataManager->typeToLabel($tagType);
+        if (isset($this->tags[$tagLabelName])) {
+            return $this->tags[$tagLabelName];
+        }
+        $qb = $this->graphManager->createQueryBuilder();
+        $qb->match('(tag:' . $tagLabelName . ')-[tagged:TAGGED]->(profile:Profile)')
+            ->returns('tag.name AS tag, count(*) as count')
+            ->limit(5);
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        $tags = array();
+        foreach ($result as $row) {
+            /* @var $row Row */
+            $tags[] = $row->offsetGet('tag');
+        }
+
+        $this->tags[$tagLabelName] = $tags;
+
+        return $tags;
     }
 
 }

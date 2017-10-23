@@ -2,8 +2,6 @@
 
 namespace Model\Metadata;
 
-use Everyman\Neo4j\Query\Row;
-
 class ProfileMetadataManager extends MetadataManager
 {
     protected $profileOptions = array();
@@ -38,7 +36,9 @@ class ProfileMetadataManager extends MetadataManager
      */
     protected function modifyByType($publicField, $name, $values)
     {
-        $choiceOptions = $this->getChoiceOptions();
+        $locale = $this->translator->getLocale();
+
+        $choiceOptions = $this->profileOptionManager->getLocaleOptions($locale);
 
         switch ($values['type']) {
             case 'choice':
@@ -62,71 +62,16 @@ class ProfileMetadataManager extends MetadataManager
                         $publicField['choices'][$choice] = $this->getLocaleString($description);
                     }
                 }
-                $publicField['top'] = $this->getTopProfileTags($name);
+                $publicField['top'] = $this->profileOptionManager->getTopProfileTags($name);
                 break;
             case 'tags':
-                $publicField['top'] = $this->getTopProfileTags($name);
+                $publicField['top'] = $this->profileOptionManager->getTopProfileTags($name);
                 break;
             default:
                 break;
         }
 
         return $publicField;
-    }
-
-    /**
-     * Output  choice options according to user language
-     * @return array
-     * @throws \Model\Neo4j\Neo4jException
-     */
-    protected function getChoiceOptions()
-    {
-        $translationField = $this->getTranslationField();
-        if (isset($this->profileOptions[$translationField])) {
-            return $this->profileOptions[$translationField];
-        }
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(option:ProfileOption)')
-            ->returns("head(filter(x IN labels(option) WHERE x <> 'ProfileOption')) AS labelName, option.id AS id, option." . $translationField . " AS name")
-            ->orderBy('labelName');
-
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
-
-        $choiceOptions = array();
-        /** @var Row $row */
-        foreach ($result as $row) {
-            $typeName = $this->labelToType($row->offsetGet('labelName'));
-            $optionId = $row->offsetGet('id');
-            $optionName = $row->offsetGet('name');
-
-            $choiceOptions[$typeName][$optionId] = $optionName;
-        }
-
-        $this->profileOptions[$translationField] = $choiceOptions;
-
-        return $choiceOptions;
-    }
-
-    protected function getTranslationField()
-    {
-        $locale = $this->translator->getLocale();
-
-        return 'name_' . $locale;
-    }
-
-    public function splitFilters($filters)
-    {
-        $filters['profileFilters'] = (isset($filters['profileFilters']) && is_array($filters['profileFilters'])) ? $filters['profileFilters'] : array();
-        $profileMetadata = $this->getMetadata();
-        foreach ($profileMetadata as $fieldName => $fieldData) {
-            if (isset($filters['userFilters'][$fieldName])) {
-                $filters['profileFilters'][$fieldName] = $filters['userFilters'][$fieldName];
-                unset($filters['userFilters'][$fieldName]);
-            }
-        }
-
-        return $filters;
     }
 
     public function getAgeRangeFromBirthdayRange(array $birthday)
@@ -162,58 +107,5 @@ class ProfileMetadataManager extends MetadataManager
         return $return;
     }
 
-    protected function getTopProfileTags($tagType)
-    {
-        $tagLabelName = $this->typeToLabel($tagType);
-        if (isset($this->profileTags[$tagLabelName])) {
-            return $this->profileTags[$tagLabelName];
-        }
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(tag:' . $tagLabelName . ')-[tagged:TAGGED]->(profile:Profile)')
-            ->returns('tag.name AS tag, count(*) as count')
-            ->limit(5);
 
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
-
-        $tags = array();
-        foreach ($result as $row) {
-            /* @var $row Row */
-            $tags[] = $row->offsetGet('tag');
-        }
-
-        $this->profileTags[$tagLabelName] = $tags;
-
-        return $tags;
-    }
-
-    /**
-     * @param $publicField
-     * @param $name
-     * @param $choiceOptions
-     * @return mixed
-     */
-    protected function addChoices($publicField, $name, $choiceOptions)
-    {
-        $publicField['choices'] = isset($choiceOptions[$name]) ? $choiceOptions[$name] : array();
-
-        return $publicField;
-    }
-
-    /**
-     * @param $publicField
-     * @param $values
-     * @return mixed
-     */
-    protected function addDoubleChoices($publicField, $values)
-    {
-        $valueDoubleChoices = isset($values['doubleChoices']) ? $values['doubleChoices'] : array();
-        foreach ($valueDoubleChoices as $choice => $doubleChoices) {
-            foreach ($doubleChoices as $doubleChoice => $doubleChoiceValues) {
-                $publicField['doubleChoices'][$choice][$doubleChoice] = $this->getLocaleString($doubleChoiceValues);
-            }
-        }
-
-        return $publicField;
-    }
 }

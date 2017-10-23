@@ -614,7 +614,7 @@ class UserController
         //user-dependent filters
 
         /* @var $userFilterModel UserFilterMetadataManager */
-        $userFilterModel = $app['users.userFilter.model'];
+        $userFilterModel = $app['users.userFilterMetadata.manager'];
         $userFilters = $userFilterModel->getMetadata($locale);
 
         //TODO: Move this logic to userFilter during/after QS-982 (remove filter logic from GroupModel)

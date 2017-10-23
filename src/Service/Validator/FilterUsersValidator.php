@@ -8,23 +8,13 @@ use Model\User\ProfileOptionManager;
 
 class FilterUsersValidator extends Validator
 {
+    protected $userFilterMetadataManager;
 
-    /**
-     * @var ProfileOptionManager
-     */
-    protected $profileOptionManager;
-
-    /**
-     * @var UserFilterMetadataManager
-     */
-    protected $userFilterModel;
-
-    public function __construct(GraphManager $graphManager, ProfileOptionManager $profileOptionManager, UserFilterMetadataManager $userFilterModel, array $metadata)
+    public function __construct(GraphManager $graphManager, UserFilterMetadataManager $userFilterMetadataManager, array $metadata)
     {
         parent::__construct($graphManager, $metadata);
 
-        $this->profileOptionManager = $profileOptionManager;
-        $this->userFilterModel = $userFilterModel;
+        $this->userFilterMetadataManager = $userFilterMetadataManager;
     }
 
     public function validateOnUpdate($data, $userId = null)
@@ -39,26 +29,10 @@ class FilterUsersValidator extends Validator
 
     protected function validate($data, $userId = null)
     {
-        if (isset($data['userFilters']) && $userId) {
-            $metadata = $this->metadata['user_filter'];
-            $choices = $this->getUserChoices($userId);
-            $this->validateMetadata($data['userFilters'], $metadata, $choices);
-        }
-        if (isset($data['profileFilters'])) {
-            $metadata = $this->metadata['profile_filter'];
-            $choices = $this->getProfileChoices();
-            $this->validateMetadata($data['profileFilters'], $metadata, $choices);
+        if (!empty($data) && $userId) {
+            $metadata = $this->metadata;
+            $choices = $this->userFilterMetadataManager->getUserOptions($userId);
+            $this->validateMetadata($data, $metadata, $choices);
         }
     }
-
-    protected function getProfileChoices()
-    {
-        return $this->profileOptionManager->getChoiceOptionIds();
-    }
-
-    protected function getUserChoices($userId)
-    {
-        return $this->userFilterModel->getChoiceOptionIds($userId);
-    }
-
 }

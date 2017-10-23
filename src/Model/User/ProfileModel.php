@@ -3,7 +3,7 @@
 namespace Model\User;
 
 use Event\ProfileEvent;
-use Model\Metadata\MetadataManagerInterface;
+use Model\Metadata\ProfileMetadataManager;
 use Model\Neo4j\GraphManager;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
@@ -23,7 +23,7 @@ class ProfileModel
     protected $dispatcher;
     protected $validator;
 
-    public function __construct(GraphManager $gm, MetadataManagerInterface $profileMetadataManager, ProfileOptionManager $profileOptionManager, EventDispatcher $dispatcher, ProfileValidator $validator)
+    public function __construct(GraphManager $gm, ProfileMetadataManager $profileMetadataManager, ProfileOptionManager $profileOptionManager, EventDispatcher $dispatcher, ProfileValidator $validator)
     {
         $this->gm = $gm;
         $this->profileMetadataManager = $profileMetadataManager;
@@ -152,7 +152,7 @@ class ProfileModel
     public function validateOnCreate(array $data, $userId = null)
     {
         $data['userId'] = $userId;
-        $data['choices'] = $this->profileOptionManager->getChoiceOptionIds();
+        $data['choices'] = $this->profileOptionManager->getOptions();
 
         $this->validator->validateOnCreate($data);
     }
@@ -160,7 +160,7 @@ class ProfileModel
     public function validateOnUpdate(array $data, $userId)
     {
         $data['userId'] = $userId;
-        $data['choices'] = $this->profileOptionManager->getChoiceOptionIds();
+        $data['choices'] = $this->profileOptionManager->getOptions();
         $this->validator->validateOnUpdate($data);
     }
 

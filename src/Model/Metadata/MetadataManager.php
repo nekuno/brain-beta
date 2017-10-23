@@ -3,21 +3,24 @@
 namespace Model\Metadata;
 
 use Model\Neo4j\GraphManager;
+use Model\User\ProfileOptionManager;
 use Symfony\Component\Translation\Translator;
 
 class MetadataManager implements MetadataManagerInterface
 {
     protected $gm;
     protected $translator;
+    protected $profileOptionManager;
     protected $metadata;
     protected $defaultLocale;
 
     protected $validLocales = array('en', 'es');
 
-    public function __construct(GraphManager $gm, Translator $translator, array $metadata, $defaultLocale)
+    public function __construct(GraphManager $gm, Translator $translator, ProfileOptionManager $profileOptionManager, array $metadata, $defaultLocale)
     {
         $this->gm = $gm;
         $this->translator = $translator;
+        $this->profileOptionManager = $profileOptionManager;
         $this->metadata = $metadata;
         $this->defaultLocale = $defaultLocale;
     }
@@ -102,6 +105,7 @@ class MetadataManager implements MetadataManagerInterface
         return $publicField;
     }
 
+    //TODO: Move to GraphManager or new class
     public function labelToType($labelName)
     {
 
@@ -202,6 +206,36 @@ class MetadataManager implements MetadataManagerInterface
         $restString = mb_strtolower(mb_substr($typeName, 1, null, 'UTF-8'), 'UTF-8');
 
         return $firstCharacter . $restString;
+    }
+
+    /**
+     * @param $publicField
+     * @param $name
+     * @param $choiceOptions
+     * @return mixed
+     */
+    protected function addChoices($publicField, $name, $choiceOptions)
+    {
+        $publicField['choices'] = isset($choiceOptions[$name]) ? $choiceOptions[$name] : array();
+
+        return $publicField;
+    }
+
+    /**
+     * @param $publicField
+     * @param $values
+     * @return mixed
+     */
+    protected function addDoubleChoices($publicField, $values)
+    {
+        $valueDoubleChoices = isset($values['doubleChoices']) ? $values['doubleChoices'] : array();
+        foreach ($valueDoubleChoices as $choice => $doubleChoices) {
+            foreach ($doubleChoices as $doubleChoice => $doubleChoiceValues) {
+                $publicField['doubleChoices'][$choice][$doubleChoice] = $this->getLocaleString($doubleChoiceValues);
+            }
+        }
+
+        return $publicField;
     }
 
 }
