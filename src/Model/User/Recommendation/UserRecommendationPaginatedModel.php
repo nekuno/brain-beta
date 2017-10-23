@@ -10,26 +10,23 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
 
     /**
      * Slices the query according to $offset, and $limit.
-     * @param array $filters
+     * @param array $filtersArray
      * @param int $offset
      * @param int $limit
      * @throws \Exception
      * @return array
      */
-    public function slice(array $filters, $offset, $limit)
+    public function slice(array $filtersArray, $offset, $limit)
     {
-        $id = $filters['id'];
+        $id = $filtersArray['id'];
 
         $orderQuery = ' matching_questions DESC, similarity DESC, id ';
-        if (isset($filters['userFilters']['order']) && $filters['userFilters']['order'] == 'similarity') {
+        if (isset($filtersArray['userFilters']['order']) && $filtersArray['userFilters']['order'] == 'similarity') {
             $orderQuery = '  similarity DESC, matching_questions DESC, id ';
-            unset($filters['userFilters']['order']);
+            unset($filtersArray['userFilters']['order']);
         }
 
-        $filters = $this->profileMetadataManager->splitFilters($filters);
-
-        $profileFilters = $this->applyProfileFilters($filters['profileFilters']);
-        $userFilters = $this->applyUserFilters($filters['userFilters']);
+        $filters = $this->applyFilters($filtersArray);
 
         $return = array('items' => array());
 

@@ -4,6 +4,7 @@ namespace Model\User\Group;
 
 use Model\User\Recommendation\AbstractUserRecommendationPaginatedModel;
 
+//Not using this since we recommend only by thread.
 class GroupMembersRecommendationPaginatedModel extends AbstractUserRecommendationPaginatedModel
 {
     public function slice(array $filters, $offset, $limit)
