@@ -58,15 +58,10 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
         $qb->optionalMatch('(p)-[:LOCATION]->(l:Location)');
 
         $qb->with('u, anyUser, hasCommonObjectives, matching_questions, similarity, p, l');
-        $qb->where($profileFilters['conditions'])
-            ->with('u', 'anyUser', 'hasCommonObjectives', 'matching_questions', 'similarity', 'p', 'l');
-        $qb->where( $userFilters['conditions'])
+        $qb->where($filters['conditions'])
             ->with('u', 'anyUser', 'hasCommonObjectives', 'matching_questions', 'similarity', 'p', 'l');
 
-        foreach ($profileFilters['matches'] as $match) {
-            $qb->match($match);
-        }
-        foreach ($userFilters['matches'] as $match) {
+        foreach ($filters['matches'] as $match) {
             $qb->match($match);
         }
 
@@ -134,15 +129,12 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
      * @throws \Exception
      * @return int
      */
-    public function countTotal(array $filters)
+    public function countTotal(array $filtersArray)
     {
-        $id = $filters['id'];
+        $id = $filtersArray['id'];
         $count = 0;
 
-        $filters = $this->profileMetadataManager->splitFilters($filters);
-
-        $profileFilters = $this->applyProfileFilters($filters['profileFilters']);
-        $userFilters = $this->applyUserFilters($filters['userFilters']);
+        $filters = $this->applyFilters($filtersArray);
 
         $qb = $this->gm->createQueryBuilder();
 
@@ -164,15 +156,10 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
         $qb->optionalMatch('(p)-[:LOCATION]->(l:Location)');
 
         $qb->with('u, anyUser, matching_questions, similarity, p, l');
-        $qb->where($profileFilters['conditions'])
-            ->with('u', 'anyUser', 'matching_questions', 'similarity', 'p', 'l');
-        $qb->where( $userFilters['conditions'])
+        $qb->where($filters['conditions'])
             ->with('u', 'anyUser', 'matching_questions', 'similarity', 'p', 'l');
 
-        foreach ($profileFilters['matches'] as $match) {
-            $qb->match($match);
-        }
-        foreach ($userFilters['matches'] as $match) {
+        foreach ($filters['matches'] as $match) {
             $qb->match($match);
         }
 
