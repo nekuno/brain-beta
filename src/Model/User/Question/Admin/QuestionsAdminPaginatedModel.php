@@ -15,13 +15,15 @@ class QuestionsAdminPaginatedModel extends QuestionAdminManager implements Pagin
 
     public function slice(array $filters, $offset, $limit)
     {
+        $order = $filters['order'] ? $filters['order'] : 'answered';
+        $orderDir = $filters['orderDir'] ? $filters['orderDir'] : 'desc';
+
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(q:Question)')
             ->optionalMatch('(q)<-[s:SKIPS]-(:User)')
             ->optionalMatch('(q)<-[r:RATES]-(:User)')
-            ->with('q', 'count(s) AS skipped', 'count(r) AS answered');
-
-        $qb->orderBy('id(q) ASC');
+            ->with('q', 'count(s) AS skipped', 'count(r) AS answered')
+            ->orderBy("$order $orderDir");
 
         if (!is_null($offset)) {
             $qb->skip($offset);
@@ -31,7 +33,8 @@ class QuestionsAdminPaginatedModel extends QuestionAdminManager implements Pagin
         }
 
         $qb->optionalMatch('(q)<-[:IS_ANSWER_OF]-(a:Answer)')
-            ->returns('q', 'skipped', 'answered', 'collect(a) AS answers');
+            ->returns('q', 'skipped', 'answered', 'collect(a) AS answers')
+            ->orderBy("$order $orderDir");
 
         $query = $qb->getQuery();
 

@@ -11,7 +11,13 @@ class QuestionController
     public function getQuestionsAction(Request $request, Application $app)
     {
         $locale = $request->get('locale', 'es');
-        $filters = array('locale' => $locale);
+        $order = $request->get('order', null);
+        $orderDir = $request->get('orderDir', null);
+        $filters = array(
+            'locale' => $locale,
+            'order' => $order,
+            'orderDir' => $orderDir,
+        );
 
         $paginator = $app['paginator'];
         $model = $app['users.questions.paginated.model'];
