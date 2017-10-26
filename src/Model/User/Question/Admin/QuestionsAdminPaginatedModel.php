@@ -16,6 +16,9 @@ class QuestionsAdminPaginatedModel extends QuestionAdminManager implements Pagin
     public function slice(array $filters, $offset, $limit)
     {
         $order = $filters['order'] ? $filters['order'] : 'answered';
+        if ($order === 'id') {
+            $order = 'id(q)';
+        }
         $orderDir = $filters['orderDir'] ? $filters['orderDir'] : 'desc';
 
         $qb = $this->graphManager->createQueryBuilder();
