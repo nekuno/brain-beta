@@ -2,19 +2,18 @@
 
 namespace Service\Validator;
 
-use Model\Metadata\UserFilterMetadataManager;
+use Service\MetadataService;
 use Model\Neo4j\GraphManager;
-use Model\User\ProfileOptionManager;
 
 class FilterUsersValidator extends Validator
 {
-    protected $userFilterMetadataManager;
+    protected $metadataService;
 
-    public function __construct(GraphManager $graphManager, UserFilterMetadataManager $userFilterMetadataManager, array $metadata)
+    public function __construct(GraphManager $graphManager, MetadataService $metadataService, array $metadata)
     {
         parent::__construct($graphManager, $metadata);
 
-        $this->userFilterMetadataManager = $userFilterMetadataManager;
+        $this->metadataService = $metadataService;
     }
 
     public function validateOnUpdate($data, $userId = null)
@@ -29,10 +28,15 @@ class FilterUsersValidator extends Validator
 
     protected function validate($data, $userId = null)
     {
+        $choices = array();
         if (!empty($data) && $userId) {
-            $metadata = $this->metadata;
-            $choices = $this->userFilterMetadataManager->getUserOptions($userId);
-            $this->validateMetadata($data, $metadata, $choices);
+            $groupChoices = $this->metadataService->getGroupChoices($userId);
+            foreach ($groupChoices as $key => $value)
+            {
+                $groupChoices[$key] = $key;
+            }
+            $choices = array('groups' => $groupChoices);
         }
+        $this->validateMetadata($data, $this->metadata, $choices);
     }
 }

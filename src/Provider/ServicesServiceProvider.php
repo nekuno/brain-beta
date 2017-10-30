@@ -10,8 +10,10 @@ use Service\Consistency\ConsistencyCheckerService;
 use Service\DeviceService;
 use Service\EmailNotifications;
 use Service\EventDispatcher;
+use Service\GroupService;
 use Service\ImageTransformations;
 use Service\Links\EnqueueLinksService;
+use Service\MetadataService;
 use Service\NotificationManager;
 use Service\QuestionService;
 use Service\RecommendatorService;
@@ -178,6 +180,17 @@ class ServicesServiceProvider implements ServiceProviderInterface
             }
         );
 
+        $app['metadata.service'] = $app->share(
+            function (Application $app) {
+                return new MetadataService($app['users.metadataManager.factory'], $app['users.groups.model'], $app['users.profileOption.manager'], $app['metadata.utilities']);
+            }
+        );
+
+        $app['group.service'] = $app->share(
+            function (Application $app) {
+                return new GroupService($app['users.groups.model'], $app['users.filterusers.manager']);
+            }
+        );
     }
 
     /**

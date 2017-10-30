@@ -35,7 +35,7 @@ class GroupModel
     /**
      * @var FilterUsersManager
      */
-    protected $filterUsersManager;
+//    protected $filterUsersManager;
 
     /**
      * @var EventDispatcher
@@ -61,13 +61,13 @@ class GroupModel
      * @param GroupValidator|ValidatorInterface $validator
      * @param $invitationImagesRoot
      */
-    public function __construct(GraphManager $gm, EventDispatcher $dispatcher, UserManager $um, PhotoManager $pm, FilterUsersManager $filterUsersManager, GroupValidator $validator, $invitationImagesRoot)
+    public function __construct(GraphManager $gm, EventDispatcher $dispatcher, UserManager $um, PhotoManager $pm, GroupValidator $validator, $invitationImagesRoot)
     {
         $this->gm = $gm;
         $this->um = $um;
         $this->pm = $pm;
         $this->dispatcher = $dispatcher;
-        $this->filterUsersManager = $filterUsersManager;
+//        $this->filterUsersManager = $filterUsersManager;
         $this->validator = $validator;
         $this->invitationImagesRoot = $invitationImagesRoot;
     }
@@ -299,8 +299,6 @@ class GroupModel
 
         $group = $this->build($row);
 
-        $this->updateFilterUsers($group, $data);
-
         return $group;
     }
 
@@ -346,24 +344,7 @@ class GroupModel
 
         $group = $this->build($row);
 
-        $this->updateFilterUsers($group, $data);
-
         return $group;
-    }
-
-    private function updateFilterUsers(Group $group, array $data)
-    {
-        if (isset($data['followers'])) {
-            $filterUsers = $this->filterUsersManager->updateFilterUsersByGroupId(
-                $group->getId(),
-                array(
-                    'userFilters' => array(
-                        $data['type_matching'] => $data['min_matching']
-                    )
-                )
-            );
-            $group->setFilterUsers($filterUsers);
-        }
     }
 
     public function remove($id)
@@ -411,34 +392,6 @@ class GroupModel
 
         return $this->build($row);
 
-    }
-
-    /**
-     * @param $userId
-     * @return Group[]
-     */
-    public function getByUser($userId)
-    {
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(u:User {qnoow_id: { userId }})')
-            ->setParameter('userId', (integer)$userId)
-            ->match('(u)-[r:BELONGS_TO]->(g:Group)')
-            ->with('g')
-            ->optionalMatch('(g)-[:LOCATION]->(l:Location)')
-            ->optionalMatch('(g)-[:HAS_FILTER]->(f:FilterUsers)')
-            ->returns('g', 'l', 'f');
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        $return = array();
-
-        foreach ($result as $row) {
-            $return[] = $this->build($row);
-        }
-
-        return $return;
     }
 
     public function addUser($id, $userId)
@@ -653,9 +606,9 @@ class GroupModel
     private function getFilterUsers(Row $row)
     {
         $filterUsers = null;
-        if ($row->offsetExists('f')) {
-            $filterUsers = $this->filterUsersManager->getFilterUsersById($row->offsetGet('f')->getId());
-        }
+//        if ($row->offsetExists('f')) {
+//            $filterUsers = $this->filterUsersManager->getFilterUsersById($row->offsetGet('f')->getId());
+//        }
 
         return $filterUsers;
     }
@@ -727,33 +680,22 @@ class GroupModel
         }
         $group->setUsersCount($usersCount);
 
-//        $additionalLabels = $this->getAdditionalGroupLabels($groupNode);
-//        if (in_array('GroupFollowers', $additionalLabels)) {
-//            $user = $this->um->getByCreatedGroup($groupNode->getId());
-//            $group->setCreatedBy(
-//                array(
-//                    'username' => $user->getUsername(),
-//                    'id' => $user->getId(),
-//                )
-//            );
-//        }
-
         return $group;
     }
 
-//    private function getAdditionalGroupLabels(Node $groupNode)
-//    {
-//        $additionalLabels = array();
-//        $labels = $groupNode->getLabels();
-//        /* @var $label Label */
-//        foreach ($labels as $label) {
-//            if ($label->getName() !== 'Group') {
-//                $additionalLabels[] = $label->getName();
-//            }
-//        }
-//
-//        return $additionalLabels;
-//    }
+    /**
+     * @param $groups Group[]
+     * @return array
+     */
+    public function buildGroupNames(array $groups)
+    {
+        $choices = array();
+        foreach ($groups as $group){
+            $choices[$group->getId()] = $group->getName();
+        }
+
+        return $choices;
+    }
 
     private function buildLocation(Node $locationNode = null)
     {

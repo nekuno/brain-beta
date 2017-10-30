@@ -6,10 +6,11 @@ use Everyman\Neo4j\Label;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
+use Model\Metadata\MetadataUtilities;
 use Model\Neo4j\GraphManager;
-use Model\Metadata\ProfileMetadataManager;
 use Model\Metadata\UserFilterMetadataManager;
 use Model\Neo4j\QueryBuilder;
+use Model\User\ProfileOptionManager;
 use Service\Validator\FilterUsersValidator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -21,25 +22,25 @@ class FilterUsersManager
     protected $graphManager;
 
     /**
-     * @var ProfileMetadataManager
-     */
-    protected $profileMetadataManager;
-
-    /**
      * @var UserFilterMetadataManager
      */
     protected $userFilterMetadataManager;
+
+    protected $profileOptionManager;
+
+    protected $metadataUtilities;
 
     /**
      * @var FilterUsersValidator
      */
     protected $validator;
 
-    public function __construct(GraphManager $graphManager, ProfileMetadataManager $profileMetadataManager, UserFilterMetadataManager $userFilterMetadataManager, FilterUsersValidator $validator)
+    public function __construct(GraphManager $graphManager, UserFilterMetadataManager $userFilterMetadataManager, ProfileOptionManager $profileOptionManager, MetadataUtilities $metadataUtilities, FilterUsersValidator $validator)
     {
         $this->graphManager = $graphManager;
-        $this->profileMetadataManager = $profileMetadataManager;
         $this->userFilterMetadataManager = $userFilterMetadataManager;
+        $this->profileOptionManager = $profileOptionManager;
+        $this->metadataUtilities = $metadataUtilities;
         $this->validator = $validator;
     }
 
@@ -106,7 +107,7 @@ class FilterUsersManager
 
 //        $this->validateOnUpdate(array('profileFilters' => $profileFilters));
 
-        $metadata = $this->profileMetadataManager->getMetadata();
+        $metadata = $this->userFilterMetadataManager->getMetadata();
 
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(filter:FilterUsers)')
@@ -194,7 +195,7 @@ class FilterUsersManager
                     $qb->with('filter');
                     break;
                 case 'choice':
-                    $profileLabelName = $this->profileMetadataManager->typeToLabel($fieldName);
+                    $profileLabelName = $this->metadataUtilities->typeToLabel($fieldName);
                     $qb->optionalMatch("(filter)-[old_po_rel:FILTERS_BY]->(:$profileLabelName)")
                         ->delete("old_po_rel");
 
@@ -205,7 +206,7 @@ class FilterUsersManager
                     $qb->with('filter');
                     break;
                 case 'double_multiple_choices':
-                    $profileLabelName = $this->profileMetadataManager->typeToLabel($fieldName);
+                    $profileLabelName = $this->metadataUtilities->typeToLabel($fieldName);
                     $qb->optionalMatch("(filter)-[old_po_rel:FILTERS_BY]->(:$profileLabelName)")
                         ->delete("old_po_rel");
                     if ($value) {
@@ -223,7 +224,7 @@ class FilterUsersManager
                     $qb->with('filter');
                     break;
                 case 'choice_and_multiple_choices':
-                    $profileLabelName = $this->profileMetadataManager->typeToLabel($fieldName);
+                    $profileLabelName = $this->metadataUtilities->typeToLabel($fieldName);
                     $qb->optionalMatch("(filter)-[old_po_rel:FILTERS_BY]->(:$profileLabelName)")
                         ->delete("old_po_rel");
                     if ($value && isset($value['choice'])) {
@@ -238,7 +239,7 @@ class FilterUsersManager
                     $qb->with('filter');
                     break;
                 case 'multiple_choices':
-                    $profileLabelName = $this->profileMetadataManager->typeToLabel($fieldName);
+                    $profileLabelName = $this->metadataUtilities->typeToLabel($fieldName);
                     $qb->optionalMatch("(filter)-[old_po_rel:FILTERS_BY]->(:$profileLabelName)")
                         ->delete("old_po_rel");
 
@@ -272,7 +273,7 @@ class FilterUsersManager
                     if ($value) {
                         foreach ($value as $singleValue) {
                             $tag = $fieldName === 'language' ?
-                                $this->profileMetadataManager->getLanguageFromTag($singleValue['tag']) :
+                                $this->metadataUtilities->getLanguageFromTag($singleValue['tag']) :
                                 $singleValue['tag'];
                             $choice = isset($singleValue['choice']) ? $singleValue['choice'] : '';
 
@@ -292,7 +293,7 @@ class FilterUsersManager
                     if ($value) {
                         foreach ($value as $singleValue) {
                             $tag = $fieldName === 'language' ?
-                                $this->profileMetadataManager->getLanguageFromTag($singleValue['tag']) :
+                                $this->metadataUtilities->getLanguageFromTag($singleValue['tag']) :
                                 $singleValue['tag'];
                             $choices = isset($singleValue['choices']) ? $singleValue['choices'] : '';
                             $qb->merge("(tag$fieldName$tag:$tagLabelName:ProfileTag{name:'$tag'})");
@@ -340,15 +341,11 @@ class FilterUsersManager
      */
     protected function buildFiltersUsers(array $filtersArray)
     {
-        $profileFilterMetadata = $this->profileMetadataManager->getMetadata();
-        $userFilterMetadata = $this->userFilterMetadataManager->getMetadata();
-        $metadata = $profileFilterMetadata + $userFilterMetadata;
-
+        $metadata = $this->userFilterMetadataManager->getMetadata();
         $filters = new FilterUsers($metadata);
-        foreach ($filtersArray as $field => $value) {
+        foreach ($filtersArray['userFilters'] as $field => $value) {
             $filters->set($field, $value);
         }
-
         return $filters;
     }
 
@@ -503,18 +500,20 @@ class FilterUsersManager
             );
         }
 
-        return array_filter($filters);
+        $filters = array_filter($filters);
+
+        return array('userFilters' => $filters);
     }
 
     /**
-     * Quite similar to ProfileModel->buildProfileOptions
+     * TODO: Check if merge with ProfileOptionManager->buildOptions or add ->buildFilterOptions(options, node)
      * @param \ArrayAccess $options
      * @param Node $filterNode
      * @return array
      */
     private function buildProfileOptions(\ArrayAccess $options, Node $filterNode)
     {
-        $filterMetadata = $this->profileMetadataManager->getMetadata();
+        $filterMetadata = $this->userFilterMetadataManager->getMetadata();
         $optionsResult = array();
         /* @var Node $option */
         foreach ($options as $option) {
@@ -523,7 +522,7 @@ class FilterUsersManager
             /* @var Label $label */
             foreach ($labels as $label) {
                 if ($label->getName() && $label->getName() != 'ProfileOption') {
-                    $typeName = $this->profileMetadataManager->labelToType($label->getName());
+                    $typeName = $this->metadataUtilities->labelToType($label->getName());
                     $metadataValues = isset($filterMetadata[$typeName]) ? $filterMetadata[$typeName] : array();
 
                     switch ($metadataValues['type']) {
@@ -569,7 +568,7 @@ class FilterUsersManager
             /* @var Label $label */
             foreach ($labels as $label) {
                 if ($label->getName() && $label->getName() != 'ProfileTag') {
-                    $typeName = $this->profileMetadataManager->labelToType($label->getName());
+                    $typeName = $this->metadataUtilities->labelToType($label->getName());
                     $tagResult = $tag->getProperty('name');
                     $detail = $relationship->getProperty('detail');
                     if (!is_null($detail)) {

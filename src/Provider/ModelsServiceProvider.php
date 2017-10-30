@@ -7,6 +7,7 @@ use Model\EnterpriseUser\EnterpriseUserModel;
 use Model\Link\LinkModel;
 use Model\Metadata\CategoryMetadataManager;
 use Model\Metadata\MetadataManagerFactory;
+use Model\Metadata\MetadataUtilities;
 use Model\Metadata\ProfileMetadataManager;
 use Model\Popularity\PopularityManager;
 use Model\Popularity\PopularityPaginatedModel;
@@ -25,7 +26,6 @@ use Model\User\Filters\FilterContentManager;
 use Model\User\Filters\FilterUsersManager;
 use Model\User\GhostUser\GhostUserManager;
 use Model\User\Group\GroupContentPaginatedModel;
-use Model\User\Group\GroupMembersRecommendationPaginatedModel;
 use Model\User\Group\GroupModel;
 use Model\User\InvitationModel;
 use Model\User\LookUpModel;
@@ -113,20 +113,21 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
                 $profileValidator = $app['validator.factory']->build('profile');
 
-                return new ProfileModel($app['neo4j.graph_manager'], $app['users.profileMetadata.manager'], $app['users.profileOption.manager'], $app['dispatcher'], $profileValidator);
+                return new ProfileModel($app['neo4j.graph_manager'], $app['users.profileMetadata.manager'], $app['users.profileOption.manager'], $app['metadata.utilities'],  $app['dispatcher'], $profileValidator);
             }
         );
 
         $app['users.profileOption.manager'] = $app->share(
             function ($app) {
-                return new ProfileOptionManager($app['neo4j.graph_manager'], $app['users.profileMetadata.manager']);
+
+                return new ProfileOptionManager($app['neo4j.graph_manager'], $app['users.profileMetadata.manager'], $app['metadata.utilities']);
             }
         );
 
         $app['users.metadataManager.factory'] = $app->share(
             function ($app) {
 
-                return new MetadataManagerFactory($app['metadata.config'], $app['neo4j.graph_manager'], $app['translator'], $app['fields'], $app['locale.options']['default']);
+                return new MetadataManagerFactory($app['metadata.config'], $app['translator'], $app['metadata.utilities'], $app['fields'], $app['locale.options']['default']);
             }
         );
 
@@ -140,16 +141,6 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
 
                 return $app['users.metadataManager.factory']->build('profile');
-            }
-        );
-
-        $app['users.profileFilter.model'] = $app->share(
-            function ($app) {
-
-                /** @var ProfileMetadataManager $model */
-                $model = $app['users.metadataManager.factory']->build('profile_filter');
-
-                return $model;
             }
         );
 
@@ -167,6 +158,12 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
 
                 return $app['users.metadataManager.factory']->build('content_filter');
+            }
+        );
+
+        $app['metadata.utilities'] = $app->share(
+            function () {
+                return new MetadataUtilities();
             }
         );
 
@@ -272,14 +269,14 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.recommendation.users.model'] = $app->share(
             function ($app) {
 
-                return new UserRecommendationPaginatedModel($app['neo4j.graph_manager'], $app['users.profileFilter.model'], $app['users.userFilterMetadata.manager'], $app['users.photo.manager'], $app['users.profile.model']);
+                return new UserRecommendationPaginatedModel($app['neo4j.graph_manager'], $app['metadata.utilities'], $app['users.userFilterMetadata.manager'], $app['users.photo.manager'], $app['users.profile.model']);
             }
         );
 
         $app['users.recommendation.popularusers.model'] = $app->share(
             function ($app) {
 
-                return new UserPopularRecommendationPaginatedModel($app['neo4j.graph_manager'], $app['users.profileFilter.model'], $app['users.userFilterMetadata.manager'], $app['users.photo.manager'], $app['users.profile.model']);
+                return new UserPopularRecommendationPaginatedModel($app['neo4j.graph_manager'], $app['metadata.utilities'], $app['users.userFilterMetadata.manager'], $app['users.photo.manager'], $app['users.profile.model']);
             }
         );
 
@@ -309,13 +306,6 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
 
                 return new GroupContentPaginatedModel($app['neo4j.graph_manager'], $app['links.model'], $app['validator.service'], $app['imageTransformations.service']);
-            }
-        );
-
-        $app['users.group.members.model'] = $app->share(
-            function ($app) {
-
-                return new GroupMembersRecommendationPaginatedModel($app['neo4j.graph_manager'], $app['users.profileFilter.model'], $app['users.userFilterMetadata.manager'], $app['users.photo.manager'], $app['users.profile.model']);
             }
         );
 
@@ -397,8 +387,8 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.filterusers.manager'] = $app->share(
             function ($app) {
 
-                $validator = new FilterUsersValidator($app['neo4j.graph_manager'], $app['users.userFilterMetadata.manager'], $app['fields']);
-                return new FilterUsersManager($app['neo4j.graph_manager'], $app['users.profileFilter.model'], $app['users.userFilterMetadata.manager'], $validator);
+                $validator = new FilterUsersValidator($app['neo4j.graph_manager'], $app['metadata.service'], $app['fields']);
+                return new FilterUsersManager($app['neo4j.graph_manager'], $app['users.userFilterMetadata.manager'], $app['users.profileOption.manager'], $app['metadata.utilities'], $validator);
             }
         );
 
@@ -406,7 +396,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
 
                 $validator = $app['validator.factory']->build('content_filter');
-                return new FilterContentManager($app['neo4j.graph_manager'], $app['users.contentFilter.model'], $validator);
+                return new FilterContentManager($app['neo4j.graph_manager'], $validator);
             }
         );
 
@@ -414,7 +404,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
                 $groupValidator = $app['validator.factory']->build('groups');
 
-                return new GroupModel($app['neo4j.graph_manager'], $app['dispatcher'], $app['users.manager'], $app['users.photo.manager'], $app['users.filterusers.manager'], $groupValidator, $app['admin_domain_plus_post']);
+                return new GroupModel($app['neo4j.graph_manager'], $app['dispatcher'], $app['users.manager'], $app['users.photo.manager'], $groupValidator, $app['admin_domain_plus_post']);
             }
         );
 

@@ -96,8 +96,7 @@ class RecommendatorService
                 $threadFilters = $thread->getFilterUsers();
                 $filters = array(
                     'id' => $user->getId(),
-                    'profileFilters' => $threadFilters->getProfileFilters(),
-                    'userFilters' => $threadFilters->getUserFilters(),
+                    'userFilters' => $threadFilters->jsonSerialize(),
                 );
 
                 if ($user->isGuest())
@@ -164,8 +163,7 @@ class RecommendatorService
                 $threadFilters = $thread->getFilterUsers();
                 $filters = array(
                     'id' => $user->getId(),
-                    'profileFilters' => $threadFilters->getProfileFilters(),
-                    'userFilters' => $threadFilters->getUserFilters(),
+                    'userFilters' => $threadFilters->jsonSerialize(),
                 );
 
                 if ($order) {

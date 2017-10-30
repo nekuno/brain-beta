@@ -10,7 +10,6 @@ use Model\User;
 use Model\User\Group\Group;
 use Model\User\ProfileModel;
 use Service\Validator\ThreadValidator;
-use Service\Validator\Validator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Translation\Translator;
 

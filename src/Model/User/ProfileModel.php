@@ -3,6 +3,7 @@
 namespace Model\User;
 
 use Event\ProfileEvent;
+use Model\Metadata\MetadataUtilities;
 use Model\Metadata\ProfileMetadataManager;
 use Model\Neo4j\GraphManager;
 use Everyman\Neo4j\Node;
@@ -20,14 +21,16 @@ class ProfileModel
     protected $gm;
     protected $profileOptionManager;
     protected $profileMetadataManager;
+    protected $metadataUtilities;
     protected $dispatcher;
     protected $validator;
 
-    public function __construct(GraphManager $gm, ProfileMetadataManager $profileMetadataManager, ProfileOptionManager $profileOptionManager, EventDispatcher $dispatcher, ProfileValidator $validator)
+    public function __construct(GraphManager $gm, ProfileMetadataManager $profileMetadataManager, ProfileOptionManager $profileOptionManager, MetadataUtilities $metadataUtilities, EventDispatcher $dispatcher, ProfileValidator $validator)
     {
         $this->gm = $gm;
         $this->profileMetadataManager = $profileMetadataManager;
         $this->profileOptionManager = $profileOptionManager;
+        $this->metadataUtilities = $metadataUtilities;
         $this->dispatcher = $dispatcher;
         $this->validator = $validator;
     }
@@ -185,47 +188,10 @@ class ProfileModel
             $location = null;
         }
 
-        $profile += $this->profileOptionManager->buildOptions($row);
-        $profile += $this->buildTags($row, $locale);
+        $profile += $this->profileOptionManager->buildOptions($row->offsetGet('options'));
+        $profile += $this->profileOptionManager->buildTags($row, $locale);
 
         return $profile;
-    }
-
-    protected function buildTags(Row $row, $locale = null)
-    {
-        $tags = $row->offsetGet('tags');
-        $tagsResult = array();
-        /** @var Row $tagData */
-        foreach ($tags as $tagData) {
-            $tag = $tagData->offsetGet('tag');
-            $tagged = $tagData->offsetGet('tagged');
-            $labels = $tag ? $tag->getLabels() : array();
-
-            /* @var Label $label */
-            foreach ($labels as $label) {
-                if ($label->getName() && $label->getName() != 'ProfileTag') {
-                    $typeName = $this->profileMetadataManager->labelToType($label->getName());
-                    $tagResult = $tag->getProperty('name');
-                    $detail = $tagged->getProperty('detail');
-                    if (!is_null($detail)) {
-                        $tagResult = array();
-                        $tagResult['tag'] = $tag->getProperty('name');
-                        $tagResult['choice'] = $detail;
-                    }
-                    if ($typeName === 'language') {
-                        if (is_null($detail)) {
-                            $tagResult = array();
-                            $tagResult['tag'] = $tag->getProperty('name');
-                            $tagResult['choice'] = '';
-                        }
-                        $tagResult['tag'] = $this->profileMetadataManager->translateLanguageToLocale($tagResult['tag'], $locale);
-                    }
-                    $tagsResult[$typeName][] = $tagResult;
-                }
-            }
-        }
-
-        return $tagsResult;
     }
 
     protected function getUserAndProfileNodesById($id)
@@ -253,11 +219,12 @@ class ProfileModel
         return array($userNode, $profileNode);
     }
 
+    //TODO: Divide in saveProfileData and saveProfileOptionsData
     protected function saveProfileData($id, array $data)
     {
         $metadata = $this->profileMetadataManager->getMetadata();
-        $options = $this->getProfileNodeOptions($id);
-        $tags = $this->getProfileNodeTags($id);
+        $currentOptions = $this->profileOptionManager->getUserProfileOptions($id);
+        $tags = $this->profileOptionManager->getUserProfileTags($id);
 
         if (isset($data['objective']) && in_array('human-contact', $data['objective'])) {
             $data['orientationRequired'] = true;
@@ -289,8 +256,8 @@ class ProfileModel
                             ->with('profile');
                         break;
                     case 'birthday':
-                        $zodiacSign = $this->getZodiacSignFromDate($fieldValue);
-                        if (isset($options['zodiacSign'])) {
+                        $zodiacSign = $this->metadataUtilities->getZodiacSignFromDate($fieldValue);
+                        if (isset($currentOptions['zodiacSign'])) {
                             $qb->match('(profile)<-[zodiacSignRel:OPTION_OF]-(zs:ZodiacSign)')
                                 ->delete('zodiacSignRel')
                                 ->with('profile');
@@ -321,13 +288,13 @@ class ProfileModel
                             ->with('profile');
                         break;
                     case 'choice':
-                        if (isset($options[$fieldName])) {
-                            $qb->optionalMatch('(profile)<-[optionRel:OPTION_OF]-(:' . $this->profileMetadataManager->typeToLabel($fieldName) . ')')
+                        if (isset($currentOptions[$fieldName])) {
+                            $qb->optionalMatch('(profile)<-[optionRel:OPTION_OF]-(:' . $this->metadataUtilities->typeToLabel($fieldName) . ')')
                                 ->delete('optionRel')
                                 ->with('profile');
                         }
                         if (!is_null($fieldValue)) {
-                            $qb->match('(option:' . $this->profileMetadataManager->typeToLabel($fieldName) . ' {id: { ' . $fieldName . ' }})')
+                            $qb->match('(option:' . $this->metadataUtilities->typeToLabel($fieldName) . ' {id: { ' . $fieldName . ' }})')
                                 ->merge('(profile)<-[:OPTION_OF]-(option)')
                                 ->setParameter($fieldName, $fieldValue)
                                 ->with('profile');
@@ -340,14 +307,14 @@ class ProfileModel
                             ->setParameter('id', (int)$id)
                             ->with('profile');
 
-                        if (isset($options[$fieldName])) {
-                            $qbDoubleChoice->optionalMatch('(profile)<-[doubleChoiceOptionRel:OPTION_OF]-(:' . $this->profileMetadataManager->typeToLabel($fieldName) . ')')
+                        if (isset($currentOptions[$fieldName])) {
+                            $qbDoubleChoice->optionalMatch('(profile)<-[doubleChoiceOptionRel:OPTION_OF]-(:' . $this->metadataUtilities->typeToLabel($fieldName) . ')')
                                 ->delete('doubleChoiceOptionRel')
                                 ->with('profile');
                         }
                         if (isset($fieldValue['choice'])) {
                             $detail = !is_null($fieldValue['detail']) ? $fieldValue['detail'] : '';
-                            $qbDoubleChoice->match('(option:' . $this->profileMetadataManager->typeToLabel($fieldName) . ' {id: { ' . $fieldName . ' }})')
+                            $qbDoubleChoice->match('(option:' . $this->metadataUtilities->typeToLabel($fieldName) . ' {id: { ' . $fieldName . ' }})')
                                 ->merge('(profile)<-[:OPTION_OF {detail: {' . $fieldName . '_detail}}]-(option)')
                                 ->setParameter($fieldName, $fieldValue['choice'])
                                 ->setParameter($fieldName . '_detail', $detail);
@@ -366,13 +333,13 @@ class ProfileModel
                                 ->setParameter('id', (int)$id)
                                 ->with('profile');
 
-                            $qbTagsAndChoice->optionalMatch('(profile)<-[tagsAndChoiceOptionRel:TAGGED]-(:' . $this->profileMetadataManager->typeToLabel($fieldName) . ')')
+                            $qbTagsAndChoice->optionalMatch('(profile)<-[tagsAndChoiceOptionRel:TAGGED]-(:' . $this->metadataUtilities->typeToLabel($fieldName) . ')')
                                 ->delete('tagsAndChoiceOptionRel');
 
                             $savedTags = array();
                             foreach ($fieldValue as $index => $value) {
                                 $tagValue = $fieldName === 'language' ?
-                                    $this->profileMetadataManager->getLanguageFromTag($value['tag']) :
+                                    $this->metadataUtilities->getLanguageFromTag($value['tag']) :
                                     $value['tag'];
                                 if (in_array($tagValue, $savedTags)) {
                                     continue;
@@ -383,7 +350,7 @@ class ProfileModel
                                 $choiceParameter = $fieldName . '_choice_' . $index;
 
                                 $qbTagsAndChoice->with('profile')
-                                    ->merge('(' . $tagLabel . ':ProfileTag:' . $this->profileMetadataManager->typeToLabel($fieldName) . ' {name: { ' . $tagParameter . ' }})')
+                                    ->merge('(' . $tagLabel . ':ProfileTag:' . $this->metadataUtilities->typeToLabel($fieldName) . ' {name: { ' . $tagParameter . ' }})')
                                     ->merge('(profile)<-[:TAGGED {detail: {' . $choiceParameter . '}}]-(' . $tagLabel . ')')
                                     ->setParameter($tagParameter, $tagValue)
                                     ->setParameter($choiceParameter, $choice);
@@ -401,14 +368,14 @@ class ProfileModel
                             ->setParameter('id', (int)$id)
                             ->with('profile');
 
-                        if (isset($options[$fieldName])) {
-                            $qbMultipleChoices->optionalMatch('(profile)<-[optionRel:OPTION_OF]-(:' . $this->profileMetadataManager->typeToLabel($fieldName) . ')')
+                        if (isset($currentOptions[$fieldName])) {
+                            $qbMultipleChoices->optionalMatch('(profile)<-[optionRel:OPTION_OF]-(:' . $this->metadataUtilities->typeToLabel($fieldName) . ')')
                                 ->delete('optionRel')
                                 ->with('profile');
                         }
                         if (is_array($fieldValue)) {
                             foreach ($fieldValue as $index => $value) {
-                                $qbMultipleChoices->match('(option:' . $this->profileMetadataManager->typeToLabel($fieldName) . ' {id: { ' . $index . ' }})')
+                                $qbMultipleChoices->match('(option:' . $this->metadataUtilities->typeToLabel($fieldName) . ' {id: { ' . $index . ' }})')
                                     ->merge('(profile)<-[:OPTION_OF]-(option)')
                                     ->setParameter($index, $value)
                                     ->with('profile');
@@ -422,14 +389,14 @@ class ProfileModel
                     case 'tags':
                         if (isset($tags[$fieldName])) {
                             foreach ($tags[$fieldName] as $tag) {
-                                $qb->optionalMatch('(profile)<-[tagRel:TAGGED]-(tag:' . $this->profileMetadataManager->typeToLabel($fieldName) . ' {name: "' . $tag . '" })')
+                                $qb->optionalMatch('(profile)<-[tagRel:TAGGED]-(tag:' . $this->metadataUtilities->typeToLabel($fieldName) . ' {name: "' . $tag . '" })')
                                     ->delete('tagRel')
                                     ->with('profile');
                             }
                         }
                         if (is_array($fieldValue) && !empty($fieldValue)) {
                             foreach ($fieldValue as $tag) {
-                                $qb->merge('(tag:ProfileTag:' . $this->profileMetadataManager->typeToLabel($fieldName) . ' {name: "' . $tag . '" })')
+                                $qb->merge('(tag:ProfileTag:' . $this->metadataUtilities->typeToLabel($fieldName) . ' {name: "' . $tag . '" })')
                                     ->merge('(profile)<-[:TAGGED]-(tag)')
                                     ->with('profile');
                             }
@@ -450,86 +417,5 @@ class ProfileModel
         $result = $query->getResultSet();
 
         return $this->build($result->current());
-    }
-
-    protected function getProfileNodeOptions($id)
-    {
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(option:ProfileOption)-[optionOf:OPTION_OF]->(profile:Profile)-[:PROFILE_OF]->(user:User)')
-            ->where('user.qnoow_id = { id }')
-            ->setParameter('id', $id)
-            ->returns('profile, collect(distinct {option: option, detail: (CASE WHEN EXISTS(optionOf.detail) THEN optionOf.detail ELSE null END)}) AS options');
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        $options = array();
-        foreach ($result as $row) {
-            $options += $this->profileOptionManager->buildOptions($row);
-        }
-
-        return $options;
-    }
-
-    protected function getProfileNodeTags($id)
-    {
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(tag:ProfileTag)-[tagged:TAGGED]->(profile:Profile)-[:PROFILE_OF]->(user:User)')
-            ->where('user.qnoow_id = { id }')
-            ->setParameter('id', $id)
-            ->returns('profile', 'collect(distinct {tag: tag, tagged: tagged}) AS tags');
-
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
-
-        $tags = array();
-        foreach ($result as $row) {
-            $tags += $this->buildTags($row);
-        }
-
-        return $tags;
-    }
-
-    /*
-     * Please don't believe in this crap
-     */
-    protected function getZodiacSignFromDate($date)
-    {
-
-        $sign = null;
-        $birthday = \DateTime::createFromFormat('Y-m-d', $date);
-
-        $zodiac[356] = 'capricorn';
-        $zodiac[326] = 'sagittarius';
-        $zodiac[296] = 'scorpio';
-        $zodiac[266] = 'libra';
-        $zodiac[235] = 'virgo';
-        $zodiac[203] = 'leo';
-        $zodiac[172] = 'cancer';
-        $zodiac[140] = 'gemini';
-        $zodiac[111] = 'taurus';
-        $zodiac[78] = 'aries';
-        $zodiac[51] = 'pisces';
-        $zodiac[20] = 'aquarius';
-        $zodiac[0] = 'capricorn';
-
-        if (!$date) {
-            return $sign;
-        }
-
-        $dayOfTheYear = $birthday->format('z');
-        $isLeapYear = $birthday->format('L');
-        if ($isLeapYear && ($dayOfTheYear > 59)) {
-            $dayOfTheYear = $dayOfTheYear - 1;
-        }
-
-        foreach ($zodiac as $day => $sign) {
-            if ($dayOfTheYear > $day) {
-                break;
-            }
-        }
-
-        return $sign;
     }
 }

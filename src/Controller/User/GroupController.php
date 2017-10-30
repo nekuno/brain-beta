@@ -30,7 +30,7 @@ class GroupController
         $data = $request->request->all();
 
         $data['createdBy'] = $user->getId();
-        $createdGroup = $app['users.groups.model']->create($data);
+        $createdGroup = $app['group.service']->create($data);
         $app['users.groups.model']->addUser($createdGroup->getId(), $user->getId());
 
         $data['groupId'] = $createdGroup->getId();
@@ -43,26 +43,6 @@ class GroupController
 
         $createdGroup->setInvitation($createdInvitation);
         return $app->json($createdGroup, 201);
-    }
-
-
-    /**
-     * @param Request $request
-     * @param Application $app
-     * @param User $user
-     * @param integer $groupId
-     * @return \Symfony\Component\HttpFoundation\JsonResponse
-     * @throws \Exception
-     */
-    public function getMembersAction(Request $request, Application $app, User $user, $groupId)
-    {
-        $paginator = $app['paginator'];
-        $groupContentModel = $app['users.group.members.model'];
-        $filters = array('groupId' => (int)$groupId, 'userId' => $user->getId());
-
-        $content = $paginator->paginate($filters, $groupContentModel, $request);
-
-        return $app->json($content);
     }
 
     public function getContentsAction(Request $request, Application $app, $groupId)

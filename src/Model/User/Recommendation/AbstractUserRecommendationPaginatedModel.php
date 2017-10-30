@@ -5,8 +5,8 @@ namespace Model\User\Recommendation;
 use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
 use Manager\PhotoManager;
+use Model\Metadata\MetadataUtilities;
 use Model\Neo4j\GraphManager;
-use Model\Metadata\ProfileMetadataManager;
 use Model\User\ProfileModel;
 use Model\Metadata\UserFilterMetadataManager;
 use Paginator\PaginatedInterface;
@@ -18,10 +18,7 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
      */
     protected $gm;
 
-    /**
-     * @var ProfileMetadataManager
-     */
-    protected $profileMetadataManager;
+    protected $metadataUtilities;
 
     /**
      * @var UserFilterMetadataManager
@@ -38,10 +35,10 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
      */
     protected $profileModel;
 
-    public function __construct(GraphManager $gm, ProfileMetadataManager $profileMetadataManager, UserFilterMetadataManager $userFilterMetadataManager, PhotoManager $pm, ProfileModel $profileModel)
+    public function __construct(GraphManager $gm, MetadataUtilities $metadataUtilities, UserFilterMetadataManager $userFilterMetadataManager, PhotoManager $pm, ProfileModel $profileModel)
     {
         $this->gm = $gm;
-        $this->profileMetadataManager = $profileMetadataManager;
+        $this->metadataUtilities = $metadataUtilities;
         $this->userFilterMetadataManager = $userFilterMetadataManager;
         $this->pm = $pm;
         $this->profileModel = $profileModel;
@@ -55,9 +52,9 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
     public function validateFilters(array $filters)
     {
         $hasId = isset($filters['id']);
-        $hasProfileFilters = isset($filters['profileFilters']);
+//        $hasProfileFilters = isset($filters['userFilters']);
 
-        return $hasId && $hasProfileFilters;
+        return $hasId;
     }
 
     public function getUsersByPopularity(array $filtersArray, $offset, $limit, $additionalCondition = null)
@@ -146,10 +143,12 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
 
     protected function applyFilters(array $filters)
     {
+        $filters = $filters['userFilters'];
+
         $conditions = array();
         $matches = array();
 
-        $metadata = $this->getMetadata();
+        $metadata = $this->userFilterMetadataManager->getMetadata();
         foreach ($metadata as $name => $filter) {
             $value = isset($filters[$name]) ? $filters[$name] : null;
             if ($value && !empty($value)) {
@@ -179,7 +178,7 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
                     case 'birthday_range':
                         $age_min = isset($value['min']) ? $value['min'] : null;
                         $age_max = isset($value['max']) ? $value['max'] : null;
-                        $birthdayRange = $this->profileMetadataManager->getBirthdayRangeFromAgeRange($age_min, $age_max);
+                        $birthdayRange = $this->metadataUtilities->getBirthdayRangeFromAgeRange($age_min, $age_max);
                         $min = $birthdayRange['min'];
                         $max = $birthdayRange['max'];
                         if ($min) {
@@ -204,12 +203,12 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
                         $matches[] = $query;
                         break;
                     case 'double_choice':
-                        $profileLabelName = $this->profileMetadataManager->typeToLabel($name);
+                        $profileLabelName = $this->metadataUtilities->typeToLabel($name);
                         $value = implode("', '", $value);
                         $matches[] = "(p)<-[:OPTION_OF]-(option$name:$profileLabelName) WHERE option$name.id IN ['$value']";
                         break;
                     case 'double_multiple_choices':
-                        $profileLabelName = $this->profileMetadataManager->typeToLabel($name);
+                        $profileLabelName = $this->metadataUtilities->typeToLabel($name);
                         $matchQuery = "(p)<-[rel$name:OPTION_OF]-(option$name:$profileLabelName)";
                         $whereQueries = array();
                         $choices = $value['choices'];
@@ -228,7 +227,7 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
                         $matches[] = $matchQuery . ' WHERE (' . implode(' OR ', $whereQueries) . ')';
                         break;
                     case 'choice_and_multiple_choices':
-                        $profileLabelName = $this->profileMetadataManager->typeToLabel($name);
+                        $profileLabelName = $this->metadataUtilities->typeToLabel($name);
                         $matchQuery = "(p)<-[rel$name:OPTION_OF]-(option$name:$profileLabelName)";
                         $whereQueries = array();
                         $choice = $value['choice'];
@@ -245,16 +244,16 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
                         $matches[] = $matchQuery . ' WHERE (' . implode(' OR ', $whereQueries) . ')';
                         break;
                     case 'tags':
-                        $tagLabelName = $this->profileMetadataManager->typeToLabel($name);
+                        $tagLabelName = $this->metadataUtilities->typeToLabel($name);
                         $matches[] = "(p)<-[:TAGGED]-(tag$name:$tagLabelName) WHERE tag$name.name = '$value'";
                         break;
                     case 'tags_and_choice':
-                        $tagLabelName = $this->profileMetadataManager->typeToLabel($name);
+                        $tagLabelName = $this->metadataUtilities->typeToLabel($name);
                         $matchQuery = "(p)<-[rel$name:TAGGED]-(tag$name:ProfileTag:$tagLabelName)";
                         $whereQueries = array();
                         foreach ($value as $dataValue) {
                             $tagValue = $name === 'language' ?
-                                $this->profileMetadataManager->getLanguageFromTag($dataValue['tag']) :
+                                $this->metadataUtilities->getLanguageFromTag($dataValue['tag']) :
                                 $dataValue['tag'];
                             $choice = isset($dataValue['choices']) ? $dataValue['choices'] : null;
                             $whereQuery = " tag$name.name = '$tagValue'";
@@ -267,12 +266,12 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
                         $matches[] = $matchQuery . ' WHERE (' . implode('OR', $whereQueries) . ')';
                         break;
                     case 'tags_and_multiple_choices':
-                        $tagLabelName = $this->profileMetadataManager->typeToLabel($name);
+                        $tagLabelName = $this->metadataUtilities->typeToLabel($name);
                         $matchQuery = "(p)<-[rel$name:TAGGED]-(tag$name:ProfileTag:$tagLabelName)";
                         $whereQueries = array();
                         foreach ($value as $dataValue) {
                             $tagValue = $name === 'language' ?
-                                $this->profileMetadataManager->getLanguageFromTag($dataValue['tag']) :
+                                $this->metadataUtilities->getLanguageFromTag($dataValue['tag']) :
                                 $dataValue['tag'];
                             $choices = isset($dataValue['choices']) ? $dataValue['choices'] : array();
 
@@ -297,19 +296,11 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
         );
     }
 
-    protected function getMetadata()
-    {
-        $profileMetadata = $this->profileMetadataManager->getMetadata();
-        $userMetadata = $this->userFilterMetadataManager->getMetadata();
-
-        return $userMetadata + $profileMetadata;
-    }
-
     protected function getChoiceMatch($name, $value)
     {
         $queries = array();
 
-        $profileLabelName = $this->profileMetadataManager->typeToLabel($name);
+        $profileLabelName = $this->metadataUtilities->typeToLabel($name);
         $needsDescriptiveGenderFix = $name === 'descriptiveGender' && (in_array('man', $value) || in_array('woman', $value));
         if ($needsDescriptiveGenderFix) {
             $gendersArray = ['man' => 'male', 'woman' => 'female'];
@@ -330,11 +321,6 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
         return implode(' MATCH ', $queries);
     }
 
-    protected function getProfileFilterMetadata()
-    {
-        return $this->profileMetadataManager->getMetadata();
-    }
-
     /**
      * @param array $filters
      * @return array
@@ -344,7 +330,7 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
         $conditions = array();
         $matches = array();
 
-        $userFilterMetadata = $this->getUserFilterMetadata();
+        $userFilterMetadata = $this->userFilterMetadataManager->getMetadata();
         foreach ($userFilterMetadata as $name => $filter) {
             if (isset($filters[$name]) && !empty($filters[$name])) {
                 $value = $filters[$name];
@@ -366,11 +352,6 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
             'conditions' => $conditions,
             'matches' => $matches
         );
-    }
-
-    protected function getUserFilterMetadata()
-    {
-        return $this->userFilterMetadataManager->getMetadata();
     }
 
     /**

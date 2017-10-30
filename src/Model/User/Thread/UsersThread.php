@@ -33,7 +33,7 @@ class UsersThread extends Thread
 
         $array += array(
             'category' => ThreadManager::LABEL_THREAD_USERS,
-            'filters' => $this->getFilterUsers(),
+            'filters' => array('userFilters' => $this->getFilterUsers()),
         );
 
         return $array;
