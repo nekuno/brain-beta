@@ -97,6 +97,11 @@ api_consumer.config:
             consumer_secret: %facebook.consumer_secret%
             redirect_uri: %facebook.redirect_uri%
 
+        instagram:
+            consumer_key: %instagram.consumer_key%
+            consumer_secret: %instagram.consumer_secret%
+            redirect_uri: %instagram.redirect_uri%
+
 admin_domain_plus_post: %admin.domain_plus_port%
 social_host: %social.host%
 

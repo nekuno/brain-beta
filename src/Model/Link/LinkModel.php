@@ -988,7 +988,7 @@ class LinkModel
     //TODO: Refactor this to use locale keys or move them to fields.yml
     public static function getValidTypes()
     {
-        return array('Audio', 'Video', 'Image', 'Link', 'Creator', 'CreatorFacebook', 'CreatorTwitter');
+        return array('Audio', 'Video', 'Image', 'Link', 'Creator', 'CreatorFacebook', 'CreatorTwitter', 'CreatorInstagram');
     }
 
     public function buildOptionalTypesLabel($filters)
