@@ -24,8 +24,9 @@ class QuestionsAdminPaginatedModel extends QuestionAdminManager implements Pagin
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(q:Question)')
             ->optionalMatch('(q)<-[s:SKIPS]-(:User)')
+            ->with('q', 'count(s) AS skipped')
             ->optionalMatch('(q)<-[r:RATES]-(:User)')
-            ->with('q', 'count(s) AS skipped', 'count(r) AS answered')
+            ->with('q', 'skipped', 'count(r) AS answered')
             ->orderBy("$order $orderDir");
 
         if (!is_null($offset)) {
