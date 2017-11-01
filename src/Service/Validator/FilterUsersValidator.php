@@ -31,12 +31,13 @@ class FilterUsersValidator extends Validator
         $choices = array();
         if (!empty($data) && $userId) {
             $groupChoices = $this->metadataService->getGroupChoices($userId);
-            foreach ($groupChoices as $key => $value)
-            {
+            foreach ($groupChoices as $key => $value) {
                 $groupChoices[$key] = $key;
             }
             $choices = array('groups' => $groupChoices);
         }
-        $this->validateMetadata($data, $this->metadata, $choices);
+        $metadata = $this->metadataService->getUserFilterMetadata('en', $userId);
+        $metadata = $this->metadataService->changeChoicesToIds($metadata);
+        $this->validateMetadata($data['userFilters'], $metadata, $choices);
     }
 }

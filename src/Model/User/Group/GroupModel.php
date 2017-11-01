@@ -7,8 +7,6 @@ use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Manager\PhotoManager;
 use Model\Neo4j\GraphManager;
-use Model\User\Filters\FilterUsersManager;
-use Manager\UserManager;
 use Service\Validator\GroupValidator;
 use Service\Validator\ValidatorInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -23,29 +21,14 @@ class GroupModel
     protected $gm;
 
     /**
-     * @var UserManager
-     */
-    protected $um;
-
-    /**
      * @var PhotoManager
      */
     protected $pm;
 
     /**
-     * @var FilterUsersManager
-     */
-//    protected $filterUsersManager;
-
-    /**
      * @var EventDispatcher
      */
     protected $dispatcher;
-
-    /**
-     * @var GroupValidator
-     */
-    protected $validator;
 
     /**
      * @var string
@@ -55,20 +38,14 @@ class GroupModel
     /**
      * @param GraphManager $gm
      * @param EventDispatcher $dispatcher
-     * @param UserManager $um
      * @param PhotoManager $pm
-     * @param FilterUsersManager $filterUsersManager
-     * @param GroupValidator|ValidatorInterface $validator
      * @param $invitationImagesRoot
      */
-    public function __construct(GraphManager $gm, EventDispatcher $dispatcher, UserManager $um, PhotoManager $pm, GroupValidator $validator, $invitationImagesRoot)
+    public function __construct(GraphManager $gm, EventDispatcher $dispatcher, PhotoManager $pm, $invitationImagesRoot)
     {
         $this->gm = $gm;
-        $this->um = $um;
         $this->pm = $pm;
         $this->dispatcher = $dispatcher;
-//        $this->filterUsersManager = $filterUsersManager;
-        $this->validator = $validator;
         $this->invitationImagesRoot = $invitationImagesRoot;
     }
 
@@ -204,33 +181,8 @@ class GroupModel
         return $this->build($row);
     }
 
-    public function validateOnCreate(array $data)
-    {
-        $this->validator->validateOnCreate($data);
-    }
-
-    public function validateOnUpdate(array $data, $groupId)
-    {
-        $data['groupId'] = $groupId;
-        $this->validator->validateOnUpdate($data);
-    }
-
-    public function validateOnDelete($groupId, $userId)
-    {
-        $data = array('groupId' => $groupId, 'userId' => $userId);
-        $this->validator->validateOnDelete($data);
-    }
-
-    protected function validateOnAddUser($groupId, $userId)
-    {
-        $data = array('groupId' => $groupId, 'userId' => $userId);
-        $this->validator->validateOnAddUser($data);
-    }
-
     public function create(array $data)
     {
-        $this->validateOnCreate($data);
-
         $qb = $this->gm->createQueryBuilder();
 
         $qb->create('(g:Group)')
@@ -304,8 +256,6 @@ class GroupModel
 
     public function update($id, array $data)
     {
-        $this->validateOnUpdate($data, $id);
-
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(g:Group)')
             ->where('id(g) = { id }')
@@ -396,8 +346,6 @@ class GroupModel
 
     public function addUser($id, $userId)
     {
-        $this->validateOnAddUser($id, $userId);
-
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(g:Group)')
             ->where('id(g) = { id }')
@@ -424,8 +372,6 @@ class GroupModel
 
     public function addGhostUser($id, $userId)
     {
-        $this->validateOnAddUser($id, $userId);
-
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(g:Group)')
             ->where('id(g) = { id }')
@@ -444,8 +390,6 @@ class GroupModel
 
     public function removeUser($id, $userId)
     {
-        $this->validateOnDelete($id, $userId);
-
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(g:Group)')
             ->where('id(g) = { id }')

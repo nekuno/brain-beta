@@ -46,7 +46,7 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['register.service'] = $app->share(
             function (Application $app) {
-                return new RegisterService($app['users.manager'], $app['users.ghostuser.manager'], $app['users.tokens.model'], $app['users.profile.model'], $app['users.invitations.model'], $app['users.groups.model'], $app['dispatcher']);
+                return new RegisterService($app['users.manager'], $app['users.ghostuser.manager'], $app['users.tokens.model'], $app['users.profile.model'], $app['users.invitations.model'], $app['group.service'], $app['dispatcher']);
             }
         );
 
@@ -120,7 +120,7 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['validator.factory'] = $app->share(
             function (Application $app) {
-                return new ValidatorFactory($app['neo4j.graph_manager'], $app['users.metadataManager.factory'], $app['validator.config']);
+                return new ValidatorFactory($app['neo4j.graph_manager'], $app['metadata.service'], $app['validator.config']);
             }
         );
 
@@ -188,7 +188,7 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['group.service'] = $app->share(
             function (Application $app) {
-                return new GroupService($app['users.groups.model'], $app['users.filterusers.manager']);
+                return new GroupService($app['users.groups.model'], $app['users.filterusers.manager'], $app['validator.factory']);
             }
         );
     }

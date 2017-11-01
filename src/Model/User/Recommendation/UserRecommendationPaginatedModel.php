@@ -26,7 +26,7 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
             unset($filtersArray['userFilters']['order']);
         }
 
-        $filters = $this->applyFilters($filtersArray);
+        $appliedFilters = $this->applyFilters($filtersArray);
 
         $return = array('items' => array());
 
@@ -58,10 +58,10 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
         $qb->optionalMatch('(p)-[:LOCATION]->(l:Location)');
 
         $qb->with('u, anyUser, hasCommonObjectives, matching_questions, similarity, p, l');
-        $qb->where($filters['conditions'])
+        $qb->where($appliedFilters['conditions'])
             ->with('u', 'anyUser', 'hasCommonObjectives', 'matching_questions', 'similarity', 'p', 'l');
 
-        foreach ($filters['matches'] as $match) {
+        foreach ($appliedFilters['matches'] as $match) {
             $qb->match($match);
         }
 
@@ -100,10 +100,10 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
         if ($needContent) {
 
             $foreign = 0;
-            if (isset($filters['foreign'])) {
-                $foreign = $filters['foreign'];
+            if (isset($filtersArray['foreign'])) {
+                $foreign = $filtersArray['foreign'];
             }
-            $foreignResult = $this->getForeignContent($filters, $needContent, $foreign);
+            $foreignResult = $this->getForeignContent($filtersArray, $needContent, $foreign);
             $return['items'] = array_merge($return['items'], $foreignResult['items']);
             $return['newForeign'] = $foreignResult['foreign'];
         }
@@ -111,11 +111,11 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
         $needContent = $this->needMoreContent($limit, $return);
         if ($needContent) {
             $ignored = 0;
-            if (isset($filters['ignored'])) {
-                $ignored = $filters['ignored'];
+            if (isset($filtersArray['ignored'])) {
+                $ignored = $filtersArray['ignored'];
             }
 
-            $ignoredResult = $this->getIgnoredContent($filters, $needContent, $ignored);
+            $ignoredResult = $this->getIgnoredContent($filtersArray, $needContent, $ignored);
             $return['items'] = array_merge($return['items'], $ignoredResult['items']);
             $return['newIgnored'] = $ignoredResult['ignored'];
         }
@@ -125,8 +125,7 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
 
     /**
      * Counts the total results from queryset.
-     * @param array $filters
-     * @throws \Exception
+     * @param array $filtersArray
      * @return int
      */
     public function countTotal(array $filtersArray)

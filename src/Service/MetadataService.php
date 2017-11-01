@@ -2,10 +2,9 @@
 
 namespace Service;
 
-use Model\Metadata\MetadataManager;
 use Model\Metadata\MetadataManagerFactory;
+use Model\Metadata\MetadataManagerInterface;
 use Model\Metadata\MetadataUtilities;
-use Model\Metadata\UserFilterMetadataManager;
 use Model\User\Group\GroupModel;
 use Model\User\ProfileOptionManager;
 
@@ -173,11 +172,26 @@ class MetadataService
 //        foreach ($choices)
     }
 
-    protected function getBasicMetadata($locale, $name)
+    public function getBasicMetadata($locale, $name)
     {
-        /** @var UserFilterMetadataManager $userFilterMetadataManager */
-        $userFilterMetadataManager = $this->getMetadataManager($name);
-        $metadata = $userFilterMetadataManager->getMetadata($locale);
+        /** @var MetadataManagerInterface $metadataManager */
+        $metadataManager = $this->getMetadataManager($name);
+        $metadata = $metadataManager->getMetadata($locale);
+
+        return $metadata;
+    }
+
+    public function changeChoicesToIds(array $metadata)
+    {
+        foreach ($metadata as &$field)
+        {
+            if (isset($field['choices']) && is_array($field['choices'])){
+                foreach ($field['choices'] as $id => $choice)
+                {
+                    $field['choices'][$id] = $id;
+                }
+            }
+        }
 
         return $metadata;
     }

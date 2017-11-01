@@ -268,7 +268,7 @@ class Fixtures
                     break;
                 }
                 $this->im->consume($invitation['invitation']['token'], $user->getId());
-                $this->gpm->addUser($group->getId(), $user->getId());
+                $this->groupService->addUser($group->getId(), $user->getId());
             }
         }
 

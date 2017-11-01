@@ -402,9 +402,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
 
         $app['users.groups.model'] = $app->share(
             function ($app) {
-                $groupValidator = $app['validator.factory']->build('groups');
-
-                return new GroupModel($app['neo4j.graph_manager'], $app['dispatcher'], $app['users.manager'], $app['users.photo.manager'], $groupValidator, $app['admin_domain_plus_post']);
+                return new GroupModel($app['neo4j.graph_manager'], $app['dispatcher'], $app['users.photo.manager'],$app['admin_domain_plus_post']);
             }
         );
 
