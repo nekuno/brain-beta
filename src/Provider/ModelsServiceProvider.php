@@ -16,6 +16,7 @@ use Model\User\Device\DeviceModel;
 use Model\User\ProfileOptionManager;
 use Model\User\Question\Admin\QuestionAdminBuilder;
 use Model\User\Question\Admin\QuestionAdminManager;
+use Model\User\Question\QuestionCorrelationManager;
 use Model\User\Question\QuestionModel;
 use Model\User\Affinity\AffinityModel;
 use Model\User\Question\AnswerManager;
@@ -199,6 +200,12 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
 
                 return new UserAnswerPaginatedModel($app['neo4j.graph_manager'], $app['users.answers.model']);
+            }
+        );
+
+        $app['users.questionCorrelation.manager'] = $app->share(
+            function ($app) {
+                return new QuestionCorrelationManager($app['neo4j.graph_manager']);
             }
         );
 
