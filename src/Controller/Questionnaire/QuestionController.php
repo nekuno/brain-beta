@@ -15,18 +15,18 @@ class QuestionController
      * @param Application $app
      * @return JsonResponse
      */
-    public function getQuestionsAction(Request $request, Application $app)
-    {
-        $locale = $this->getLocale($request, $app['locale.options']['default']);
-        $skip = $request->query->get('skip');
-        $limit = $request->query->get('limit', 10);
-        /* @var QuestionModel $model */
-        $model = $app['questionnaire.questions.model'];
-
-        $questions = $model->getAll($locale, $skip, $limit);
-
-        return $app->json($questions);
-    }
+//    public function getQuestionsAction(Request $request, Application $app)
+//    {
+//        $locale = $this->getLocale($request, $app['locale.options']['default']);
+//        $skip = $request->query->get('skip');
+//        $limit = $request->query->get('limit', 10);
+//        /* @var QuestionModel $model */
+//        $model = $app['questionnaire.questions.model'];
+//
+//        $questions = $model->getAll($locale, $skip, $limit);
+//
+//        return $app->json($questions);
+//    }
 
     /**
      * Returns an unanswered question for given user

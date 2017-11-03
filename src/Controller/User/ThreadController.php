@@ -2,10 +2,10 @@
 
 namespace Controller\User;
 
+use Model\User\Thread\Thread;
 use Model\User\Thread\ThreadPaginatedModel;
 use Model\User;
 use Paginator\Paginator;
-use Service\RecommendatorService;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -117,27 +117,30 @@ class ThreadController
      * @return array|string string if got an exception in production environment
      * @throws \Exception
      */
-    protected function getRecommendations($app, $thread, Request $request) {
-        /** @var RecommendatorService $recommendator */
+    protected function getRecommendations(Application $app, Thread $thread, Request $request)
+    {
+
         $recommendator = $app['recommendator.service'];
         try {
             $result = $recommendator->getRecommendationFromThreadAndRequest($thread, $request);
-
-            if (!$request->get('offset')){
-                $app['users.threads.manager']->cacheResults($thread,
-                    array_slice($result['items'], 0, 20),
-                    $result['pagination']['total']);
-            }
-
+//            $this->cacheRecommendations($app, $thread, $request, $result);
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
                 throw $e;
             } else {
                 return $e->getMessage();
-
             }
         }
 
         return $result;
+    }
+
+    protected function cacheRecommendations(Application $app, Thread $thread, Request $request, array $result)
+    {
+        $isFirstPage = !$request->get('offset');
+        if ($isFirstPage) {
+            $firstResults = array_slice($result['items'], 0, 20);
+            $app['users.threads.manager']->cacheResults($thread, $firstResults, $result['pagination']['total']);
+        }
     }
 }

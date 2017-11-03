@@ -27,10 +27,6 @@ privacy:
 categories:
     profile:
         - label:
-            en: Description
-            es: Descripción
-          fields: [description, descriptionImportant, descriptionTime, descriptionSkills, descriptionNotice, descriptionFan, descriptionLive, descriptionThinking, descriptionFriday, descriptionMessage]
-        - label:
             en: Basic
             es: Básicos
           fields: [objective, birthday, gender, descriptiveGender, location, orientation]
@@ -54,6 +50,10 @@ categories:
             en: Others
             es: Otros
           fields: [income, diet, pets, profession, allergy, sons, zodiacSign, handicap]
+        - label:
+            en: Description
+            es: Descripción
+          fields: [description, descriptionImportant, descriptionTime, descriptionSkills, descriptionNotice, descriptionFan, descriptionLive, descriptionThinking, descriptionFriday, descriptionMessage]
     filters:
         - label:
             en: Basic
