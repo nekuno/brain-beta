@@ -59,6 +59,8 @@ class TestingFixtures
      */
     protected $qm;
 
+    protected $correlationManager;
+
     /**
      * @var AnswerManager
      */
@@ -93,6 +95,7 @@ class TestingFixtures
         $this->im = $app['users.invitations.model'];
         $this->lm = $app['links.model'];
         $this->qm = $app['questionnaire.questions.model'];
+        $this->correlationManager = $app['users.questionCorrelation.manager'];
         $this->rm = $app['users.rate.model'];
         $this->logger = $app['logger'];
     }
@@ -396,8 +399,8 @@ class TestingFixtures
     private function calculateRegisterQuestions()
     {
         $this->logger->notice('Calculating uncorrelated questions');
-        $result = $this->qm->getUncorrelatedQuestions();
-        $this->qm->setDivisiveQuestions($result['questions']);
+        $result = $this->correlationManager->getUncorrelatedQuestions();
+        $this->correlationManager->setDivisiveQuestions($result['questions']);
         $this->logger->notice(sprintf('Obtained and saved %d questions', count($result['questions'])));
 
     }

@@ -58,6 +58,11 @@ class Fixtures
     protected $qm;
 
     /**
+     * @var User\Question\QuestionCorrelationManager
+     */
+    protected $correlationManager;
+
+    /**
      * @var AnswerManager
      */
     protected $am;
@@ -118,6 +123,7 @@ class Fixtures
         $this->im = $app['users.invitations.model'];
         $this->lm = $app['links.model'];
         $this->qm = $app['questionnaire.questions.model'];
+        $this->correlationManager = $app['users.questionCorrelation.manager'];
         $this->am = $app['users.answers.model'];
         $this->pm = $app['users.profile.model'];
         $this->prim = $app['users.privacy.model'];
@@ -584,8 +590,8 @@ Duis venenatis porta arcu sed luctus. Quisque eu mi sit amet tellus porttitor vu
     private function calculateRegisterQuestions()
     {
         $this->logger->notice('Calculating uncorrelated questions');
-        $result = $this->qm->getUncorrelatedQuestions();
-        $this->qm->setDivisiveQuestions($result['questions']);
+        $result = $this->correlationManager->getUncorrelatedQuestions();
+        $this->correlationManager->setDivisiveQuestions($result['questions']);
         $this->logger->notice(sprintf('Obtained and saved %d questions', count($result['questions'])));
 
     }
