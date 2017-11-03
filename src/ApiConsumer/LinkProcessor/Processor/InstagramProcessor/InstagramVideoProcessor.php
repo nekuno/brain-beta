@@ -19,6 +19,7 @@ class InstagramVideoProcessor extends AbstractInstagramProcessor
 
     public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
     {
+        parent::hydrateLink($preprocessedLink, $data);
         $link = $preprocessedLink->getFirstLink();
         $video = Video::buildFromArray($link->toArray());
         $title = isset($data['caption']['text']) ? $data['caption']['text'] : $data['link'];

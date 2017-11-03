@@ -4,6 +4,7 @@ namespace Model\Link;
 
 class Link implements \JsonSerializable
 {
+
     protected $id;
     protected $url;
     protected $title;
@@ -21,6 +22,7 @@ class Link implements \JsonSerializable
     protected $language;
     /** @var Link[] */
     protected $synonymous = array();
+    protected $additionalLabels = array();
 
     public static function buildFromArray(array $array)
     {
@@ -58,6 +60,9 @@ class Link implements \JsonSerializable
         }
         if (isset($array['timestamp'])) {
             $link->setCreated($array['timestamp']);
+        }
+        if (isset($array['additionalLabels'])) {
+            $link->setAdditionalLabels($array['additionalLabels']);
         }
 
         return $link;
@@ -337,6 +342,30 @@ class Link implements \JsonSerializable
     public function addSynonymous($synonymous)
     {
         $this->synonymous[] = $synonymous;
+    }
+
+    /**
+     * @return array
+     */
+    public function getAdditionalLabels()
+    {
+        return $this->additionalLabels;
+    }
+
+    /**
+     * @param array $additionalLabels
+     */
+    public function setAdditionalLabels($additionalLabels)
+    {
+        $this->additionalLabels = $additionalLabels;
+    }
+
+    /**
+     * @param string $additionalLabel
+     */
+    public function addAdditionalLabels($additionalLabel)
+    {
+        $this->additionalLabels[] = $additionalLabel;
     }
 
     public function isComplete()

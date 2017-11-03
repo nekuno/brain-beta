@@ -140,6 +140,7 @@ class YoutubeChannelProcessorTest extends AbstractProcessorTest
         $expected = new Link();
         $expected->setTitle('Efecto Pasillo');
         $expected->setDescription('Canal Oficial de Youtube de Efecto Pasillo.');
+        $expected->addAdditionalLabels(AbstractYoutubeProcessor::YOUTUBE_LABEL);
 
         return array(
             array(

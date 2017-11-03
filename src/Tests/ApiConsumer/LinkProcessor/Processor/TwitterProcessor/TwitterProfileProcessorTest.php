@@ -5,10 +5,11 @@ namespace Tests\ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
 use ApiConsumer\Exception\UrlNotValidException;
 use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\AbstractTwitterProcessor;
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterProfileProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
-use Model\Link\Creator\CreatorTwitter;
+use Model\Link\Creator;
 use Model\User\Token\TokensModel;
 use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
@@ -150,12 +151,14 @@ class TwitterProfileProcessorTest extends AbstractProcessorTest
 
     public function getResponseHydration()
     {
-        $expected = new CreatorTwitter();
+        $expected = new Creator();
         $expected->setTitle('yawmoght');
         $expected->setDescription('Tool developer & data junkie');
         $expected->setThumbnail('http://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png');
         $expected->setUrl('https://twitter.com/yawmoght');
         $expected->setCreated(time() * 1000);
+        $expected->addAdditionalLabels(AbstractTwitterProcessor::TWITTER_LABEL);
+
         return array(
             array(
                 $this->getProfileUrl(),
@@ -293,7 +296,7 @@ class TwitterProfileProcessorTest extends AbstractProcessorTest
             'description' => 'Tool developer & data junkie',
             'url' => 'https://twitter.com/yawmoght',
             'thumbnail' => "http://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png",
-            'additionalLabels' => array('Creator'),
+            'additionalLabels' => array('LinkTwitter', 'Creator'),
             'resource' => TokensModel::TWITTER,
             'timestamp' => 1000 * time(),
             'processed' => 1,

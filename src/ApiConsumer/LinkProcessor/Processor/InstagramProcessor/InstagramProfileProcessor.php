@@ -5,7 +5,7 @@ namespace ApiConsumer\LinkProcessor\Processor\InstagramProcessor;
 use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\InstagramUrlParser;
-use Model\Link\Creator\CreatorInstagram;
+use Model\Link\Creator;
 
 class InstagramProfileProcessor extends AbstractInstagramProcessor
 {
@@ -19,9 +19,10 @@ class InstagramProfileProcessor extends AbstractInstagramProcessor
 
     public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
     {
+        parent::hydrateLink($preprocessedLink, $data);
         $link = $preprocessedLink->getFirstLink();
         $data = $data['data'];
-        $creator = CreatorInstagram::buildFromArray($link->toArray());
+        $creator = Creator::buildFromArray($link->toArray());
         $creator->setDescription(isset($data['bio']) ? $data['bio'] : isset($data['full_name']) ? $data['full_name'] : $data['username']);
         $creator->setTitle(isset($data['full_name']) ? $data['full_name'] : $data['username']);
         $preprocessedLink->setFirstLink($creator);

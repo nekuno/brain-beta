@@ -141,6 +141,7 @@ class YoutubeVideoProcessorTest extends AbstractProcessorTest
         $expected->setDescription('En Mawi');
         $expected->setEmbedType('youtube');
         $expected->setEmbedId('zLgY05beCnY');
+        $expected->addAdditionalLabels(AbstractYoutubeProcessor::YOUTUBE_LABEL);
 
         return array(
             array(

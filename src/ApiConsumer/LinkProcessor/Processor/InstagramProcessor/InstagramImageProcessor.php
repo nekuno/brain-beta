@@ -19,6 +19,7 @@ class InstagramImageProcessor extends AbstractInstagramProcessor
 
     public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
     {
+        parent::hydrateLink($preprocessedLink, $data);
         $link = $preprocessedLink->getFirstLink();
         $image = Image::buildFromArray($link->toArray());
         $preprocessedLink->setFirstLink($image);

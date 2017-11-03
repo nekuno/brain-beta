@@ -10,6 +10,7 @@ use ApiConsumer\ResourceOwner\InstagramResourceOwner;
 
 abstract class AbstractInstagramProcessor extends AbstractAPIProcessor
 {
+    const INSTAGRAM_LABEL = 'LinkInstagram';
     /**
      * @var InstagramUrlParser
      */
@@ -19,6 +20,12 @@ abstract class AbstractInstagramProcessor extends AbstractAPIProcessor
      * @var InstagramResourceOwner
      */
     protected $resourceOwner;
+
+    public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
+    {
+        $link = $preprocessedLink->getFirstLink();
+        $link->addAdditionalLabels(self::INSTAGRAM_LABEL);
+    }
 
     public function getImages(PreprocessedLink $preprocessedLink, array $data)
     {

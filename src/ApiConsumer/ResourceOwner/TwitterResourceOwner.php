@@ -147,7 +147,6 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
             'thumbnail' => $this->urlParser->getOriginalProfileUrl($user, null),
             'thumbnailSmall' => $this->urlParser->getSmallProfileUrl($user, null),
             'thumbnailMedium' => $this->urlParser->getMediumProfileUrl($user, null),
-            'additionalLabels' => array('Creator', 'CreatorTwitter'),
             'resource' => TokensModel::TWITTER,
             'timestamp' => 1000 * time(),
             'processed' => 1

@@ -124,6 +124,7 @@ class FacebookStatusProcessorTest extends AbstractProcessorTest
         $expectedLink = new Link();
         $expectedLink->setTitle($this->getTitle());
         $expectedLink->setDescription($this->getDescription());
+        $expectedLink->addAdditionalLabels(AbstractFacebookProcessor::FACEBOOK_LABEL);
 
         return array(
             array(

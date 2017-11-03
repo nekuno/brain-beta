@@ -2,6 +2,7 @@
 
 namespace Model\Link;
 
+use ApiConsumer\LinkProcessor\Processor\ScraperProcessor\ScraperProcessor;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j;
@@ -233,10 +234,10 @@ class LinkModel
 
         $processed = isset($data['processed']) ? $data['processed'] : 1;
 
-        $additionalLabels = '';
-        if (isset($data['additionalLabels'])) {
-            $additionalLabels = ':' . implode(':', $data['additionalLabels']);
+        if (!isset($data['additionalLabels']) || empty($data['additionalLabels'])) {
+            $data['additionalLabels'] = array(ScraperProcessor::WEB_LABEL);
         }
+        $additionalLabels = ':' . implode(':', $data['additionalLabels']);
 
         $qb = $this->gm->createQueryBuilder();
 
@@ -988,7 +989,7 @@ class LinkModel
     //TODO: Refactor this to use locale keys or move them to fields.yml
     public static function getValidTypes()
     {
-        return array('Audio', 'Video', 'Image', 'Link', 'Creator', 'CreatorFacebook', 'CreatorTwitter', 'CreatorInstagram');
+        return array('Audio', 'Video', 'Image', 'Link', 'Creator', 'Web', 'LinkFacebook', 'LinkTwitter', 'LinkYoutube', 'LinkSpotify', 'LinkInstagram');
     }
 
     public function buildOptionalTypesLabel($filters)

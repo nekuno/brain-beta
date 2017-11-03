@@ -129,3 +129,7 @@ hwi_oauth:
             type:                spotify
             client_id:           %spotify.consumer_key%
             client_secret:       %spotify.consumer_secret%
+        instagram:
+            type:                instagram
+            client_id:           %instagram.consumer_key%
+            client_secret:       %instagram.consumer_secret%
