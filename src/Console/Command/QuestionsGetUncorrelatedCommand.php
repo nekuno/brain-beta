@@ -30,7 +30,7 @@ class QuestionsGetUncorrelatedCommand extends ApplicationAwareCommand
         $preselected = $input->getArgument('preselect');
 
         if ($input->getOption('correlated')) {
-            $correlations = $model->getAllCorrelations($preselected);
+            $correlations = $model->getCorrelatedQuestions($preselected);
 
             $correlations = $model->sortCorrelations($correlations);
 
