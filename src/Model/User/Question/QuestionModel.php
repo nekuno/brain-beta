@@ -33,42 +33,6 @@ class QuestionModel
         $this->validator = $validator;
     }
 
-    public function getAll($locale, $skip = null, $limit = null)
-    {
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(q:Question)')
-            ->where("EXISTS(q.text_$locale)")
-            ->match('(q)<-[:IS_ANSWER_OF]-(a:Answer)')
-            ->with('q', 'a')
-            ->orderBy('id(a)')
-            ->with('q, collect(a) AS answers')
-            ->optionalMatch('(q)<-[s:SKIPS]-(u:User)')
-            ->with('q', 'answers', 'COUNT(s) as count')
-            ->where('count <= 3')
-            ->returns('q AS question', 'answers')
-            ->orderBy('q.ranking DESC');
-
-        if (!is_null($skip)) {
-            $qb->skip($skip);
-        }
-
-        if (!is_null($limit)) {
-            $qb->limit($limit);
-        }
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        $return = array();
-
-        foreach ($result as $row) {
-            $return[] = $this->build($row, $locale);
-        }
-
-        return $return;
-    }
-
     public function getNextByUser($userId, $locale, $sortByRanking = true)
     {
         $divisiveQuestion = $this->getNextDivisiveQuestionByUserId($userId, $locale);
@@ -120,10 +84,12 @@ class QuestionModel
 
         $qb->match('(user:User {qnoow_id: { userId }}), (otherUser:User {qnoow_id: { otherUserId }})')
             ->match('(otherUser)-[:ANSWERS]->(a:Answer)-[:IS_ANSWER_OF]->(answeredOther:Question)')
-            ->setParameters(array(
-                'userId' => (int)$userId,
-                'otherUserId' => (int)$otherUserId,
-            ))
+            ->setParameters(
+                array(
+                    'userId' => (int)$userId,
+                    'otherUserId' => (int)$otherUserId,
+                )
+            )
             ->optionalMatch('(user)-[:ANSWERS]->(:Answer)-[:IS_ANSWER_OF]->(answered:Question)')
             ->optionalMatch('(user)-[:REPORTS]->(report:Question)')
             ->with('user', 'a', 'collect(answered) + collect(report) AS excluded')
@@ -151,24 +117,24 @@ class QuestionModel
         return $this->build($row, $locale);
     }
 
-	public function userHasCompletedRegisterQuestions($userId)
-	{
-		$qb = $this->gm->createQueryBuilder();
+    public function userHasCompletedRegisterQuestions($userId)
+    {
+        $qb = $this->gm->createQueryBuilder();
 
-		$qb->match('(user:User {qnoow_id: { userId }})', '(a:Answer)-[:IS_ANSWER_OF]->(:RegisterQuestion)')
-		   ->setParameter('userId', (int)$userId)
-		   ->where('NOT (user)-[:ANSWERS]->(a)')
-		   ->returns('COUNT(a)');
+        $qb->match('(user:User {qnoow_id: { userId }})', '(a:Answer)-[:IS_ANSWER_OF]->(:RegisterQuestion)')
+            ->setParameter('userId', (int)$userId)
+            ->where('NOT (user)-[:ANSWERS]->(a)')
+            ->returns('COUNT(a)');
 
-		$query = $qb->getQuery();
-		$result = $query->getResultSet();
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
 
-		if ($result->count() > 0) {
-			return true;
-		}
+        if ($result->count() > 0) {
+            return true;
+        }
 
-		return false;
-	}
+        return false;
+    }
 
     /**
      * @return bool
@@ -184,9 +150,9 @@ class QuestionModel
         return false;
     }
 
+    //TODO: Make answer existence optionalMatch
     public function getById($id, $locale)
     {
-
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(q:Question)<-[:IS_ANSWER_OF]-(a:Answer)')
             ->where('id(q) = { id }', "EXISTS(q.text_$locale)")
@@ -538,7 +504,6 @@ class QuestionModel
 
         $return = array(
             'questionId' => $question->getId(),
-            'text' => $question->getProperty('text_' . $locale),
             'maleAnswersCount' => $stats['maleAnswersCount'],
             'femaleAnswersCount' => $stats['femaleAnswersCount'],
             'youngAnswersCount' => $stats['youngAnswersCount'],
@@ -547,17 +512,32 @@ class QuestionModel
             'isRegisterQuestion' => $isRegisterQuestion,
         );
 
+        if (null !== $locale) {
+            $return['text'] = $question->getProperty('text_' . $locale);
+        } else {
+            $return['textEs'] = $question->getProperty('text_es');
+            $return['textEn'] = $question->getProperty('text_en');
+        }
+
         foreach ($row->offsetGet('answers') as $answer) {
 
             /* @var $answer Node */
-            $return['answers'][] = array(
+            $answerArray = array(
                 'answerId' => $answer->getId(),
-                'text' => $answer->getProperty('text_' . $locale),
                 'maleAnswersCount' => $maleAnswersStats[$answer->getId()],
                 'femaleAnswersCount' => $femaleAnswersStats[$answer->getId()],
                 'youngAnswersCount' => $youngAnswersStats[$answer->getId()],
                 'oldAnswersCount' => $oldAnswersStats[$answer->getId()],
             );
+
+            if (null !== $locale) {
+                $answerArray['text'] = $answer->getProperty('text_' . $locale);
+            } else {
+                $answerArray['textEs'] = $answer->getProperty('text_es');
+                $answerArray['textEn'] = $answer->getProperty('text_en');
+            }
+
+            $return['answers'][] = $answerArray;
         }
 
         $return['locale'] = $locale;
@@ -565,150 +545,7 @@ class QuestionModel
         return $return;
     }
 
-    /**
-     * @param $preselected integer how many questions are preselected by rating to be analyzed
-     * @return array
-     */
-    public function getUncorrelatedQuestions($preselected = 50)
-    {
-        $qb = $this->gm->createQueryBuilder();
-
-        $n = (integer)$preselected;
-        $parameters = array('preselected' => $n);
-        $qb->setParameters($parameters);
-
-        $qb->match('(q:Question)')
-            ->with('q')
-            ->orderBy('q.ranking DESC')
-            ->limit('{preselected}')
-            ->with('collect(q) AS questions')
-            ->match('(q1:Question),(q2:Question)')
-            ->where(
-                '(q1 in questions) AND (q2 in questions)',
-                'id(q1)<id(q2)'
-            )
-            ->with('q1,q2');
-
-        $qb->match('(q1)<-[:IS_ANSWER_OF]-(a1:Answer)')
-            ->match('(q2)<-[:IS_ANSWER_OF]-(a2:Answer)')
-            ->optionalMatch('(a1)<-[:ANSWERS]-(u:User)-[:ANSWERS]->(a2)')
-            ->with('id(q1) AS q1,id(q2) AS q2,id(a1) AS a1,id(a2) AS a2,count(distinct(u)) AS users')
-            ->with('q1, q2, sum(users) as totalUsers,  stdevp(users) AS std, (count(distinct(a1))+count(distinct(a2))) AS answers')
-            ->where('totalUsers>0')
-            ->with('q1, q2, std/totalUsers as normstd, answers')
-            ->with('q1,q2,normstd*sqrt(answers) as finalstd')
-            ->returns('q1,q2,finalstd');
-
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
-
-        $correlations = array();
-        /* @var $row Row */
-        foreach ($result as $row) {
-            $correlations[$row->offsetGet('q1')][$row->offsetGet('q2')] = $row->offsetGet('finalstd');
-        }
-
-        $correctCorrelations = array();
-        foreach ($correlations as $q1 => $array) {
-            foreach ($correlations as $q2 => $array2) {
-                if (!($q1 < $q2)) {
-                    continue;
-                }
-                $correctCorrelations[$q1][$q2] = isset($correlations[$q1][$q2]) ? $correlations[$q1][$q2] : 1;
-            }
-        }
-
-//        return $correlations;
-
-        //Size fixed at 4 questions / set
-        $minimum = 600;
-        $questions = array();
-        foreach ($correctCorrelations as $q1 => $c1) {
-            foreach ($correctCorrelations as $q2 => $c2) {
-                foreach ($correctCorrelations as $q3 => $c3) {
-                    foreach ($correctCorrelations as $q4 => $c4) {
-                        if (!($q1 < $q2 && $q2 < $q3 && $q3 < $q4)) {
-                            continue;
-                        }
-                        $foursome = $correctCorrelations[$q1][$q2] +
-                            $correctCorrelations[$q2][$q3] +
-                            $correctCorrelations[$q1][$q3] +
-                            $correctCorrelations[$q1][$q4] +
-                            $correctCorrelations[$q2][$q4] +
-                            $correctCorrelations[$q3][$q4];
-                        if ($foursome < $minimum) {
-                            $minimum = $foursome;
-                            $questions = array(
-                                'q1' => $q1,
-                                'q2' => $q2,
-                                'q3' => $q3,
-                                'q4' => $q4
-                            );
-                        }
-                    }
-                }
-            }
-        }
-
-        return array(
-            'totalCorrelation' => $minimum,
-            'questions' => $questions
-        );
-
-    }
-
-    public function setDivisiveQuestions(array $ids)
-    {
-        $questions = array();
-        foreach ($ids as $id) {
-            $questions[] = $this->setDivisiveQuestion($id);
-        }
-
-        return $questions;
-    }
-
-    public function setDivisiveQuestion($id)
-    {
-
-        $qb = $this->gm->createQueryBuilder();
-        $parameters = array('questionId' => (integer)$id);
-        $qb->setParameters($parameters);
-
-        $qb->match('(q:Question)')
-            ->where('id(q)={questionId}')
-            ->set('q :RegisterQuestion')
-            ->returns('q');
-
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
-
-        /* @var $row Row */
-        $row = $result->current();
-
-        return $row->offsetGet('q');
-    }
-
-    /**
-     * @return integer
-     * @throws \Exception
-     */
-    public function unsetDivisiveQuestions()
-    {
-        $qb = $this->gm->createQueryBuilder();
-
-        $qb->match('(q:RegisterQuestion)')
-            ->remove('q :RegisterQuestion')
-            ->returns('count(q) AS c');
-
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
-
-        /* @var $row Row */
-        $row = $result->current();
-
-        return $row->offsetGet('c');
-    }
-
+    //TODO: Fix this->build dependency and move to QuestionCorrelationManager
     public function getDivisiveQuestions($locale)
     {
 

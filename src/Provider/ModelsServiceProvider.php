@@ -14,6 +14,9 @@ use Model\User\ContactModel;
 use Model\User\Content\ContentReportModel;
 use Model\User\Device\DeviceModel;
 use Model\User\ProfileOptionManager;
+use Model\User\Question\Admin\QuestionAdminBuilder;
+use Model\User\Question\Admin\QuestionAdminManager;
+use Model\User\Question\QuestionCorrelationManager;
 use Model\User\Question\QuestionModel;
 use Model\User\Affinity\AffinityModel;
 use Model\User\Question\AnswerManager;
@@ -35,6 +38,7 @@ use Model\User\PrivacyModel;
 use Model\User\ProfileModel;
 use Model\User\ProfileTagModel;
 use Model\User\Question\QuestionComparePaginatedModel;
+use Model\User\Question\Admin\QuestionsAdminPaginatedModel;
 use Model\User\Question\UserAnswerPaginatedModel;
 use Model\User\RateModel;
 use Model\User\Recommendation\ContentPopularRecommendationPaginatedModel;
@@ -196,6 +200,12 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
 
                 return new UserAnswerPaginatedModel($app['neo4j.graph_manager'], $app['users.answers.model']);
+            }
+        );
+
+        $app['users.questionCorrelation.manager'] = $app->share(
+            function ($app) {
+                return new QuestionCorrelationManager($app['neo4j.graph_manager']);
             }
         );
 
@@ -378,6 +388,24 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
                 $validator = $app['validator.factory']->build('questions');
                 return new QuestionModel($app['neo4j.graph_manager'], $validator);
+            }
+        );
+
+        $app['questionnaire.admin.questions.model'] = $app->share(
+            function ($app) {
+                return new QuestionAdminManager($app['neo4j.graph_manager'], $app['questionnaire.questions.admin.builder']);
+            }
+        );
+
+        $app['questionnaire.questions.admin.builder'] = $app->share(
+            function () {
+                return new QuestionAdminBuilder();
+            }
+        );
+
+        $app['users.questions.paginated.model'] = $app->share(
+            function ($app) {
+                return new QuestionsAdminPaginatedModel($app['neo4j.graph_manager'], $app['questionnaire.questions.admin.builder']);
             }
         );
 

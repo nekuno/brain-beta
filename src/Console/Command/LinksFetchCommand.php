@@ -78,7 +78,7 @@ class LinksFetchCommand extends ApplicationAwareCommand
             try {
                 $links = $fetcherService->fetchUser($userId, $resource);
                 $dispatcher->dispatch(\AppEvents::PROCESS_START, new ProcessLinksEvent($userId, $resource, $links));
-                $processorService->reprocess($links, $userId);
+                $processorService->process($links, $userId);
                 $dispatcher->dispatch(\AppEvents::PROCESS_FINISH, new ProcessLinksEvent($userId, $resource, $links));
 
             } catch (\Exception $e) {
