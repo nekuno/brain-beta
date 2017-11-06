@@ -8,6 +8,7 @@ validator.config:
     invitations: Service\Validator\InvitationValidator
     profile: Service\Validator\ProfileValidator
     questions: Service\Validator\QuestionValidator
+    questions_admin: Service\Validator\QuestionAdminValidator
     tokens: Service\Validator\TokenValidator
     tokenStatus: Service\Validator\TokenStatusValidator
     default: Service\Validator\Validator

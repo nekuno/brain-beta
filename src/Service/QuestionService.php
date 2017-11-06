@@ -29,12 +29,9 @@ class QuestionService
 
     public function createQuestion(array $data)
     {
-//        $dataSets = $this->multilingualToLocales($data);
 
         $created = $this->questionAdminManager->create($data);
         $questionId = $created->getQuestionId();
-//        $dataSets[1]['questionId'] = $questionId;
-//        $this->questionModel->update($dataSets[1]);
 
         return $this->getOneMultilanguage($questionId);
     }
@@ -47,7 +44,6 @@ class QuestionService
         foreach ($dataSets as $dataSet)
         {
             $this->questionModel->update($dataSet);
-//            $updated[] = $this->questionAdminManager->getById($questionUpdated['id']);
         }
 
         return $this->getOneMultilanguage($data['questionId']);

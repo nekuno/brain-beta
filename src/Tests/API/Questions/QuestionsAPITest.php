@@ -11,6 +11,11 @@ abstract class QuestionsAPITest extends APITest
         return $this->getResponseByRouteWithCredentials('/questions', 'POST', $questionData, $loggedInUserId);
     }
 
+    public function createQuestionFromAdmin($questionData)
+    {
+        return $this->getResponseByRouteWithoutCredentials('/admin/questions', 'POST', $questionData);
+    }
+
     public function reportQuestion($questionId, $loggedInUserId = self::OWN_USER_ID)
     {
         $url = '/questions/' . $questionId . '/report';

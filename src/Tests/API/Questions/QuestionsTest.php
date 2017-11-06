@@ -8,10 +8,11 @@ class QuestionsTest extends QuestionsAPITest
 
     public function testQuestions()
     {
-        $this->assertQuestionCreation();
-        $this->assertNextQuestion();
-        $this->assertSkipQuestion();
-        $this->assertReportQuestions();
+//        $this->assertQuestionCreation();
+        $this->assertQuestionCreationFromAdmin();
+//        $this->assertNextQuestion();
+//        $this->assertSkipQuestion();
+//        $this->assertReportQuestions();
     }
 
     public function assertQuestionCreation()
@@ -22,6 +23,13 @@ class QuestionsTest extends QuestionsAPITest
 
         $response = $this->createQuestion($questionData, 1);
         $this->assertStatusCode($response, 201, 'Correct question creation');
+    }
+
+    public function assertQuestionCreationFromAdmin()
+    {
+        $questionData = $this->getCreateQuestionDataFromAdminA();
+        $response = $this->createQuestionFromAdmin($questionData);
+        $this->assertStatusCode($response, 201, 'Correct question creation from admin');
     }
 
     public function assertNextQuestion()
@@ -60,6 +68,18 @@ class QuestionsTest extends QuestionsAPITest
             'locale' => 'en',
             'text' => 'English text question A',
             'answers' => $answers
+        );
+    }
+
+    protected function getCreateQuestionDataFromAdminA()
+    {
+        return array(
+            'textEs' => 'Question text in Spanish',
+            'textEn' => 'Question text in English',
+            'answer1Es' => 'Answer 1 text in Spanish',
+            'answer1En' => 'Answer 1 text in English',
+            'answer2Es' => 'Answer 2 text in Spanish',
+            'answer2En' => 'Answer 2 text in English',
         );
     }
 

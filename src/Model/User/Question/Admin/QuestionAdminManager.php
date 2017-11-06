@@ -4,6 +4,7 @@ namespace Model\User\Question\Admin;
 
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
+use Service\Validator\ValidatorInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class QuestionAdminManager
@@ -12,15 +13,19 @@ class QuestionAdminManager
 
     protected $questionAdminBuilder;
 
+    protected $validator;
+
     /**
      * QuestionAdminManager constructor.
      * @param GraphManager $graphManager
      * @param QuestionAdminBuilder $questionAdminBuilder
+     * @param ValidatorInterface $validator
      */
-    public function __construct(GraphManager $graphManager, QuestionAdminBuilder $questionAdminBuilder)
+    public function __construct(GraphManager $graphManager, QuestionAdminBuilder $questionAdminBuilder, ValidatorInterface $validator)
     {
         $this->graphManager = $graphManager;
         $this->questionAdminBuilder = $questionAdminBuilder;
+        $this->validator = $validator;
     }
 
     public function getById($id)
@@ -57,7 +62,7 @@ class QuestionAdminManager
      */
     public function create(array $data)
     {
-//        $this->validateOnCreate($data);
+        $this->validateOnCreate($data);
 
         $answersData = $this->getAnswersTexts($data);
         $questionTexts = $this->getQuestionTexts($data);
@@ -134,5 +139,10 @@ class QuestionAdminManager
         }
 
         return $texts;
+    }
+
+    protected function validateOnCreate(array $data)
+    {
+        $this->validator->validateOnCreate($data);
     }
 }
