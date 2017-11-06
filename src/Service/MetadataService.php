@@ -39,9 +39,9 @@ class MetadataService
         $choices = $this->profileOptionManager->getLocaleOptions($locale);
         $metadata = $this->addChoices($metadata, $choices, $locale);
 
-        if ($userId){
+        if ($userId) {
             $groupChoices = $this->getGroupChoices($userId);
-            if (!empty($groupChoices)){
+            if (!empty($groupChoices)) {
                 $metadata['groups'] = $groupChoices;
             }
         }
@@ -53,7 +53,7 @@ class MetadataService
     {
         $metadata = $this->getBasicMetadata($locale, 'profile');
 
-        $choices = $this->profileOptionManager->getOptions();
+        $choices = $this->profileOptionManager->getLocaleOptions($locale);
         $metadata = $this->addChoices($metadata, $choices, $locale);
 
         return $metadata;
@@ -83,7 +83,7 @@ class MetadataService
 
     protected function getMetadataManager($name)
     {
-        if (isset($this->managers[$name])){
+        if (isset($this->managers[$name])) {
             return $this->managers[$name];
         }
 
@@ -95,35 +95,26 @@ class MetadataService
 
     protected function addChoices(array $metadata, array $choices, $locale)
     {
-        foreach ($metadata as $name => &$field)
-        {
+        foreach ($metadata as $name => &$field) {
             switch ($field['type']) {
                 case 'choice':
-                    $field = $this->addSingleChoices($field, $name, $choices);
-                    foreach ($field['choices'] as $choice)
-                    {
-                        $this->fixLocale($choice, $locale);
-                    }
+                    $field = $this->mergeSingleChoices($field, $name, $choices);
                     break;
                 case 'double_choice':
                 case 'double_multiple_choices':
                 case 'choice_and_multiple_choices':
-                    $field = $this->addSingleChoices($field, $name, $choices);
-//                    foreach ($field[])
-                        $field = $this->fixDoubleChoicesLocale($field, $locale);
+                    $field = $this->mergeSingleChoices($field, $name, $choices);
+                    $field = $this->fixDoubleChoicesLocale($field, $locale);
                     break;
                 case 'multiple_choices':
-                    $field = $this->addSingleChoices($field, $name, $choices);
+                    $field = $this->mergeSingleChoices($field, $name, $choices);
                     $field['max_choices'] = isset($field['max_choices']) ? $field['max_choices'] : 999;
                     $field['min_choices'] = isset($field['min_choices']) ? $field['min_choices'] : 0;
                     break;
                 case 'tags_and_choice':
-                    $field['choices'] = array();
-                    if (isset($field['choices'])) {
-                        foreach ($field['choices'] as $choice => $description) {
-                            $field['choices'][$choice] = $this->metadataUtilities->getLocaleString($description, $locale);
-                        }
-                    }
+                    $field = $this->mergeSingleChoices($field, $name, $choices);
+                    $field = $this->fixSingleChoicesLocale($field, $locale);
+
                     $field['top'] = $this->profileOptionManager->getTopProfileTags($name);
                     break;
                 case 'tags':
@@ -143,9 +134,14 @@ class MetadataService
      * @param $choices
      * @return array
      */
-    protected function addSingleChoices(array $field, $name, $choices)
+    protected function mergeSingleChoices(array $field, $name, $choices)
     {
-        $field['choices'] = isset($choices[$name]) ? $choices[$name] : array();
+        $configChoices = isset($field['choices']) && is_array($field['choices']) ? $field['choices'] : array();
+        $databaseChoices = isset($choices[$name]) ? $choices[$name] : array();
+        $allChoices = $configChoices + $databaseChoices;
+//        if (!empty($allChoices)) {
+            $field['choices'] = $allChoices;
+//        }
 
         return $field;
     }
@@ -167,9 +163,15 @@ class MetadataService
         return $field;
     }
 
-    protected function fixLocale($choices, $locale)
+    protected function fixSingleChoicesLocale($field, $locale)
     {
-//        foreach ($choices)
+        if (isset($field['choices'])) {
+            foreach ($field['choices'] as $choice => $description) {
+                $field['choices'][$choice] = $this->metadataUtilities->getLocaleString($description, $locale);
+            }
+        }
+
+        return $field;
     }
 
     public function getBasicMetadata($locale, $name)
@@ -183,11 +185,9 @@ class MetadataService
 
     public function changeChoicesToIds(array $metadata)
     {
-        foreach ($metadata as &$field)
-        {
-            if (isset($field['choices']) && is_array($field['choices'])){
-                foreach ($field['choices'] as $id => $choice)
-                {
+        foreach ($metadata as &$field) {
+            if (isset($field['choices']) && is_array($field['choices'])) {
+                foreach ($field['choices'] as $id => $choice) {
                     $field['choices'][$id] = $id;
                 }
             }
