@@ -2,16 +2,21 @@
 
 namespace Service\Validator;
 
+use Model\Metadata\MetadataManager;
+
 class QuestionAdminValidator extends Validator
 {
     public function validateOnCreate($data)
     {
         $metadata = $this->metadata;
-        $choices = $this->getChoices();
-//        $this->validateAnswerTexts($data]);
-//        $this->validateQuestionTexts($data['questionTexts']);
 
-//        $this->validateMetadata($data, $metadata, $choices);
+        $this->validateMetadata($data, $metadata);
+
+        foreach ($data['answerTexts'] as $answerText) {
+            $this->validateTexts($answerText);
+
+        }
+        $this->validateTexts($data['questionTexts']);
     }
 
 //    public function validateOnUpdate($data)
@@ -31,18 +36,20 @@ class QuestionAdminValidator extends Validator
 //        $this->throwException($errors);
 //    }
 
-    protected function getChoices()
+    protected function validateTexts($texts)
     {
-        return array(
-            'locale' => array('en', 'es'),
-        );
-    }
+        $errors = array();
+        $validLocales = MetadataManager::$validLocales;
+        foreach ($texts as $locale => $text) {
+            if (!in_array($locale, $validLocales)) {
+                $errors['texts'][] = sprintf('Locale %s is not valid, valid locales are %s', $locale, json_encode($validLocales));
+            }
 
-    protected function validateAnswerTexts(array $data)
-    {
-//        foreach ($data as $key => $value)
-//        {
-//            if ($nswerIda)
-//        }
+            if (!is_string($text)) {
+                $errors['texts'][] = sprintf('Texts into questions and answers must be strings');
+            }
+        }
+
+        $this->throwException($errors);
     }
 }

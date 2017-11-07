@@ -8,6 +8,7 @@ use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
 use Model\Exception\ValidationException;
+use Model\Metadata\MetadataManager;
 use Model\Neo4j\GraphManager;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
@@ -422,8 +423,8 @@ class PrivacyModel
 
     protected function getLocale($locale)
     {
-
-        if (!$locale || !in_array($locale, array('en', 'es'))) {
+        $validLocales = MetadataManager::$validLocales;
+        if (!$locale || !in_array($locale, $validLocales)) {
             $locale = $this->defaultLocale;
         }
 

@@ -64,8 +64,8 @@ class QuestionAdminManager
     {
         $this->validateOnCreate($data);
 
-        $answersData = $this->getAnswersTexts($data);
-        $questionTexts = $this->getQuestionTexts($data);
+        $answersData = $data['answerTexts'];
+        $questionTexts = $data['questionTexts'];
         $qb = $this->graphManager->createQueryBuilder();
 
         $qb->create('(q:Question)');
@@ -91,54 +91,6 @@ class QuestionAdminManager
         $row = $result->current();
 
         return $this->questionAdminBuilder->build($row);
-    }
-
-    protected function getAnswersTexts(array $data)
-    {
-        $answers = array();
-        foreach ($data as $key => $value) {
-            $hasAnswerText = strpos($key, 'answer') !== false;
-            $isNotId = strpos($key, 'Id') === false;
-            if ($hasAnswerText && $isNotId && !empty($value)) {
-                $id = $this->extractAnswerId($key);
-                $locale = $this->extractLocale($key);
-                $answers[$id][$locale] = $value;
-            }
-        }
-
-        return $answers;
-    }
-
-    //To change with more locales
-    protected function extractLocale($text)
-    {
-        if (strpos($text, 'Es') !== false) {
-            return 'es';
-        }
-
-        return 'en';
-    }
-
-    protected function extractAnswerId($text)
-    {
-        $prefixSize = strlen('answer');
-        $number = substr($text, $prefixSize, 1);
-
-        return (integer)$number;
-    }
-
-    protected function getQuestionTexts(array $data)
-    {
-        $texts = array();
-        foreach ($data as $key => $value) {
-            $isQuestionText = strpos($key, 'text') === 0;
-            if ($isQuestionText) {
-                $locale = $this->extractLocale($key);
-                $texts[$locale] = $value;
-            }
-        }
-
-        return $texts;
     }
 
     protected function validateOnCreate(array $data)

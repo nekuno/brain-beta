@@ -2,6 +2,8 @@
 
 namespace Service\Validator;
 
+use Model\Metadata\MetadataManager;
+
 class QuestionValidator extends Validator
 {
     public function validateOnCreate($data)
@@ -35,7 +37,7 @@ class QuestionValidator extends Validator
     protected function getChoices()
     {
         return array(
-            'locale' => array('en', 'es'),
+            'locale' => MetadataManager::$validLocales,
         );
     }
 }

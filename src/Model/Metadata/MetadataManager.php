@@ -12,7 +12,7 @@ class MetadataManager implements MetadataManagerInterface
     protected $metadata;
     protected $defaultLocale;
 
-    protected $validLocales = array('en', 'es');
+    static public $validLocales = array('en', 'es');
 
     public function __construct(GraphManager $gm, Translator $translator, array $metadata, $defaultLocale)
     {

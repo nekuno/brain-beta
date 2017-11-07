@@ -2,6 +2,8 @@
 
 namespace Service;
 
+use Model\Metadata\MetadataManager;
+use Model\User\Question\Admin\QuestionAdminDataFormatter;
 use Model\User\Question\Admin\QuestionAdminManager;
 use Model\User\Question\QuestionModel;
 
@@ -17,6 +19,8 @@ class QuestionService
      */
     protected $questionAdminManager;
 
+    protected $questionAdminDataFormatter;
+
     /**
      * @param QuestionModel $questionModel
      * @param QuestionAdminManager $questionAdminManager
@@ -25,11 +29,12 @@ class QuestionService
     {
         $this->questionModel = $questionModel;
         $this->questionAdminManager = $questionAdminManager;
+        $this->questionAdminDataFormatter = new QuestionAdminDataFormatter();
     }
 
     public function createQuestion(array $data)
     {
-
+        $data = $this->questionAdminDataFormatter->getDataFromAdmin($data);
         $created = $this->questionAdminManager->create($data);
         $questionId = $created->getQuestionId();
 
@@ -41,8 +46,7 @@ class QuestionService
     {
         $dataSets = $this->multilingualToLocales($data);
 
-        foreach ($dataSets as $dataSet)
-        {
+        foreach ($dataSets as $dataSet) {
             $this->questionModel->update($dataSet);
         }
 
@@ -52,7 +56,7 @@ class QuestionService
     protected function multilingualToLocales(array $data)
     {
         $localesData = array();
-        $localesAvailable = array('es', 'en');
+        $localesAvailable = MetadataManager::$validLocales;
 
         $questionId = isset($data['questionId']) ? $data['questionId'] : null;
         foreach ($localesAvailable as $locale) {
@@ -99,5 +103,10 @@ class QuestionService
         $data = array('questionId' => $questionId);
 
         return $this->questionModel->delete($data);
+    }
+
+    protected function formatAdminData(array $data)
+    {
+
     }
 }

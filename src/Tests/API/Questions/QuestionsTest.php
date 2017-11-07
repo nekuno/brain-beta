@@ -30,6 +30,22 @@ class QuestionsTest extends QuestionsAPITest
         $questionData = $this->getCreateQuestionDataFromAdminA();
         $response = $this->createQuestionFromAdmin($questionData);
         $this->assertStatusCode($response, 201, 'Correct question creation from admin');
+
+        $questionData = $this->getCreateQuestionDataFromAdmin1Answer();
+        $response = $this->createQuestionFromAdmin($questionData);
+        $this->assertStatusCode($response, 422, 'Incorrect question creation from admin with 1 answer');
+
+        $questionData = $this->getCreateQuestionDataFromAdmin7Answers();
+        $response = $this->createQuestionFromAdmin($questionData);
+        $this->assertStatusCode($response, 422, 'Incorrect question creation from admin with 7 answers');
+
+        $questionData = $this->getCreateQuestionDataFromAdminInvalidLocale();
+        $response = $this->createQuestionFromAdmin($questionData);
+        $this->assertStatusCode($response, 422, 'Incorrect question creation from admin with invalid locale');
+
+        $questionData = $this->getCreateQuestionDataFromAdminInvalidText();
+        $response = $this->createQuestionFromAdmin($questionData);
+        $this->assertStatusCode($response, 422, 'Incorrect question creation from admin with invalid text');
     }
 
     public function assertNextQuestion()
@@ -75,6 +91,62 @@ class QuestionsTest extends QuestionsAPITest
     {
         return array(
             'textEs' => 'Question text in Spanish',
+            'textEn' => 'Question text in English',
+            'answer1Es' => 'Answer 1 text in Spanish',
+            'answer1En' => 'Answer 1 text in English',
+            'answer2Es' => 'Answer 2 text in Spanish',
+            'answer2En' => 'Answer 2 text in English',
+        );
+    }
+
+    protected function getCreateQuestionDataFromAdmin1Answer()
+    {
+        return array(
+            'textEs' => 'Question text in Spanish',
+            'textEn' => 'Question text in English',
+            'answer1Es' => 'Answer 1 text in Spanish',
+            'answer1En' => 'Answer 1 text in English',
+        );
+    }
+
+    protected function getCreateQuestionDataFromAdmin7Answers()
+    {
+        return array(
+            'textEs' => 'Question text in Spanish',
+            'textEn' => 'Question text in English',
+            'answer1Es' => 'Answer 1 text in Spanish',
+            'answer1En' => 'Answer 1 text in English',
+            'answer2Es' => 'Answer 2 text in Spanish',
+            'answer2En' => 'Answer 2 text in English',
+            'answer3Es' => 'Answer 3 text in Spanish',
+            'answer3En' => 'Answer 3 text in English',
+            'answer4Es' => 'Answer 4 text in Spanish',
+            'answer4En' => 'Answer 4 text in English',
+            'answer5Es' => 'Answer 5 text in Spanish',
+            'answer5En' => 'Answer 5 text in English',
+            'answer6Es' => 'Answer 6 text in Spanish',
+            'answer6En' => 'Answer 6 text in English',
+            'answer7Es' => 'Answer 7 text in Spanish',
+            'answer7En' => 'Answer 7 text in English',
+        );
+    }
+
+    protected function getCreateQuestionDataFromAdminInvalidLocale()
+    {
+        return array(
+            'textEs' => 'Question text in Spanish',
+            'textEn' => 'Question text in English',
+            'answer1Sp' => 'Answer 1 text in Spanish',
+            'answer1En' => 'Answer 1 text in English',
+            'answer2Es' => 'Answer 2 text in Spanish',
+            'answer2En' => 'Answer 2 text in English',
+        );
+    }
+
+    protected function getCreateQuestionDataFromAdminInvalidText()
+    {
+        return array(
+            'textEs' => array('Question text in Spanish'),
             'textEn' => 'Question text in English',
             'answer1Es' => 'Answer 1 text in Spanish',
             'answer1En' => 'Answer 1 text in English',

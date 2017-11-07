@@ -46,7 +46,7 @@ class QuestionController
 
         $created = $questionService->createQuestion($data);
 
-        return $app->json($created);
+        return $app->json($created, 201);
     }
 
     public function updateQuestionAction(Request $request, Application $app, $questionId)
