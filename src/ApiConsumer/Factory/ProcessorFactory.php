@@ -54,7 +54,7 @@ class ProcessorFactory
     public function buildScrapperProcessor($processorName)
     {
         $processorClass = $this->options[$processorName]['class'];
-        $scraper = new $processorClass($this->goutteClientFactory);
+        $scraper = new $processorClass($this->goutteClientFactory, $this->brainBaseUrl);
 
         return $scraper;
     }

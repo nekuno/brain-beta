@@ -124,6 +124,7 @@ class FacebookProfileProcessorTest extends AbstractProcessorTest
         $expectedLink = new Link();
         $expectedLink->setTitle($this->getTitle());
         $expectedLink->setDescription($this->getTitle());
+        $expectedLink->addAdditionalLabels(AbstractFacebookProcessor::FACEBOOK_LABEL);
         return array(
             array(
                 $this->getProfileUrl(),

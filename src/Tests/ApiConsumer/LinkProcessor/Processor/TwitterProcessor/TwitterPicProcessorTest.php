@@ -115,6 +115,8 @@ class TwitterPicProcessorTest extends AbstractProcessorTest
     public function getResponseHydration()
     {
         $expected = new Link();
+        $expected->addAdditionalLabels(AbstractTwitterProcessor::TWITTER_LABEL);
+
         return array(
             array(
                 $this->getStatusUrl(),

@@ -10,6 +10,7 @@ use ApiConsumer\ResourceOwner\FacebookResourceOwner;
 
 abstract class AbstractFacebookProcessor extends AbstractAPIProcessor
 {
+    const FACEBOOK_LABEL = 'LinkFacebook';
     /**
      * @var FacebookResourceOwner
      */
@@ -30,6 +31,7 @@ abstract class AbstractFacebookProcessor extends AbstractAPIProcessor
     public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
     {
         $link = $preprocessedLink->getFirstLink();
+        $link->addAdditionalLabels(self::FACEBOOK_LABEL);
         $link->setDescription(isset($data['description']) ? $data['description'] : $this->buildDescriptionFromTitle($data));
         $link->setTitle(isset($data['name']) ? $data['name'] : $this->buildTitleFromDescription($data));
     }

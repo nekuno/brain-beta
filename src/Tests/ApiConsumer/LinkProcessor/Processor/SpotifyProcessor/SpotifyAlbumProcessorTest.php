@@ -5,6 +5,7 @@ namespace Tests\ApiConsumer\LinkProcessor\Processor\SpotifyProcessor;
 use ApiConsumer\Exception\UrlNotValidException;
 use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\AbstractSpotifyProcessor;
 use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\SpotifyAlbumProcessor;
 use ApiConsumer\ResourceOwner\SpotifyResourceOwner;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
@@ -155,6 +156,7 @@ class SpotifyAlbumProcessorTest extends AbstractProcessorTest
         $expected->setDescription('By: Miles Davis');
         $expected->setEmbedType('spotify');
         $expected->setEmbedId('spotify:album:4sb0eMpDn3upAFfyi4q2rw');
+        $expected->addAdditionalLabels(AbstractSpotifyProcessor::SPOTIFY_LABEL);
 
         return array(
             array(

@@ -5,6 +5,7 @@ namespace Tests\ApiConsumer\LinkProcessor\Processor\SpotifyProcessor;
 use ApiConsumer\Exception\UrlNotValidException;
 use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\AbstractSpotifyProcessor;
 use ApiConsumer\LinkProcessor\SynonymousParameters;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
 use ApiConsumer\ResourceOwner\SpotifyResourceOwner;
@@ -178,6 +179,7 @@ class SpotifyTrackProcessorTest extends AbstractProcessorTest
         $expected->setDescription('Kind Of Blue (Legacy Edition) : Miles Davis');
         $expected->setEmbedType('spotify');
         $expected->setEmbedId('spotify:track:4vLYewWIvqHfKtJDk8c8tq');
+        $expected->addAdditionalLabels(AbstractSpotifyProcessor::SPOTIFY_LABEL);
 
         return array(
             array(

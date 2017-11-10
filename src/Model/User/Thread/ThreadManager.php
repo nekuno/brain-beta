@@ -236,7 +236,7 @@ class ThreadManager
                     'category' => ThreadManager::LABEL_THREAD_CONTENT,
                     'filters' => array(
                         'contentFilters' => array(
-                            'type' => array('Creator', 'CreatorTwitter'),
+                            'type' => array('Creator', 'LinkTwitter'),
                         ),
                     ),
                     'default' => true,

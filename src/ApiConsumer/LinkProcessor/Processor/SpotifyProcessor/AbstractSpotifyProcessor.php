@@ -10,6 +10,8 @@ use ApiConsumer\ResourceOwner\SpotifyResourceOwner;
 
 abstract class AbstractSpotifyProcessor extends AbstractAPIProcessor
 {
+    const SPOTIFY_LABEL = 'LinkSpotify';
+
     /**
      * @var SpotifyUrlParser
      */
@@ -19,6 +21,12 @@ abstract class AbstractSpotifyProcessor extends AbstractAPIProcessor
      * @var SpotifyResourceOwner
      */
     protected $resourceOwner;
+
+    public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
+    {
+        $link = $preprocessedLink->getFirstLink();
+        $link->addAdditionalLabels(self::SPOTIFY_LABEL);
+    }
 
     protected function buildArtistTag($artist)
     {

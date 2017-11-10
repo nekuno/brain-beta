@@ -31,7 +31,7 @@ abstract class AbstractProcessorTest extends \PHPUnit_Framework_TestCase
             'language' => null,
             'synonymous' => array(),
             'imageProcessed' => null,
-            'additionalLabels' => array('Creator', 'CreatorFacebook'),
+            'additionalLabels' => array('Creator', 'LinkFacebook'),
             'lastChecked' => null,
             'lastReprocessed' => null,
             'reprocessedCount' => null,
