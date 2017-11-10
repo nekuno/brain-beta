@@ -8,7 +8,7 @@ use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\AbstractFacebookProces
 use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookPageProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;
-use Model\Link\Creator\CreatorFacebook;
+use Model\Link\Creator;
 use Model\User\Token\TokensModel;
 use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
@@ -121,9 +121,10 @@ class FacebookPageProcessorTest extends AbstractProcessorTest
 
     public function getResponseHydration()
     {
-        $expectedLink = new CreatorFacebook();
+        $expectedLink = new Creator();
         $expectedLink->setTitle($this->getTitle());
         $expectedLink->setDescription($this->getDescription());
+        $expectedLink->addAdditionalLabels(AbstractFacebookProcessor::FACEBOOK_LABEL);
 
         return array(
             array(

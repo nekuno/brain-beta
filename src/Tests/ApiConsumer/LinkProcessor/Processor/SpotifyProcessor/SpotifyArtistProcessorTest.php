@@ -5,6 +5,7 @@ namespace Tests\ApiConsumer\LinkProcessor\Processor\SpotifyProcessor;
 use ApiConsumer\Exception\UrlNotValidException;
 use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\AbstractSpotifyProcessor;
 use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\SpotifyArtistProcessor;
 use ApiConsumer\ResourceOwner\SpotifyResourceOwner;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
@@ -133,6 +134,8 @@ class SpotifyArtistProcessorTest extends AbstractProcessorTest
     {
         $expected = new Link();
         $expected->setTitle('Charlie Parker');
+        $expected->addAdditionalLabels(AbstractSpotifyProcessor::SPOTIFY_LABEL);
+
         return array(
             array(
                 $this->getArtistUrl(),

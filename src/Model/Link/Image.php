@@ -4,6 +4,8 @@ namespace Model\Link;
 
 class Image extends Link
 {
+    const IMAGE_LABEL = 'Image';
+
     public function isComplete() {
         return !!$this->getUrl();
     }
@@ -11,7 +13,8 @@ class Image extends Link
     public function toArray()
     {
         $array = parent::toArray();
-        $array['additionalLabels'] = array('Image');
+        $array['additionalLabels'][] = self::IMAGE_LABEL;
+
         return $array;
     }
 }

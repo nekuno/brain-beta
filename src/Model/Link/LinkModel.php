@@ -233,10 +233,10 @@ class LinkModel
 
         $processed = isset($data['processed']) ? $data['processed'] : 1;
 
-        $additionalLabels = '';
-        if (isset($data['additionalLabels'])) {
-            $additionalLabels = ':' . implode(':', $data['additionalLabels']);
+        if ($this->hasToAddWebLabel($data)) {
+            $data['additionalLabels'][] = Link::WEB_LABEL;
         }
+        $additionalLabels = ':' . implode(':', $data['additionalLabels']);
 
         $qb = $this->gm->createQueryBuilder();
 
@@ -400,6 +400,20 @@ class LinkModel
             $linkArray['additionalLabels'] = $data['additionalLabels'];
         }
         return $linkArray;
+    }
+
+    private function hasToAddWebLabel($data)
+    {
+        if (isset($data['additionalLabels'])) {
+            if (in_array(Link::WEB_LABEL, $data['additionalLabels'])) {
+                return false;
+            }
+            if (count(array_intersect(array(Audio::AUDIO_LABEL, Video::VIDEO_LABEL, Creator::CREATOR_LABEL, Image::IMAGE_LABEL), $data['additionalLabels']))){
+                return false;
+            }
+        }
+
+        return true;
     }
 
     //TODO: Improve and use Validator service
@@ -988,7 +1002,7 @@ class LinkModel
     //TODO: Refactor this to use locale keys or move them to fields.yml
     public static function getValidTypes()
     {
-        return array('Audio', 'Video', 'Image', 'Link', 'Creator', 'CreatorFacebook', 'CreatorTwitter');
+        return array('Audio', 'Video', 'Image', 'Link', 'Creator', 'Web', 'LinkFacebook', 'LinkTwitter', 'LinkYoutube', 'LinkSpotify', 'LinkInstagram');
     }
 
     public function buildOptionalTypesLabel($filters)

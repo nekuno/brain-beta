@@ -142,6 +142,8 @@ class YoutubePlaylistProcessorTest extends AbstractProcessorTest
         $expected->setDescription('');
         $expected->setEmbedType('youtube');
         $expected->setEmbedId('PLcB-8ayo3tzddinO3ob7cEHhUtyyo66mN');
+        $expected->addAdditionalLabels(AbstractYoutubeProcessor::YOUTUBE_LABEL);
+
         return array(
             array(
                 $this->getPlaylistUrl(),

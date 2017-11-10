@@ -4,6 +4,8 @@ namespace Model\Link;
 
 class Audio extends Link
 {
+    const AUDIO_LABEL = 'Audio';
+
     protected $embed_type;
     protected $embed_id;
 
@@ -27,7 +29,7 @@ class Audio extends Link
     public function toArray()
     {
         $array = parent::toArray();
-        $array['additionalLabels'] = array('Audio');
+        $array['additionalLabels'][] = self::AUDIO_LABEL;
         $array['additionalFields'] = array(
             'embed_id' => $this->getEmbedId(),
             'embed_type' => $this->getEmbedType()

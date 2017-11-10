@@ -26,10 +26,6 @@ class TwitterIntentProcessor extends AbstractTwitterProcessor
         return !empty($this->getUserIdFromResourceId($preprocessedLink)) ? $this->getUserIdFromResourceId($preprocessedLink) : $this->parser->getProfileId($preprocessedLink->getUrl());
     }
 
-    public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
-    {
-    }
-
     protected function getUserIdFromResourceId(PreprocessedLink $preprocessedLink)
     {
         if ($resourceId = $preprocessedLink->getResourceItemId()) {

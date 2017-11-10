@@ -27,7 +27,9 @@ class FacebookVideoProcessor extends AbstractFacebookProcessor
 
     public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
     {
-        $video = new Video();
+        parent::hydrateLink($preprocessedLink, $data);
+        $link = $preprocessedLink->getFirstLink();
+        $video = Video::buildFromArray($link->toArray());
         $video->setDescription(isset($data['description']) ? $data['description'] : null);
         $video->setTitle($this->buildTitleFromDescription($data));
         $video->setEmbedType(TokensModel::FACEBOOK);

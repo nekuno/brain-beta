@@ -115,6 +115,8 @@ class TwitterIntentProcessorTest extends AbstractProcessorTest
         $expected = new Link();
         $expected->setDescription('Tool developer & data junkie');
         $expected->setId(34529134);
+        $expected->addAdditionalLabels(AbstractTwitterProcessor::TWITTER_LABEL);
+
         return array(
             array(
                 $this->getProfileUrl(),
@@ -262,7 +264,7 @@ class TwitterIntentProcessorTest extends AbstractProcessorTest
             'description' => 'Tool developer & data junkie',
             'url' => 'https://twitter.com/yawmoght',
             'thumbnail' => "http://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png",
-            'additionalLabels' => array('Creator', 'CreatorTwitter'),
+            'additionalLabels' => array('Creator', 'LinkTwitter'),
             'resource' => TokensModel::TWITTER,
             'timestamp' => 1000 * time(),
             'processed' => 1,
