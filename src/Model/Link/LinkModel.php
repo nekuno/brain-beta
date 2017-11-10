@@ -2,7 +2,6 @@
 
 namespace Model\Link;
 
-use ApiConsumer\LinkProcessor\Processor\ScraperProcessor\ScraperProcessor;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j;
@@ -234,8 +233,8 @@ class LinkModel
 
         $processed = isset($data['processed']) ? $data['processed'] : 1;
 
-        if (!isset($data['additionalLabels']) || empty($data['additionalLabels'])) {
-            $data['additionalLabels'] = array(ScraperProcessor::WEB_LABEL);
+        if ($this->hasToAddWebLabel($data)) {
+            $data['additionalLabels'][] = Link::WEB_LABEL;
         }
         $additionalLabels = ':' . implode(':', $data['additionalLabels']);
 
@@ -401,6 +400,20 @@ class LinkModel
             $linkArray['additionalLabels'] = $data['additionalLabels'];
         }
         return $linkArray;
+    }
+
+    private function hasToAddWebLabel($data)
+    {
+        if (isset($data['additionalLabels'])) {
+            if (in_array(Link::WEB_LABEL, $data['additionalLabels'])) {
+                return false;
+            }
+            if (count(array_intersect(array(Audio::AUDIO_LABEL, Video::VIDEO_LABEL, Creator::CREATOR_LABEL, Image::IMAGE_LABEL), $data['additionalLabels']))){
+                return false;
+            }
+        }
+
+        return true;
     }
 
     //TODO: Improve and use Validator service

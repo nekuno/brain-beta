@@ -158,6 +158,7 @@ class TwitterProfileProcessorTest extends AbstractProcessorTest
         $expected->setUrl('https://twitter.com/yawmoght');
         $expected->setCreated(time() * 1000);
         $expected->addAdditionalLabels(AbstractTwitterProcessor::TWITTER_LABEL);
+        $expected->setProcessed(true);
 
         return array(
             array(

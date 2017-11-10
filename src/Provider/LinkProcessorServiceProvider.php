@@ -24,7 +24,7 @@ class LinkProcessorServiceProvider implements ServiceProviderInterface
 
         $app['api_consumer.link_processor.processor.scrapper'] = $app->share(
             function ($app) {
-                return new ScraperProcessor($app['api_consumer.link_processor.goutte_factory']);
+                return new ScraperProcessor($app['api_consumer.link_processor.goutte_factory'], $app['brain_base_url']);
             }
         );
 

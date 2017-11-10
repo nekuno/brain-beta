@@ -69,7 +69,7 @@ params:
     rabbitmq.pass: nekuno
 
     ## Twitter
-    twitter.consumer_key: ~
+    twitter.consumer_key: WBIuTH6u0Xa4r0E49a13eTeLd
     twitter.consumer_secret: ~
     twitter.application_token: ~
 
@@ -89,11 +89,6 @@ params:
     facebook.consumer_key: ~
     facebook.consumer_secret: ~
     facebook.redirect_uri: https://client.local.nekuno.com/
-
-    ## Instagram App
-    instagram.consumer_key: 7d6f40c53c9b49ef8838710fa775eda8
-    instagram.consumer_secret: 09d4a2c9192749d58c6d2a53b09b5654
-    instagram.redirect_uri: http://client.local.nekuno.com/
 
     ## Invitations migration
     admin.domain_plus_port: https://admin.local.nekuno.com/

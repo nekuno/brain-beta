@@ -10,8 +10,6 @@ use Goutte\Client;
 
 abstract class AbstractScraperProcessor implements ProcessorInterface
 {
-    const WEB_LABEL = 'Web';
-
     /**
      * @var GoutteClientFactory
      */

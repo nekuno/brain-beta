@@ -4,6 +4,7 @@ namespace Model\Link;
 
 class Link implements \JsonSerializable
 {
+    const WEB_LABEL = 'Web';
 
     protected $id;
     protected $url;

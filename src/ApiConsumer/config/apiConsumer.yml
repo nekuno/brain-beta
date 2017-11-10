@@ -13,9 +13,6 @@ api_consumer.config:
         spotify:
             class: ApiConsumer\ResourceOwner\SpotifyResourceOwner
             parser_class: ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser
-        instagram:
-            class: ApiConsumer\ResourceOwner\InstagramResourceOwner
-            parser_class: ApiConsumer\LinkProcessor\UrlParser\InstagramUrlParser
     fetcher:
         twitter_links:
             class: ApiConsumer\Fetcher\TwitterLinksFetcher
@@ -44,12 +41,6 @@ api_consumer.config:
         spotify:
             class: ApiConsumer\Fetcher\SpotifyFetcher
             resourceOwner: spotify
-        instagram_likes:
-            class: ApiConsumer\Fetcher\InstagramLikedFetcher
-            resourceOwner: instagram
-        instagram_follows:
-            class: ApiConsumer\Fetcher\InstagramFollowsFetcher
-            resourceOwner: instagram
     processor:
         twitter_intent:
             class: ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterIntentProcessor
@@ -111,18 +102,12 @@ api_consumer.config:
             parser: ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser
             resourceOwner: google
 
+        instagram:
+            class: ApiConsumer\LinkProcessor\Processor\InstagramProcessor\InstagramProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\InstagramUrlParser
         instagram_profile:
             class: ApiConsumer\LinkProcessor\Processor\InstagramProcessor\InstagramProfileProcessor
             parser: ApiConsumer\LinkProcessor\UrlParser\InstagramUrlParser
-            resourceOwner: instagram
-        instagram_image:
-            class: ApiConsumer\LinkProcessor\Processor\InstagramProcessor\InstagramImageProcessor
-            parser: ApiConsumer\LinkProcessor\UrlParser\InstagramUrlParser
-            resourceOwner: instagram
-        instagram_video:
-            class: ApiConsumer\LinkProcessor\Processor\InstagramProcessor\InstagramVideoProcessor
-            parser: ApiConsumer\LinkProcessor\UrlParser\InstagramUrlParser
-            resourceOwner: instagram
 
         scrapper:
             class: ApiConsumer\LinkProcessor\Processor\ScraperProcessor\ScraperProcessor

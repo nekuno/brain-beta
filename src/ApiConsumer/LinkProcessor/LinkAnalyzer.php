@@ -80,10 +80,6 @@ class LinkAnalyzer
             return TokensModel::TWITTER;
         }
 
-        if (self::isInstagram($url)) {
-            return TokensModel::INSTAGRAM;
-        }
-
         return null;
     }
 
@@ -169,7 +165,7 @@ class LinkAnalyzer
 
     private static function isInstagram($url)
     {
-        return preg_match('/^https?:\/\/(www\.)?(instagram\.com)\//i', $url);
+        return preg_match('/^https?:\/\/(www\.)?instagram\.com\//i', $url);
     }
 
 }

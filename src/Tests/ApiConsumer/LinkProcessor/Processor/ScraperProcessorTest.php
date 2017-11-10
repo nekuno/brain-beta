@@ -26,7 +26,7 @@ class ScraperProcessorTest extends AbstractProcessorTest
         $this->parser = new UrlParser();
 
         $goutteClientFactory = new GoutteClientFactory();
-        $this->processor = new ScraperProcessor($goutteClientFactory);
+        $this->processor = new ScraperProcessor($goutteClientFactory, $this->brainBaseUrl);
     }
 
     /**

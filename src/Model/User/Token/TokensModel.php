@@ -22,7 +22,6 @@ class TokensModel
     CONST GOOGLE = 'google';
     CONST SPOTIFY = 'spotify';
     CONST LINKEDIN = 'linkedin';
-    CONST INSTAGRAM = 'instagram';
 
     /**
      * @var EventDispatcher
@@ -56,7 +55,6 @@ class TokensModel
             self::TWITTER,
             self::GOOGLE,
             self::SPOTIFY,
-            self::INSTAGRAM,
         );
     }
 

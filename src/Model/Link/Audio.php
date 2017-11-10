@@ -2,8 +2,6 @@
 
 namespace Model\Link;
 
-use ApiConsumer\LinkProcessor\Processor\ScraperProcessor\ScraperProcessor;
-
 class Audio extends Link
 {
     const AUDIO_LABEL = 'Audio';
