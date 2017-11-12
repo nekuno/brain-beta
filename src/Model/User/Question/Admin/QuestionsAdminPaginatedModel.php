@@ -3,7 +3,6 @@
 namespace Model\User\Question\Admin;
 
 use Everyman\Neo4j\Query\Row;
-use Model\User\Question\QuestionModel;
 use Paginator\PaginatedInterface;
 
 class QuestionsAdminPaginatedModel extends QuestionAdminManager implements PaginatedInterface
@@ -15,11 +14,8 @@ class QuestionsAdminPaginatedModel extends QuestionAdminManager implements Pagin
 
     public function slice(array $filters, $offset, $limit)
     {
-        $order = $filters['order'] ? $filters['order'] : 'answered';
-        if ($order === 'id') {
-            $order = 'id(q)';
-        }
-        $orderDir = $filters['orderDir'] ? $filters['orderDir'] : 'desc';
+        $order = $this->getOrder($filters);
+        $textAttribute = $this->questionAdminBuilder->buildTextAttribute($filters['locale']);
 
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(q:Question)')
@@ -27,7 +23,7 @@ class QuestionsAdminPaginatedModel extends QuestionAdminManager implements Pagin
             ->with('q', 'count(s) AS skipped')
             ->optionalMatch('(q)<-[r:RATES]-(:User)')
             ->with('q', 'skipped', 'count(r) AS answered')
-            ->orderBy("$order $orderDir");
+            ->orderBy($order);
 
         if (!is_null($offset)) {
             $qb->skip($offset);
@@ -37,8 +33,10 @@ class QuestionsAdminPaginatedModel extends QuestionAdminManager implements Pagin
         }
 
         $qb->optionalMatch('(q)<-[:IS_ANSWER_OF]-(a:Answer)')
-            ->returns('q', 'skipped', 'answered', 'collect(a) AS answers')
-            ->orderBy("$order $orderDir");
+            ->with('q', 'skipped', 'answered', 'a', "CASE WHEN EXISTS(a.$textAttribute) THEN 0 ELSE 1 END AS lacksLocale")
+            ->with('q', 'skipped', 'answered', 'collect(a) AS answers', 'sum(lacksLocale) AS localeMissing')
+            ->returns('q', 'skipped', 'answered', 'answers', "localeMissing + CASE WHEN EXISTS(q.$textAttribute) THEN 0 ELSE 1 END AS localeMissing")
+            ->orderBy($order);
 
         $query = $qb->getQuery();
 
@@ -67,5 +65,20 @@ class QuestionsAdminPaginatedModel extends QuestionAdminManager implements Pagin
         $result = $qb->getQuery()->getResultSet();
 
         return $result->current()->offsetGet('amount');
+    }
+
+    protected function getOrder(array $filters)
+    {
+        switch($filters['order']) {
+            case 'id':
+                $order = 'id(q)';
+                break;
+            default:
+                $order = $filters['order'] ? $filters['order'] : 'answered';
+                break;
+        }
+        $orderDir = $filters['orderDir'] ? $filters['orderDir'] : 'desc';
+
+        return $order . ' ' . $orderDir;
     }
 }

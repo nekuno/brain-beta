@@ -20,7 +20,7 @@ class QuestionController
         );
 
         $paginator = $app['paginator'];
-        $model = $app['users.questions.paginated.model'];
+        $model = $app['admin.questions.paginated.model'];
 
         $result = $paginator->paginate($filters, $model, $request);
 
