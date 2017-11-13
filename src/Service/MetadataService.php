@@ -42,7 +42,7 @@ class MetadataService
         if ($userId) {
             $groupChoices = $this->getGroupChoices($userId);
             if (!empty($groupChoices)) {
-                $metadata['groups'] = $groupChoices;
+                $metadata['groups']['choices'] = $groupChoices;
             }
         }
 

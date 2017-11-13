@@ -83,7 +83,7 @@ class FilterUsersManager
     {
         $filtersArray = $this->getFilters($filterId);
         $filter = $this->buildFiltersUsers($filtersArray);
-
+        $filter->setId($filterId);
         return $filter;
     }
 
@@ -405,11 +405,11 @@ class FilterUsersManager
 
     /**
      * Creates array ready to use as profileFilter from neo4j
-     * @param $id
+     * @param $filterId
      * @return array ready to use in recommendation
      * @throws \Model\Neo4j\Neo4jException
      */
-    private function getFilters($id)
+    private function getFilters($filterId)
     {
         //TODO: Refactor this into metadata
         $qb = $this->graphManager->createQueryBuilder();
@@ -423,11 +423,11 @@ class FilterUsersManager
             ->with('filter', 'options', 'tags', 'loc', 'loc_rel')
             ->optionalMatch('(filter)-[:FILTERS_BY]->(group:Group)')
             ->returns('filter, options, tags, loc, loc_rel', 'collect(id(group)) AS groups');
-        $qb->setParameter('id', (integer)$id);
+        $qb->setParameter('id', (integer)$filterId);
         $result = $qb->getQuery()->getResultSet();
 
         if ($result->count() < 1) {
-            throw new NotFoundHttpException('filter with id ' . $id . ' not found');
+            throw new NotFoundHttpException('filter with id ' . $filterId . ' not found');
         }
 
         /** @var Row $row */

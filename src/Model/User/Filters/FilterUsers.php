@@ -58,6 +58,14 @@ class FilterUsers implements \JsonSerializable
     {
         $idArray = array('id' => $this->getId());
 
-        return $idArray + $this->values;
+        $values = $this->values;
+        foreach ($values as $key => $value) {
+            if (!isset($value)) {
+                unset($values[$key]);
+            }
+        }
+        $valuesArray = array('userFilters' => $values);
+
+        return $idArray + $valuesArray;
     }
 }
