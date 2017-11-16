@@ -57,7 +57,7 @@ class QuestionController
         /** @var QuestionService $questionService */
         $questionService = $app['question.service'];
 
-        $updated = $questionService->updateMultilanguage($data);
+        $updated = $questionService->updateQuestion($data);
 
         return $app->json($updated);
     }

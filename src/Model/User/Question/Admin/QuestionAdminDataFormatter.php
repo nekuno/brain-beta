@@ -4,7 +4,7 @@ namespace Model\User\Question\Admin;
 
 class QuestionAdminDataFormatter
 {
-    public function getDataFromAdmin(array $data)
+    public function getCreateData(array $data)
     {
         return array(
             'answerTexts' => $this->getAnswersTexts($data),
@@ -12,16 +12,33 @@ class QuestionAdminDataFormatter
         );
     }
 
+    public function getUpdateData(array $rawData)
+    {
+        $data = array(
+            'answerTexts' => $this->getAnswersTexts($rawData),
+            'questionTexts' => $this->getQuestionTexts($rawData),
+        );
+
+        if (isset($rawData['questionId'])){
+            $data['questionId'] = $rawData['questionId'];
+        }
+
+        return $data;
+    }
+
     protected function getAnswersTexts(array $data)
     {
         $answers = array();
         foreach ($data as $key => $value) {
+            $internalId = $this->extractAnswerInternalId($key);
             $hasAnswerText = strpos($key, 'answer') !== false;
-            $isNotId = strpos($key, 'Id') === false;
-            if ($hasAnswerText && $isNotId && !empty($value)) {
-                $id = $this->extractAnswerId($key);
+            $isId = strpos($key, 'Id') !== false;
+
+            if ($hasAnswerText && $isId && !empty($value)) {
+                $answers[$internalId]['answerId'] = $value;
+            } elseif ($hasAnswerText && !empty($value)) {
                 $locale = $this->extractLocale($key);
-                $answers[$id][$locale] = $value;
+                $answers[$internalId]['locales'][$locale] = $value;
             }
         }
 
@@ -56,7 +73,7 @@ class QuestionAdminDataFormatter
         return null;
     }
 
-    protected function extractAnswerId($text)
+    protected function extractAnswerInternalId($text)
     {
         $prefixSize = strlen('answer');
         $number = substr($text, $prefixSize, 1);

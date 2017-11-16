@@ -13,18 +13,24 @@ class QuestionAdminValidator extends Validator
         $this->validateMetadata($data, $metadata);
 
         foreach ($data['answerTexts'] as $answerText) {
-            $this->validateTexts($answerText);
+            $this->validateLocales($answerText['locales']);
 
         }
-        $this->validateTexts($data['questionTexts']);
+        $this->validateLocales($data['questionTexts']);
     }
 
-//    public function validateOnUpdate($data)
-//    {
-//        $metadata = $this->metadata;
-//        $choices = $this->getChoices();
-//        $this->validateMetadata($data, $metadata, $choices);
-//    }
+    public function validateOnUpdate($data)
+    {
+        $metadata = $this->metadata;
+
+        $this->validateMetadata($data, $metadata);
+
+        foreach ($data['answerTexts'] as $answerText) {
+            $this->validateLocales($answerText['locales']);
+
+        }
+        $this->validateLocales($data['questionTexts']);
+    }
 //
 //    public function validateOnDelete($data)
 //    {
@@ -36,10 +42,13 @@ class QuestionAdminValidator extends Validator
 //        $this->throwException($errors);
 //    }
 
-    protected function validateTexts($texts)
+    protected function validateLocales($texts)
     {
         $errors = array();
         $validLocales = MetadataManager::$validLocales;
+        if (count($texts) < count($validLocales)){
+            $errors['texts'][] = sprintf('There are incomplete texts');
+        }
         foreach ($texts as $locale => $text) {
             if (!in_array($locale, $validLocales)) {
                 $errors['texts'][] = sprintf('Locale %s is not valid, valid locales are %s', $locale, json_encode($validLocales));

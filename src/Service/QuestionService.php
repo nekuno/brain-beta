@@ -34,53 +34,20 @@ class QuestionService
 
     public function createQuestion(array $data)
     {
-        $data = $this->questionAdminDataFormatter->getDataFromAdmin($data);
+        $data = $this->questionAdminDataFormatter->getCreateData($data);
         $created = $this->questionAdminManager->create($data);
         $questionId = $created->getQuestionId();
 
         return $this->getOneMultilanguage($questionId);
     }
 
-    //TODO: Write custom update query in QuestionAdminManager
-    public function updateMultilanguage(array $data)
+    public function updateQuestion(array $data)
     {
-        $dataSets = $this->multilingualToLocales($data);
+        $data = $this->questionAdminDataFormatter->getUpdateData($data);
+        $created = $this->questionAdminManager->update($data);
+        $questionId = $created->getQuestionId();
 
-        foreach ($dataSets as $dataSet) {
-            $this->questionModel->update($dataSet);
-        }
-
-        return $this->getOneMultilanguage($data['questionId']);
-    }
-
-    protected function multilingualToLocales(array $data)
-    {
-        $localesData = array();
-        $localesAvailable = MetadataManager::$validLocales;
-
-        $questionId = isset($data['questionId']) ? $data['questionId'] : null;
-        foreach ($localesAvailable as $locale) {
-
-            $result = array('locale' => $locale);
-            if ($questionId) {
-                $result['questionId'] = $questionId;
-            }
-
-            $answers = array();
-            for ($i = 1; $i <= 6; $i++) {
-                $answerTextLabel = 'answer' . $i . ucfirst($locale);
-                $answerIdLabel = 'answer' . $i . 'Id';
-                $answers[] = array('answerId' => $data[$answerIdLabel], 'text' => $data[$answerTextLabel]);
-            }
-            $result['answers'] = $answers;
-
-            $questionTextLabel = 'text' . ucfirst($locale);
-            $result['text'] = $data[$questionTextLabel];
-
-            $localesData[] = $result;
-        }
-
-        return $localesData;
+        return $this->getOneMultilanguage($questionId);
     }
 
     public function getById($questionId, $locale)
@@ -103,10 +70,5 @@ class QuestionService
         $data = array('questionId' => $questionId);
 
         return $this->questionModel->delete($data);
-    }
-
-    protected function formatAdminData(array $data)
-    {
-
     }
 }

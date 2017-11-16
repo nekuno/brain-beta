@@ -93,8 +93,63 @@ class QuestionAdminManager
         return $this->questionAdminBuilder->build($row);
     }
 
+    /**
+     * @param array $data
+     * @return QuestionAdmin
+     */
+    public function update(array $data)
+    {
+        $this->validateOnUpdate($data);
+
+        $answerTexts = $data['answerTexts'];
+        $questionTexts = $data['questionTexts'];
+        $questionId = $data['questionId'];
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(q:Question)')
+            ->where('id(q) = {questionId}')
+            ->setParameter('questionId', (integer)$questionId);
+
+        foreach ($questionTexts as $locale => $text) {
+            $qb->set("q.text_$locale = {question$locale}")
+                ->setParameter("question$locale", $text);
+        }
+        $qb->set('q.timestamp = timestamp()', 'q.ranking = 0');
+        $qb->with('q');
+        foreach ($answerTexts as $answerIndex => $answerData) {
+            if (isset($answerData['answerId'])){
+                $qb->match("(a$answerIndex:Answer)-[:IS_ANSWER_OF]->(q)")
+                    ->where("id(a$answerIndex) = {answerId$answerIndex}")
+                    ->setParameter("answerId$answerIndex", (integer)$answerData['answerId']);
+            } else {
+                $qb->create("(a$answerIndex:Answer)-[:IS_ANSWER_OF]->(q)");
+            }
+
+            foreach ($answerData['locales'] as $locale => $text) {
+                $qb->set("a$answerIndex.text_$locale = {text$answerIndex$locale}")
+                    ->setParameter("text$answerIndex$locale", $text);
+            }
+            $qb->with('q');
+        };
+
+        $qb->returns('q AS question');
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        /* @var $row Row */
+        $row = $result->current();
+
+        return $this->questionAdminBuilder->build($row);
+    }
+
     protected function validateOnCreate(array $data)
     {
         $this->validator->validateOnCreate($data);
+    }
+
+    protected function validateOnUpdate(array $data)
+    {
+        $this->validator->validateOnUpdate($data);
     }
 }
