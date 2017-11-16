@@ -53,7 +53,7 @@ class MetadataManager implements MetadataManagerInterface
 
     protected function getLocale($locale)
     {
-        if (!$locale || !in_array($locale, $this->validLocales)) {
+        if (!$locale || !in_array($locale, self::$validLocales)) {
             $locale = $this->defaultLocale;
         }
 
