@@ -2,7 +2,6 @@
 
 namespace Service\Consistency;
 
-
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\PropertyContainer;
 use Everyman\Neo4j\Relationship;
@@ -12,7 +11,7 @@ class ConsistencyChecker
 {
     public function check(Node $node, ConsistencyNodeRule $userRule) {
 
-        $this->checkNodeRelationships($node, $userRule->getRelationships());
+//        $this->checkNodeRelationships($node, $userRule->getRelationships());
         $this->checkProperties($node, $userRule->getProperties());
     }
 
@@ -52,11 +51,11 @@ class ConsistencyChecker
                 if ($rule->getDirection() == 'incoming' && $endNode->getId() != $node->getId()
                     || $rule->getDirection() == 'outgoing' && $startNode->getId() != $node->getId()
                 ) {
-                    $errors['relationships'][] = sprintf('Direction of relationship %d is not correct', $relationship->getId());
+                    $errors['relationships']['direction'] = sprintf('Direction of relationship %d is not correct', $relationship->getId());
                 }
 
                 if (!in_array($rule->getOtherNode(), ConsistencyCheckerService::getLabelNames($otherNode))) {
-                    $errors['relationships'][] = sprintf('Label of destination node for relationship %d is not correct', $relationship->getId());
+                    $errors['relationships']['label'] = sprintf('Label of destination node for relationship %d is not correct', $relationship->getId());
                 }
 
                 $this->checkProperties($relationship, $rule->getProperties());
@@ -74,21 +73,24 @@ class ConsistencyChecker
 
         foreach ($propertyRules as $name => $propertyRule) {
 
-            $errors = array('properties' => array());
+            $errors = array();
             $rule = new ConsistencyPropertyRule($name, $propertyRule);
 
             if (!isset($properties[$name])) {
                 if (!$rule->isRequired()) {
                     continue;
                 }
-                $errors['properties'][$name] = sprintf('Element with id $d does not have property %s', $propertyContainer->getId(), $name);
+
+                $error = new MissingPropertyConsistencyError();
+                $error->setPropertyName($name);
+                $errors[] = $error;
             } else {
                 $value = $properties[$name];
 
                 $options = $rule->getOptions();
                 if (!empty($options)) {
                     if (!in_array($value, $options)) {
-                        $errors['properties'][$name] = sprintf('Element with id %d has property %s with invalid value %s', $propertyContainer->getId(), $name, $value);
+                        $errors[$name] = sprintf('Element with id %d has property %s with invalid value %s', $propertyContainer->getId(), $name, $value);
                     }
                 }
 
@@ -97,34 +99,34 @@ class ConsistencyChecker
                         break;
                     case ConsistencyPropertyRule::TYPE_INTEGER:
                         if (!is_int($value)) {
-                            $errors['properties'][$name] = sprintf('Element with id %d has property %s with value %s which should be an integer', $propertyContainer->getId(), $name, $value);
+                            $errors[$name] = sprintf('Element with id %d has property %s with value %s which should be an integer', $propertyContainer->getId(), $name, $value);
                         } else {
                             if ($rule->getMaximum() && $value > $rule->getMaximum()) {
-                                $errors['properties'][$name] = sprintf('Element with id %d has property %d greater than maximum %d', $propertyContainer->getId(), $name, $value, $rule->getMaximum());
+                                $errors[$name] = sprintf('Element with id %d has property %d greater than maximum %d', $propertyContainer->getId(), $name, $value, $rule->getMaximum());
                             }
                             if ($rule->getMinimum() && $value < $rule->getMinimum()) {
-                                $errors['properties'][$name] = sprintf('Element with id %d has property %d lower than minimum %d', $propertyContainer->getId(), $name, $value, $rule->getMinimum());
+                                $errors[$name] = sprintf('Element with id %d has property %d lower than minimum %d', $propertyContainer->getId(), $name, $value, $rule->getMinimum());
                             }
                         }
                         break;
                     case ConsistencyPropertyRule::TYPE_BOOLEAN:
                         if (!is_bool($value)) {
-                            $errors['properties'][$name] = sprintf('Element with id %d has property %s with value %s which should be a boolean', $propertyContainer->getId(), $name, $value);
+                            $errors[$name] = sprintf('Element with id %d has property %s with value %s which should be a boolean', $propertyContainer->getId(), $name, $value);
                         };
                         break;
                     case ConsistencyPropertyRule::TYPE_ARRAY:
                         if (!is_array($value)) {
-                            $errors['properties'][$name] = sprintf('Element with id %d has property %s with value %s which should be an array', $propertyContainer->getId(), $name, $value);
+                            $errors[$name] = sprintf('Element with id %d has property %s with value %s which should be an array', $propertyContainer->getId(), $name, $value);
                         };
                         break;
                     case ConsistencyPropertyRule::TYPE_DATETIME:
                         $date = new \DateTime($value);
 
                         if ($rule->getMaximum() && $date > new \DateTime($rule->getMaximum())) {
-                            $errors['properties'][$name] = sprintf('Element with id %d has property %s later than maximum %s', $propertyContainer->getId(), $name, $rule->getMaximum());
+                            $errors[$name] = sprintf('Element with id %d has property %s later than maximum %s', $propertyContainer->getId(), $name, $rule->getMaximum());
                         }
                         if ($rule->getMinimum() && $value < $rule->getMinimum()) {
-                            $errors['properties'][$name] = sprintf('Element with id %d has property %s earlier than minimum %s', $propertyContainer->getId(), $name, $rule->getMinimum());
+                            $errors[$name] = sprintf('Element with id %d has property %s earlier than minimum %s', $propertyContainer->getId(), $name, $rule->getMinimum());
                         }
                         break;
                     default:
@@ -132,7 +134,7 @@ class ConsistencyChecker
                 }
             }
 
-            if (!empty($errors['properties'])) {
+            if (!empty($errors)) {
                 throw new ValidationException($errors, 'Properties consistency error for element ' . $propertyContainer->getId());
             }
         }

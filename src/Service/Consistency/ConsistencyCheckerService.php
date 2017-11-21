@@ -13,33 +13,30 @@ class ConsistencyCheckerService
 {
     protected $graphManager;
     protected $dispatcher;
-    protected $consistency;
+    protected $consistencyRules;
 
     /**
      * ConsistencyChecker constructor.
      * @param GraphManager $graphManager
      * @param EventDispatcher $dispatcher
-     * @param array $consistency
+     * @param array $consistencyRules
      */
-    public function __construct(GraphManager $graphManager, EventDispatcher $dispatcher, array $consistency)
+    public function __construct(GraphManager $graphManager, EventDispatcher $dispatcher, array $consistencyRules)
     {
         $this->graphManager = $graphManager;
         $this->dispatcher = $dispatcher;
-        $this->consistency = $consistency;
+        $this->consistencyRules = $consistencyRules;
     }
 
-    public function checkDatabase($label = null)
+    public function getDatabaseErrors($label = null)
     {
         //dispatch consistency start
         $this->dispatcher->dispatch(\AppEvents::CONSISTENCY_START);
         $paginationSize = 1000;
         $offset = 0;
 
-        $errors = array();
+        $errorList = array();
         do {
-            var_dump($offset);
-            var_dump(count($errors));
-
             $qb = $this->graphManager->createQueryBuilder();
 
             if (null !== $label) {
@@ -55,11 +52,10 @@ class ConsistencyCheckerService
 
             $result = $qb->getQuery()->getResultSet();
             foreach ($result as $row) {
+                /** @var Node $node */
                 $node = $row->offsetGet('a');
-                $newErrors = $this->checkNode($node);
-                foreach ($newErrors as $field =>$id) {
-                    $errors[$field][] = $id;
-                }
+                $nodeErrors = $this->checkNode($node);
+                $errorList = array_merge($errorList, $nodeErrors);
             }
 
             $offset += $paginationSize;
@@ -69,6 +65,20 @@ class ConsistencyCheckerService
 
         //dispatch consistency end
         $this->dispatcher->dispatch(\AppEvents::CONSISTENCY_END);
+
+        return $errorList;
+    }
+
+    /** @var $errors ConsistencyError[]
+     * @return ConsistencyError[]
+     */
+    public function solveDatabaseErrors(array $errors)
+    {
+        foreach ($errors as $error) {
+            $solver = $this->chooseSolver($error->getRule());
+            $isSolved = $solver->solve($error);
+            $error->setSolved($isSolved);
+        }
 
         return $errors;
     }
@@ -81,35 +91,67 @@ class ConsistencyCheckerService
     {
         /** @var Label[] $labels */
         $labelNames = $this->getLabelNames($node);
+        $nodeId = $node->getId();
 
-        $rules = $this->consistency;
+        $rules = $this->consistencyRules;
         $errors = array();
+
         foreach ($rules['nodes'] as $rule) {
             if (!in_array($rule['label'], $labelNames)) {
                 continue;
             }
 
-            if (isset($rule['class'])) {
-                $checker = new $rule['class']();
-            } else {
-                $checker = new ConsistencyChecker();
-            }
-
             $nodeRule = new ConsistencyNodeRule($rule);
+            $checker = $this->chooseChecker($nodeRule);
+
             try {
                 $checker->check($node, $nodeRule);
             } catch (ValidationException $e) {
-                foreach ($e->getErrors() as $field => $messages) {
-                    foreach ($messages as $type => $message) {
-                        $key = $field . '-' . $type . ' -> ' . $message;
-                        $errors[$key] = $node->getId();
-                    }
+                $newErrors = $e->getErrors();
+                foreach ($newErrors as $newError) {
+                    /** @var ConsistencyError $newError */
+                    $newError->setRule($nodeRule);
+                    $newError->setNodeId($nodeId);
                 }
-                $this->dispatcher->dispatch(\AppEvents::CONSISTENCY_ERROR, new ExceptionEvent($e, 'Checking node ' . $node->getId()));
+                $errors += $newErrors;
+
+                $this->dispatcher->dispatch(\AppEvents::CONSISTENCY_ERROR, new ExceptionEvent($e, 'Checking node ' . $nodeId));
             }
         }
 
         return $errors;
+    }
+
+    /**
+     * @param ConsistencyNodeRule $rule
+     * @return ConsistencyChecker
+     */
+    protected function chooseChecker(ConsistencyNodeRule $rule)
+    {
+        $ruleClass = $rule->getCheckerClass();
+        $defaultClass = ConsistencyChecker::class;
+
+        if ($ruleClass){
+            return new $ruleClass();
+        } else {
+            return new $defaultClass();
+        }
+    }
+
+    /**
+     * @param ConsistencyNodeRule $rule
+     * @return ConsistencySolver
+     */
+    protected function chooseSolver(ConsistencyNodeRule $rule)
+    {
+        $ruleClass = $rule->getSolverClass();
+        $defaultClass = ConsistencySolver::class;
+
+        if ($ruleClass){
+            return new $ruleClass($this->graphManager);
+        } else {
+            return new $defaultClass($this->graphManager);
+        }
     }
 
     static function getLabelNames(Node $node)
