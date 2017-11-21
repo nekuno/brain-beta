@@ -6,6 +6,7 @@ use ApiConsumer\Exception\UrlNotValidException;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\InstagramUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
+use ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\UrlParserInterface;
@@ -80,6 +81,10 @@ class LinkAnalyzer
             return TokensModel::TWITTER;
         }
 
+        if (self::isTumblr($url)) {
+            return TokensModel::TUMBLR;
+        }
+
         return null;
     }
 
@@ -115,6 +120,10 @@ class LinkAnalyzer
 
         if (self::isInstagram($url)) {
             return new InstagramUrlParser();
+        }
+
+        if (self::isTumblr($url)) {
+            return new TumblrUrlParser();
         }
 
         return new UrlParser();
@@ -168,4 +177,8 @@ class LinkAnalyzer
         return preg_match('/^https?:\/\/(www\.)?instagram\.com\//i', $url);
     }
 
+    private static function isTumblr($url)
+    {
+        return preg_match('/^https?:\/\/.+\.tumblr\.com\//i', $url);
+    }
 }

@@ -90,6 +90,11 @@ params:
     facebook.consumer_secret: ~
     facebook.redirect_uri: https://client.local.nekuno.com/
 
+    ## Tumblr App
+    tumblr.consumer_key: boLPNHs4oCPLtisiAWFUijDIq6nJz0sl8DH0I6Scx7lxuofWxU
+    tumblr.consumer_secret: 9JeA1Jr7SU3xbyr11Q9YNVLITAD5but4RGpqewF2vS9AmzuIsg
+    tumblr.application_token: hQP1bByQRB9yrhBAIiIJglVblevbJpYuWj16eeljBdTwsoeXNK
+
     ## Invitations migration
     admin.domain_plus_port: https://admin.local.nekuno.com/
 
