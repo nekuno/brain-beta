@@ -107,18 +107,18 @@ class TumblrBlogProcessorTest extends AbstractProcessorTest
     /**
      * @dataProvider getResponseImages
      */
-    /* TODO: requestBlogAvatar doesn't seem to be called from $this->processor->getImages($link, $response)
-    public function testGetImages($url, $response, $expectedImages)
+    public function testGetImages($url, $response)
     {
+        $this->resourceOwner->expects($this->exactly(3))
+            ->method('requestBlogAvatar')
+            ->will($this->returnValueMap($this->getProcessingImages()));
+
         $link = new PreprocessedLink($url);
         $firstLink = Link::buildFromArray(array('url' => $url));
         $link->setFirstLink($firstLink);
 
-        $images = $this->processor->getImages($link, $response);
-
-        $this->assertEquals($expectedImages, $images, 'Images got from response');
+        $this->processor->getImages($link, $response);
     }
-    */
 
     public function getBadUrls()
     {
@@ -170,7 +170,6 @@ class TumblrBlogProcessorTest extends AbstractProcessorTest
             array(
                 $this->getBlogUrl(),
                 $this->getBlogResponse(),
-                $this->getProcessingImages()
             )
         );
     }
@@ -228,14 +227,18 @@ class TumblrBlogProcessorTest extends AbstractProcessorTest
         return array();
     }
 
-    public function getThumbnail()
+    public function getThumbnail($size)
     {
-        return 'https://api.tumblr.com/v2/blog/acabrillanes/avatar/512';
+        return "https://api.tumblr.com/v2/blog/acabrillanes/avatar/$size";
     }
 
     public function getProcessingImages()
     {
-        return array(new ProcessingImage($this->getThumbnail()));
+        return array(
+            new ProcessingImage($this->getThumbnail(512)),
+            new ProcessingImage($this->getThumbnail(128)),
+            new ProcessingImage($this->getThumbnail(96)),
+        );
     }
 
 }
