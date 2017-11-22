@@ -102,48 +102,48 @@ class TumblrResourceOwner extends GenericOAuth1ResourceOwner
         sleep($fifteenMinutes);
     }
 
-    public function requestBlog($blogId, Token $token)
+    public function requestBlog($blogId, Token $token = null)
     {
         $url = "blog/$blogId/info";
 
-        if ($token->getResourceOwner() === TokensModel::TUMBLR) {
+        if ($token && $token->getResourceOwner() === TokensModel::TUMBLR) {
             return $this->request($url, array(), $token);
         }
 
         return $this->requestAsClient($url);
     }
 
-    public function requestBlogAvatar($blogId, $size, Token $token)
+    public function requestBlogAvatar($blogId, $size, Token $token = null)
     {
         try {
             $url = "blog/$blogId/avatar/$size";
-            if ($token->getResourceOwner() === TokensModel::TUMBLR) {
+            if ($token && $token->getResourceOwner() === TokensModel::TUMBLR) {
                 $response = $this->requestAsUser($url, array(), $token);
             } else {
                 $response = $this->requestAsClient($url);
             }
         } catch (RequestException $e) {
-            return null;
+            return TumblrUrlParser::DEFAULT_IMAGE_PATH;
         }
 
         return isset($response['errors']) ? TumblrUrlParser::DEFAULT_IMAGE_PATH : $this->options['base_url'] . $url;
     }
 
-    public function requestPost($blogId, $postId, Token $token)
+    public function requestPost($blogId, $postId, Token $token = null)
     {
         $url = "blog/$blogId/posts";
         $query = array(
             'id' => $postId
         );
 
-        if ($token->getResourceOwner() === TokensModel::TUMBLR) {
+        if ($token && $token->getResourceOwner() === TokensModel::TUMBLR) {
             return $this->request($url, $query, $token);
         }
 
         return $this->requestAsClient($url, $query);
     }
 
-    public function requestPosts($blogId, Token $token)
+    public function requestPosts($blogId, Token $token = null)
     {
         $url = "blog/$blogId/posts";
 

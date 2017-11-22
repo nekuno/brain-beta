@@ -19,8 +19,11 @@ class TumblrUrlParser extends UrlParser
         if ($this->isBlogUrl($url)) {
             return self::TUMBLR_BLOG;
         }
+        if ($this->isPostUrl($url)) {
+            return self::TUMBLR_UNKNOWN_TYPE_POST;
+        }
 
-        return self::TUMBLR_UNKNOWN_TYPE_POST;
+        throw new UrlNotValidException($url);
     }
 
     static public function getBlogId($url)
@@ -33,6 +36,10 @@ class TumblrUrlParser extends UrlParser
             if (count($path) > 1 && $path[0] === 'blog' && $id = $path[1]) {
                 return $id;
             }
+        }
+
+        if (!isset($urlParsed['host'])) {
+            throw new UrlNotValidException($url);
         }
 
         return $urlParsed['host'];
@@ -83,6 +90,10 @@ class TumblrUrlParser extends UrlParser
 
     public function isBlogUrl($url)
     {
+        if (!$this->isTumblrUrl($url)) {
+            throw new UrlNotValidException($url);
+        }
+
         $parsedUrl = parse_url($url);
 
         if (isset($parsedUrl['query']) && substr($parsedUrl['query'], 0, 12) === "redirect_to=") {
@@ -104,14 +115,28 @@ class TumblrUrlParser extends UrlParser
 
     public function isPostUrl($url)
     {
+        if (!$this->isTumblrUrl($url)) {
+            throw new UrlNotValidException($url);
+        }
+
         $parsedUrl = parse_url($url);
 
         if (isset($parsedUrl['path'])) {
             $path = explode('/', trim($parsedUrl['path'], '/'));
 
-            if (count($path) > 0) {
+            if (count($path) > 0 && ($path[0] === 'post' || $path[0] === 'image')) {
                 return true;
             }
+        }
+
+        return false;
+    }
+
+    public function isTumblrUrl($url)
+    {
+        $parsedUrl = parse_url($url);
+        if (preg_match("/.*tumblr\\.com.*/", $parsedUrl['host'])) {
+            return true;
         }
 
         return false;
