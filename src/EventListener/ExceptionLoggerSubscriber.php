@@ -11,6 +11,7 @@ use Model\Neo4j\Neo4jHandler;
 use Monolog\Logger;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
+use Service\Consistency\ConsistencyError;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class ExceptionLoggerSubscriber implements EventSubscriberInterface, LoggerAwareInterface
@@ -82,12 +83,16 @@ class ExceptionLoggerSubscriber implements EventSubscriberInterface, LoggerAware
     {
         /** @var ValidationException $exception */
         $exception = $event->getException();
+        /** @var  $errors */
         $errors = $exception->getErrors();
 
         $lines = array();
-        foreach ($errors as $field => $error) {
-            foreach ($error as $name => $message) {
-                $lines[] = sprintf('%s error related to %s: %s', $field, $name, $message);
+
+        foreach ($errors as $field => $fieldErrors) {
+            foreach ($fieldErrors as $error)
+            {
+                /** @var ConsistencyError $error */
+                $lines[] = sprintf('%s error in field : %s', $error->getErrorType(), $field,  $error->getMessage());
             }
         }
 

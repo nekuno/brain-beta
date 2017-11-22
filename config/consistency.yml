@@ -1,7 +1,7 @@
 nodes:
     user:
         label: User
-        class: Service\Consistency\UserConsistencyChecker
+        checkerClass: Service\Consistency\UserConsistencyChecker
 
         relationships:
             profile:
@@ -202,3 +202,35 @@ nodes:
                 direction: outgoing
                 otherNode: Popularity
                 maximum: 1
+
+    question:
+        label: Question
+
+        properties:
+            text_en:
+                required: true
+            text_es:
+                required: true
+            text:
+                required: true
+                default: node.text_es
+
+        relationships:
+            rates:
+                type: RATES
+                direction: incoming
+                otherNode: User
+
+            is_answer_of:
+                type: IS_ANSWER_OF
+                direction: incoming
+                otherNode: Answer
+                minimum: 2
+                maximum: 6
+
+            created_by:
+                type: CREATED_BY
+                direction: outgoing
+                otherNode: User
+                maximum: 1
+
