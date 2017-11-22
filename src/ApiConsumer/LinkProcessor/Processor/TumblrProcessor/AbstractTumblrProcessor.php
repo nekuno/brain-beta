@@ -29,20 +29,22 @@ abstract class AbstractTumblrProcessor extends AbstractAPIProcessor
         $defaultImageUrl = $this->brainBaseUrl . TumblrUrlParser::DEFAULT_IMAGE_PATH;
         $defaultImage = $this->buildSquareImage($defaultImageUrl, ProcessingImage::LABEL_LARGE, 512);
 
-        if ($blogId = $preprocessedLink->getResourceItemId()) {
-            try {
-                $largeThumbnailUrl = $this->resourceOwner->requestBlogAvatar($blogId, 512, $preprocessedLink->getToken());
-                $largeImage = $this->buildSquareImage($largeThumbnailUrl, ProcessingImage::LABEL_LARGE, 512);
-
-                $mediumThumbnailUrl = $this->resourceOwner->requestBlogAvatar($blogId, 128, $preprocessedLink->getToken());
-                $mediumImage = $this->buildSquareImage($mediumThumbnailUrl, ProcessingImage::LABEL_MEDIUM, 128);
-
-                $smallThumbnailUrl = $this->resourceOwner->requestBlogAvatar($blogId, 96, $preprocessedLink->getToken());
-                $smallImage = $this->buildSquareImage($smallThumbnailUrl, ProcessingImage::LABEL_SMALL, 96);
-
-                return array($largeImage, $mediumImage, $smallImage);
-            } catch (\Exception $e) {}
+        if (!$blogId = $preprocessedLink->getResourceItemId()) {
+            $firstLink = $preprocessedLink->getFirstLink();
+            $blogId = TumblrUrlParser::getBlogId($firstLink->getUrl());
         }
+        try {
+            $largeThumbnailUrl = $this->resourceOwner->requestBlogAvatar($blogId, 512, $preprocessedLink->getToken());
+            $largeImage = $this->buildSquareImage($largeThumbnailUrl, ProcessingImage::LABEL_LARGE, 512);
+
+            $mediumThumbnailUrl = $this->resourceOwner->requestBlogAvatar($blogId, 128, $preprocessedLink->getToken());
+            $mediumImage = $this->buildSquareImage($mediumThumbnailUrl, ProcessingImage::LABEL_MEDIUM, 128);
+
+            $smallThumbnailUrl = $this->resourceOwner->requestBlogAvatar($blogId, 96, $preprocessedLink->getToken());
+            $smallImage = $this->buildSquareImage($smallThumbnailUrl, ProcessingImage::LABEL_SMALL, 96);
+
+            return array($largeImage, $mediumImage, $smallImage);
+        } catch (\Exception $e) {}
 
         return array($defaultImage);
     }

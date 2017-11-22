@@ -2,6 +2,8 @@
 
 namespace ApiConsumer\LinkProcessor\UrlParser;
 
+use ApiConsumer\Exception\UrlNotValidException;
+
 class TumblrUrlParser extends UrlParser
 {
     const TUMBLR_BLOG = 'tumblr_blog';
@@ -9,7 +11,7 @@ class TumblrUrlParser extends UrlParser
     const TUMBLR_VIDEO = 'tumblr_video';
     const TUMBLR_PHOTO = 'tumblr_photo';
     const TUMBLR_LINK = 'tumblr_link';
-    const TUMBLR_POST = 'tumblr_post';
+    const TUMBLR_UNKNOWN_TYPE_POST = 'tumblr_unknown_type_post';
     const DEFAULT_IMAGE_PATH = 'default_images/tumblr.png';
 
     public function getUrlType($url)
@@ -18,22 +20,81 @@ class TumblrUrlParser extends UrlParser
             return self::TUMBLR_BLOG;
         }
 
-        return self::TUMBLR_POST;
+        return self::TUMBLR_UNKNOWN_TYPE_POST;
     }
 
     static public function getBlogId($url)
     {
-        return preg_replace('/https?:\/\//', '', trim($url, '/'));
+        $urlParsed = parse_url($url);
+
+        if (isset($urlParsed['path'])) {
+            $path = explode('/', trim($urlParsed['path'], '/'));
+
+            if (count($path) > 1 && $path[0] === 'blog' && $id = $path[1]) {
+                return $id;
+            }
+        }
+
+        return $urlParsed['host'];
     }
 
-    public function isBlogUrl($url)
+    static public function fixUrl($url)
+    {
+        $urlParsed = parse_url($url);
+
+        if (isset($urlParsed['query']) && substr($urlParsed['query'], 0, 12) === "redirect_to=") {
+            $redirectPath = substr($urlParsed['query'], 12);
+            $url = $urlParsed['scheme'] . '://' . $urlParsed['host'] . $redirectPath;
+        }
+
+        return $url;
+    }
+
+    static public function getPostId($url)
     {
         $parsedUrl = parse_url($url);
 
         if (isset($parsedUrl['path'])) {
             $path = explode('/', trim($parsedUrl['path'], '/'));
 
-            if (count($path) > 0) {
+            if (count($path) > 1 && ($path[0] === 'post' || $path[0] === 'image') && $id = $path[1]) {
+                return $id;
+            }
+        }
+
+        throw new UrlNotValidException($url);
+    }
+
+    static public function getPostProcessor($post)
+    {
+        switch ($post['type']) {
+            case 'audio':
+                return TumblrUrlParser::TUMBLR_AUDIO;
+            case 'video':
+                return TumblrUrlParser::TUMBLR_VIDEO;
+            case 'photo':
+                return TumblrUrlParser::TUMBLR_PHOTO;
+            case 'link':
+                return TumblrUrlParser::TUMBLR_LINK;
+        }
+
+        return null;
+    }
+
+    public function isBlogUrl($url)
+    {
+        $parsedUrl = parse_url($url);
+
+        if (isset($parsedUrl['query']) && substr($parsedUrl['query'], 0, 12) === "redirect_to=") {
+            $redirectPath = substr($parsedUrl['query'], 12);
+            $url = $parsedUrl['scheme'] . '://' . $parsedUrl['host'] . $redirectPath;
+            $parsedUrl = parse_url($url);
+        }
+
+        if (isset($parsedUrl['path'])) {
+            $path = explode('/', trim($parsedUrl['path'], '/'));
+
+            if (count($path) > 0 && $path[0] !== 'blog') {
                 return false;
             }
         }

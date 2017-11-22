@@ -2,7 +2,6 @@
 
 namespace ApiConsumer\ResourceOwner;
 
-use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\AbstractTwitterProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use Buzz\Exception\RequestException;
@@ -76,9 +75,7 @@ class TumblrResourceOwner extends GenericOAuth1ResourceOwner
         $url = $this->getOption('base_url') . $url;
 
         $headers = array();
-        if (!empty($clientToken)) {
-            $headers = array('Authorization: Bearer ' . $clientToken);
-        }
+        $query['api_key'] = $clientToken;
 
         $response = $this->httpRequest($this->normalizeUrl($url, $query), null, array(), $headers);
 
@@ -109,14 +106,22 @@ class TumblrResourceOwner extends GenericOAuth1ResourceOwner
     {
         $url = "blog/$blogId/info";
 
-        return $this->request($url, array(), $token);
+        if ($token->getResourceOwner() === TokensModel::TUMBLR) {
+            return $this->request($url, array(), $token);
+        }
+
+        return $this->requestAsClient($url);
     }
 
     public function requestBlogAvatar($blogId, $size, Token $token)
     {
         try {
             $url = "blog/$blogId/avatar/$size";
-            $response = $this->requestAsUser($url, array(), $token);
+            if ($token->getResourceOwner() === TokensModel::TUMBLR) {
+                $response = $this->requestAsUser($url, array(), $token);
+            } else {
+                $response = $this->requestAsClient($url);
+            }
         } catch (RequestException $e) {
             return null;
         }
@@ -131,7 +136,11 @@ class TumblrResourceOwner extends GenericOAuth1ResourceOwner
             'id' => $postId
         );
 
-        return $this->request($url, $query, $token);
+        if ($token->getResourceOwner() === TokensModel::TUMBLR) {
+            return $this->request($url, $query, $token);
+        }
+
+        return $this->requestAsClient($url, $query);
     }
 
     public function requestPosts($blogId, Token $token)

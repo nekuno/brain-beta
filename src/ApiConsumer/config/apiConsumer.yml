@@ -137,6 +137,10 @@ api_consumer.config:
             class: ApiConsumer\LinkProcessor\Processor\TumblrProcessor\TumblrVideoProcessor
             parser: ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser
             resourceOwner: tumblr
+        tumblr_unknown_type_post:
+            class: ApiConsumer\LinkProcessor\Processor\TumblrProcessor\TumblrUnknownTypePostProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser
+            resourceOwner: tumblr
 
         instagram:
             class: ApiConsumer\LinkProcessor\Processor\InstagramProcessor\InstagramProcessor
