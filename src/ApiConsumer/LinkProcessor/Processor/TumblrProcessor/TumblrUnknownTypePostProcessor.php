@@ -18,9 +18,14 @@ class TumblrUnknownTypePostProcessor extends TumblrPostProcessor
             throw new UrlNotValidException($link->getUrl());
         }
 
-        $this->type = $post['type'];
+        $this->setType($post['type']);
 
         return $post;
+    }
+
+    public function setType($type)
+    {
+        $this->type = $type;
     }
 
     public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
