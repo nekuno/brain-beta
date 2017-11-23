@@ -136,3 +136,8 @@ hwi_oauth:
             type:                oauth1
             client_id:           %tumblr.consumer_key%
             client_secret:       %tumblr.consumer_secret%
+            user_response_class: HWI\Bundle\OAuthBundle\OAuth\Response\PathUserResponse
+            paths:
+                identifier:     response.user.name
+                nickname:       response.user.name
+                realname:       response.user.name

@@ -3,14 +3,16 @@
 namespace ApiConsumer\ResourceOwner;
 
 use ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser;
-use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use Buzz\Exception\RequestException;
 use Buzz\Message\Response;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\AbstractResourceOwner;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\GenericOAuth1ResourceOwner;
+use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
+use HWI\Bundle\OAuthBundle\Security\OAuthUtils;
 use Model\User\Token\Token;
 use Model\User\Token\TokensModel;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Buzz\Message\RequestInterface as HttpRequestInterface;
 
 class TumblrResourceOwner extends GenericOAuth1ResourceOwner
 {
@@ -19,7 +21,7 @@ class TumblrResourceOwner extends GenericOAuth1ResourceOwner
         AbstractResourceOwnerTrait::__construct as private traitConstructor;
     }
 
-    /** @var  TwitterUrlParser */
+    /** @var  TumblrUrlParser */
     protected $urlParser;
 
     public function __construct($httpClient, $httpUtils, $options, $name, $storage, $dispatcher)
@@ -32,7 +34,33 @@ class TumblrResourceOwner extends GenericOAuth1ResourceOwner
      */
     public function getUserInformation(array $accessToken, array $extraParameters = array())
     {
-        return parent::getUserInformation($accessToken, $extraParameters);
+        $parameters = array_merge(array(
+            'oauth_consumer_key'     => $this->options['client_id'],
+            'oauth_timestamp'        => time(),
+            'oauth_nonce'            => $this->generateNonce(),
+            'oauth_version'          => '1.0',
+            'oauth_signature_method' => $this->options['signature_method'],
+            'oauth_token'            => $accessToken['oauth_token'],
+        ), $extraParameters);
+
+        $url = $this->options['infos_url'];
+        $parameters['oauth_signature'] = OAuthUtils::signRequest(
+            HttpRequestInterface::METHOD_GET,
+            $url,
+            $parameters,
+            $this->options['client_secret'],
+            $accessToken['oauth_token_secret'],
+            $this->options['signature_method']
+        );
+
+        $content = $this->httpRequest($this->normalizeUrl($url, $parameters))->getContent();
+
+        $response = $this->getUserResponse();
+        $response->setResponse($content);
+        $response->setResourceOwner($this);
+        $response->setOAuthToken(new OAuthToken($accessToken));
+
+        return $response;
     }
 
     /**
@@ -45,6 +73,7 @@ class TumblrResourceOwner extends GenericOAuth1ResourceOwner
 
         $resolver->setDefaults(array(
             'base_url' => 'https://api.tumblr.com/v2/',
+            'realm' => null,
             'authorization_url' => 'https://www.tumblr.com/oauth/authorize',
             'request_token_url' => 'https://www.tumblr.com/oauth/request_token',
             'access_token_url' => 'https://www.tumblr.com/oauth/access_token',
