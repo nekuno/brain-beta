@@ -11,7 +11,7 @@ use Model\Neo4j\Neo4jHandler;
 use Monolog\Logger;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
-use Service\Consistency\ConsistencyError;
+use Service\Consistency\ConsistencyErrors\ConsistencyError;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class ExceptionLoggerSubscriber implements EventSubscriberInterface, LoggerAwareInterface

@@ -1,6 +1,8 @@
 <?php
 
-namespace Service\Consistency;
+namespace Service\Consistency\ConsistencyErrors;
+
+use Service\Consistency\ConsistencyNodeRule;
 
 class ConsistencyError
 {
@@ -8,6 +10,7 @@ class ConsistencyError
     protected $rule;
     protected $nodeId;
     protected $solved = false;
+    protected $message = null;
 
     /**
      * @return mixed
@@ -75,6 +78,15 @@ class ConsistencyError
 
     public function getMessage()
     {
-        return 'Error with data ' . json_encode($this->data);
+        return $this->message ? : 'Error with data ' . json_encode($this->data);
     }
+
+    /**
+     * @param null $message
+     */
+    public function setMessage($message)
+    {
+        $this->message = $message;
+    }
+
 }

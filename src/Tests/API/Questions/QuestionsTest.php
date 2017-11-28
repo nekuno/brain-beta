@@ -9,6 +9,7 @@ class QuestionsTest extends QuestionsAPITest
     public function testQuestions()
     {
         $this->assertQuestionCreation();
+        $this->assertQuestionCreationFromAdmin();
         $this->assertNextQuestion();
         $this->assertSkipQuestion();
         $this->assertReportQuestions();
@@ -22,6 +23,38 @@ class QuestionsTest extends QuestionsAPITest
 
         $response = $this->createQuestion($questionData, 1);
         $this->assertStatusCode($response, 201, 'Correct question creation');
+    }
+
+    public function assertQuestionCreationFromAdmin()
+    {
+        $questionData = $this->getCreateQuestionDataFromAdminA();
+        $response = $this->createQuestionFromAdmin($questionData);
+        $this->assertStatusCode($response, 201, 'Correct question creation from admin');
+
+        $questionData = $this->getCreateQuestionDataFromAdmin1Answer();
+        $response = $this->createQuestionFromAdmin($questionData);
+        $this->assertStatusCode($response, 422, 'Incorrect question creation from admin with 1 answer');
+
+        $questionData = $this->getCreateQuestionDataFromAdmin7Answers();
+        $response = $this->createQuestionFromAdmin($questionData);
+        $this->assertStatusCode($response, 422, 'Incorrect question creation from admin with 7 answers');
+
+        $questionData = $this->getCreateQuestionDataFromAdminInvalidLocale();
+        $response = $this->createQuestionFromAdmin($questionData);
+        $this->assertStatusCode($response, 422, 'Incorrect question creation from admin with invalid locale');
+
+        $questionData = $this->getCreateQuestionDataFromAdminInvalidText();
+        $response = $this->createQuestionFromAdmin($questionData);
+        $this->assertStatusCode($response, 422, 'Incorrect question creation from admin with invalid text');
+    }
+
+    public function assertGetQuestionsFromAdmin()
+    {
+        $response = $this->getQuestionsFromAdmin();
+        $formattedResponse = $this->assertJsonResponse($response, 200, 'Getting questions from admin');
+        $this->isType('array')->evaluate($formattedResponse, 'Questions from admin return an array');
+
+
     }
 
     public function assertNextQuestion()

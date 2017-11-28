@@ -1,6 +1,6 @@
 <?php
 
-namespace Service\Consistency;
+namespace Service\Consistency\ConsistencyErrors;
 
 class MissingPropertyConsistencyError extends ConsistencyError
 {
