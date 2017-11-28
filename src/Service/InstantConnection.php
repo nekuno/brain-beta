@@ -54,12 +54,29 @@ class InstantConnection
         return $this->post($url, $data);
     }
 
+    public function deleteMessages($data)
+    {
+        $url = 'api/user/messages';
+        return $this->delete($url, $data);
+    }
+
     protected function post($url, $data)
     {
         $data = array('json' => $data);
 
         try{
             return $this->client->post($url, $data);
+        } catch (RequestException $e) {
+            return null;
+        }
+    }
+
+    protected function delete($url, $data)
+    {
+        $data = array('json' => $data);
+
+        try{
+            return $this->client->delete($url, $data);
         } catch (RequestException $e) {
             return null;
         }

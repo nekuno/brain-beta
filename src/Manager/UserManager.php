@@ -561,6 +561,20 @@ class UserManager
         return $user;
     }
 
+    public function delete($userId)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(u:User)')
+            ->where('u.qnoow_id = {userId}')
+            ->setParameter('userId', (integer)$userId);
+        $qb->detachDelete('u');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        return $result->count();
+    }
+
     public function setEnabled($userId, $enabled, $fromAdmin = false)
     {
         $conditions = array('u.qnoow_id = { qnoow_id }');
