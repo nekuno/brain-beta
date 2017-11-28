@@ -2,75 +2,89 @@
 
 namespace Service\Consistency;
 
-use Everyman\Neo4j\Node;
-use Everyman\Neo4j\PropertyContainer;
-use Everyman\Neo4j\Relationship;
 use Model\Exception\ValidationException;
+use Service\Consistency\ConsistencyErrors\ConsistencyError;
+use Service\Consistency\ConsistencyErrors\MissingPropertyConsistencyError;
+use Service\Consistency\ConsistencyErrors\ReverseRelationshipConsistencyError;
 
 class ConsistencyChecker
 {
-    public function check(Node $node, ConsistencyNodeRule $userRule) {
-
-//        $this->checkNodeRelationships($node, $userRule->getRelationships());
-        $this->checkProperties($node, $userRule->getProperties());
+    public function checkNode(ConsistencyNodeData $nodeData, ConsistencyNodeRule $rule)
+    {
+        $this->checkNodeRelationships($nodeData, $rule->getRelationships());
+        $this->checkProperties($nodeData->getProperties(), $nodeData->getId(), $rule->getProperties());
     }
 
     /**
-     * @param Node $node
-     * @param $relationshipRules
+     * @param ConsistencyNodeData $nodeData
+     * @param array $relationshipRules
+     * @internal param array $totalRelationships
+     * @internal param $nodeId
      */
-    protected function checkNodeRelationships(Node $node, $relationshipRules)
+    protected function checkNodeRelationships(ConsistencyNodeData $nodeData,  array $relationshipRules)
     {
-        $totalRelationships = $node->getRelationships();
-
+        $nodeId = $nodeData->getId();
         foreach ($relationshipRules as $relationshipRule) {
             $rule = new ConsistencyRelationshipRule($relationshipRule);
 
-            /** @var Relationship[] $relationships */
-            $relationships = array_filter($totalRelationships, function ($relationship) use ($rule) {
-                /** @var $relationship Relationship */
-                return $relationship->getType() === $rule->getType();
-            });
+            list($incoming, $outgoing) = $this->chooseByRule($nodeData, $rule);
+            $totalRelationships = array_merge($incoming + $outgoing);
+            $errors = array();
 
-            $errors = array('relationships' => array());
-
-            if (count($relationships) < $rule->getMinimum()) {
-                $errors['relationships'][$rule->getType()] = sprintf('Amount of relationships %d is less than %d allowed', count($relationships), $rule->getMinimum());
+            $count = count($totalRelationships);
+            if ($count < $rule->getMinimum()) {
+                $error = new ConsistencyError();
+                $error->setMessage(sprintf('Amount of relationships %d is less than %d allowed', $count, $rule->getMinimum()));
+                $errors[] = $error;
             }
 
-            if (count($relationships) > $rule->getMaximum()) {
-                $errors['relationships'][$rule->getType()] = sprintf('Amount of relationships %d is more than %d allowed', count($relationships), $rule->getMaximum());
+            if ($count > $rule->getMaximum()) {
+                $error = new ConsistencyError();
+                $error->setMessage(sprintf('Amount of relationships %d is more than %d allowed', $count, $rule->getMaximum()));
+                $errors[] = $error;
             }
 
-            foreach ($relationships as $relationship) {
-                $startNode = $relationship->getStartNode();
-                $endNode = $relationship->getEndNode();
-                $otherNode = $startNode->getId() !== $node->getId() ? $startNode : $endNode;
-
-
-                if ($rule->getDirection() == 'incoming' && $endNode->getId() != $node->getId()
-                    || $rule->getDirection() == 'outgoing' && $startNode->getId() != $node->getId()
-                ) {
-                    $errors['relationships']['direction'] = sprintf('Direction of relationship %d is not correct', $relationship->getId());
+            foreach ($incoming as $relationship) {
+                if ($rule->getDirection() == 'outgoing'){
+                    $errors[] = new ReverseRelationshipConsistencyError($relationship->getId());
                 }
 
-                if (!in_array($rule->getOtherNode(), ConsistencyCheckerService::getLabelNames($otherNode))) {
-                    $errors['relationships']['label'] = sprintf('Label of destination node for relationship %d is not correct', $relationship->getId());
+                $otherNodeLabels = $relationship->getStartNodeLabels();
+
+                if (!in_array($rule->getOtherNode(), $otherNodeLabels)) {
+                    $error = new ConsistencyError();
+                    $error->setMessage(sprintf('Label of node for relationship %d is not correct', $relationship->getId()));
+                    $errors[] = $error;
                 }
 
-                $this->checkProperties($relationship, $rule->getProperties());
+                $this->checkProperties($relationship->getProperties(), $relationship->getId(), $rule->getProperties());
             }
 
-            if (!empty($errors['relationships'])) {
-                throw new ValidationException($errors, 'Node relationships consistency error for node ' . $node->getId());
+            foreach ($outgoing as $relationship) {
+                if ($rule->getDirection() == 'incoming'){
+                    $errors[] = new ReverseRelationshipConsistencyError($relationship->getId());
+                }
+
+                $otherNodeLabels = $relationship->getEndNodeLabels();
+
+
+                if (!in_array($rule->getOtherNode(), $otherNodeLabels)) {
+                    $error = new ConsistencyError();
+                    $error->setMessage(sprintf('Label of node for relationship %d is not correct', $relationship->getId()));
+                    $errors[] = $error;
+                }
+
+                $this->checkProperties($relationship->getProperties(), $relationship->getId(), $rule->getProperties());
+            }
+
+            if (!empty($errors)) {
+                throw new ValidationException($errors, 'Node relationships consistency error for node ' . $nodeId);
             }
         }
     }
 
-    protected function checkProperties(PropertyContainer $propertyContainer, array $propertyRules)
+    protected function checkProperties(array $properties, $id, array $propertyRules)
     {
-        $properties = $propertyContainer->getProperties();
-
         foreach ($propertyRules as $name => $propertyRule) {
 
             $errors = array();
@@ -90,7 +104,9 @@ class ConsistencyChecker
                 $options = $rule->getOptions();
                 if (!empty($options)) {
                     if (!in_array($value, $options)) {
-                        $errors[$name] = sprintf('Element with id %d has property %s with invalid value %s', $propertyContainer->getId(), $name, $value);
+                        $error = new ConsistencyError();
+                        $error->setMessage(sprintf('Element with id %d has property %s with invalid value %s', $id, $name, $value));
+                        $errors[] = $error;
                     }
                 }
 
@@ -99,34 +115,49 @@ class ConsistencyChecker
                         break;
                     case ConsistencyPropertyRule::TYPE_INTEGER:
                         if (!is_int($value)) {
-                            $errors[$name] = sprintf('Element with id %d has property %s with value %s which should be an integer', $propertyContainer->getId(), $name, $value);
+                            $error = new ConsistencyError();
+                            $error->setMessage(sprintf('Element with id %d has property %s with value %s which should be an integer', $id, $name, $value));
+                            $errors[] = $error;
                         } else {
                             if ($rule->getMaximum() && $value > $rule->getMaximum()) {
-                                $errors[$name] = sprintf('Element with id %d has property %d greater than maximum %d', $propertyContainer->getId(), $name, $value, $rule->getMaximum());
+                                $error = new ConsistencyError();
+                                $error->setMessage(sprintf('Element with id %d has property %d greater than maximum %d', $id, $name, $value, $rule->getMaximum()));
+                                $errors[] = $error;
                             }
+
                             if ($rule->getMinimum() && $value < $rule->getMinimum()) {
-                                $errors[$name] = sprintf('Element with id %d has property %d lower than minimum %d', $propertyContainer->getId(), $name, $value, $rule->getMinimum());
+                                $error = new ConsistencyError();
+                                $error->setMessage(sprintf('Element with id %d has property %d lower than minimum %d', $id, $name, $value, $rule->getMinimum()));
+                                $errors[] = $error;
                             }
                         }
                         break;
                     case ConsistencyPropertyRule::TYPE_BOOLEAN:
                         if (!is_bool($value)) {
-                            $errors[$name] = sprintf('Element with id %d has property %s with value %s which should be a boolean', $propertyContainer->getId(), $name, $value);
+                            $error = new ConsistencyError();
+                            $error->setMessage(sprintf('Element with id %d has property %s that should be a value', $id, json_encode($value)));
+                            $errors[] = $error;
                         };
                         break;
                     case ConsistencyPropertyRule::TYPE_ARRAY:
                         if (!is_array($value)) {
-                            $errors[$name] = sprintf('Element with id %d has property %s with value %s which should be an array', $propertyContainer->getId(), $name, $value);
+                            $error = new ConsistencyError();
+                            $error->setMessage(sprintf('Element with id %d has property %s with value %s which should be an array', $id, $name, $value));
+                            $errors[] = $error;
                         };
                         break;
                     case ConsistencyPropertyRule::TYPE_DATETIME:
                         $date = new \DateTime($value);
 
                         if ($rule->getMaximum() && $date > new \DateTime($rule->getMaximum())) {
-                            $errors[$name] = sprintf('Element with id %d has property %s later than maximum %s', $propertyContainer->getId(), $name, $rule->getMaximum());
+                            $error = new ConsistencyError();
+                            $error->setMessage(sprintf('Element with id %d has property %s later than maximum %s', $id, $name, $rule->getMaximum()));
+                            $errors[] = $error;
                         }
                         if ($rule->getMinimum() && $value < $rule->getMinimum()) {
-                            $errors[$name] = sprintf('Element with id %d has property %s earlier than minimum %s', $propertyContainer->getId(), $name, $rule->getMinimum());
+                            $error = new ConsistencyError();
+                            $error->setMessage(sprintf('Element with id %d has property %s earlier than minimum %s', $id, $name, $rule->getMinimum()));
+                            $errors[] = $error;
                         }
                         break;
                     default:
@@ -135,8 +166,32 @@ class ConsistencyChecker
             }
 
             if (!empty($errors)) {
-                throw new ValidationException($errors, 'Properties consistency error for element ' . $propertyContainer->getId());
+                throw new ValidationException($errors, 'Properties consistency error for element ' . $id);
             }
         }
+    }
+
+    /**
+     * @param ConsistencyNodeData $nodeData
+     * @param ConsistencyRelationshipRule $rule
+     * @return ConsistencyRelationshipData[][]
+     */
+    protected function chooseByRule(ConsistencyNodeData $nodeData, ConsistencyRelationshipRule $rule)
+    {
+        $incoming = array();
+        foreach ($nodeData->getIncoming() as $candidateRelationship) {
+            if ($candidateRelationship->getType() === $rule->getType()) {
+                $incoming[] = $candidateRelationship;
+            }
+        }
+
+        $outgoing = array();
+        foreach ($nodeData->getOutgoing() as $candidateRelationship) {
+            if ($candidateRelationship->getType() === $rule->getType()) {
+                $outgoing[] = $candidateRelationship;
+            }
+        }
+
+        return array($incoming, $outgoing);
     }
 }

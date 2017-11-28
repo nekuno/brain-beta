@@ -3,10 +3,9 @@
 namespace Service\Consistency;
 
 use Event\ExceptionEvent;
-use Everyman\Neo4j\Label;
-use Everyman\Neo4j\Node;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
+use Service\Consistency\ConsistencyErrors\ConsistencyError;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class ConsistencyCheckerService
@@ -14,6 +13,7 @@ class ConsistencyCheckerService
     protected $graphManager;
     protected $dispatcher;
     protected $consistencyRules;
+    protected $consistencyNodeRetriever;
 
     /**
      * ConsistencyChecker constructor.
@@ -26,6 +26,7 @@ class ConsistencyCheckerService
         $this->graphManager = $graphManager;
         $this->dispatcher = $dispatcher;
         $this->consistencyRules = $consistencyRules;
+        $this->consistencyNodeRetriever = new ConsistencyNodeRetriever($this->graphManager);
     }
 
     public function getDatabaseErrors($label = null)
@@ -37,29 +38,15 @@ class ConsistencyCheckerService
 
         $errorList = array();
         do {
-            $qb = $this->graphManager->createQueryBuilder();
+            $nodes = $this->consistencyNodeRetriever->getNodeData($paginationSize, $offset, $label);
 
-            if (null !== $label) {
-                $qb->match("(a:$label)");
-            } else {
-                $qb->match('(a)');
-            }
-
-            $qb->returns('a')
-                ->skip('{offset}')
-                ->limit($paginationSize)
-                ->setParameter('offset', $offset);;
-
-            $result = $qb->getQuery()->getResultSet();
-            foreach ($result as $row) {
-                /** @var Node $node */
-                $node = $row->offsetGet('a');
-                $nodeErrors = $this->checkNode($node);
+            foreach ($nodes as $node) {
+                $nodeErrors = $this->checkSingle($node);
                 $errorList = array_merge($errorList, $nodeErrors);
             }
 
             $offset += $paginationSize;
-            $moreResultsAvailable = $result->count() >= $paginationSize;
+            $moreResultsAvailable = count($nodes) >= $paginationSize;
 
         } while ($moreResultsAvailable);
 
@@ -84,28 +71,23 @@ class ConsistencyCheckerService
     }
 
     /**
-     * @param Node $node
+     * @param ConsistencyNodeData $nodeData
      * @return array
      */
-    public function checkNode(Node $node)
+    public function checkSingle(ConsistencyNodeData $nodeData)
     {
-        /** @var Label[] $labels */
-        $labelNames = $this->getLabelNames($node);
-        $nodeId = $node->getId();
+        $nodeId = $nodeData->getId();
 
-        $rules = $this->consistencyRules;
+        $rules = $this->chooseRules($nodeData);
         $errors = array();
 
-        foreach ($rules['nodes'] as $rule) {
-            if (!in_array($rule['label'], $labelNames)) {
-                continue;
-            }
+        foreach ($rules as $rule) {
 
             $nodeRule = new ConsistencyNodeRule($rule);
             $checker = $this->chooseChecker($nodeRule);
 
             try {
-                $checker->check($node, $nodeRule);
+                $checker->checkNode($nodeData, $nodeRule);
             } catch (ValidationException $e) {
                 $newErrors = $e->getErrors();
                 foreach ($newErrors as $newError) {
@@ -120,6 +102,16 @@ class ConsistencyCheckerService
         }
 
         return $errors;
+    }
+
+    protected function chooseRules(ConsistencyNodeData $nodeData)
+    {
+        $labels = $nodeData->getLabels();
+
+        return array_filter($this->consistencyRules, function($rule) use ($labels) {
+            $nodeRule = new ConsistencyNodeRule($rule);
+            return in_array($nodeRule->getLabel(), $labels);
+        });
     }
 
     /**
@@ -152,17 +144,5 @@ class ConsistencyCheckerService
         } else {
             return new $defaultClass($this->graphManager);
         }
-    }
-
-    static function getLabelNames(Node $node)
-    {
-        /** @var Label[] $labels */
-        $labels = $node->getLabels();
-        $labelNames = array();
-        foreach ($labels as $label) {
-            $labelNames[] = $label->getName();
-        }
-
-        return $labelNames;
     }
 }

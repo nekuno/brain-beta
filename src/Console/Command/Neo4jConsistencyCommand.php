@@ -4,7 +4,7 @@ namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
 use Service\Consistency\ConsistencyCheckerService;
-use Service\Consistency\ConsistencyError;
+use Service\Consistency\ConsistencyErrors\ConsistencyError;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
