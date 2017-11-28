@@ -9,6 +9,7 @@ use Event\UserRegisteredEvent;
 use GuzzleHttp\Exception\RequestException;
 use Model\User\Thread\ThreadManager;
 use Service\ChatMessageNotifications;
+use Service\InstantConnection;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use GuzzleHttp\Client;
 
@@ -21,16 +22,13 @@ class UserSubscriber implements EventSubscriberInterface
 
     protected $chat;
 
-    /**
-     * @var Client
-     */
-    protected $client;
+    protected $instantConnection;
 
-    public function __construct(ThreadManager $threadManager, ChatMessageNotifications $chat, Client $client)
+    public function __construct(ThreadManager $threadManager, ChatMessageNotifications $chat, InstantConnection $instantConnection)
     {
         $this->threadManager = $threadManager;
         $this->chat = $chat;
-        $this->client = $client;
+        $this->instantConnection = $instantConnection;
     }
 
     public static function getSubscribedEvents()
@@ -104,10 +102,6 @@ class UserSubscriber implements EventSubscriberInterface
     {
         $user = $event->getUser();
         $json = array('userId' => $user->getId());
-        try {
-            $this->client->post('api/user/clear', array('json' => $json));
-        } catch (RequestException $e) {
-
-        }
+        $this->instantConnection->clearUser($json);
     }
 }

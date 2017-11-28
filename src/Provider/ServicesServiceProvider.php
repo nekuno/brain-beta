@@ -11,6 +11,7 @@ use Service\DeviceService;
 use Service\EmailNotifications;
 use Service\EventDispatcher;
 use Service\ImageTransformations;
+use Service\InstantConnection;
 use Service\Links\EnqueueLinksService;
 use Service\Links\MigrateLinksService;
 use Service\NotificationManager;
@@ -107,7 +108,7 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['userStats.service'] = $app->share(
             function (Application $app) {
-                return new UserStatsService( $app['users.stats.manager'], $app['users.groups.model'], $app['users.relations.model'], $app['users.content.model'], $app['users.content.compare.model'], $app['users.shares.manager']);
+                return new UserStatsService($app['users.stats.manager'], $app['users.groups.model'], $app['users.relations.model'], $app['users.content.model'], $app['users.content.compare.model'], $app['users.shares.manager']);
             }
         );
 
@@ -185,6 +186,11 @@ class ServicesServiceProvider implements ServiceProviderInterface
             }
         );
 
+        $app['instant.connection.service'] = $app->share(
+            function (Application $app) {
+                return new InstantConnection($app['instant.client']);
+            }
+        );
     }
 
     /**

@@ -365,6 +365,7 @@ class UserManager
         return $this->findUserBy(array('confirmationToken' => $token));
     }
 
+    //TODO: Move to Validator
     public function validate(array $data, $isUpdate = false)
     {
 
