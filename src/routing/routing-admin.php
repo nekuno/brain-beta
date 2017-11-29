@@ -45,6 +45,10 @@ $admin->get('/enterpriseUsers/{enterpriseUserId}/invitations/{id}', 'admin.enter
 $admin->put('/enterpriseUsers/{enterpriseUserId}/invitations/{id}', 'admin.enterpriseUsers.invitations.controller:putAction');
 $admin->post('/enterpriseUsers/{enterpriseUserId}/invitations/{id}', 'admin.enterpriseUsers.invitations.controller:validateAction');
 
+
+/** User routes */
+$admin->get('/users', 'admin.users.controller:getUsersAction');
+
 /** User tracking events */
 $admin->get('/users/jwt/{id}', 'admin.users.controller:jwtAction');
 $admin->get('/users/tracking', 'admin.userTracking.controller:getAllAction');

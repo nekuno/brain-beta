@@ -61,6 +61,7 @@ use Model\User\Token\TokenStatus\TokenStatusManager;
 use Model\User\UserDisabledPaginatedModel;
 use Model\User\Stats\UserStatsCalculator;
 use Manager\UserManager;
+use Model\User\UserPaginatedModel;
 use Model\User\UserTrackingModel;
 use Security\UserProvider;
 use Service\Validator\FilterUsersValidator;
@@ -276,6 +277,12 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
 
                 return new PopularityPaginatedModel($app['neo4j.graph_manager'], $app['popularity.manager']);
+            }
+        );
+
+        $app['users.paginated.model'] = $app->share(
+            function($app) {
+                return new UserPaginatedModel($app['neo4j.graph_manager'], $app['users.manager']);
             }
         );
 

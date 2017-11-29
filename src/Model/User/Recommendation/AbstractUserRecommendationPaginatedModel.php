@@ -26,7 +26,7 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
     /**
      * @var UserFilterMetadataManager
      */
-    protected $userFilterModel;
+    protected $userFilterMetadataManager;
 
     /**
      * @var PhotoManager
@@ -42,7 +42,7 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
     {
         $this->gm = $gm;
         $this->profileFilterModel = $profileFilterModel;
-        $this->userFilterModel = $userFilterModel;
+        $this->userFilterMetadataManager = $userFilterModel;
         $this->pm = $pm;
         $this->profileModel = $profileModel;
     }
@@ -396,7 +396,7 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
 
     protected function getUserFilterMetadata()
     {
-        return $this->userFilterModel->getMetadata();
+        return $this->userFilterMetadataManager->getMetadata();
     }
 
     /**
