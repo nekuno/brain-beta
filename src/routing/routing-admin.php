@@ -48,6 +48,7 @@ $admin->post('/enterpriseUsers/{enterpriseUserId}/invitations/{id}', 'admin.ente
 
 /** User routes */
 $admin->get('/users', 'admin.users.controller:getUsersAction');
+$admin->delete('/users/{userId}', 'admin.users.controller:deleteUserAction');
 
 /** User tracking events */
 $admin->get('/users/jwt/{id}', 'admin.users.controller:jwtAction');

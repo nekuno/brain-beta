@@ -192,7 +192,6 @@ class PhotoManager
 
     public function remove($id)
     {
-
         $photo = $this->getById($id);
 
         $qb = $this->gm->createQueryBuilder();

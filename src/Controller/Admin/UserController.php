@@ -2,6 +2,7 @@
 
 namespace Controller\Admin;
 
+use Service\UserService;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -30,5 +31,15 @@ class UserController
         $result = $paginator->paginate($filters, $model, $request);
 
         return $app->json($result);
+    }
+
+    public function deleteUserAction(Application $app, $userId)
+    {
+        /** @var UserService $userService */
+        $userService = $app['user.service'];
+
+        $user = $userService->deleteUser((integer)$userId);
+
+        return $app->json($user, 201);
     }
 }

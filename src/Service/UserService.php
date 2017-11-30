@@ -59,7 +59,10 @@ class UserService
 
         $user = $this->userManager->getById($userId);
         $photoId = $user->getPhoto()->getId();
-        $this->photoManager->remove($photoId);
+        if ($photoId)
+        {
+            $this->photoManager->remove($photoId);
+        }
 
         $this->tokenStatusManager->removeAll($userId);
         $this->tokensModel->removeAll($userId);
@@ -70,6 +73,8 @@ class UserService
         $this->profileManager->remove($userId);
 
         $this->userManager->delete($userId);
+
+        return $user;
     }
 
 }
