@@ -20,7 +20,7 @@ use GuzzleHttp\Exception\RequestException;
 use Model\Link\Creator;
 use Model\Link\LinkModel;
 use Model\Neo4j\Neo4jException;
-use Model\User\RateModel;
+use Model\User\Rate\RateModel;
 use Model\User\Token\TokensModel;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;

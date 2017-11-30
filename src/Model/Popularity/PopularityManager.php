@@ -55,13 +55,27 @@ class PopularityManager
         return $this->buildOne($result->current());
     }
 
-    public function deleteOneByLink($linkId)
+    public function deleteOneByLinkId($linkId)
     {
         $qb = $this->gm->createQueryBuilder();
 
         $qb->match('(l:Link)')
             ->where('id(l) = {nodeId}')
             ->setParameter('nodeId', (integer)$linkId);
+
+        $qb->match('(l)-[rel:HAS_POPULARITY]->(popularity:Popularity)')
+            ->delete('rel', 'popularity');
+
+        $qb->getQuery()->getResultSet();
+    }
+
+    public function deleteOneByUrl($url)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(l:Link)')
+            ->where('l.url = {url}')
+            ->setParameter('url', $url);
 
         $qb->match('(l)-[rel:HAS_POPULARITY]->(popularity:Popularity)')
             ->delete('rel', 'popularity');

@@ -7,7 +7,7 @@ use Model\User\Question\QuestionModel;
 use Model\User;
 use Model\User\Question\AnswerManager;
 use Model\User\ProfileModel;
-use Model\User\RateModel;
+use Model\User\Rate\RateModel;
 use Manager\UserManager;
 use Model\EnterpriseUser\EnterpriseUserModel;
 use Model\User\Group\GroupModel;

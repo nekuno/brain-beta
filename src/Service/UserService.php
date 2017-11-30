@@ -5,6 +5,7 @@ namespace Service;
 use Manager\PhotoManager;
 use Manager\UserManager;
 use Model\User\ProfileModel;
+use Model\User\Rate\RateModel;
 use Model\User\Token\TokensModel;
 use Model\User\Token\TokenStatus\TokenStatusManager;
 
@@ -14,6 +15,8 @@ class UserService
     protected $profileManager;
     protected $tokensModel;
     protected $tokenStatusManager;
+    protected $rateModel;
+    protected $linkService;
     protected $instantConnection;
     protected $photoManager;
 
@@ -22,14 +25,20 @@ class UserService
      * @param UserManager $userManager
      * @param ProfileModel $profileManager
      * @param TokensModel $tokensModel
+     * @param TokenStatusManager $tokenStatusManager
+     * @param RateModel $rateModel
+     * @param LinkService $linkService
      * @param InstantConnection $instantConnection
+     * @param PhotoManager $photoManager
      */
-    public function __construct(UserManager $userManager, ProfileModel $profileManager, TokensModel $tokensModel, TokenStatusManager $tokenStatusManager, InstantConnection $instantConnection, PhotoManager $photoManager)
+    public function __construct(UserManager $userManager, ProfileModel $profileManager, TokensModel $tokensModel, TokenStatusManager $tokenStatusManager, RateModel $rateModel, LinkService $linkService, InstantConnection $instantConnection, PhotoManager $photoManager)
     {
         $this->userManager = $userManager;
         $this->profileManager = $profileManager;
         $this->tokensModel = $tokensModel;
         $this->tokenStatusManager = $tokenStatusManager;
+        $this->rateModel = $rateModel;
+        $this->linkService = $linkService;
         $this->instantConnection = $instantConnection;
         $this->photoManager = $photoManager;
     }
@@ -54,6 +63,9 @@ class UserService
 
         $this->tokenStatusManager->removeAll($userId);
         $this->tokensModel->removeAll($userId);
+
+        $deletedLikesUrls = $this->rateModel->deleteAllLinksByUser($userId);
+        $this->linkService->deleteNotLiked($deletedLikesUrls);
 
         $this->profileManager->remove($userId);
 

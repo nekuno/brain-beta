@@ -10,7 +10,7 @@ use Model\Neo4j\ProfileOptions;
 use Model\User\Question\QuestionModel;
 use Model\User\Question\AnswerManager;
 use Model\User\ProfileModel;
-use Model\User\RateModel;
+use Model\User\Rate\RateModel;
 use Model\User\Group\GroupModel;
 use Model\User\InvitationModel;
 use Psr\Log\LoggerInterface;

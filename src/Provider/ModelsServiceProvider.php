@@ -40,7 +40,7 @@ use Model\User\ProfileTagModel;
 use Model\User\Question\QuestionComparePaginatedModel;
 use Model\User\Question\Admin\QuestionsAdminPaginatedModel;
 use Model\User\Question\UserAnswerPaginatedModel;
-use Model\User\RateModel;
+use Model\User\Rate\RateModel;
 use Model\User\Recommendation\ContentPopularRecommendationPaginatedModel;
 use Model\User\Recommendation\ContentRecommendationPaginatedModel;
 use Model\User\Recommendation\ContentRecommendationTagModel;

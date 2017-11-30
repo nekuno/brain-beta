@@ -6,7 +6,7 @@ use Model\Exception\ValidationException;
 use Model\User\Content\ContentPaginatedModel;
 use Model\Metadata\ProfileMetadataManager;
 use Model\Metadata\UserFilterMetadataManager;
-use Model\User\RateModel;
+use Model\User\Rate\RateModel;
 use Model\User\Content\ContentReportModel;
 use Model\User\Stats\UserStatsCalculator;
 use Manager\UserManager;
