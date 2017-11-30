@@ -14,6 +14,7 @@ use Service\GroupService;
 use Service\ImageTransformations;
 use Service\Links\EnqueueLinksService;
 use Service\MetadataService;
+use Service\Links\MigrateLinksService;
 use Service\NotificationManager;
 use Service\QuestionService;
 use Service\RecommendatorService;
@@ -189,6 +190,12 @@ class ServicesServiceProvider implements ServiceProviderInterface
         $app['group.service'] = $app->share(
             function (Application $app) {
                 return new GroupService($app['users.groups.model'], $app['users.filterusers.manager'], $app['validator.factory']);
+            }
+        );
+        
+        $app['migrateLinks.service'] = $app->share(
+            function (Application $app) {
+                return new MigrateLinksService($app['neo4j.graph_manager']);
             }
         );
     }
