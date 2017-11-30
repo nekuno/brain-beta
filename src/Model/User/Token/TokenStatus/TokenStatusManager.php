@@ -129,6 +129,15 @@ class TokenStatusManager
         return $tokenStatusToBeDeleted;
     }
 
+    public function removeAll($userId)
+    {
+        $qb = $this->mergeAllTokenStatusQuery($userId);
+        $this->deleteStatusQuery($qb);
+
+        $result = $qb->getQuery()->getResultSet();
+        return $result->count();
+    }
+
     protected function validateOnCreate($value)
     {
         $data = array('boolean' => $value);

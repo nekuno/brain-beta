@@ -5,11 +5,15 @@ namespace Service;
 use Manager\PhotoManager;
 use Manager\UserManager;
 use Model\User\ProfileModel;
+use Model\User\Token\TokensModel;
+use Model\User\Token\TokenStatus\TokenStatusManager;
 
 class UserService
 {
     protected $userManager;
     protected $profileManager;
+    protected $tokensModel;
+    protected $tokenStatusManager;
     protected $instantConnection;
     protected $photoManager;
 
@@ -17,12 +21,15 @@ class UserService
      * UserService constructor.
      * @param UserManager $userManager
      * @param ProfileModel $profileManager
+     * @param TokensModel $tokensModel
      * @param InstantConnection $instantConnection
      */
-    public function __construct(UserManager $userManager, ProfileModel $profileManager, InstantConnection $instantConnection, PhotoManager $photoManager)
+    public function __construct(UserManager $userManager, ProfileModel $profileManager, TokensModel $tokensModel, TokenStatusManager $tokenStatusManager, InstantConnection $instantConnection, PhotoManager $photoManager)
     {
         $this->userManager = $userManager;
         $this->profileManager = $profileManager;
+        $this->tokensModel = $tokensModel;
+        $this->tokenStatusManager = $tokenStatusManager;
         $this->instantConnection = $instantConnection;
         $this->photoManager = $photoManager;
     }
@@ -38,13 +45,15 @@ class UserService
 
     public function deleteUser($userId)
     {
-        $user = $this->userManager->getById($userId);
-
         $messagesData = array('userId' => $userId);
         $this->instantConnection->deleteMessages($messagesData);
 
+        $user = $this->userManager->getById($userId);
         $photoId = $user->getPhoto()->getId();
         $this->photoManager->remove($photoId);
+
+        $this->tokenStatusManager->removeAll($userId);
+        $this->tokensModel->removeAll($userId);
 
         $this->profileManager->remove($userId);
 

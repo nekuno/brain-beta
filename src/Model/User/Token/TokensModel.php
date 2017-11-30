@@ -9,7 +9,6 @@ use Everyman\Neo4j\Query\Row;
 use HWI\Bundle\OAuthBundle\DependencyInjection\Configuration;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
-use Model\User\Token\TokenStatus\TokenStatusManager;
 use Service\Validator\TokenValidator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
@@ -33,18 +32,15 @@ class TokensModel
      */
     protected $gm;
 
-    protected $tokenStatusManager;
-
     /**
      * @var TokenValidator
      */
     protected $validator;
 
-    public function __construct(EventDispatcher $dispatcher, GraphManager $graphManager, TokenStatusManager $tokenStatusManager, TokenValidator $validator)
+    public function __construct(EventDispatcher $dispatcher, GraphManager $graphManager, TokenValidator $validator)
     {
         $this->dispatcher = $dispatcher;
         $this->gm = $graphManager;
-        $this->tokenStatusManager = $tokenStatusManager;
         $this->validator = $validator;
     }
 
@@ -187,16 +183,24 @@ class TokensModel
             ->returns('COUNT(token_of) AS count');
 
         $query = $qb->getQuery();
-        $result = $query->getResultSet();
-        /* @var $row Row */
-        $row = $result->current();
-        $count = $row->offsetGet('count');
-
-        if ($count === 1) {
-            $this->tokenStatusManager->removeOne($userId, $resourceOwner);
-        }
+        $query->getResultSet();
 
         return $token;
+    }
+
+    public function removeAll($userId)
+    {
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match('(user:User)<-[token_of:TOKEN_OF]-(token:Token)')
+            ->where('user.qnoow_id = { id }')
+            ->setParameter('id', (integer)$userId)
+            ->delete('token', 'token_of')
+            ->returns('COUNT(token_of) AS count');
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        return $result->count();
     }
 
     /**

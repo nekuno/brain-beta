@@ -103,7 +103,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
 
                 $validator = $app['validator.factory']->build('tokens');
-                return new TokensModel($app['dispatcher'], $app['neo4j.graph_manager'], $app['users.tokenStatus.manager'], $validator);
+                return new TokensModel($app['dispatcher'], $app['neo4j.graph_manager'], $validator);
             }
         );
 
