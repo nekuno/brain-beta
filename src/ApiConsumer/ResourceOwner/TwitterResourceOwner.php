@@ -2,6 +2,7 @@
 
 namespace ApiConsumer\ResourceOwner;
 
+use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\AbstractTwitterProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use Buzz\Exception\RequestException;
 use Buzz\Message\Response;
@@ -147,10 +148,10 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
             'thumbnail' => $this->urlParser->getOriginalProfileUrl($user, null),
             'thumbnailSmall' => $this->urlParser->getSmallProfileUrl($user, null),
             'thumbnailMedium' => $this->urlParser->getMediumProfileUrl($user, null),
-            'additionalLabels' => array('Creator', 'CreatorTwitter'),
             'resource' => TokensModel::TWITTER,
             'timestamp' => 1000 * time(),
-            'processed' => 1
+            'processed' => 1,
+            'additionalLabels' => array(AbstractTwitterProcessor::TWITTER_LABEL),
         );
         $profile['title'] = isset($user['name']) ? $user['name'] : $profile['url'];
         return $profile;

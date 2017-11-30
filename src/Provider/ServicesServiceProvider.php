@@ -12,6 +12,7 @@ use Service\EmailNotifications;
 use Service\EventDispatcher;
 use Service\ImageTransformations;
 use Service\Links\EnqueueLinksService;
+use Service\Links\MigrateLinksService;
 use Service\NotificationManager;
 use Service\QuestionService;
 use Service\RecommendatorService;
@@ -175,6 +176,12 @@ class ServicesServiceProvider implements ServiceProviderInterface
         $app['question.service'] = $app->share(
             function (Application $app) {
                 return new QuestionService($app['questionnaire.questions.model'], $app['questionnaire.admin.questions.model']);
+            }
+        );
+
+        $app['migrateLinks.service'] = $app->share(
+            function (Application $app) {
+                return new MigrateLinksService($app['neo4j.graph_manager']);
             }
         );
 

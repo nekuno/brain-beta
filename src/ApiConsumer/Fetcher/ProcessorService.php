@@ -17,7 +17,7 @@ use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use Event\ConsistencyEvent;
 use Event\ProcessLinkEvent;
 use GuzzleHttp\Exception\RequestException;
-use Model\Link\Creator\Creator;
+use Model\Link\Creator;
 use Model\Link\LinkModel;
 use Model\Neo4j\Neo4jException;
 use Model\User\RateModel;

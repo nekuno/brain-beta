@@ -31,6 +31,7 @@ class SpotifyTrackProcessor extends AbstractSpotifyProcessor
 
     public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
     {
+        parent::hydrateLink($preprocessedLink, $data);
         $link = $preprocessedLink->getFirstLink();
 
         $artistList = $this->buildArtistList($data);

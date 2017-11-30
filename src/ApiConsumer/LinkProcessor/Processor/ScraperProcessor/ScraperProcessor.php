@@ -26,14 +26,18 @@ class ScraperProcessor extends AbstractScraperProcessor
      */
     private $basicMetadataParser;
 
+    protected $brainBaseUrl;
+
     /**
      * @param GoutteClientFactory $goutteGoutteClientFactory
+     * @param $brainBaseUrl
      */
-    public function __construct(GoutteClientFactory $goutteGoutteClientFactory)
+    public function __construct(GoutteClientFactory $goutteGoutteClientFactory, $brainBaseUrl)
     {
         parent::__construct($goutteGoutteClientFactory);
         $this->basicMetadataParser = new BasicMetadataParser();
         $this->facebookMetadataParser = new FacebookMetadataParser();
+        $this->brainBaseUrl = $brainBaseUrl;
     }
 
     public function getResponse(PreprocessedLink $preprocessedLink)

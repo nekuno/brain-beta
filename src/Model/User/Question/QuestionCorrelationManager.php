@@ -25,9 +25,8 @@ class QuestionCorrelationManager
     public function getUncorrelatedQuestions($preselected = 50)
     {
         $correlations = $this->getAllCorrelations($preselected);
-        $correctCorrelations = $this->includeDefaultCorrelations($correlations, 1);
         //Size fixed at 4 questions / set
-        list ($questions, $minimum) = $this->findUncorrelatedFourGroup($correctCorrelations);
+        list ($questions, $minimum) = $this->findUncorrelatedFourGroup($correlations);
 
         return array(
             'totalCorrelation' => $minimum,
@@ -35,21 +34,33 @@ class QuestionCorrelationManager
         );
     }
 
-    public function getCorrelatedQuestions($preselected = 50)
+    public function getCorrelatedQuestions($preselected = 50, $minimumCountPerAnswer = 20)
     {
         $correlations = $this->getAllCorrelations($preselected);
+        var_dump($this->countCorrelations($correlations));
+        $correlations = $this->filterCorrelationsByMinimumAnswers($correlations, $minimumCountPerAnswer);
+        var_dump($this->countCorrelations($correlations));
+        //Size fixed at 2 for list
+//        list ($questions, $maximum) = $this->findCorrelatedTwoGroup($correlations);
 
-        $correctCorrelations = $this->includeDefaultCorrelations($correlations, 0);
-
-        //Size fixed at 4 questions / set
-        list ($questions, $maximum) = $this->findCorrelatedTwoGroup($correctCorrelations);
-
-        return array(
-            'totalCorrelation' => $maximum,
-            'questions' => $questions
-        );
+        return $correlations;
     }
 
+    protected function countCorrelations($correlations)
+    {
+        $count = 0;
+        foreach ($correlations as $q)
+        {
+            $count += count($q);
+        }
+
+        return $count;
+    }
+
+    /**
+     * @param $preselected
+     * @return array
+     */
     public function getAllCorrelations($preselected)
     {
         $qb = $this->graphManager->createQueryBuilder();
@@ -58,6 +69,7 @@ class QuestionCorrelationManager
         $parameters = array('preselected' => $n);
         $qb->setParameters($parameters);
 
+        //Choose questions pairs with no repetition
         $qb->match('(q:Question)')
             ->with('q')
             ->orderBy('q.ranking DESC')
@@ -70,12 +82,15 @@ class QuestionCorrelationManager
             )
             ->with('q1,q2');
 
+        //Count users for each answer pair (for each two questions)
         $qb->match('(q1)<-[:IS_ANSWER_OF]-(a1:Answer)')
             ->match('(q2)<-[:IS_ANSWER_OF]-(a2:Answer)')
             ->optionalMatch('(a1)<-[:ANSWERS]-(u:User)-[:ANSWERS]->(a2)')
             ->with('id(q1) AS q1,id(q2) AS q2,id(a1) AS a1,id(a2) AS a2,count(distinct(u)) AS users')
+            //Use standard deviation as a correlation measure
             ->with('q1, q2, sum(users) as totalUsers,  stdevp(users) AS std, (count(distinct(a1))+count(distinct(a2))) AS answers')
             ->where('totalUsers>0')
+            //Normalizations to get it between 0 and 1
             ->with('q1, q2, std/totalUsers as normstd, answers')
             ->with('q1,q2,normstd*sqrt(answers) as finalstd')
             ->returns('q1,q2,finalstd');
@@ -92,6 +107,48 @@ class QuestionCorrelationManager
         return $correlations;
     }
 
+    protected function filterCorrelationsByMinimumAnswers(array $correlations, $minimumAnswers)
+    {
+        $filteredCorrelations = array();
+        foreach ($correlations as $q1 => $c1) {
+            foreach ($c1 as $q2 => $correlation) {
+                $isSharedEnough = $this->isSharedEnough($q1, $q2, $minimumAnswers);
+                if ($isSharedEnough) {
+                    $filteredCorrelations[$q1][$q2] = $correlation;
+                }
+            }
+        }
+        return $filteredCorrelations;
+    }
+
+    protected function isSharedEnough($question1Id, $question2Id, $minimumAnswers)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(question1:Question)')
+            ->where('id(question1) = {question1Id}')
+            ->setParameter('question1Id', (integer)$question1Id);
+        $qb->match('(question2:Question)')
+            ->where('id(question2) = {question2Id}')
+            ->setParameter('question2Id', (integer)$question2Id);
+
+        //calculates isValid for every answer combination
+        $qb->match('(question1)<-[:IS_ANSWER_OF]-(a1:Answer)')
+            ->match('(question2)<-[:IS_ANSWER_OF]-(a2:Answer)');
+        $qb->match('(a1)<-[:ANSWERS]-(u:User)-[:ANSWERS]->(a2)')
+            ->with('a1', 'a2', 'CASE WHEN count(u) >= {minimumAnswers} THEN 1 ELSE 0 END AS isValid')
+            ->setParameter('minimumAnswers', (integer)$minimumAnswers);
+
+        //boolean logic: one zero (invalid) makes areAllValid equal to zero
+        $qb->with('collect(isValid) AS areValid')
+            ->returns('reduce( valid = 1, eachValid in areValid | valid * eachValid) AS areAllValid');
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        return $result->current()->offsetGet('areAllValid');
+    }
+
     public function setDivisiveQuestions(array $ids)
     {
         $questions = array();
@@ -104,7 +161,6 @@ class QuestionCorrelationManager
 
     public function setDivisiveQuestion($id)
     {
-
         $qb = $this->graphManager->createQueryBuilder();
         $parameters = array('questionId' => (integer)$id);
         $qb->setParameters($parameters);
@@ -224,15 +280,14 @@ class QuestionCorrelationManager
     public function sortCorrelations($unsortedCorrelations)
     {
         $correlations = array();
-        foreach ($unsortedCorrelations as $q1 => $c1)
-        {
-            foreach ($c1 as $q2 => $correlation)
-            {
-                $correlations[10000*$correlation] = array($q1, $q2);
+        foreach ($unsortedCorrelations as $q1 => $c1) {
+            foreach ($c1 as $q2 => $correlation) {
+                $correlations[10000 * $correlation] = array($q1, $q2);
             }
         }
 
         ksort($correlations);
+
         return $correlations;
     }
 }

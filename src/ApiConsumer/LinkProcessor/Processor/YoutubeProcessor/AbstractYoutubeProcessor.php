@@ -10,6 +10,8 @@ use Model\User\Token\Token;
 
 abstract class AbstractYoutubeProcessor extends AbstractAPIProcessor
 {
+    const YOUTUBE_LABEL = 'LinkYoutube';
+
     /**
      * @var YoutubeUrlParser
      */
@@ -43,6 +45,7 @@ abstract class AbstractYoutubeProcessor extends AbstractAPIProcessor
     {
         $link = $preprocessedLink->getFirstLink();
 
+        $link->addAdditionalLabels(self::YOUTUBE_LABEL);
         $snippet = $data['items'][0]['snippet'];
         $link->setTitle($snippet['title']);
         $link->setDescription($snippet['description']);
