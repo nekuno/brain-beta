@@ -2,36 +2,30 @@
 
 namespace Model\Metadata;
 
-use Model\Neo4j\GraphManager;
+use Model\User\ProfileOptionManager;
 use Silex\Translator;
 
 class MetadataManagerFactory
 {
     protected $config;
-    /**
-     * @var GraphManager
-     */
-    protected $graphManager;
-    /**
-     * @var Translator
-     */
     protected $translator;
+    protected $metadataUtilities;
     protected $defaultLocale;
     protected $metadata;
 
     /**
      * MetadataManagerFactory constructor.
      * @param $config
-     * @param GraphManager $graphManager
      * @param Translator $translator
-     * @param $defaultLocale
+     * @param MetadataUtilities $metadataUtilities
      * @param $metadata
+     * @param $defaultLocale
      */
-    public function __construct($config, GraphManager $graphManager, Translator $translator, $metadata, $defaultLocale)
+    public function __construct($config, Translator $translator, MetadataUtilities $metadataUtilities,  $metadata, $defaultLocale)
     {
         $this->config = $config;
-        $this->graphManager = $graphManager;
         $this->translator = $translator;
+        $this->metadataUtilities = $metadataUtilities;
         $this->metadata = $metadata;
         $this->defaultLocale = $defaultLocale;
     }
@@ -45,6 +39,6 @@ class MetadataManagerFactory
         $class = isset($this->config[$name]) ? $this->config[$name] : $this->config['default'];
         $metadata = isset($this->metadata[$name]) ? $this->metadata[$name] : [];
 
-        return new $class($this->graphManager, $this->translator, $metadata, $this->defaultLocale);
+        return new $class($this->translator, $this->metadataUtilities, $metadata, $this->defaultLocale);
     }
 }

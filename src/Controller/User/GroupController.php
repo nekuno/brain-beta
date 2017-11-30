@@ -30,8 +30,8 @@ class GroupController
         $data = $request->request->all();
 
         $data['createdBy'] = $user->getId();
-        $createdGroup = $app['users.groups.model']->create($data);
-        $app['users.groups.model']->addUser($createdGroup->getId(), $user->getId());
+        $createdGroup = $app['group.service']->createGroup($data);
+        $app['group.service']->addUser($createdGroup->getId(), $user->getId());
 
         $data['groupId'] = $createdGroup->getId();
         $invitationData = array(
@@ -43,26 +43,6 @@ class GroupController
 
         $createdGroup->setInvitation($createdInvitation);
         return $app->json($createdGroup, 201);
-    }
-
-
-    /**
-     * @param Request $request
-     * @param Application $app
-     * @param User $user
-     * @param integer $groupId
-     * @return \Symfony\Component\HttpFoundation\JsonResponse
-     * @throws \Exception
-     */
-    public function getMembersAction(Request $request, Application $app, User $user, $groupId)
-    {
-        $paginator = $app['paginator'];
-        $groupContentModel = $app['users.group.members.model'];
-        $filters = array('groupId' => (int)$groupId, 'userId' => $user->getId());
-
-        $content = $paginator->paginate($filters, $groupContentModel, $request);
-
-        return $app->json($content);
     }
 
     public function getContentsAction(Request $request, Application $app, $groupId)
@@ -85,7 +65,7 @@ class GroupController
      */
     public function addUserAction(Application $app, User $user, $groupId)
     {
-        $group = $app['users.groups.model']->addUser((int)$groupId, $user->getId());
+        $group = $app['group.service']->addUser((int)$groupId, $user->getId());
 
         return $app->json($group);
     }
@@ -93,13 +73,13 @@ class GroupController
     /**
      * @param Application $app
      * @param User $user
-     * @param integer $id
+     * @param integer $groupId
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      * @throws \Exception
      */
     public function removeUserAction(Application $app, User $user, $groupId)
     {
-        $removed = $app['users.groups.model']->removeUser($groupId, $user->getId());
+        $removed = $app['group.service']->removeUser($groupId, $user->getId());
 
         return $app->json($removed, 204);
     }

@@ -9,7 +9,7 @@ class QuestionsTest extends QuestionsAPITest
     public function testQuestions()
     {
         $this->assertQuestionCreation();
-        $this->assertQuestionCreationFromAdmin();
+//        $this->assertQuestionCreationFromAdmin();
         $this->assertNextQuestion();
         $this->assertSkipQuestion();
         $this->assertReportQuestions();

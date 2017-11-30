@@ -2,29 +2,18 @@
 
 namespace Service\Validator;
 
-use Model\Metadata\UserFilterMetadataManager;
+use Service\MetadataService;
 use Model\Neo4j\GraphManager;
-use Model\User\ProfileOptionManager;
 
 class FilterUsersValidator extends Validator
 {
+    protected $metadataService;
 
-    /**
-     * @var ProfileOptionManager
-     */
-    protected $profileOptionManager;
-
-    /**
-     * @var UserFilterMetadataManager
-     */
-    protected $userFilterModel;
-
-    public function __construct(GraphManager $graphManager, ProfileOptionManager $profileOptionManager, UserFilterMetadataManager $userFilterModel, array $metadata)
+    public function __construct(GraphManager $graphManager, MetadataService $metadataService, array $metadata)
     {
         parent::__construct($graphManager, $metadata);
 
-        $this->profileOptionManager = $profileOptionManager;
-        $this->userFilterModel = $userFilterModel;
+        $this->metadataService = $metadataService;
     }
 
     public function validateOnUpdate($data, $userId = null)
@@ -39,26 +28,16 @@ class FilterUsersValidator extends Validator
 
     protected function validate($data, $userId = null)
     {
-        if (isset($data['userFilters']) && $userId) {
-            $metadata = $this->metadata['user_filter'];
-            $choices = $this->getUserChoices($userId);
-            $this->validateMetadata($data['userFilters'], $metadata, $choices);
+        $choices = array();
+        if (!empty($data) && $userId) {
+            $groupChoices = $this->metadataService->getGroupChoices($userId);
+            foreach ($groupChoices as $key => $value) {
+                $groupChoices[$key] = $key;
+            }
+            $choices = array('groups' => $groupChoices);
         }
-        if (isset($data['profileFilters'])) {
-            $metadata = $this->metadata['profile_filter'];
-            $choices = $this->getProfileChoices();
-            $this->validateMetadata($data['profileFilters'], $metadata, $choices);
-        }
+        $metadata = $this->metadataService->getUserFilterMetadata('en', $userId);
+        $metadata = $this->metadataService->changeChoicesToIds($metadata);
+        $this->validateMetadata($data['userFilters'], $metadata, $choices);
     }
-
-    protected function getProfileChoices()
-    {
-        return $this->profileOptionManager->getChoiceOptionIds();
-    }
-
-    protected function getUserChoices($userId)
-    {
-        return $this->userFilterModel->getChoiceOptionIds($userId);
-    }
-
 }
