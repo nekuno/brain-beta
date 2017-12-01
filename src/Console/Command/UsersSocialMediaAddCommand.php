@@ -101,7 +101,7 @@ class UsersSocialMediaAddCommand extends ApplicationAwareCommand
 			        $output->writeln(sprintf('Group with id %s does not exist', $groupId));
 		        }
 
-			    $this->app['users.groups.model']->addGhostUser($groupId, $id);
+			    $this->app['group.service']->addGhostUser($groupId, $id);
 	        }
 
             $output->writeln('Success!');
