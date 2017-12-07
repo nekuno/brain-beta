@@ -47,6 +47,18 @@ class FilterUsers implements \JsonSerializable
         $this->id = $id;
     }
 
+    public function getValues()
+    {
+        $values = $this->values;
+        foreach ($values as $key => $value) {
+            if (!isset($value)) {
+                unset($values[$key]);
+            }
+        }
+
+        return $values;
+    }
+
     /**
      * Specify data which should be serialized to JSON
      * @link http://php.net/manual/en/jsonserializable.jsonserialize.php
@@ -54,7 +66,7 @@ class FilterUsers implements \JsonSerializable
      * which is a value of any type other than a resource.
      * @since 5.4.0
      */
-    function jsonSerialize()
+    public function jsonSerialize()
     {
         $idArray = array('id' => $this->getId());
 
@@ -68,4 +80,5 @@ class FilterUsers implements \JsonSerializable
 
         return $idArray + $valuesArray;
     }
+
 }
