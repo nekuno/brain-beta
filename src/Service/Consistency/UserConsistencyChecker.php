@@ -3,23 +3,22 @@
 namespace Service\Consistency;
 
 
-use Everyman\Neo4j\Node;
-
 class UserConsistencyChecker extends ConsistencyChecker
 {
-    public function check(Node $node, ConsistencyNodeRule $userRule)
+    public function checkNode(ConsistencyNodeData $nodeData, ConsistencyNodeRule $rule)
     {
         //TODO: Change this by using "RealUser" label
 
-        if (in_array('GhostUser', ConsistencyCheckerService::getLabelNames($node))) {
+        $labels = $nodeData->getLabels();
+        if (in_array('GhostUser', $labels)) {
             //TODO: Add relationships to this rule (similarity with user, belongs_to group)
-            $qnoow_idRule = $userRule->getProperties()['qnoow_id'];
+            $qnoow_idRule = $rule->getProperties()['qnoow_id'];
             $nodeRule = new ConsistencyNodeRule(array('properties' => array('qnoow_id' => $qnoow_idRule)));
         } else {
-            $nodeRule = $userRule;
+            $nodeRule = $rule;
         }
 
-        parent::check($node, $nodeRule);
+        parent::checkNode($nodeData, $nodeRule);
     }
 
 }

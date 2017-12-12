@@ -10,7 +10,6 @@ use Model\User;
 use Model\User\Group\Group;
 use Model\User\ProfileModel;
 use Service\Validator\ThreadValidator;
-use Service\Validator\Validator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Translation\Translator;
 
@@ -236,7 +235,7 @@ class ThreadManager
                     'category' => ThreadManager::LABEL_THREAD_CONTENT,
                     'filters' => array(
                         'contentFilters' => array(
-                            'type' => array('Creator', 'CreatorTwitter'),
+                            'type' => array('Creator', 'LinkTwitter'),
                         ),
                     ),
                     'default' => true,

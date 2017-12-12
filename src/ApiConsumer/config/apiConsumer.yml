@@ -102,6 +102,13 @@ api_consumer.config:
             parser: ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser
             resourceOwner: google
 
+        instagram:
+            class: ApiConsumer\LinkProcessor\Processor\InstagramProcessor\InstagramProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\InstagramUrlParser
+        instagram_profile:
+            class: ApiConsumer\LinkProcessor\Processor\InstagramProcessor\InstagramProfileProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\InstagramUrlParser
+
         scrapper:
             class: ApiConsumer\LinkProcessor\Processor\ScraperProcessor\ScraperProcessor
         scrapperImage:

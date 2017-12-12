@@ -76,10 +76,6 @@ class TwitterTweetProcessor extends AbstractTwitterProcessor
         return false;
     }
 
-    public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
-    {
-    }
-
     public function getImages(PreprocessedLink $preprocessedLink, array $data)
     {
         $profileAvatar = null;

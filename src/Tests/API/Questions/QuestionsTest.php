@@ -8,11 +8,11 @@ class QuestionsTest extends QuestionsAPITest
 
     public function testQuestions()
     {
-//        $this->assertQuestionCreation();
+        $this->assertQuestionCreation();
         $this->assertQuestionCreationFromAdmin();
-//        $this->assertNextQuestion();
-//        $this->assertSkipQuestion();
-//        $this->assertReportQuestions();
+        $this->assertNextQuestion();
+        $this->assertSkipQuestion();
+        $this->assertReportQuestions();
     }
 
     public function assertQuestionCreation()
@@ -46,6 +46,15 @@ class QuestionsTest extends QuestionsAPITest
         $questionData = $this->getCreateQuestionDataFromAdminInvalidText();
         $response = $this->createQuestionFromAdmin($questionData);
         $this->assertStatusCode($response, 422, 'Incorrect question creation from admin with invalid text');
+    }
+
+    public function assertGetQuestionsFromAdmin()
+    {
+        $response = $this->getQuestionsFromAdmin();
+        $formattedResponse = $this->assertJsonResponse($response, 200, 'Getting questions from admin');
+        $this->isType('array')->evaluate($formattedResponse, 'Questions from admin return an array');
+
+
     }
 
     public function assertNextQuestion()

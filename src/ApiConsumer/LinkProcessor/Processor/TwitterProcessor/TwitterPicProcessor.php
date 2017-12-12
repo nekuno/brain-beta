@@ -12,10 +12,6 @@ class TwitterPicProcessor extends AbstractTwitterProcessor
         throw new CannotProcessException($link->getUrl(), 'Twitter pic needs to be scraped');
     }
 
-    function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
-    {
-    }
-
     protected function getItemIdFromParser($url)
     {
 

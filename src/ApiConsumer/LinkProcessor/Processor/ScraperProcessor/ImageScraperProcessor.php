@@ -12,10 +12,8 @@ use Model\Link\Image;
 class ImageScraperProcessor extends AbstractScraperProcessor
 {
     protected $imageAnalyzer;
-    /**
-     * ImageScraperProcessor constructor.
-     */
-    public function __construct(GoutteClientFactory $goutteClientFactory)
+
+    public function __construct(GoutteClientFactory $goutteClientFactory, $brainBaseUrl)
     {
         parent::__construct($goutteClientFactory);
         $guzzle = $this->client->getClient();

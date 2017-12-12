@@ -4,6 +4,8 @@ namespace Model\Link;
 
 class Video extends Link
 {
+    const VIDEO_LABEL = 'Video';
+
     protected $embed_type;
     protected $embed_id;
 
@@ -27,7 +29,7 @@ class Video extends Link
     public function toArray()
     {
         $array = parent::toArray();
-        $array['additionalLabels'] = array('Video');
+        $array['additionalLabels'][] = self::VIDEO_LABEL;
         $array['additionalFields'] = array(
             'embed_id' => $this->getEmbedId(),
             'embed_type' => $this->getEmbedType()

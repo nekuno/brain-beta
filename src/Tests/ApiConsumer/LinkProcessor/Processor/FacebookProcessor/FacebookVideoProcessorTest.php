@@ -132,6 +132,7 @@ class FacebookVideoProcessorTest extends AbstractProcessorTest
         $expectedLink->setDescription("¡Tu combo de likes más rápido con el nuevo WIFI! A conectar! #wifigratis");
         $expectedLink->setEmbedId('1184085874980824');
         $expectedLink->setEmbedType('facebook');
+        $expectedLink->addAdditionalLabels(AbstractFacebookProcessor::FACEBOOK_LABEL);
 
         return array(
             array(

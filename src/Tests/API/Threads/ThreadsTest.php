@@ -38,14 +38,22 @@ class ThreadsTest extends ThreadsAPITest
 
         $this->assertArrayOfType('array', $formattedResponse, 'Threads response is array of arrays');
         $this->assertArrayHasKey('items', $formattedResponse, 'Thread data has items');
+
         $threads = $formattedResponse['items'];
         $this->assertArrayOfType('array', $threads, 'Thread items in an array');
         $this->assertArrayHasKey(0, $threads, 'Exists first thread');
         $firstThread = $threads[0];
+
         $this->isType('array')->evaluate($firstThread, 'Thread data is an array');
         $this->assertArrayHasKey('name', $firstThread, 'Thread data has name');
         $this->assertArrayHasKey('category', $firstThread, 'Thread data has category');
+        $this->assertArrayHasKey('filters', $firstThread, 'Thread data has filters');
 
+        $filters = $firstThread['filters'];
+        $this->isType('array')->evaluate($filters, 'Thread filters is array');
+        $this->assertArrayHasKey('userFilters', $filters, 'Thread filters has userFilters');
+        $this->isType('array')->evaluate($filters['userFilters'], 'Thread userFilters is array');
+        $this->assertArrayOfType('array', $filters['userFilters'], 'Thread userFilters is array');
     }
 
     public function assertEditThread()

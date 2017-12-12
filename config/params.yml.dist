@@ -69,7 +69,7 @@ params:
     rabbitmq.pass: nekuno
 
     ## Twitter
-    twitter.consumer_key: ~
+    twitter.consumer_key: WBIuTH6u0Xa4r0E49a13eTeLd
     twitter.consumer_secret: ~
     twitter.application_token: ~
 

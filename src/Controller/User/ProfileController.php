@@ -2,8 +2,6 @@
 
 namespace Controller\User;
 
-use Model\Metadata\CategoryMetadataManager;
-use Model\Metadata\ProfileMetadataManager;
 use Model\User\ProfileModel;
 use Model\User\ProfileTagModel;
 use Model\User;
@@ -87,11 +85,10 @@ class ProfileController
      */
     public function getMetadataAction(Request $request, Application $app)
     {
-        $locale = $request->query->get('locale');
+        $locale = $request->query->get('locale', 'en');
 
-        /* @var $model ProfileMetadataManager */
-        $model = $app['users.profileMetadata.manager'];
-        $metadata = $model->getMetadata($locale);
+        $metadataService = $app['metadata.service'];
+        $metadata = $metadataService->getProfileMetadata($locale);
 
         return $app->json($metadata);
     }
@@ -103,11 +100,10 @@ class ProfileController
      */
     public function getCategoriesAction(Request $request, Application $app)
     {
-        $locale = $request->query->get('locale');
+        $locale = $request->query->get('locale', 'en');
 
-        /* @var $model CategoryMetadataManager */
-        $model = $app['users.profileCategories.manager'];
-        $categories = $model->getMetadata($locale);
+        $metadataService = $app['metadata.service'];
+        $categories = $metadataService->getCategoriesMetadata($locale);
 
         return $app->json($categories);
     }
@@ -119,11 +115,10 @@ class ProfileController
      */
     public function getFiltersAction(Request $request, Application $app)
     {
-        $locale = $request->query->get('locale');
+        $locale = $request->query->get('locale', 'en');
 
-        /* @var $model ProfileMetadataManager */
-        $model = $app['users.profileFilter.model'];
-        $filters = $model->getMetadata($locale);
+        $metadataService = $app['metadata.service'];
+        $filters = $metadataService->getUserFilterMetadata($locale);
 
         return $app->json($filters);
     }

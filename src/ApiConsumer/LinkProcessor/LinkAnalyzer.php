@@ -4,6 +4,7 @@ namespace ApiConsumer\LinkProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
+use ApiConsumer\LinkProcessor\UrlParser\InstagramUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
@@ -112,6 +113,10 @@ class LinkAnalyzer
             return new TwitterUrlParser();
         }
 
+        if (self::isInstagram($url)) {
+            return new InstagramUrlParser();
+        }
+
         return new UrlParser();
     }
 
@@ -156,6 +161,11 @@ class LinkAnalyzer
     private static function isYouTube($url)
     {
         return preg_match('/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i', $url);
+    }
+
+    private static function isInstagram($url)
+    {
+        return preg_match('/^https?:\/\/(www\.)?instagram\.com\//i', $url);
     }
 
 }

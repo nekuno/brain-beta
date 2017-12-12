@@ -14,6 +14,7 @@ use Model\User\Group\GroupModel;
 use Model\User\InvitationModel;
 use Model\User\PrivacyModel;
 use Psr\Log\LoggerInterface;
+use Service\GroupService;
 use Silex\Application;
 
 class Fixtures
@@ -87,6 +88,11 @@ class Fixtures
     protected $gpm;
 
     /**
+     * @var GroupService
+     */
+    protected $groupService;
+
+    /**
      * @var InvitationModel
      */
     protected $im;
@@ -113,6 +119,7 @@ class Fixtures
         $this->um = $app['users.manager'];
         $this->eu = $app['enterpriseUsers.model'];
         $this->gpm = $app['users.groups.model'];
+        $this->groupService = $app['group.service'];
         $this->im = $app['users.invitations.model'];
         $this->lm = $app['links.model'];
         $this->qm = $app['questionnaire.questions.model'];
@@ -238,7 +245,7 @@ class Fixtures
 
         for ($i = 1; $i <= self::NUM_OF_ENTERPRISE_USERS; $i++) {
 
-            $group = $this->gpm->create(
+            $group = $this->groupService->createGroup(
                 array(
                     'name' => 'group ' . $i,
                     'html' => $this->getHTMLFixture(),
@@ -267,14 +274,14 @@ class Fixtures
                     break;
                 }
                 $this->im->consume($invitation['invitation']['token'], $user->getId());
-                $this->gpm->addUser($group->getId(), $user->getId());
+                $this->groupService->addUser($group->getId(), $user->getId());
             }
         }
 
         $this->logger->notice(sprintf('Loading %d groups', self::NUM_OF_GROUPS - self::NUM_OF_ENTERPRISE_USERS));
 
         for ($i = self::NUM_OF_ENTERPRISE_USERS + 1; $i <= self::NUM_OF_GROUPS - self::NUM_OF_ENTERPRISE_USERS; $i++) {
-            $this->gpm->create(
+            $this->groupService->createGroup(
                 array(
                     'name' => 'group ' . $i,
                     'html' => $this->getHTMLFixture(),

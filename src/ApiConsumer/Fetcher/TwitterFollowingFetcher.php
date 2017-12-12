@@ -3,7 +3,7 @@
 namespace ApiConsumer\Fetcher;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use Model\Link\Creator\CreatorTwitter;
+use Model\Link\Creator;
 
 class TwitterFollowingFetcher extends AbstractTwitterFetcher
 {
@@ -57,7 +57,7 @@ class TwitterFollowingFetcher extends AbstractTwitterFetcher
                     'timestamp' => 1000 * time(),
                 );
                 $preprocessedLink = new PreprocessedLink($link['url']);
-                $preprocessedLink->setFirstLink(CreatorTwitter::buildFromArray($link));
+                $preprocessedLink->setFirstLink(Creator::buildFromArray($link));
                 $preprocessedLink->setSource($this->resourceOwner->getName());
                 $preprocessedLink->setResourceItemId($id);
                 $preprocessedLinks[] = $preprocessedLink;
@@ -74,7 +74,7 @@ class TwitterFollowingFetcher extends AbstractTwitterFetcher
 //                    )
 //                );
                 $preprocessedLink = new PreprocessedLink($link['url']);
-                $preprocessedLink->setFirstLink(CreatorTwitter::buildFromArray($link));
+                $preprocessedLink->setFirstLink(Creator::buildFromArray($link));
                 $preprocessedLinks[] = $preprocessedLink;
             }
         }
