@@ -2,7 +2,6 @@
 
 namespace Model\User\Filters;
 
-
 class FilterContent implements \JsonSerializable
 {
     protected $tag = array();
@@ -75,7 +74,7 @@ class FilterContent implements \JsonSerializable
      * which is a value of any type other than a resource.
      * @since 5.4.0
      */
-    function jsonSerialize()
+    public function jsonSerialize()
     {
         $filters = array(
             'type' => $this->getType(),
@@ -84,12 +83,13 @@ class FilterContent implements \JsonSerializable
         if (empty($filters['tags'])) {
             unset ($filters['tags']);
         }
-        if (empty($filters['type']) || $filters['type'] === array('Link')){
+        if (empty($filters['type']) || $filters['type'] === array('Link')) {
             unset($filters['type']);
         }
-        if (empty($filters)){
+        if (empty($filters)) {
             $filters = new \StdClass();
         }
+
         return array(
             'id' => $this->getId(),
             'contentFilters' => $filters,
