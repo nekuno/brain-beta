@@ -55,7 +55,7 @@ class UserService
     public function deleteUser($userId)
     {
         $messagesData = array('userId' => $userId);
-        $this->instantConnection->deleteMessages($messagesData);
+//        $this->instantConnection->deleteMessages($messagesData);
 
         $user = $this->userManager->getById($userId);
         $photoId = $user->getPhoto()->getId();

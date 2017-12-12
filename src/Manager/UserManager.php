@@ -505,7 +505,7 @@ class UserManager
     /**
      * @param array $data
      * @return User
-     * @throws Neo4jException
+     * @throws \Exception
      */
     public function create(array $data)
     {
