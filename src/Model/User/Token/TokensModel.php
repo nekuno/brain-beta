@@ -57,6 +57,7 @@ class TokensModel
             self::GOOGLE,
             self::SPOTIFY,
             self::TUMBLR,
+            self::LINKEDIN,
         );
     }
 

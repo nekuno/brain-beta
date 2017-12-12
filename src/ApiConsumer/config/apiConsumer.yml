@@ -16,6 +16,8 @@ api_consumer.config:
         tumblr:
             class: ApiConsumer\ResourceOwner\TumblrResourceOwner
             parser_class: ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser
+        linkedin:
+            class: ApiConsumer\ResourceOwner\LinkedinResourceOwner
     fetcher:
         twitter_links:
             class: ApiConsumer\Fetcher\TwitterLinksFetcher
