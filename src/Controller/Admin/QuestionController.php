@@ -38,7 +38,6 @@ class QuestionController
 
     public function createQuestionAction(Request $request, Application $app)
     {
-//        $data = $request->query->all();
         $data = $request->request->all();
 
         /** @var QuestionService $questionService */

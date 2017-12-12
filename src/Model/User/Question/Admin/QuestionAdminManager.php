@@ -77,7 +77,7 @@ class QuestionAdminManager
 
         foreach ($answersData as $answerIndex => $answerData) {
             $qb->create("(a$answerIndex:Answer)-[:IS_ANSWER_OF]->(q)");
-            foreach ($answerData as $locale => $text) {
+            foreach ($answerData['locales'] as $locale => $text) {
                 $qb->set("a$answerIndex.text_$locale = {text$answerIndex$locale}")
                     ->setParameter("text$answerIndex$locale", $text);
             }
