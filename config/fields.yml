@@ -689,6 +689,18 @@ questions:
         min: 2
         max: 6
 
+questions_admin:
+    answerTexts:
+        required: true
+        type: array
+        min: 2
+        max: 6
+    questionTexts:
+        required: true
+        type: array
+        min: 2
+        max : 2
+
 answers:
     questionId:
         required: true

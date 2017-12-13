@@ -4,6 +4,7 @@ namespace Model\User\Question\Admin;
 
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
+use Service\Validator\ValidatorInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class QuestionAdminManager
@@ -12,15 +13,19 @@ class QuestionAdminManager
 
     protected $questionAdminBuilder;
 
+    protected $validator;
+
     /**
      * QuestionAdminManager constructor.
      * @param GraphManager $graphManager
      * @param QuestionAdminBuilder $questionAdminBuilder
+     * @param ValidatorInterface $validator
      */
-    public function __construct(GraphManager $graphManager, QuestionAdminBuilder $questionAdminBuilder)
+    public function __construct(GraphManager $graphManager, QuestionAdminBuilder $questionAdminBuilder, ValidatorInterface $validator)
     {
         $this->graphManager = $graphManager;
         $this->questionAdminBuilder = $questionAdminBuilder;
+        $this->validator = $validator;
     }
 
     public function getById($id)
@@ -57,10 +62,10 @@ class QuestionAdminManager
      */
     public function create(array $data)
     {
-//        $this->validateOnCreate($data);
+        $this->validateOnCreate($data);
 
-        $answersData = $this->getAnswersTexts($data);
-        $questionTexts = $this->getQuestionTexts($data);
+        $answersData = $data['answerTexts'];
+        $questionTexts = $data['questionTexts'];
         $qb = $this->graphManager->createQueryBuilder();
 
         $qb->create('(q:Question)');
@@ -72,7 +77,7 @@ class QuestionAdminManager
 
         foreach ($answersData as $answerIndex => $answerData) {
             $qb->create("(a$answerIndex:Answer)-[:IS_ANSWER_OF]->(q)");
-            foreach ($answerData as $locale => $text) {
+            foreach ($answerData['locales'] as $locale => $text) {
                 $qb->set("a$answerIndex.text_$locale = {text$answerIndex$locale}")
                     ->setParameter("text$answerIndex$locale", $text);
             }
@@ -88,51 +93,63 @@ class QuestionAdminManager
         return $this->questionAdminBuilder->build($row);
     }
 
-    protected function getAnswersTexts(array $data)
+    /**
+     * @param array $data
+     * @return QuestionAdmin
+     */
+    public function update(array $data)
     {
-        $answers = array();
-        foreach ($data as $key => $value) {
-            $hasAnswerText = strpos($key, 'answer') !== false;
-            $isNotId = strpos($key, 'Id') === false;
-            if ($hasAnswerText && $isNotId && !empty($value)) {
-                $id = $this->extractAnswerId($key);
-                $locale = $this->extractLocale($key);
-                $answers[$id][$locale] = $value;
+        $this->validateOnUpdate($data);
+
+        $answerTexts = $data['answerTexts'];
+        $questionTexts = $data['questionTexts'];
+        $questionId = $data['questionId'];
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(q:Question)')
+            ->where('id(q) = {questionId}')
+            ->setParameter('questionId', (integer)$questionId);
+
+        foreach ($questionTexts as $locale => $text) {
+            $qb->set("q.text_$locale = {question$locale}")
+                ->setParameter("question$locale", $text);
+        }
+        $qb->set('q.timestamp = timestamp()', 'q.ranking = 0');
+        $qb->with('q');
+        foreach ($answerTexts as $answerIndex => $answerData) {
+            if (isset($answerData['answerId'])){
+                $qb->match("(a$answerIndex:Answer)-[:IS_ANSWER_OF]->(q)")
+                    ->where("id(a$answerIndex) = {answerId$answerIndex}")
+                    ->setParameter("answerId$answerIndex", (integer)$answerData['answerId']);
+            } else {
+                $qb->create("(a$answerIndex:Answer)-[:IS_ANSWER_OF]->(q)");
             }
-        }
 
-        return $answers;
-    }
-
-    //To change with more locales
-    protected function extractLocale($text)
-    {
-        if (strpos($text, 'Es') !== false) {
-            return 'es';
-        }
-
-        return 'en';
-    }
-
-    protected function extractAnswerId($text)
-    {
-        $prefixSize = strlen('answer');
-        $number = substr($text, $prefixSize, 1);
-
-        return (integer)$number;
-    }
-
-    protected function getQuestionTexts(array $data)
-    {
-        $texts = array();
-        foreach ($data as $key => $value) {
-            $isQuestionText = strpos($key, 'text') === 0;
-            if ($isQuestionText) {
-                $locale = $this->extractLocale($key);
-                $texts[$locale] = $value;
+            foreach ($answerData['locales'] as $locale => $text) {
+                $qb->set("a$answerIndex.text_$locale = {text$answerIndex$locale}")
+                    ->setParameter("text$answerIndex$locale", $text);
             }
-        }
+            $qb->with('q');
+        };
 
-        return $texts;
+        $qb->returns('q AS question');
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        /* @var $row Row */
+        $row = $result->current();
+
+        return $this->questionAdminBuilder->build($row);
+    }
+
+    protected function validateOnCreate(array $data)
+    {
+        $this->validator->validateOnCreate($data);
+    }
+
+    protected function validateOnUpdate(array $data)
+    {
+        $this->validator->validateOnUpdate($data);
     }
 }

@@ -22,8 +22,10 @@ class QuestionAdminBuilder
     {
         $question = new QuestionAdmin();
         $question->setQuestionId($questionNode->getId());
-        $question->setQuestionText('es', $questionNode->getProperty('text_es'));
-        $question->setQuestionText('en', $questionNode->getProperty('text_en'));
+        $spanishText = $this->buildTextAttribute('es');
+        $question->setQuestionText('es', $questionNode->getProperty($spanishText));
+        $englishText = $this->buildTextAttribute('en');
+        $question->setQuestionText('en', $questionNode->getProperty($englishText));
 
         return $question;
     }
@@ -61,8 +63,10 @@ class QuestionAdminBuilder
     {
         $answer = new AnswerAdmin();
         $answer->setAnswerId($answerNode->getId());
-        $answer->setText('es', $answerNode->getProperty('text_es'));
-        $answer->setText('en', $answerNode->getProperty('text_en'));
+        $spanishText = $this->buildTextAttribute('es');
+        $answer->setText('es', $answerNode->getProperty($spanishText));
+        $englishText = $this->buildTextAttribute('en');
+        $answer->setText('en', $answerNode->getProperty($englishText));
 
         return $answer;
     }
@@ -74,5 +78,10 @@ class QuestionAdminBuilder
 
         $countSkipped = $row->offsetExists('skipped') ? $row->offsetGet('skipped') : 0;
         $question->setSkipped($countSkipped);
+    }
+
+    public function buildTextAttribute($locale)
+    {
+        return "text_" . $locale;
     }
 }
