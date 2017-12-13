@@ -13,6 +13,11 @@ api_consumer.config:
         spotify:
             class: ApiConsumer\ResourceOwner\SpotifyResourceOwner
             parser_class: ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser
+        tumblr:
+            class: ApiConsumer\ResourceOwner\TumblrResourceOwner
+            parser_class: ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser
+        linkedin:
+            class: ApiConsumer\ResourceOwner\LinkedinResourceOwner
     fetcher:
         twitter_links:
             class: ApiConsumer\Fetcher\TwitterLinksFetcher
@@ -41,6 +46,18 @@ api_consumer.config:
         spotify:
             class: ApiConsumer\Fetcher\SpotifyFetcher
             resourceOwner: spotify
+        tumblr_blogs:
+            class: ApiConsumer\Fetcher\TumblrBlogsFetcher
+            resourceOwner: tumblr
+        tumblr_following:
+            class: ApiConsumer\Fetcher\TumblrFollowingFetcher
+            resourceOwner: tumblr
+        tumblr_likes:
+            class: ApiConsumer\Fetcher\TumblrLikesFetcher
+            resourceOwner: tumblr
+        tumblr_posts:
+            class: ApiConsumer\Fetcher\TumblrPostsFetcher
+            resourceOwner: tumblr
     processor:
         twitter_intent:
             class: ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterIntentProcessor
@@ -101,6 +118,31 @@ api_consumer.config:
             class: ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\YoutubeVideoProcessor
             parser: ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser
             resourceOwner: google
+
+        tumblr_audio:
+            class: ApiConsumer\LinkProcessor\Processor\TumblrProcessor\TumblrAudioProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser
+            resourceOwner: tumblr
+        tumblr_blog:
+            class: ApiConsumer\LinkProcessor\Processor\TumblrProcessor\TumblrBlogProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser
+            resourceOwner: tumblr
+        tumblr_link:
+            class: ApiConsumer\LinkProcessor\Processor\TumblrProcessor\TumblrLinkProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser
+            resourceOwner: tumblr
+        tumblr_photo:
+            class: ApiConsumer\LinkProcessor\Processor\TumblrProcessor\TumblrPhotoProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser
+            resourceOwner: tumblr
+        tumblr_video:
+            class: ApiConsumer\LinkProcessor\Processor\TumblrProcessor\TumblrVideoProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser
+            resourceOwner: tumblr
+        tumblr_unknown_type_post:
+            class: ApiConsumer\LinkProcessor\Processor\TumblrProcessor\TumblrUnknownTypePostProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser
+            resourceOwner: tumblr
 
         instagram:
             class: ApiConsumer\LinkProcessor\Processor\InstagramProcessor\InstagramProcessor

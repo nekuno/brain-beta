@@ -11,7 +11,7 @@ class MetadataManager implements MetadataManagerInterface
     protected $metadata;
     protected $defaultLocale;
 
-    protected $validLocales = array('en', 'es');
+    static public $validLocales = array('en', 'es');
 
     public function __construct(Translator $translator, MetadataUtilities $metadataUtilities, array $metadata, $defaultLocale)
     {
@@ -52,7 +52,7 @@ class MetadataManager implements MetadataManagerInterface
 
     protected function sanitizeLocale($locale)
     {
-        if (!$locale || !in_array($locale, $this->validLocales)) {
+        if (!$locale || !in_array($locale, self::$validLocales)) {
             $locale = $this->defaultLocale;
         }
 

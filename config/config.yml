@@ -97,6 +97,17 @@ api_consumer.config:
             consumer_secret: %facebook.consumer_secret%
             redirect_uri: %facebook.redirect_uri%
 
+        tumblr:
+            consumer_key: %tumblr.consumer_key%
+            consumer_secret:  %tumblr.consumer_secret%
+            scope: "read"
+            client_credential:
+                application_token: %tumblr.application_token%
+
+        linkedin:
+            consumer_key: %linkedin.consumer_key%
+            consumer_secret:  %linkedin.consumer_secret%
+
 admin_domain_plus_post: %admin.domain_plus_port%
 social_host: %social.host%
 
@@ -124,3 +135,16 @@ hwi_oauth:
             type:                spotify
             client_id:           %spotify.consumer_key%
             client_secret:       %spotify.consumer_secret%
+        tumblr:
+            type:                oauth1
+            client_id:           %tumblr.consumer_key%
+            client_secret:       %tumblr.consumer_secret%
+            user_response_class: HWI\Bundle\OAuthBundle\OAuth\Response\PathUserResponse
+            paths:
+                identifier:     response.user.name
+                nickname:       response.user.name
+                realname:       response.user.name
+        linkedin:
+            type:                linkedin
+            client_id:           %linkedin.consumer_key%
+            client_secret:       %linkedin.consumer_secret%
