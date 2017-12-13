@@ -418,4 +418,25 @@ class ProfileModel
 
         return $this->build($result->current());
     }
+
+    public function getIndustryIdFromDescription($description)
+    {
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match('(industry:ProfileOption:Industry)')
+            ->where('industry.name_en = {description}')
+            ->setParameter('description', $description)
+            ->returns('industry.id as id')
+            ->limit(1);
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        /** @var Row $row */
+        $row = $result->current();
+        if ($row->offsetExists('id')) {
+            return $row->offsetGet('id');
+        }
+
+        throw new NotFoundHttpException(sprintf("Description %s not found", $description));
+    }
 }
