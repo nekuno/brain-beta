@@ -28,6 +28,6 @@ class UserTrackingSubscriber implements EventSubscriberInterface
     {
         $user = $event->getUser();
         $trackingData = $event->getTrackingData();
-        $this->userTrackingModel->set($user->getId(), 'Registration success', 'Registration', null, $trackingData);
+//        $this->userTrackingModel->set($user->getId(), 'Registration success', 'Registration', null, $trackingData);
     }
 }

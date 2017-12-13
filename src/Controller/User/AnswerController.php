@@ -3,6 +3,7 @@
 namespace Controller\User;
 
 use Event\AnswerEvent;
+use Model\Metadata\MetadataManager;
 use Model\User\Question\QuestionModel;
 use Model\User\Question\UserAnswerPaginatedModel;
 use Model\User;
@@ -263,7 +264,8 @@ class AnswerController
     protected function getLocale(Request $request, $defaultLocale)
     {
         $locale = $request->get('locale', $defaultLocale);
-        if (!in_array($locale, array('en', 'es'))) {
+        $validLocales = MetadataManager::$validLocales;
+        if (!in_array($locale, $validLocales)) {
             $locale = $defaultLocale;
         }
 

@@ -383,7 +383,8 @@ class ModelsServiceProvider implements ServiceProviderInterface
 
         $app['questionnaire.admin.questions.model'] = $app->share(
             function ($app) {
-                return new QuestionAdminManager($app['neo4j.graph_manager'], $app['questionnaire.questions.admin.builder']);
+                $validator = $app['validator.factory']->build('questions_admin');
+                return new QuestionAdminManager($app['neo4j.graph_manager'], $app['questionnaire.questions.admin.builder'], $validator);
             }
         );
 
@@ -393,9 +394,10 @@ class ModelsServiceProvider implements ServiceProviderInterface
             }
         );
 
-        $app['users.questions.paginated.model'] = $app->share(
+        $app['admin.questions.paginated.model'] = $app->share(
             function ($app) {
-                return new QuestionsAdminPaginatedModel($app['neo4j.graph_manager'], $app['questionnaire.questions.admin.builder']);
+                $validator = $app['validator.factory']->build('questions_admin');
+                return new QuestionsAdminPaginatedModel($app['neo4j.graph_manager'], $app['questionnaire.questions.admin.builder'], $validator);
             }
         );
 

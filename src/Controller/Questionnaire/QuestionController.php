@@ -2,6 +2,7 @@
 
 namespace Controller\Questionnaire;
 
+use Model\Metadata\MetadataManager;
 use Model\User\Question\QuestionModel;
 use Model\User;
 use Silex\Application;
@@ -167,7 +168,8 @@ class QuestionController
     protected function getLocale(Request $request, $defaultLocale)
     {
         $locale = $request->get('locale', $defaultLocale);
-        if (!in_array($locale, array('en', 'es'))) {
+        $validLocales = MetadataManager::$validLocales;
+        if (!in_array($locale, $validLocales)) {
             $locale = $defaultLocale;
         }
 

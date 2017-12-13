@@ -20,7 +20,7 @@ class QuestionController
         );
 
         $paginator = $app['paginator'];
-        $model = $app['users.questions.paginated.model'];
+        $model = $app['admin.questions.paginated.model'];
 
         $result = $paginator->paginate($filters, $model, $request);
 
@@ -38,7 +38,6 @@ class QuestionController
 
     public function createQuestionAction(Request $request, Application $app)
     {
-//        $data = $request->query->all();
         $data = $request->request->all();
 
         /** @var QuestionService $questionService */
@@ -46,7 +45,7 @@ class QuestionController
 
         $created = $questionService->createQuestion($data);
 
-        return $app->json($created);
+        return $app->json($created, 201);
     }
 
     public function updateQuestionAction(Request $request, Application $app, $questionId)
@@ -57,7 +56,7 @@ class QuestionController
         /** @var QuestionService $questionService */
         $questionService = $app['question.service'];
 
-        $updated = $questionService->updateMultilanguage($data);
+        $updated = $questionService->updateQuestion($data);
 
         return $app->json($updated);
     }
