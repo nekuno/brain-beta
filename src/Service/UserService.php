@@ -77,4 +77,11 @@ class UserService
         return $user;
     }
 
+    public function getOneUser($userId)
+    {
+        $user = $this->userManager->getById($userId);
+
+        return $user;
+    }
+
 }

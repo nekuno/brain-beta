@@ -45,11 +45,6 @@ $admin->get('/enterpriseUsers/{enterpriseUserId}/invitations/{id}', 'admin.enter
 $admin->put('/enterpriseUsers/{enterpriseUserId}/invitations/{id}', 'admin.enterpriseUsers.invitations.controller:putAction');
 $admin->post('/enterpriseUsers/{enterpriseUserId}/invitations/{id}', 'admin.enterpriseUsers.invitations.controller:validateAction');
 
-
-/** User routes */
-$admin->get('/users', 'admin.users.controller:getUsersAction');
-$admin->delete('/users/{userId}', 'admin.users.controller:deleteUserAction');
-
 /** User tracking events */
 $admin->get('/users/jwt/{id}', 'admin.users.controller:jwtAction');
 $admin->get('/users/tracking', 'admin.userTracking.controller:getAllAction');
@@ -59,6 +54,11 @@ $admin->get('/users/reported', 'admin.userReport.controller:getReportedAction');
 $admin->get('/users/disabled', 'admin.userReport.controller:getDisabledAction');
 $admin->post('/users/{id}/enable', 'admin.userReport.controller:enableAction');
 $admin->post('/users/{id}/disable', 'admin.userReport.controller:disableAction');
+
+/** User routes */
+$admin->get('/users', 'admin.users.controller:getUsersAction');
+$admin->get('/users/{userId}', 'admin.users.controller:getUserAction');
+$admin->delete('/users/{userId}', 'admin.users.controller:deleteUserAction');
 
 /** Content routes */
 $admin->get('/content/reported', 'admin.content.controller:getReportedAction');

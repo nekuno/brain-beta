@@ -33,6 +33,16 @@ class UserController
         return $app->json($result);
     }
 
+    public function getUserAction(Application $app, $userId)
+    {
+        /** @var UserService $userService */
+        $userService = $app['user.service'];
+
+        $user = $userService->getOneUser($userId);
+
+        return $app->json($user);
+    }
+
     public function deleteUserAction(Application $app, $userId)
     {
         /** @var UserService $userService */

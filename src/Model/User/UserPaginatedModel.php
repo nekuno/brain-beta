@@ -71,10 +71,11 @@ class UserPaginatedModel implements PaginatedInterface
 
     protected function getOrderQuery($filters)
     {
-        $default = 'u.qnoow_id DESC';
+        $defaultOrder = 'u.qnoow_id';
+        $defaultOrderDir = 'desc';
 
         if (!isset($filters['order']) || !isset($filters['orderDir'])) {
-            return $default;
+            return $defaultOrder . ' ' . $defaultOrderDir;
         }
 
         switch ($filters['order']) {
@@ -85,10 +86,10 @@ class UserPaginatedModel implements PaginatedInterface
                 $order = 'u.username';
                 break;
             default:
-                $order = $default;
+                $order = $defaultOrder;
         }
 
-        $orderDir = $filters['orderDir'] ?: 'desc';
+        $orderDir = $filters['orderDir'] ?: $defaultOrderDir;
 
         return $order . ' ' . $orderDir;
     }
