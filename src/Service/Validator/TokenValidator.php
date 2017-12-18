@@ -10,6 +10,9 @@ class TokenValidator extends Validator
     {
         $metadata = $this->metadata;
         $metadata['resourceId']['required'] = true;
+        if (isset($data['resourceOwner']) && $data['resourceOwner'] === TokensModel::STEAM) {
+            $metadata['oauthToken']['required'] = false;
+        }
         $choices = $this->getChoices();
 
         $this->validateMetadata($data, $metadata, $choices);

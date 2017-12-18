@@ -23,6 +23,7 @@ class TokensModel
     CONST SPOTIFY = 'spotify';
     CONST LINKEDIN = 'linkedin';
     CONST TUMBLR = 'tumblr';
+    CONST STEAM = 'steam';
 
     /**
      * @var EventDispatcher
@@ -58,6 +59,7 @@ class TokensModel
             self::SPOTIFY,
             self::TUMBLR,
             self::LINKEDIN,
+            self::STEAM,
         );
     }
 

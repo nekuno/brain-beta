@@ -18,6 +18,9 @@ api_consumer.config:
             parser_class: ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser
         linkedin:
             class: ApiConsumer\ResourceOwner\LinkedinResourceOwner
+        steam:
+            class: ApiConsumer\ResourceOwner\SteamResourceOwner
+            parser_class: ApiConsumer\LinkProcessor\UrlParser\SteamUrlParser
     fetcher:
         twitter_links:
             class: ApiConsumer\Fetcher\TwitterLinksFetcher
@@ -58,6 +61,9 @@ api_consumer.config:
         tumblr_posts:
             class: ApiConsumer\Fetcher\TumblrPostsFetcher
             resourceOwner: tumblr
+        steam_games:
+            class: ApiConsumer\Fetcher\SteamGamesFetcher
+            resourceOwner: steam
     processor:
         twitter_intent:
             class: ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterIntentProcessor
@@ -143,6 +149,11 @@ api_consumer.config:
             class: ApiConsumer\LinkProcessor\Processor\TumblrProcessor\TumblrUnknownTypePostProcessor
             parser: ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser
             resourceOwner: tumblr
+
+        steam_game:
+            class: ApiConsumer\LinkProcessor\Processor\SteamProcessor\SteamGameProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\SteamUrlParser
+            resourceOwner: steam
 
         instagram:
             class: ApiConsumer\LinkProcessor\Processor\InstagramProcessor\InstagramProcessor

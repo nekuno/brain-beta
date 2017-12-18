@@ -6,6 +6,7 @@ use ApiConsumer\Exception\UrlNotValidException;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\InstagramUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
+use ApiConsumer\LinkProcessor\UrlParser\SteamUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
@@ -84,6 +85,9 @@ class LinkAnalyzer
         if (self::isTumblr($url)) {
             return TokensModel::TUMBLR;
         }
+        if (self::isSteam($url)) {
+            return TokensModel::STEAM;
+        }
 
         return null;
     }
@@ -124,6 +128,10 @@ class LinkAnalyzer
 
         if (self::isTumblr($url)) {
             return new TumblrUrlParser();
+        }
+
+        if (self::isSteam($url)) {
+            return new SteamUrlParser();
         }
 
         return new UrlParser();
@@ -180,5 +188,10 @@ class LinkAnalyzer
     private static function isTumblr($url)
     {
         return preg_match('/^https?:\/\/.+\.tumblr\.com\//i', $url);
+    }
+
+    private static function isSteam($url)
+    {
+        return preg_match('/^https?:\/\/.+\.steampowered\.com\//i', $url);
     }
 }
