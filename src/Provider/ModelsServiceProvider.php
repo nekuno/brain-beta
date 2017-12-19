@@ -2,7 +2,8 @@
 
 namespace Provider;
 
-use Manager\PhotoManager;
+use Model\User\Photo\GalleryManager;
+use Model\User\Photo\PhotoManager;
 use Model\EnterpriseUser\EnterpriseUserModel;
 use Model\Link\LinkModel;
 use Model\Metadata\CategoryMetadataManager;
@@ -539,7 +540,13 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.photo.manager'] = $app->share(
             function ($app) {
 
-                return new PhotoManager($app['neo4j.graph_manager'], $app['images_web_dir'], $app['params']['social.host']);
+                return new PhotoManager($app['neo4j.graph_manager'], $app['users.gallery.manager'], $app['images_web_dir'], $app['params']['social.host']);
+            }
+        );
+
+        $app['users.gallery.manager'] = $app->share(
+            function($app) {
+                return new GalleryManager($app['images_web_dir']);
             }
         );
 

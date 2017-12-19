@@ -13,6 +13,7 @@ use Model\Neo4j\Neo4jException;
 use Model\User;
 use Model\User\GhostUser\GhostUserManager;
 use Model\User\LookUpModel;
+use Model\User\Photo\PhotoManager;
 use Model\User\SocialNetwork\SocialProfile;
 use Model\User\Token\TokensModel;
 use Model\User\UserStatusModel;

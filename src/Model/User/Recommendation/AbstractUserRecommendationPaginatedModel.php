@@ -4,7 +4,7 @@ namespace Model\User\Recommendation;
 
 use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
-use Manager\PhotoManager;
+use Model\User\Photo\PhotoManager;
 use Model\Neo4j\GraphManager;
 use Model\Metadata\ProfileMetadataManager;
 use Model\User\ProfileModel;

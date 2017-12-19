@@ -2,7 +2,8 @@
 
 namespace Service;
 
-use Manager\PhotoManager;
+use Model\User\Photo\GalleryManager;
+use Model\User\Photo\PhotoManager;
 use Manager\UserManager;
 use Model\User\ProfileModel;
 use Model\User\Rate\RateModel;
@@ -19,6 +20,7 @@ class UserService
     protected $linkService;
     protected $instantConnection;
     protected $photoManager;
+    protected $galleryManager;
 
     /**
      * UserService constructor.
@@ -30,8 +32,9 @@ class UserService
      * @param LinkService $linkService
      * @param InstantConnection $instantConnection
      * @param PhotoManager $photoManager
+     * @param GalleryManager $galleryManager
      */
-    public function __construct(UserManager $userManager, ProfileModel $profileManager, TokensModel $tokensModel, TokenStatusManager $tokenStatusManager, RateModel $rateModel, LinkService $linkService, InstantConnection $instantConnection, PhotoManager $photoManager)
+    public function __construct(UserManager $userManager, ProfileModel $profileManager, TokensModel $tokensModel, TokenStatusManager $tokenStatusManager, RateModel $rateModel, LinkService $linkService, InstantConnection $instantConnection, PhotoManager $photoManager, GalleryManager $galleryManager)
     {
         $this->userManager = $userManager;
         $this->profileManager = $profileManager;
@@ -40,7 +43,9 @@ class UserService
         $this->rateModel = $rateModel;
         $this->linkService = $linkService;
         $this->instantConnection = $instantConnection;
+        //TODO: Move to PhotoService and remove USerManager->PhotoManager dependencies
         $this->photoManager = $photoManager;
+        $this->galleryManager = $galleryManager;
     }
 
     public function createUser(array $userData, array $profileData)
@@ -50,6 +55,26 @@ class UserService
         $this->profileManager->create($user->getId(), $profileData);
 
         return $user;
+    }
+
+    public function updateUser(array $userData)
+    {
+        $this->updateEnabled($userData);
+        $user = $this->userManager->update($userData);
+
+        return $user;
+    }
+    
+    protected function updateEnabled(array $userData)
+    {
+        $userId = $userData['userId'];
+        $user = $this->userManager->getById($userId);
+
+        if ($user->isEnabled() !== $userData['enabled'])
+        {
+            $fromAdmin = true;
+            $this->userManager->setEnabled($userId, $userData['enabled'], $fromAdmin);
+        }
     }
 
     public function deleteUser($userId)
@@ -63,6 +88,8 @@ class UserService
         {
             $this->photoManager->remove($photoId);
         }
+
+        $this->galleryManager->deleteAllFromUser($user);
 
         $this->tokenStatusManager->removeAll($userId);
         $this->tokensModel->removeAll($userId);

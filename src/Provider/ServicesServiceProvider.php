@@ -48,7 +48,7 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['user.service'] = $app->share(
             function (Application $app) {
-                return new UserService($app['users.manager'], $app['users.profile.model'], $app['users.tokens.model'], $app['users.tokenStatus.manager'], $app['users.rate.model'], $app['link.service'], $app['instant.connection.service'], $app['users.photo.manager']);
+                return new UserService($app['users.manager'], $app['users.profile.model'], $app['users.tokens.model'], $app['users.tokenStatus.manager'], $app['users.rate.model'], $app['link.service'], $app['instant.connection.service'], $app['users.photo.manager'], $app['users.gallery.manager']);
             }
         );
 
