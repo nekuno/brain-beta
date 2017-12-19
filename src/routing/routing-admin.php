@@ -58,6 +58,7 @@ $admin->post('/users/{id}/disable', 'admin.userReport.controller:disableAction')
 /** User routes */
 $admin->get('/users', 'admin.users.controller:getUsersAction');
 $admin->get('/users/{userId}', 'admin.users.controller:getUserAction');
+$admin->put('/users/{userId}', 'admin.users.controller:updateUserAction');
 $admin->delete('/users/{userId}', 'admin.users.controller:deleteUserAction');
 
 /** Content routes */

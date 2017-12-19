@@ -43,6 +43,19 @@ class UserController
         return $app->json($user);
     }
 
+    public function updateUserAction (Application $app, Request $request, $userId)
+    {
+        $data = $request->request->all();
+        $data['userId'] = $userId;
+
+        /** @var UserService $userService */
+        $userService = $app['user.service'];
+
+        $user = $userService->updateUser($data);
+
+        return $app->json($user);
+    }
+
     public function deleteUserAction(Application $app, $userId)
     {
         /** @var UserService $userService */
