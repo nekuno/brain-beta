@@ -59,7 +59,7 @@ class UserService
 
     public function updateUser(array $userData)
     {
-        $this->updateEnabled($userData);
+        $userData = $this->updateEnabled($userData);
         $user = $this->userManager->update($userData);
 
         return $user;
@@ -75,12 +75,16 @@ class UserService
             $fromAdmin = true;
             $this->userManager->setEnabled($userId, $userData['enabled'], $fromAdmin);
         }
+
+        unset($userData['enabled']);
+
+        return $userData;
     }
 
     public function deleteUser($userId)
     {
         $messagesData = array('userId' => $userId);
-//        $this->instantConnection->deleteMessages($messagesData);
+        $this->instantConnection->deleteMessages($messagesData);
 
         $user = $this->userManager->getById($userId);
         $photoId = $user->getPhoto()->getId();

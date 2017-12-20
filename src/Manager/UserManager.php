@@ -1009,7 +1009,7 @@ class UserManager
 
     public function save(array $data)
     {
-        $userId = $data['userId'];
+        $userId = (integer)$data['userId'];
         unset($data['userId']);
 
         $this->updateCanonicalFields($data);
