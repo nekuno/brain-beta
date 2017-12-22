@@ -2,13 +2,16 @@
 
 namespace ApiConsumer\LinkProcessor\Processor\TumblrProcessor;
 
+use ApiConsumer\Exception\UrlChangedException;
 use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser;
+use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
 use Model\Link\Audio;
 use Model\Link\Image;
 use Model\Link\Link;
 use Model\Link\Video;
+use Model\User\Token\TokensModel;
 
 class TumblrPostProcessor extends AbstractTumblrProcessor
 {
@@ -24,8 +27,20 @@ class TumblrPostProcessor extends AbstractTumblrProcessor
         }
 
         $response = $this->resourceOwner->requestPost($blogId, $postId, $token);
+        $post = isset($response['response']['posts'][0]) ? $response['response']['posts'][0] : null;
 
-        return isset($response['response']['posts'][0]) ? $response['response']['posts'][0] : null;
+        if (isset($post['video_type']) && $post['video_type'] === 'youtube' && isset($post['permalink_url'])) {
+            $preprocessedLink->setSource(TokensModel::GOOGLE);
+            $preprocessedLink->setType(YoutubeUrlParser::VIDEO_URL);
+            throw new UrlChangedException($firstLink->getUrl(), $post['permalink_url']);
+        }
+        if (isset($post['audio_type']) && $post['audio_type'] === 'spotify' && isset($post['audio_source_url'])) {
+            $preprocessedLink->setSource(TokensModel::SPOTIFY);
+            $preprocessedLink->setType(null);
+            throw new UrlChangedException($firstLink->getUrl(), $post['audio_source_url']);
+        }
+
+        return $post;
     }
 
     public function addTags(PreprocessedLink $preprocessedLink, array $data)
