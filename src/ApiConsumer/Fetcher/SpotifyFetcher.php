@@ -107,6 +107,7 @@ class SpotifyFetcher extends BasicPaginationFetcher
                 $preprocessedLink->setFirstLink(Link::buildFromArray($link));
                 $preprocessedLink->setResourceItemId($item['track']['id']);
                 $preprocessedLink->setSource($this->resourceOwner->getName());
+                $preprocessedLink->setToken($this->getToken());
 
                 $parsed[] = $preprocessedLink;
             }

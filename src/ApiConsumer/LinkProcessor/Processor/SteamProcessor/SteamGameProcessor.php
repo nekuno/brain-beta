@@ -43,4 +43,19 @@ class SteamGameProcessor extends AbstractSteamProcessor
 
         $preprocessedLink->setFirstLink($creator);
     }
+
+    public function getImages(PreprocessedLink $preprocessedLink, array $data)
+    {
+        $firstLink = $preprocessedLink->getFirstLink();
+        if (!$firstLink->getThumbnailLarge()) {
+            if (!$gameId = $preprocessedLink->getResourceItemId()) {
+                $gameId = SteamUrlParser::getGameId($firstLink->getUrl());
+            }
+
+            $thumbnail = $this->resourceOwner->requestGameImage($gameId);
+            $firstLink->setThumbnail($thumbnail);
+        }
+
+        return parent::getImages($preprocessedLink, $data);
+    }
 }
