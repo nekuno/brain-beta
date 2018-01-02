@@ -27,7 +27,7 @@ class SteamResourceOwner extends AbstractResourceOwner
 
     public function canRequestAsClient()
     {
-        return false;
+        return true;
     }
 
     public function requestAsClient($url, array $query = array())

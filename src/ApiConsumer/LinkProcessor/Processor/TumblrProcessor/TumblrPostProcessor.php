@@ -80,22 +80,30 @@ class TumblrPostProcessor extends AbstractTumblrProcessor
 
     protected function hydrateLinkLink(PreprocessedLink $preprocessedLink, array $data)
     {
-        parent::hydrateLink($preprocessedLink, $data);
         $link = $preprocessedLink->getFirstLink();
+        parent::hydrateLink($preprocessedLink, $data);
         $newLink = Link::buildFromArray($link->toArray());
         $newLink->setTitle($data['title']);
         $newLink->setDescription(strip_tags($data['description']) ?: strip_tags($data['excerpt']));
 
         $preprocessedLink->setFirstLink($newLink);
+
+        if (isset($data['url']) && $data['url'] !== $link->getUrl()) {
+            $this->changeUrl($preprocessedLink, $data['url'], $data);
+        }
     }
 
     protected function hydratePhotoLink(PreprocessedLink $preprocessedLink, array $data)
     {
-        parent::hydrateLink($preprocessedLink, $data);
         $link = $preprocessedLink->getFirstLink();
+        parent::hydrateLink($preprocessedLink, $data);
         $newLink = $this->completePhotoLink($link, $data);
 
         $preprocessedLink->setFirstLink($newLink);
+
+        if (isset($data['link_url']) && $data['link_url'] !== $link->getUrl()) {
+            $this->changeUrl($preprocessedLink, $data['link_url'], $data);
+        }
     }
 
     public function hydrateVideoLink(PreprocessedLink $preprocessedLink, array $data)
@@ -105,6 +113,19 @@ class TumblrPostProcessor extends AbstractTumblrProcessor
         $video = $this->completeVideoLink($link, $data);
 
         $preprocessedLink->setFirstLink($video);
+    }
+
+    private function changeUrl(PreprocessedLink $preprocessedLink, $url, $data)
+    {
+        $link = $preprocessedLink->getFirstLink();
+        $preprocessedLink->setSource(null);
+        $preprocessedLink->setType(null);
+        $preprocessedLink->setResourceItemId(null);
+        if (isset($data['photos'][0]['original_size']['url'])) {
+            $link->setThumbnail($data['photos'][0]['original_size']['url']);
+        }
+        $link->setAdditionalLabels(array());
+        throw new UrlChangedException($link->getUrl(), $url);
     }
 
     protected function getAudioImages(PreprocessedLink $preprocessedLink, array $data)
