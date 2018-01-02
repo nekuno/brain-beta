@@ -21,6 +21,7 @@ class UsersTest extends UsersAPITest
         $this->assertEditOwnUserResponse();
         $this->assertValidationErrorsResponse();
         $this->assertCreateUsersResponse();
+        $this->assertDeleteUserFromAdmin();
     }
 
     public function testErrors()
@@ -149,6 +150,20 @@ class UsersTest extends UsersAPITest
         $response = $this->createUser($userData);
         $formattedResponse = $this->assertJsonResponse($response, 422, "Edit user with username error");
         $this->assertUserValidationErrorFormat($formattedResponse);
+    }
+
+    protected function assertDeleteUserFromAdmin()
+    {
+        $existent = $this->getOwnUser();
+        $formattedCreated = $this->assertJsonResponse($existent, 200, "Get user for deletion");
+        $userId = $formattedCreated['qnoow_id'];
+
+        $response = $this->deleteUserFromAdmin($userId);
+        $formattedResponse = $this->assertJsonResponse($response, 201, "Delete UserA");
+        $this->assertUserAFormat($formattedResponse);
+
+        $deleted = $this->getOwnUser();
+        $this->assertJsonResponse($deleted, 401, "UserA is correctly deleted");
     }
 
     protected function assertUserAFormat($user)

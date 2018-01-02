@@ -46,4 +46,10 @@ abstract class UsersAPITest extends APITest
         return $this->getResponseByRouteWithoutCredentials('/register', 'POST', $userData);
     }
 
+    protected function deleteUserFromAdmin($userId)
+    {
+        $url = sprintf('/admin/users/%d', $userId);
+        return $this->getResponseByRouteWithoutCredentials($url, 'DELETE');
+    }
+
 }
