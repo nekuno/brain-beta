@@ -1,7 +1,4 @@
 <?php
-/**
- * @author yawmoght <yawmoght@gmail.com>
- */
 
 namespace Model\User\Thread;
 
@@ -85,6 +82,7 @@ class UsersThreadManager
                 'matching_questions',
                 'u.qnoow_id AS id',
                 'u.username AS username',
+                'u.slug AS slug',
                 'u.photo AS photo',
                 'like',
                 'p.birthday AS birthday',

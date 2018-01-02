@@ -6,7 +6,8 @@ use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\SynonymousParameters;
 use ApiConsumer\ResourceOwner\GoogleResourceOwner;
-use Model\Link;
+use Model\Link\Link;
+use Model\User\Token\Token;
 
 class YoutubeFetcher extends BasicPaginationFetcher
 {
@@ -27,9 +28,10 @@ class YoutubeFetcher extends BasicPaginationFetcher
     /**
      * {@inheritDoc}
      */
-    protected function getQuery()
+    protected function getQuery($paginationId = null)
     {
-        return $this->query;
+        $parentQuery = parent::getQuery($paginationId);
+        return array_merge($parentQuery, $this->query);
     }
 
     protected function setQuery(array $query)
@@ -146,19 +148,18 @@ class YoutubeFetcher extends BasicPaginationFetcher
     /**
      * {@inheritDoc}
      */
-    public function fetchLinksFromUserFeed($user, $public)
+    public function fetchLinksFromUserFeed(Token $token)
     {
-        $this->user = $user;
-        $this->rawFeed = array();
+        $this->setUpToken($token);
 
-        $channels = $this->getChannelsFromUser($public);
-        $links = $this->getVideosFromChannels($channels, $public);
+        $channels = $this->getChannelsFromUser();
+        $links = $this->getVideosFromChannels($channels);
 
         $links = array_merge($links, $this->rawFeed);
         return $this->parseLinks($links);
     }
 
-    public function getChannelsFromUser($public = true)
+    protected function getChannelsFromUser($username = null)
     {
 
         $this->setUrl('youtube/v3/channels');
@@ -166,23 +167,22 @@ class YoutubeFetcher extends BasicPaginationFetcher
             'maxResults' => $this->pageLength,
             'part' => 'contentDetails'
         );
-        if (!$public) {
+        if (null == $username) {
             $query['mine'] = 'true';
         } else {
-            $query['forUsername'] = $this->resourceOwner->getUsername($this->user);
+            $query['forUsername'] = $username;
         }
 
         $this->setQuery($query);
-        $channels = $this->getLinksByPage($public);
+        $channels = $this->getLinksByPage();
         return $channels;
     }
 
     /**
      * @param array $channels
-     * @param bool $public
      * @return array
      */
-    private function getVideosFromChannels(array $channels, $public = false)
+    protected function getVideosFromChannels(array $channels)
     {
 
         $links = array();
@@ -197,7 +197,7 @@ class YoutubeFetcher extends BasicPaginationFetcher
                 'part' => 'snippet,contentDetails'
             ));
             try {
-                $this->getLinksByPage($public);
+                $this->getLinksByPage();
                 $playlists = array();
                 foreach ($this->rawFeed as $p) {
                     $playlists[$p['snippet']['title']] = $p['id'];
@@ -222,7 +222,7 @@ class YoutubeFetcher extends BasicPaginationFetcher
                     'part' => 'snippet,contentDetails'
                 ));
                 try {
-                    $this->getLinksByPage($public);
+                    $this->getLinksByPage();
                 } catch (\Exception $exception) {
                     //Some default lists return 404 if empty.
                 }
@@ -245,7 +245,7 @@ class YoutubeFetcher extends BasicPaginationFetcher
         $videos = $this->parseLinks($response);
 
         foreach ($videos as $key => $video){
-            if (!LinkAnalyzer::isTextSimilar($video->getLink()->getTitle(), $comparison)){
+            if (!LinkAnalyzer::isTextSimilar($video->getFirstLink()->getTitle(), $comparison)){
                 unset($videos[$key]);
             }
         }
@@ -283,7 +283,7 @@ class YoutubeFetcher extends BasicPaginationFetcher
             $link['description'] = array_key_exists('description', $item['snippet']) ? $item['snippet']['description'] : '';
             $link['timestamp'] = $timestamp;
 
-            $preprocessedLink->setLink(Link::buildFromArray($link));
+            $preprocessedLink->setFirstLink(Link::buildFromArray($link));
             $preprocessedLink->setResourceItemId(array_key_exists('id', $item) ? $item['id'] : null);
             $preprocessedLink->setSource($this->resourceOwner->getName());
 

@@ -5,7 +5,7 @@ namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
 use Everyman\Neo4j\Relationship;
-use Model\LinkModel;
+use Model\Link\LinkModel;
 use Model\Neo4j\GraphManager;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;

@@ -7,18 +7,25 @@ use ApiConsumer\Exception\UrlNotValidException;
 
 class FacebookUrlParser extends UrlParser
 {
+    const FACEBOOK_PAGE = 'facebook_page';
+    //Types managed outside of here:
     const FACEBOOK_VIDEO = 'facebook_video';
     const FACEBOOK_PROFILE = 'facebook_profile';
-    const FACEBOOK_PAGE = 'facebook_page';
+    const FACEBOOK_STATUS = 'facebook_status';
+    const DEFAULT_IMAGE_PATH = 'default_images/facebook.png';
 
     static function FACEBOOK_VIDEO_TYPES(){
         return array('video_inline', 'video_autoplay');
     }
 
+    static function FACEBOOK_PAGE_TYPES(){
+        return array('avatar');
+    }
+
     public function getUrlType($url)
     {
-        if ($this->isFacebookProfile($url)) {
-            return self::FACEBOOK_PROFILE;
+        if ($this->isFacebookPage($url)) {
+            return self::FACEBOOK_PAGE;
         }
 
         throw new UrlNotValidException($url);
@@ -26,8 +33,6 @@ class FacebookUrlParser extends UrlParser
 
     public function getVideoId($url)
     {
-        $url = $this->cleanURL($url);
-
         $prefix = 'videos/';
         $startPos = strpos($url, $prefix);
         if ($startPos === false) {
@@ -42,7 +47,7 @@ class FacebookUrlParser extends UrlParser
      * @param $url
      * @return bool
      */
-    protected function isFacebookProfile($url)
+    protected function isFacebookPage($url)
     {
         $reserved_urls = array('photo.php', 'settings', 'support', '#', 'groups', 'help');
 

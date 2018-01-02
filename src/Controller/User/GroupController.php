@@ -14,13 +14,13 @@ class GroupController
 {
     /**
      * @param Application $app
-     * @param integer $id
+     * @param integer $groupId
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      * @throws \Exception
      */
-    public function getAction(Application $app, $id)
+    public function getAction(Application $app, $groupId)
     {
-        $group = $app['users.groups.model']->getById($id);
+        $group = $app['users.groups.model']->getById($groupId);
 
         return $app->json($group);
     }
@@ -30,8 +30,8 @@ class GroupController
         $data = $request->request->all();
 
         $data['createdBy'] = $user->getId();
-        $createdGroup = $app['users.groups.model']->create($data);
-        $app['users.groups.model']->addUser($createdGroup->getId(), $user->getId());
+        $createdGroup = $app['group.service']->createGroup($data);
+        $app['group.service']->addUser($createdGroup->getId(), $user->getId());
 
         $data['groupId'] = $createdGroup->getId();
         $invitationData = array(
@@ -45,31 +45,11 @@ class GroupController
         return $app->json($createdGroup, 201);
     }
 
-
-    /**
-     * @param Request $request
-     * @param Application $app
-     * @param User $user
-     * @param integer $id
-     * @return \Symfony\Component\HttpFoundation\JsonResponse
-     * @throws \Exception
-     */
-    public function getMembersAction(Request $request, Application $app, User $user, $id)
-    {
-        $paginator = $app['paginator'];
-        $groupContentModel = $app['users.group.members.model'];
-        $filters = array('groupId' => (int)$id, 'userId' => $user->getId());
-
-        $content = $paginator->paginate($filters, $groupContentModel, $request);
-
-        return $app->json($content);
-    }
-
-    public function getContentsAction(Request $request, Application $app, $id)
+    public function getContentsAction(Request $request, Application $app, $groupId)
     {
         $paginator = $app['paginator'];
         $groupContentModel = $app['users.group.content.model'];
-        $filters = array('groupId' => (int)$id);
+        $filters = array('groupId' => (int)$groupId);
 
         $content = $paginator->paginate($filters, $groupContentModel, $request);
 
@@ -79,27 +59,27 @@ class GroupController
     /**
      * @param Application $app
      * @param User $user
-     * @param integer $id
+     * @param integer $groupId
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      * @throws \Exception
      */
-    public function addUserAction(Application $app, User $user, $id)
+    public function addUserAction(Application $app, User $user, $groupId)
     {
-        $app['users.groups.model']->addUser($id, $user->getId());
+        $group = $app['group.service']->addUser((int)$groupId, $user->getId());
 
-        return $app->json();
+        return $app->json($group);
     }
 
     /**
      * @param Application $app
      * @param User $user
-     * @param integer $id
+     * @param integer $groupId
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      * @throws \Exception
      */
-    public function removeUserAction(Application $app, User $user, $id)
+    public function removeUserAction(Application $app, User $user, $groupId)
     {
-        $removed = $app['users.groups.model']->removeUser($id, $user->getId());
+        $removed = $app['group.service']->removeUser($groupId, $user->getId());
 
         return $app->json($removed, 204);
     }

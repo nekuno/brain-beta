@@ -1,12 +1,9 @@
 <?php
-/**
- * @author yawmoght <yawmoght@gmail.com>
- */
 
 namespace Model\User\Thread;
 
 
-use Model\LinkModel;
+use Model\Link\LinkModel;
 use Model\Neo4j\GraphManager;
 use Model\User\Filters\FilterContentManager;
 use Model\User\Recommendation\ContentRecommendation;

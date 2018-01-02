@@ -1,7 +1,5 @@
 <?php
-/**
- * @author Manolo Salsas <manolez@gmail.com>
- */
+
 namespace Service;
 
 use Model\Entity\EmailNotification;
@@ -14,12 +12,18 @@ use Silex\Translator;
 use Silex\Application;
 use Symfony\Component\Console\Output\OutputInterface;
 use Console\Command\SwiftMailerChatSendCommand;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 
 /**
  * ChatMessageNotifications
  */
 class ChatMessageNotifications
 {
+    /**
+     * @var Client
+     */
+    protected $client;
 
     /**
      * @var EmailNotifications
@@ -34,7 +38,7 @@ class ChatMessageNotifications
     /**
      * @var Connection
      */
-    protected $connectionSocial;
+    protected $connectionBrain;
 
     /**
      * @var Translator
@@ -51,11 +55,12 @@ class ChatMessageNotifications
      */
     protected $profileModel;
 
-    function __construct(EmailNotifications $emailNotifications, EntityManager $entityManagerBrain, Connection $connectionSocial, Translator $translator, UserManager $userManager, ProfileModel $profileModel)
+    function __construct(Client $client, EmailNotifications $emailNotifications, EntityManager $entityManagerBrain, Connection $connectionBrain, Translator $translator, UserManager $userManager, ProfileModel $profileModel)
     {
+        $this->client = $client;
         $this->emailNotifications = $emailNotifications;
         $this->entityManagerBrain = $entityManagerBrain;
-        $this->connectionSocial = $connectionSocial;
+        $this->connectionBrain = $connectionBrain;
         $this->translator = $translator;
         $this->userManager = $userManager;
         $this->profileModel = $profileModel;
@@ -122,19 +127,13 @@ class ChatMessageNotifications
 
     public function createDefaultMessage($to, $locale)
     {
-        $qb = $this->connectionSocial->createQueryBuilder()
-            ->insert('chat_message')->values(array(
-                'user_to' => $to,
-                'user_from' => 16,
-                'text' => ":text",
-                'readed' => 0,
-                'createdAt' => ':now',
-            ));
-
-        $qb->setParameter('now', new \DateTime('now'), \Doctrine\DBAL\Types\Type::DATETIME);
         $this->translator->setLocale($locale);
-        $qb->setParameter('text', $this->translator->trans('messages.register'));
-        $qb->execute();
+        $json = array('userFromId' => 16, 'userToId' => $to, 'text' => $this->translator->trans('messages.register'));
+        try {
+            $this->client->post('api/message', array('json' => $json));
+        } catch (RequestException $e) {
+
+        }
     }
 
     protected function filterMessages(array $chatMessages)
@@ -173,7 +172,7 @@ class ChatMessageNotifications
     }
 
     /**
-     * Get users with unread chat messages (until 24h ago) (SOCIAL DB)
+     * Get users with unread chat messages (until 24h ago) (MYSQL BRAIN DB)
      *
      * @param int $limit
      * @return array
@@ -182,7 +181,7 @@ class ChatMessageNotifications
     {
         $yesterday = new \DateTime('-1 day');
         $yesterday = $yesterday->format("Y-m-d H:m:i");
-        $qb = $this->connectionSocial->createQueryBuilder('chat_message')
+        $qb = $this->connectionBrain->createQueryBuilder('chat_message')
             ->select('DISTINCT chat_message.user_to')
             ->from('chat_message')
             ->where('chat_message.readed = 0')
@@ -195,7 +194,7 @@ class ChatMessageNotifications
     }
 
     /**
-     * Get unread chat messages by user (until 24h ago) (SOCIAL DB)
+     * Get unread chat messages by user (until 24h ago) (MYSQL BRAIN DB)
      *
      * @param int $userId
      * @return array
@@ -204,7 +203,7 @@ class ChatMessageNotifications
     {
         $yesterday = new \DateTime('-1 day');
         $yesterday = $yesterday->format("Y-m-d H:m:i");
-        $qb = $this->connectionSocial->createQueryBuilder('chat_message')
+        $qb = $this->connectionBrain->createQueryBuilder('chat_message')
             ->select('*')
             ->from('chat_message')
             ->where('chat_message.readed = 0')
@@ -221,6 +220,7 @@ class ChatMessageNotifications
     {
         foreach ($chatMessages as $index => $chatMessage) {
             $chatMessages[$index]['username_from'] = $this->userManager->getById($chatMessage['user_from'])->getUsername();
+            $chatMessages[$index]['picture_from'] = $this->userManager->getById($chatMessage['user_from'])->getPhoto()->getUrl();
         }
 
         return array(

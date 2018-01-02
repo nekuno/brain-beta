@@ -42,6 +42,46 @@ final class AppEvents
     const PROCESS_FINISH = 'process.finish';
 
     /**
+     * Fired when a link is going to be checked
+     */
+    const CHECK_START = 'check.start';
+
+    /**
+     * Fired when receiving a checking link response
+     */
+    const CHECK_RESPONSE = 'check.response';
+
+    /**
+     * Fired when a link is successfully checked
+     */
+    const CHECK_SUCCESS = 'check.success';
+
+    /**
+     * Fired when a link is NOT successfully checked
+     */
+    const CHECK_ERROR = 'check.error';
+
+    /**
+     * Fired when a link is going to be reprocessed
+     */
+    const REPROCESS_START = 'reprocess.start';
+
+    /**
+     * Fired when a link has been reprocessed
+     */
+    const REPROCESS_FINISH = 'reprocess.finish';
+
+    /**
+     * Fired when an error occurs reprocessing a link
+     */
+    const REPROCESS_ERROR = 'reprocess.error';
+
+    /**
+     * Fired when user is registered
+     */
+    const USER_REGISTERED = 'user.registered';
+
+    /**
      * Fired when user created
      */
     const USER_CREATED = 'user.created';
@@ -57,9 +97,24 @@ final class AppEvents
     const USER_STATUS_CHANGED = 'user.statusChanged';
 
     /**
+     * Fired when user profile photo changes
+     */
+    const USER_PHOTO_CHANGED = 'user.photoChanged';
+
+    /**
+     * Fired when two users like each other
+     */
+    const USER_BOTH_LIKED = 'user.bothLiked';
+
+    /**
      * Fired when an account is connected
      */
     const ACCOUNT_CONNECTED = 'account.connected';
+
+    /**
+     * Fired when oauth access information is being saved
+     */
+    const TOKEN_PRE_SAVE = 'token.save';
 
     /**
      * Fired when matching is outdated
@@ -188,4 +243,9 @@ final class AppEvents
      * Fired when a Link needs consistency checked and fixed if necessary
      */
     const CONSISTENCY_LINK = 'consistency.link';
+
+    /**
+     * Fired when processing of an url fails
+     */
+    const URL_UNPROCESSED = 'url.unprocessed';
 }

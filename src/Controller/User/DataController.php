@@ -4,7 +4,7 @@ namespace Controller\User;
 
 use Doctrine\ORM\EntityManager;
 use Model\Entity\DataStatus;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 use Model\User;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
@@ -21,38 +21,23 @@ class DataController
     public function getStatusAction(Request $request, Application $app, User $user)
     {
         $resourceOwner = $request->query->get('resourceOwner');
+        $userId = $user->getId();
 
-        /** @var EntityManager $em */
-        $em = $app['orm.ems']['mysql_brain'];
-        $dataStatusRepository = $em->getRepository('\Model\Entity\DataStatus');
+        /** @var User\Token\TokenStatus\TokenStatusManager $tokenStatusManager */
+        $tokenStatusManager = $app['users.tokenStatus.manager'];
+        $statuses = $resourceOwner ? array($tokenStatusManager->getOne($userId, $resourceOwner)) : $tokenStatusManager->getAll($userId);
 
-        $criteria['userId'] = $user->getId();
-
-        if ($resourceOwner) {
-            $criteria['resourceOwner'] = $resourceOwner;
-        }
-
-        $dataStatus = $dataStatusRepository->findBy($criteria);
-
-        if (null === $dataStatus) {
+        if (empty($statuses)) {
             return $app->json(null, 404);
         }
 
-        /* @var TokensModel $tokensModel */
-        $tokensModel = $app['users.tokens.model'];
-        $connectedNetworks = $tokensModel->getConnectedNetworks($user->getId());
-
         $responseData = array();
-        /* @var $row DataStatus */
-        foreach ($dataStatus as $row) {
-            $resource = $row->getResourceOwner();
+        foreach ($statuses as $tokenStatus) {
+            $resource = $tokenStatus->getResourceOwner();
 
-            if (!in_array($resource, $connectedNetworks)) {
-                continue;
-            }
             $responseData[$resource] = array(
-                'fetched' => $row->getFetched(),
-                'processed' => $row->getProcessed(),
+                'fetched' => $tokenStatus->getFetched(),
+                'processed' => $tokenStatus->getProcessed(),
             );
         }
 

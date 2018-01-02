@@ -2,15 +2,14 @@
 
 namespace ApiConsumer\Factory;
 
+use ApiConsumer\ResourceOwner\AbstractResourceOwnerTrait;
 use Buzz\Client\Curl;
 use HWI\Bundle\OAuthBundle\OAuth\RequestDataStorageInterface;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwnerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Security\Http\HttpUtils;
 
-/**
- * @author Juan Luis Martínez <juanlu@comakai.com>
- */
+
 class ResourceOwnerFactory
 {
     /**
@@ -42,6 +41,7 @@ class ResourceOwnerFactory
     {
         $this->options = $options;
         $this->client = $client;
+        $this->client->setTimeout(30);
         $this->httpUtils = $httpUtils;
         $this->storage = $storage;
         $this->dispatcher = $dispatcher;

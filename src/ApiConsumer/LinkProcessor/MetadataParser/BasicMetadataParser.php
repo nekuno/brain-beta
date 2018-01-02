@@ -1,6 +1,5 @@
 <?php
 
-
 namespace ApiConsumer\LinkProcessor\MetadataParser;
 
 use Symfony\Component\DomCrawler\Crawler;
@@ -28,6 +27,7 @@ class BasicMetadataParser implements MetadataParserInterface
         $htmlTagsWithValidMetadata['title'] = $this->getTitleTagText($crawler);
         $htmlTagsWithValidMetadata['description'] = $this->getMetaDescriptionText($crawler);
         $htmlTagsWithValidMetadata['language'] = $this->getLanguage($crawler);
+        $htmlTagsWithValidMetadata['images'] = $this->getImages($crawler);
 
         return $htmlTagsWithValidMetadata;
     }
@@ -94,6 +94,26 @@ class BasicMetadataParser implements MetadataParserInterface
         }
 
         return '' !== trim($language) ? $language : null;
+    }
+
+    /**
+     * @param Crawler $crawler
+     * @return array
+     */
+    public function getImages(Crawler $crawler)
+    {
+        try {
+            $images = $crawler->filter('img')->each(
+                function ($node) {
+                    /* @var $node Crawler */
+                    return $node->attr('src');
+                }
+            );
+
+            return $images;
+        } catch (\InvalidArgumentException $e) {
+            return array();
+        }
     }
 
     /**

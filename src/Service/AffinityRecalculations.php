@@ -1,20 +1,16 @@
 <?php
-/**
- * Created by: yawmoght
- */
 
 namespace Service;
 
 use Event\AffinityProcessEvent;
 use Event\AffinityProcessStepEvent;
 use Model\Entity\EmailNotification;
-use Model\LinkModel;
+use Model\Link\LinkModel;
 use Model\Neo4j\GraphManager;
 use Model\User;
 use Model\User\Affinity\AffinityModel;
 use Manager\UserManager;
 use Silex\Translator;
-use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class AffinityRecalculations
 {

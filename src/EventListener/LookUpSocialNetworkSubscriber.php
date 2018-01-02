@@ -1,7 +1,5 @@
 <?php
-/**
- * @author Manolo Salsas <manolez@gmail.com>
- */
+
 namespace EventListener;
 
 use Event\LookUpSocialNetworksEvent;
@@ -55,6 +53,6 @@ class LookUpSocialNetworkSubscriber implements EventSubscriberInterface
             'socialNetworks' => $event->getSocialNetworks(),
         );
 
-        $this->amqpManager->enqueueMessage($message, 'brain.social_network.added');
+        $this->amqpManager->enqueueSocialNetwork($message);
     }
 }

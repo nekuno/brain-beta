@@ -2,23 +2,14 @@
 
 namespace ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
 
+use ApiConsumer\Exception\CannotProcessException;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use ApiConsumer\LinkProcessor\Processor\AbstractProcessor;
 
-class TwitterPicProcessor extends AbstractProcessor
+class TwitterPicProcessor extends AbstractTwitterProcessor
 {
-
-    /**
-     * @param $link PreprocessedLink
-     * @return array|false Returns the processed link as array or false if the processor can not process the link
-     */
     public function requestItem(PreprocessedLink $link)
     {
-        return array();
-    }
-
-    function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
-    {
+        throw new CannotProcessException($link->getUrl(), 'Twitter pic needs to be scraped');
     }
 
     protected function getItemIdFromParser($url)

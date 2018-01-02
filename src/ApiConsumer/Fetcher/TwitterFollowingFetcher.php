@@ -3,11 +3,9 @@
 namespace ApiConsumer\Fetcher;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use ApiConsumer\ResourceOwner\TwitterResourceOwner;
-use Model\Creator;
-use Model\Link;
+use Model\Link\Creator;
 
-class TwitterFollowingFetcher extends BasicPaginationFetcher
+class TwitterFollowingFetcher extends AbstractTwitterFetcher
 {
     protected $url = 'friends/ids.json';
 
@@ -15,18 +13,14 @@ class TwitterFollowingFetcher extends BasicPaginationFetcher
 
     protected $pageLength = 5000;
 
-    /**
-     * @var TwitterResourceOwner
-     */
-    protected $resourceOwner;
-
-    protected function getQuery()
+    protected function getQuery($paginationId = null)
     {
-
-        return array(
-            'count' => $this->pageLength,
+        return array_merge(
+            parent::getQuery($paginationId),
+            array(
+                'count' => $this->pageLength,
+            )
         );
-
     }
 
     protected function getItemsFromResponse($response)
@@ -45,13 +39,13 @@ class TwitterFollowingFetcher extends BasicPaginationFetcher
         return $paginationId;
     }
 
-    //TODO: Refactor to use RO->processMultipleProfiles
     /**
      * @inheritdoc
      */
     protected function parseLinks(array $rawFeed)
     {
-        $links = $this->resourceOwner->lookupUsersBy('user_id', $rawFeed);
+        $lookups = $this->resourceOwner->lookupUsersBy('user_id', $rawFeed, $this->token);
+        $links = $this->resourceOwner->buildProfilesFromLookup($lookups);
 
         $preprocessedLinks = array();
         if ($links == false || empty($links)) {
@@ -63,7 +57,7 @@ class TwitterFollowingFetcher extends BasicPaginationFetcher
                     'timestamp' => 1000 * time(),
                 );
                 $preprocessedLink = new PreprocessedLink($link['url']);
-                $preprocessedLink->setLink(Creator::buildFromArray($link));
+                $preprocessedLink->setFirstLink(Creator::buildFromArray($link));
                 $preprocessedLink->setSource($this->resourceOwner->getName());
                 $preprocessedLink->setResourceItemId($id);
                 $preprocessedLinks[] = $preprocessedLink;
@@ -80,7 +74,7 @@ class TwitterFollowingFetcher extends BasicPaginationFetcher
 //                    )
 //                );
                 $preprocessedLink = new PreprocessedLink($link['url']);
-                $preprocessedLink->setLink(Creator::buildFromArray($link));
+                $preprocessedLink->setFirstLink(Creator::buildFromArray($link));
                 $preprocessedLinks[] = $preprocessedLink;
             }
         }

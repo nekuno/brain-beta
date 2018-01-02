@@ -3,6 +3,7 @@
 namespace Model\User\Group;
 
 use Everyman\Neo4j\Node;
+use Model\GroupPhoto;
 use Model\User\Filters\FilterUsers;
 
 class Group implements \JsonSerializable
@@ -10,13 +11,18 @@ class Group implements \JsonSerializable
     protected $id;
     protected $name;
     protected $html;
-    protected $location = array();
+    protected $location;
     protected $date;
     protected $usersCount;
     protected $createdBy;
+    protected $imagePath;
+    /**
+     * @var GroupPhoto $photo
+     */
+    protected $photo;
     protected $filterUsers;
-    protected $invitation = array();
-    protected $popularContents = array();
+    protected $invitation;
+    protected $popularContents;
 
     public static function createFromNode(Node $groupNode)
     {
@@ -149,6 +155,38 @@ class Group implements \JsonSerializable
     /**
      * @return mixed
      */
+    public function getImagePath()
+    {
+        return $this->imagePath;
+    }
+
+    /**
+     * @param mixed $imagePath
+     */
+    public function setImagePath($imagePath)
+    {
+        $this->imagePath = $imagePath;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getPhoto()
+    {
+        return $this->photo;
+    }
+
+    /**
+     * @param GroupPhoto $photo
+     */
+    public function setPhoto(GroupPhoto $photo)
+    {
+        $this->photo = $photo;
+    }
+
+    /**
+     * @return mixed
+     */
     public function getFilterUsers()
     {
         return $this->filterUsers;
@@ -206,6 +244,8 @@ class Group implements \JsonSerializable
             'createdBy' => $this->getCreatedBy(),
             'filter' => $this->getFilterUsers(),
             'invitation' => $this->getInvitation(),
+            'image_path' => $this->getImagePath(),
+            'photo' => $this->getPhoto() ? $this->getPhoto()->jsonSerialize() : null,
             'popularContents' => $this->getPopularContents(),
         );
     }

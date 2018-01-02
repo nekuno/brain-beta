@@ -1,7 +1,4 @@
 <?php
-/**
- * @author yawmoght <yawmoght@gmail.com>
- */
 
 namespace Service\Consistency;
 
@@ -11,6 +8,8 @@ class ConsistencyNodeRule
     protected $label;
     protected $properties;
     protected $relationships;
+    protected $checkerClass;
+    protected $solverClass;
 
     /**
      * ConsistencyRelationshipRule constructor.
@@ -21,6 +20,8 @@ class ConsistencyNodeRule
         $this->label = isset($rule['label']) ? $rule['label'] : null;
         $this->properties = isset($rule['properties']) ? $rule['properties'] : array();
         $this->relationships = isset($rule['relationships']) ? $rule['relationships'] : array();
+        $this->checkerClass = isset($rule['checkerClass']) ? $rule['checkerClass'] : null;
+        $this->solverClass = isset($rule['solverClass']) ? $rule['solverClass'] : null;
     }
 
     /**
@@ -71,5 +72,36 @@ class ConsistencyNodeRule
         $this->relationships = $relationships;
     }
 
+    /**
+     * @return mixed
+     */
+    public function getCheckerClass()
+    {
+        return $this->checkerClass;
+    }
+
+    /**
+     * @param mixed $checkerClass
+     */
+    public function setCheckerClass($checkerClass)
+    {
+        $this->checkerClass = $checkerClass;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getSolverClass()
+    {
+        return $this->solverClass;
+    }
+
+    /**
+     * @param mixed $solverClass
+     */
+    public function setSolverClass($solverClass)
+    {
+        $this->solverClass = $solverClass;
+    }
 
 }

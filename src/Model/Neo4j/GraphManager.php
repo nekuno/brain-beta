@@ -8,9 +8,7 @@ use Everyman\Neo4j\Node;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 
-/**
- * @author Juan Luis Martínez <juanlu@comakai.com>
- */
+
 class GraphManager implements LoggerAwareInterface
 {
     /**
@@ -83,7 +81,18 @@ class GraphManager implements LoggerAwareInterface
         }
 
         return $return;
+    }
 
+    public function hasLabelName(Node $node, $name)
+    {
+        /** @var Label[] $labels */
+        $labels = $node->getLabels();
+        $labels = array_filter($labels, function($label) use ($name) {
+            /** @var $label Label */
+            return $label->getName() == $name;
+        });
+
+        return !empty($labels);
     }
 
     /** Copies every relationship and property from node 1 to node 2 and deletes node 1
@@ -116,6 +125,7 @@ class GraphManager implements LoggerAwareInterface
         $qb->setParameter('id1', $id1);
         $deleted = $qb->getQuery()->getResultSet();
         $lastProps = $this->setProperties($this->lastProperties, $id2);
+        $this->lastProperties = array();
 
         return array('relationships' => $rels,
             'properties' => array_merge($props, $lastProps),
@@ -174,7 +184,7 @@ class GraphManager implements LoggerAwareInterface
     private function copyProperties($id1, $id2)
     {
         //TODO: Improve code placement of unique node properties
-        $unique = array('qnoow_id', 'twitterID', 'googleID', 'facebookID', 'spotifyID', 'usernameCanonical', 'emailCanonical');
+        $unique = array('qnoow_id', 'usernameCanonical', 'emailCanonical', 'slug');
 
         //get properties
         $qb = $this->createQueryBuilder();
@@ -213,10 +223,8 @@ class GraphManager implements LoggerAwareInterface
         $sets = array();
 
         foreach ($properties as $key => $value) {
-
-            $value = $this->manageAttribute($value);
-
-            $sets[] = 'n.' . $key . ' = ' . $value;
+            $sets[] = 'n.' . $key . " = { $key }";
+            $qb->setParameter($key, $value);
         }
         $qb->set($sets);
 
@@ -271,7 +279,7 @@ class GraphManager implements LoggerAwareInterface
 
         } else if (empty($value) && $value !== 0) {
             $value = 0;
-        };
+        }
 
         return $value;
     }

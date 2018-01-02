@@ -6,16 +6,10 @@ use ApiConsumer\Event\OAuthTokenEvent;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use Event\ExceptionEvent;
 use GuzzleHttp\Exception\RequestException;
-use Model\User\TokensModel;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\FacebookResourceOwner as FacebookResourceOwnerBase;
+use Model\User\Token\Token;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 
-/**
- * Class FacebookResourceOwner
- *
- * @package ApiConsumer\ResourceOwner
- * @method FacebookUrlParser getParser
- */
 class FacebookResourceOwner extends FacebookResourceOwnerBase
 {
 	use AbstractResourceOwnerTrait {
@@ -23,7 +17,8 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 		AbstractResourceOwnerTrait::__construct as private traitConstructor;
 	}
 
-	protected $name = TokensModel::FACEBOOK;
+    /** @var FacebookUrlParser */
+    protected $urlParser;
 
 	public function __construct($httpClient, $httpUtils, $options, $name, $storage, $dispatcher)
 	{
@@ -41,24 +36,40 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 
 		$resolver->setDefaults(
 			array(
-				'base_url' => 'https://graph.facebook.com/v2.4/',
+				'base_url' => 'https://graph.facebook.com/v2.9/',
 			)
 		);
 
 		$resolver->setDefined('redirect_uri');
 	}
 
-	/**
-	 * We use Facebook system for getting new long-lived tokens
-	 * and assume machine-id as a non-obligatory refreshToken
-	 * @param array $token
-	 * @param array $extraParameters
-	 * @return array
-	 * @throws RequestException
-	 */
+    public function canRequestAsClient()
+    {
+        return true;
+    }
+
+    public function requestAsClient($url, array $query = array())
+    {
+        $url = $this->options['base_url'] . $url;
+
+        $token = $this->getOption('consumer_key'). '|' . $this->getOption('consumer_secret');
+        $query += array('access_token' => $token);
+
+        $response = $this->httpRequest($this->normalizeUrl($url, $query));
+
+        return $this->getResponseContent($response);
+    }
+
+    /**
+     * We use Facebook system for getting new long-lived tokens
+     * and assume machine-id as a non-obligatory refreshToken
+     * @param array $token
+     * @param array $extraParameters
+     * @return array
+     * @throws \Exception
+     */
 	public function refreshAccessToken($token, array $extraParameters = array())
 	{
-
 		$getCodeURL = 'https://graph.facebook.com/oauth/client_code';
 		$query = array(
 			'access_token' => $token['oauthToken'],
@@ -94,24 +105,29 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 
 	}
 
-	public function forceRefreshAccessToken($token)
+	public function forceRefreshAccessToken(Token $token)
 	{
-		$data = $this->refreshAccessToken($token);
-		$token = $this->addOauthData($data, $token);
+		$data = $this->refreshAccessToken($token->toArray());
+		$this->addOauthData($data, $token);
 		$event = new OAuthTokenEvent($token);
 		$this->dispatcher->dispatch(\AppEvents::TOKEN_REFRESHED, $event);
 
 		return $token;
 	}
 
-	public function extend($token)
+    protected function canRefresh($token)
+    {
+        return true;
+    }
+
+    public function extend(Token $token)
 	{
 		$getCodeURL = 'https://graph.facebook.com/oauth/access_token';
 		$query = array(
 			'grant_type' => 'fb_exchange_token',
 			'client_id' => $this->getOption('consumer_key'),
 			'client_secret' => $this->getOption('consumer_secret'),
-			'fb_exchange_token' => $token['oauthToken'],
+			'fb_exchange_token' => $token->getOauthToken(),
 		);
 
 		try {
@@ -125,18 +141,23 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 			throw $e;
 		}
 
-		$token = $this->addOauthData($data, $token);
-		$event = new OAuthTokenEvent($token);
-		$this->dispatcher->dispatch(\AppEvents::TOKEN_REFRESHED, $event);
-
-		return $token;
+		$this->addOauthData($data, $token);
 	}
 
-	//Not needed now but useful later
-	public function requestPicture($id, $token, $size = 'large')
+	public function requestSmallPicture($id, Token $token = null)
+    {
+        return $this->requestPicture($id, $token, 'small');
+    }
+
+    public function requestLargePicture($id, Token $token = null)
+    {
+        return $this->requestPicture($id, $token, 'large');
+    }
+
+	protected function requestPicture($id, Token $token = null, $size = 'large')
 	{
 	    //TODO: Try to move out of here
-		if ($this->getParser()->isStatusId($id)){
+		if ($this->urlParser->isStatusId($id)){
 			return null;
 		}
 
@@ -147,13 +168,11 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 		);
 
 		try {
-			$response = $this->sendAuthorizedRequest($this->options['base_url'] . $url, $query, $token);
+			$response = $this->request($url, $query, $token);
 		} catch (RequestException $e) {
 			$this->dispatcher->dispatch(\AppEvents::EXCEPTION_ERROR, new ExceptionEvent($e, 'Error getting facebook image by API'));
 			throw $e;
 		}
-
-		$response = $this->getResponseContent($response);
 
 		return isset($response['data']['url']) ? $response['data']['url'] : null;
 	}
@@ -165,7 +184,7 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
             'fields' => 'description,picture.type(large)'
         );
 
-        return $this->authorizedHttpRequest($url, $query, $token);
+        return $this->request($url, $query, $token);
     }
 
     public function requestPage($id, $token)
@@ -173,7 +192,7 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
         $fields = array('name', 'description', 'picture.type(large)');
         $query = array('fields' => implode(',', $fields));
 
-        return $this->authorizedHttpRequest($id, $query, $token);
+        return $this->request($id, $query, $token);
     }
 
     public function requestStatus($id, $token)
@@ -181,7 +200,7 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
         $fields = array('name', 'description', 'picture.type(large)');
         $query = array('fields' => implode(',', $fields));
 
-        return $this->authorizedHttpRequest($id, $query, $token);
+        return $this->request($id, $query, $token);
     }
 
     public function requestProfile($id, $token)
@@ -189,6 +208,6 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
         $fields = array('name', 'picture.type(large)');
         $query = array('fields' => implode(',', $fields));
 
-        return $this->authorizedHttpRequest($id, $query, $token);
+        return $this->request($id, $query, $token);
     }
 }

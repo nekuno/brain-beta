@@ -29,6 +29,11 @@ class User implements UserInterface, \JsonSerializable
     /**
      * @var string
      */
+    protected $slug;
+
+    /**
+     * @var string
+     */
     protected $email;
 
     /**
@@ -40,6 +45,11 @@ class User implements UserInterface, \JsonSerializable
      * @var boolean
      */
     protected $enabled;
+
+    /**
+     * @var boolean
+     */
+    protected $canReenable;
 
     /**
      * The salt to use for hashing
@@ -110,26 +120,6 @@ class User implements UserInterface, \JsonSerializable
     protected $credentialsExpireAt;
 
     /**
-     * @var string
-     */
-    protected $facebookID;
-
-    /**
-     * @var string
-     */
-    protected $googleID;
-
-    /**
-     * @var string
-     */
-    protected $twitterID;
-
-    /**
-     * @var string
-     */
-    protected $spotifyID;
-
-    /**
      * @var boolean
      */
     protected $confirmed;
@@ -163,6 +153,7 @@ class User implements UserInterface, \JsonSerializable
     {
         $this->salt = base_convert(sha1(uniqid(mt_rand(), true)), 16, 36);
         $this->enabled = false;
+        $this->canReenable = true;
         $this->locked = false;
         $this->expired = false;
         $this->roles = array();
@@ -183,55 +174,6 @@ class User implements UserInterface, \JsonSerializable
         }
 
         return $this;
-    }
-
-    /**
-     * Serializes the user.
-     *
-     * The serialized data have to contain the fields used by the equals method and the username.
-     *
-     * @return string
-     */
-    public function serialize()
-    {
-        return serialize(
-            array(
-                $this->password,
-                $this->salt,
-                $this->usernameCanonical,
-                $this->username,
-                $this->expired,
-                $this->locked,
-                $this->credentialsExpired,
-                $this->enabled,
-                $this->id,
-            )
-        );
-    }
-
-    /**
-     * Unserializes the user.
-     *
-     * @param string $serialized
-     */
-    public function unserialize($serialized)
-    {
-        $data = unserialize($serialized);
-        // add a few extra elements in the array to ensure that we have enough keys when unserializing
-        // older data which does not include all properties.
-        $data = array_merge($data, array_fill(0, 2, null));
-
-        list(
-            $this->password,
-            $this->salt,
-            $this->usernameCanonical,
-            $this->username,
-            $this->expired,
-            $this->locked,
-            $this->credentialsExpired,
-            $this->enabled,
-            $this->id
-            ) = $data;
     }
 
     /**
@@ -260,6 +202,11 @@ class User implements UserInterface, \JsonSerializable
     public function getUsernameCanonical()
     {
         return $this->usernameCanonical;
+    }
+
+    public function getSlug()
+    {
+        return $this->slug;
     }
 
     public function isGuest()
@@ -385,6 +332,16 @@ class User implements UserInterface, \JsonSerializable
         return $this->enabled;
     }
 
+    public function canReenable()
+    {
+        return $this->canReenable;
+    }
+
+    public function setCanReenable($canReenable)
+    {
+        $this->canReenable = $canReenable;
+    }
+
     public function isExpired()
     {
         return !$this->isAccountNonExpired();
@@ -425,6 +382,13 @@ class User implements UserInterface, \JsonSerializable
     public function setUsernameCanonical($usernameCanonical)
     {
         $this->usernameCanonical = $usernameCanonical;
+
+        return $this;
+    }
+
+    public function setSlug($slug)
+    {
+        $this->slug = $slug;
 
         return $this;
     }
@@ -611,104 +575,6 @@ class User implements UserInterface, \JsonSerializable
     }
 
     /**
-     * Get facebookID
-     *
-     * @return string
-     */
-    public function getFacebookID()
-    {
-
-        return $this->facebookID;
-    }
-
-    /**
-     * Set facebookID
-     *
-     * @param string $facebookID
-     * @return $this
-     */
-    public function setFacebookID($facebookID)
-    {
-
-        $this->facebookID = $facebookID;
-
-        return $this;
-    }
-
-    /**
-     * Get googleID
-     *
-     * @return string
-     */
-    public function getGoogleID()
-    {
-
-        return $this->googleID;
-    }
-
-    /**
-     * Set googleID
-     *
-     * @param string $googleID
-     * @return $this
-     */
-    public function setGoogleID($googleID)
-    {
-
-        $this->googleID = $googleID;
-
-        return $this;
-    }
-
-    /**
-     * Get twitterID
-     *
-     * @return string
-     */
-    public function getTwitterID()
-    {
-
-        return $this->twitterID;
-    }
-
-    /**
-     * Set twitterID
-     *
-     * @param string $twitterID
-     * @return $this
-     */
-    public function setTwitterID($twitterID)
-    {
-
-        $this->twitterID = $twitterID;
-
-        return $this;
-    }
-
-    /**
-     * Get spotifyID
-     *
-     * @return string
-     */
-    public function getSpotifyID()
-    {
-        return $this->spotifyID;
-    }
-
-    /**
-     * Set spotifyID
-     *
-     * @param string $spotifyID
-     * @return $this
-     */
-    public function setSpotifyID($spotifyID)
-    {
-        $this->spotifyID = $spotifyID;
-
-        return $this;
-    }
-
-    /**
      * Is confirmed
      *
      * @return bool
@@ -879,6 +745,9 @@ class User implements UserInterface, \JsonSerializable
             if ($value instanceof \DateTime) {
                 $vars[$key] = $value->format('Y-m-d H:i:s');
             }
+        }
+        if ($vars['enabled']){
+            unset($vars['canReenable']);
         }
 
         return $vars;

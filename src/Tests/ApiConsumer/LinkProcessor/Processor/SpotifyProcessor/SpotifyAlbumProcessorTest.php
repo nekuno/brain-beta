@@ -3,13 +3,16 @@
 namespace Tests\ApiConsumer\LinkProcessor\Processor\SpotifyProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\AbstractSpotifyProcessor;
 use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\SpotifyAlbumProcessor;
-use ApiConsumer\LinkProcessor\SynonymousParameters;
 use ApiConsumer\ResourceOwner\SpotifyResourceOwner;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
+use Model\Link\Audio;
+use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
-class SpotifyAlbumProcessorTest extends \PHPUnit_Framework_TestCase
+class SpotifyAlbumProcessorTest extends AbstractProcessorTest
 {
     /**
      * @var SpotifyResourceOwner|\PHPUnit_Framework_MockObject_MockObject
@@ -35,7 +38,7 @@ class SpotifyAlbumProcessorTest extends \PHPUnit_Framework_TestCase
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser')
             ->getMock();
 
-        $this->processor = new SpotifyAlbumProcessor($this->resourceOwner, $this->parser);
+        $this->processor = new SpotifyAlbumProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . SpotifyUrlParser::DEFAULT_IMAGE_PATH);
     }
 
     /**
@@ -50,8 +53,7 @@ class SpotifyAlbumProcessorTest extends \PHPUnit_Framework_TestCase
             ->will($this->throwException(new UrlNotValidException($url)));
 
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
-        $this->processor->requestItem($link);
+        $this->processor->getResponse($link);
     }
 
     /**
@@ -68,8 +70,7 @@ class SpotifyAlbumProcessorTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($album));
 
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
-        $response = $this->processor->requestItem($link);
+        $response = $this->processor->getResponse($link);
 
         $this->assertEquals($response, $album);
     }
@@ -80,10 +81,9 @@ class SpotifyAlbumProcessorTest extends \PHPUnit_Framework_TestCase
     public function testHydrateLink($url, $response, $expectedArray)
     {
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
         $this->processor->hydrateLink($link, $response);
 
-        $this->assertEquals($expectedArray, $link->getLink()->toArray(), 'Asserting correct hydrated link for ' . $url);
+        $this->assertEquals($expectedArray, $link->getFirstLink()->toArray(), 'Asserting correct hydrated link for ' . $url);
     }
 
     /**
@@ -92,14 +92,24 @@ class SpotifyAlbumProcessorTest extends \PHPUnit_Framework_TestCase
     public function testAddTags($url, $response, $expectedTags)
     {
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
         $this->processor->addTags($link, $response);
 
         $tags = $expectedTags;
         sort($tags);
-        $resultTags = $link->getLink()->getTags();
+        $resultTags = $link->getFirstLink()->getTags();
         sort($resultTags);
         $this->assertEquals($tags, $resultTags);
+    }
+
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
     }
 
     public function getBadUrls()
@@ -141,24 +151,18 @@ class SpotifyAlbumProcessorTest extends \PHPUnit_Framework_TestCase
 
     public function getResponseHydration()
     {
+        $expected = new Audio();
+        $expected->setTitle('Kind Of Blue (Legacy Edition)');
+        $expected->setDescription('By: Miles Davis');
+        $expected->setEmbedType('spotify');
+        $expected->setEmbedId('spotify:album:4sb0eMpDn3upAFfyi4q2rw');
+        $expected->addAdditionalLabels(AbstractSpotifyProcessor::SPOTIFY_LABEL);
+
         return array(
             array(
                 $this->getAlbumUrl(),
                 $this->getAlbumResponse(),
-                array(
-                    'title' => 'Kind Of Blue (Legacy Edition)',
-                    'description' => 'By: Miles Davis',
-                    'thumbnail' => null,
-                    'url' => null,
-                    'id' => null,
-                    'tags' => array(),
-                    'created' => null,
-                    'processed' => true,
-                    'language' => null,
-                    'synonymous' => array(),
-                    'embed_type' => 'spotify',
-                    'embed_id' => 'spotify:album:4sb0eMpDn3upAFfyi4q2rw',
-                )
+                $expected->toArray(),
             )
         );
     }
@@ -170,6 +174,17 @@ class SpotifyAlbumProcessorTest extends \PHPUnit_Framework_TestCase
                 $this->getAlbumUrl(),
                 $this->getAlbumResponse(),
                 $this->getAlbumTags(),
+            )
+        );
+    }
+
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getAlbumUrl(),
+                $this->getAlbumResponse(),
+                $this->getProcessingImages()
             )
         );
     }
@@ -365,6 +380,14 @@ class SpotifyAlbumProcessorTest extends \PHPUnit_Framework_TestCase
     public function getArtistUrl()
     {
         return 'https://open.spotify.com/artist/4Ww5mwS7BWYjoZTUIrMHfC';
+    }
+
+    public function getProcessingImages()
+    {
+        $processingImage = new ProcessingImage('https://i.scdn.co/image/d3a5855bc9c50767090e4e29f2d207061114888d');
+        $processingImage->setWidth(640);
+        $processingImage->setHeight(640);
+        return array ($processingImage);
     }
 
 }

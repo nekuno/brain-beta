@@ -1,11 +1,9 @@
 <?php
-/**
- * @author yawmoght <yawmoght@gmail.com>
- */
 
 namespace EventListener;
 
 
+use ApiConsumer\Exception\CannotProcessException;
 use Event\ExceptionEvent;
 use Model\Exception\ValidationException;
 use Model\Neo4j\Neo4jException;
@@ -13,13 +11,15 @@ use Model\Neo4j\Neo4jHandler;
 use Monolog\Logger;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
+use Service\Consistency\ConsistencyErrors\ConsistencyError;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class ExceptionLoggerSubscriber implements EventSubscriberInterface, LoggerAwareInterface
 {
     protected $logger;
 
-    protected $consistency_path;
+    protected $consistency_file;
+    protected $urlUnprocessed_file;
 
     /**
      * ExceptionLoggerSubscriber constructor.
@@ -28,7 +28,8 @@ class ExceptionLoggerSubscriber implements EventSubscriberInterface, LoggerAware
     public function __construct(Logger $logger)
     {
         $this->logger = $logger;
-        $this->consistency_path = __DIR__ . '/../../var/logs/consistency_errors.log';
+        $this->consistency_file = __DIR__ . '/../../var/logs/consistency_errors.log';
+        $this->urlUnprocessed_file = __DIR__ . '/../../var/logs/url_unprocessed.log';
     }
 
     public static function getSubscribedEvents()
@@ -39,6 +40,7 @@ class ExceptionLoggerSubscriber implements EventSubscriberInterface, LoggerAware
             \AppEvents::CONSISTENCY_ERROR => array('onConsistencyError'),
             \AppEvents::CONSISTENCY_START => array('onConsistencyStart'),
             \AppEvents::CONSISTENCY_END => array('onConsistencyEnd'),
+            \AppEvents::URL_UNPROCESSED => array('onUrlUnprocessed'),
         );
     }
 
@@ -81,61 +83,85 @@ class ExceptionLoggerSubscriber implements EventSubscriberInterface, LoggerAware
     {
         /** @var ValidationException $exception */
         $exception = $event->getException();
+        /** @var  $errors */
         $errors = $exception->getErrors();
 
-        foreach ($errors as $field => $error) {
-            $fp = fopen($this->consistency_path, "a+");
-            foreach ($error as $name => $message) {
-                $string = sprintf('%s error related to %s: %s', $field, $name, $message);
+        $lines = array();
 
-                if (flock($fp, LOCK_EX)) {
-                    fwrite($fp, PHP_EOL);
-                    fwrite($fp, $string);
-                    fwrite($fp, PHP_EOL);
-                } else {
-                    //couldn´t block the file
-                };
+        foreach ($errors as $field => $fieldErrors) {
+            foreach ($fieldErrors as $error)
+            {
+                /** @var ConsistencyError $error */
+                $lines[] = sprintf('%s error in field : %s', $error->getErrorType(), $field,  $error->getMessage());
             }
-            fclose($fp);
         }
+
+        $this->writeToFile($this->consistency_file, $lines);
     }
 
     public function onConsistencyStart()
     {
-        $fp = fopen($this->consistency_path, "a+");
         $now = (new \DateTime('now'))->format('Y-m-d');
-            if (flock($fp, LOCK_EX)) {
-                fwrite($fp, PHP_EOL);
-                fwrite($fp, '---------------------------------');
-                fwrite($fp, 'Starting consistency check on '. $now);
-                fwrite($fp, '---------------------------------');
-                fwrite($fp, PHP_EOL);
-            } else {
-                //couldn´t block the file
-            };
-        fclose($fp);
+
+        $lines = array(
+            '---------------------------------',
+            'Starting consistency check on '. $now,
+            '---------------------------------',
+        );
+
+        $this->writeToFile($this->consistency_file, $lines);
     }
 
     public function onConsistencyEnd()
     {
-        $fp = fopen($this->consistency_path, "a+");
         $now = (new \DateTime('now'))->format('Y-m-d');
+
+        $lines = array(
+            '---------------------------------',
+            'Ending consistency check on '. $now,
+            '---------------------------------',
+        );
+
+        $this->writeToFile($this->consistency_file, $lines);
+    }
+
+    public function onUrlUnprocessed(ExceptionEvent $e)
+    {
+        /** @var CannotProcessException $exception */
+        $exception = $e->getException();
+
+        $message = $exception->getMessage();
+        $process = $e->getProcess();
+        $now = (new \DateTime('now'))->format('Y-m-d');
+
+        $lines = array(
+            $message,
+            sprintf('On %s while %s', $now, $process),
+        );
+
+        $this->writeToFile($this->urlUnprocessed_file, $lines);
+    }
+
+    private function writeToFile($file, array $lines)
+    {
+        $fp = fopen($file, "a+");
         if (flock($fp, LOCK_EX)) {
             fwrite($fp, PHP_EOL);
-            fwrite($fp, '---------------------------------');
-            fwrite($fp, 'Ending consistency check on '. $now);
-            fwrite($fp, '---------------------------------');
+            foreach ($lines as $line) {
+                fwrite($fp, $line);
+            }
             fwrite($fp, PHP_EOL);
         } else {
             //couldn´t block the file
         };
         fclose($fp);
     }
+
     /**
      * Sets a logger instance on the object
      *
      * @param LoggerInterface $logger
-     * @return null
+     * @return void
      */
     public function setLogger(LoggerInterface $logger)
     {

@@ -47,6 +47,12 @@ $app['users.data.controller'] = $app->share(
     }
 );
 
+$app['links.controller'] = $app->share(
+    function () {
+        return new \Controller\LinkController;
+    }
+);
+
 $app['questionnaire.questions.controller'] = $app->share(
     function () {
 
@@ -101,6 +107,12 @@ $app['users.photos.controller'] = $app->share(
     }
 );
 
+$app['users.devices.controller'] = $app->share(
+    function() {
+        return new \Controller\User\DeviceController;
+    }
+);
+
 $app['client.controller'] = $app->share(
     function() {
         return new Controller\ClientController;
@@ -118,55 +130,6 @@ $app['lookUp.controller'] = $app->share(
     function () {
 
         return new \Controller\User\LookUpController;
-    }
-);
-
-$app['social.tokens.controller'] = $app->share(
-    function () {
-
-        return new \Controller\Social\TokensController;
-    }
-);
-
-$app['social.users.controller'] = $app->share(
-    function () {
-
-        return new \Controller\Social\UserController;
-    }
-);
-
-$app['social.profile.controller'] = $app->share(
-    function () {
-
-        return new \Controller\Social\ProfileController;
-    }
-);
-
-$app['social.privacy.controller'] = $app->share(
-    function () {
-
-        return new \Controller\Social\PrivacyController;
-    }
-);
-
-$app['social.answers.controller'] = $app->share(
-    function () {
-
-        return new \Controller\Social\AnswerController;
-    }
-);
-
-$app['social.lookUp.controller'] = $app->share(
-    function () {
-
-        return new \Controller\Social\LookUpController;
-    }
-);
-
-$app['social.groups.controller'] = $app->share(
-    function () {
-
-        return new \Controller\Social\GroupController;
     }
 );
 
@@ -212,6 +175,46 @@ $app['admin.enterpriseUsers.invitations.controller'] = $app->share(
     }
 );
 
+$app['admin.users.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Admin\UserController;
+    }
+);
+
+$app['admin.userTracking.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Admin\UserTrackingController;
+    }
+);
+
+$app['admin.userReport.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Admin\UserReportController;
+    }
+);
+
+$app['admin.content.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Admin\ContentController;
+    }
+);
+
+$app['admin.developers.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Admin\DevelopersController;
+    }
+);
+
+$app['admin.questions.controller'] = $app->share(
+    function() {
+        return new \Controller\Admin\QuestionController;
+    }
+);
 
 $app['instant.users.controller'] = $app->share(
     function () {
@@ -224,6 +227,13 @@ $app['instant.relations.controller'] = $app->share(
     function () {
 
         return new \Controller\Instant\RelationsController;
+    }
+);
+
+$app['instant.pushNotifications.controller'] = $app->share(
+    function () {
+
+        return new \Controller\Instant\PushNotificationsController;
     }
 );
 
@@ -291,7 +301,7 @@ $app->error(
             $response['debug'] = array(
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
-                'trace' => $e->getTrace(),
+                'trace' => explode("\n", $e->getTraceAsString())
             );
         }
 

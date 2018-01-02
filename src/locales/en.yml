@@ -8,10 +8,11 @@ notifications:
     unread:
       subject: 'You have unread messages'
       body:
-        title: 'You have %count% unread message.|You have %count% unread messages.'
+        title: ' you have %count% message.|you have %count% messages.'
+        unread: ' you have %count% unread message.|you have %count% unread messages.'
         latest: 'Latest %count% unread message:|Latest %count% unread messages:'
         message: 'Unread message from user %user% at %datetime%:'
-        linkAnchor: 'See all your messages'
+        linkAnchor: 'Read more'
     exceptional_links:
       subject: 'We found content you want to see'
       body:
@@ -31,16 +32,27 @@ notifications:
       body:
         message: "¡Acabamos de descubrir que <a href=\"%urlOther%\">%usernameOther%</a> es un follower con un %value%% de %filter% contigo!"
   footer: 'Regards from Nekuno team'
+push_notifications:
+    message:
+        title: 'New message from %username%'
+    process_finish:
+        title: 'Process finished'
+        body: 'We have finished to process your network %resource%.'
+    both_user_liked:
+        title: 'Mutual like'
+        body: '%username% and you have mutual like.'
 followers:
   invitation_slogan: 'Find out if you are %compatible_or_similar% with %username%!'
   group_name: 'Followers of %username%'
 messages:
-  register: 'Welcome! You can start exploring the web using the yarns we have created for you. If you want to improve them, you can always connect more social media to let us know what you like!'
+  register: 'Only when you are more yourself than ever, everyone who really loves you as you are, can notice your existence. For that reason, enjoy being yourself at Nekuno, because this is the place where all that people can find you. Count on me if you need advice. nemo ♥'
 types:
   audio: 'Music'
   video: 'Videos'
   image: 'Images & Gifs'
   creator: 'Channels of Twitter'
+  creatorFacebook: 'Channels of Facebook'
+  creatorTwitter: 'Channels of Twitter'
   link: 'Web & links'
 threads:
   default:

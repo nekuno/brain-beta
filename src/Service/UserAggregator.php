@@ -4,11 +4,12 @@ namespace Service;
 
 
 use ApiConsumer\Factory\ResourceOwnerFactory;
+use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 use Model\User\GhostUser\GhostUserManager;
 use Model\User\LookUpModel;
 use Model\User\SocialNetwork\SocialProfile;
 use Model\User\SocialNetwork\SocialProfileManager;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 use Manager\UserManager;
 
 class UserAggregator
@@ -57,11 +58,12 @@ class UserAggregator
             return null;
         }
 	    if (in_array($resource, TokensModel::getResourceOwners())) {
+            /** @var TwitterResourceOwner $resourceOwner */
             $resourceOwner = $this->resourceOwnerFactory->build($resource);
 
 		    //if not implemented for resource or request error when asking API
 		    try {
-			    $url = $url ?: $resourceOwner->getProfileUrl($username);
+			    $url = $resourceOwner->getUserUrl($username);
 		    } catch (\Exception $e){
 			    //$output->writeln('ERROR: Could not get profile url for user '.$username. ' and resource '.$resource);
 			    //$output->writeln('Reason: '.$e->getMessage());
@@ -122,12 +124,13 @@ class UserAggregator
 
 	            $this->userManager->setAsChannel($userId, $resource);
 
-	            $this->amqpManager->enqueueMessage(array(
-	                'userId' => $socialProfile->getUserId(),
-	                'resourceOwner' => $socialProfile->getResource(),
-	                'username' => $username,
-	            ), 'brain.channel.user_aggregator');
-	        }
+                $messageData = array(
+                    'userId' => $socialProfile->getUserId(),
+                    'resourceOwner' => $socialProfile->getResource(),
+                    'username' => $username,
+                );
+                $this->amqpManager->enqueueChannel($messageData);
+            }
         }
     }
 

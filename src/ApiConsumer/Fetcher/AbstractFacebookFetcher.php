@@ -4,7 +4,8 @@ namespace ApiConsumer\Fetcher;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
-use Model\Link;
+use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
+use Model\Link\Link;
 
 abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
 {
@@ -17,18 +18,21 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
     /**
      * @inheritdoc
      */
-    public function getUrl()
+    public function getUrl($userId = null)
     {
-        return $this->user['facebookID'];
+        return $userId ?: $this->token->getResourceId();
     }
 
     /**
      * @inheritdoc
      */
-    protected function getQuery()
+    protected function getQuery($paginationId = null)
     {
-        return array(
-            'limit' => $this->pageLength,
+        $query = parent::getQuery($paginationId);
+
+        return array_merge(
+            $query,
+            array('limit' => $this->pageLength)
         );
     }
 
@@ -37,7 +41,7 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
      */
     protected function getItemsFromResponse($response)
     {
-        return $response['data'] ?: array();
+        return isset($response['data']) ? $response['data'] : array();
     }
 
     /**
@@ -74,7 +78,9 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
             }
             $id = $item['id'];
 
-            $parsed[] = $this->build($url, $id, $item);
+            $parsedLink = $this->build($url, $id, $item);
+            $this->addAdditionalType($parsedLink, $item);
+            $parsed[] = $parsedLink;
 
             //if it's a like with website outside facebook
             if (isset($item['website'])) {
@@ -82,7 +88,7 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
 
                 $website = str_replace('\n', ' ', $website);
                 $website = str_replace(', ', ' ', $website);
-                $websiteUrlsArray = $this->resourceOwner->getParser()->extractURLsFromText($website);
+                $websiteUrlsArray = (new FacebookUrlParser())->extractURLsFromText($website);
 
                 $counter = 1;
                 foreach ($websiteUrlsArray as $websiteUrl) {
@@ -92,8 +98,8 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
 
                     $thisId = $id . '-' . $counter;
 
-                    $parsed[] = $this->build(trim($websiteUrl), $thisId, $item);
-
+                    $new = $this->build(trim($websiteUrl), $thisId, $item);
+                    $new->setType(UrlParser::SCRAPPER);
                     $counter++;
                 }
             }
@@ -124,10 +130,8 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
 
         $parsedLink = new PreprocessedLink($link->getUrl());
         $parsedLink->setResourceItemId($id);
-        $parsedLink->setLink($link);
+        $parsedLink->setFirstLink($link);
         $parsedLink->setSource($this->resourceOwner->getName());
-
-        $this->addAdditionalType($parsedLink, $item);
 
         return $parsedLink;
     }
@@ -136,8 +140,11 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
     {
         if (array_key_exists('attachments', $item)) {
             foreach ($item['attachments']['data'] as $attachment) {
-                if(in_array($attachment['type'], FacebookUrlParser::FACEBOOK_VIDEO_TYPES())){
+                if (in_array($attachment['type'], FacebookUrlParser::FACEBOOK_VIDEO_TYPES())) {
                     $link->setType(FacebookUrlParser::FACEBOOK_VIDEO);
+                }
+                if (in_array($attachment['type'], FacebookUrlParser::FACEBOOK_PAGE_TYPES())) {
+                    $link->setType(FacebookUrlParser::FACEBOOK_PAGE);
                 }
             }
         }

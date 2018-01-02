@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: yawmoght
- * Date: 30/10/15
- * Time: 12:36
- */
 
 namespace Model\User\GhostUser;
 
@@ -81,14 +75,18 @@ class GhostUserManager
     public function saveAsUser($id)
     {
         $ghostUser = $this->getById($id);
+
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(u:'.$this::LABEL_GHOST_USER.')')
             ->where('u.qnoow_id={id}')
             ->setParameter('id', (integer)$id)
+            ->set('u.canReenable = true')
             ->remove('u:'.$this::LABEL_GHOST_USER)
             ->returns('u');
 
         $rs = $qb->getQuery()->getResultSet();
+        $this->userManager->setEnabled($id, true);
+
         return $ghostUser;
     }
 

@@ -92,19 +92,4 @@ class PrivacyController
 
         return $app->json($metadata);
     }
-
-    /**
-     * @param Request $request
-     * @param Application $app
-     * @return JsonResponse
-     */
-    public function validateAction(Request $request, Application $app)
-    {
-        /* @var $model PrivacyModel */
-        $model = $app['users.privacy.model'];
-
-        $model->validate($request->request->all());
-
-        return $app->json();
-    }
 }

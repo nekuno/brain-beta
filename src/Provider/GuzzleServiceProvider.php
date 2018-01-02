@@ -36,6 +36,7 @@ class GuzzleServiceProvider implements ServiceProviderInterface
                 if ($app['guzzle.verify']) {
                     $c->setDefaultOption('verify', $app['guzzle.verify']);
                 }
+                $c->setDefaultOption('auth', array('brain', $app['instant_api_secret']));
 
                 return $c;
             }

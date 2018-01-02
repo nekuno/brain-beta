@@ -1,55 +1,54 @@
 <?php
-/**
- * @author Manolo Salsas <manolez@gmail.com>
- */
+
 namespace Tests\API\Profile;
 
 use Tests\API\APITest;
 
 abstract class ProfileAPITest extends APITest
 {
-    protected function getOwnProfile($loggedInUserId = 1)
+    protected function getOwnProfile($loggedInUserId = self::OWN_USER_ID)
     {
-        return $this->getResponseByRoute('/profile', 'GET', array(), $loggedInUserId);
+        return $this->getResponseByRouteWithCredentials('/profile', 'GET', array(), $loggedInUserId);
     }
 
-    protected function getOtherProfile($userId, $loggedInUserId = 1)
+    protected function getOtherProfile($userId = self::OTHER_USER_ID, $loggedInUserId = self::OWN_USER_ID)
     {
-        return $this->getResponseByRoute('/profile/' . $userId, 'GET', array(), $loggedInUserId);
+        return $this->getResponseByRouteWithCredentials('/profile/' . $userId, 'GET', array(), $loggedInUserId);
     }
 
-    protected function validateProfile($userData, $loggedInUserId = 1)
+    protected function validateProfile($userData, $loggedInUserId = self::OWN_USER_ID)
     {
-        return $this->getResponseByRoute('/profile/validate', 'POST', $userData, $loggedInUserId);
+        return $this->getResponseByRouteWithCredentials('/profile/validate', 'POST', $userData, $loggedInUserId);
     }
 
-    protected function createProfile($userData, $loggedInUserId = 1)
+    protected function editProfile($userData, $loggedInUserId = self::OWN_USER_ID)
     {
-        return $this->getResponseByRoute('/profile', 'POST', $userData, $loggedInUserId);
+        return $this->getResponseByRouteWithCredentials('/profile', 'PUT', $userData, $loggedInUserId);
     }
 
-    protected function editProfile($userData, $loggedInUserId = 1)
+    protected function getProfileMetadata($loggedInUserId = self::OWN_USER_ID)
     {
-        return $this->getResponseByRoute('/profile', 'PUT', $userData, $loggedInUserId);
+        return $this->getResponseByRouteWithCredentials('/profile/metadata', 'GET', array(), $loggedInUserId);
     }
 
-    protected function deleteProfile($loggedInUserId = 1)
+    protected function getCategories()
     {
-        return $this->getResponseByRoute('/profile', 'DELETE', array(), $loggedInUserId);
+        return $this->getResponseByRouteWithCredentials('/profile/categories', 'GET');
     }
 
-    protected function getProfileMetadata($loggedInUserId = 1)
+    protected function getProfileFilters($loggedInUserId = self::OWN_USER_ID)
     {
-        return $this->getResponseByRoute('/profile/metadata', 'GET', array(), $loggedInUserId);
+        return $this->getResponseByRouteWithCredentials('/profile/filters', 'GET', array(), $loggedInUserId);
     }
 
-    protected function getProfileFilters($loggedInUserId = 1)
+    protected function getProfileTags($type, $loggedInUserId = self::OWN_USER_ID)
     {
-        return $this->getResponseByRoute('/profile/filters', 'GET', array(), $loggedInUserId);
+        return $this->getResponseByRouteWithCredentials('/profile/tags/' . $type, 'GET', array(), $loggedInUserId);
     }
 
-    protected function getProfileTags($type, $loggedInUserId = 1)
+    protected function assertHasLocaleLabel($field, $message = '')
     {
-        return $this->getResponseByRoute('/profile/tags/' . $type, 'GET', array(), $loggedInUserId);
+        $this->assertArrayHasKey('label', $field, 'Has not locale label on ' . $message);
+        $this->isType('string')->evaluate($field['label'], 'Label is not string on ' . $message);
     }
 }

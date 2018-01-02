@@ -6,12 +6,10 @@ use Everyman\Neo4j\Label;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
-use Manager\UserManager;
 use Model\User;
 use Model\User\Group\Group;
-use Model\User\Group\GroupModel;
 use Model\User\ProfileModel;
-use Service\Validator;
+use Service\Validator\ThreadValidator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Translation\Translator;
 
@@ -22,22 +20,21 @@ class ThreadManager
     const LABEL_THREAD_CONTENT = 'ThreadContent';
     const SCENARIO_DEFAULT = 'default';
     const SCENARIO_DEFAULT_LITE = 'default_lite';
+    const SCENARIO_NONE = 'none';
 
-    static public $scenarios = array(ThreadManager::SCENARIO_DEFAULT, ThreadManager::SCENARIO_DEFAULT_LITE);
+    static public $scenarios = array(ThreadManager::SCENARIO_DEFAULT, ThreadManager::SCENARIO_DEFAULT_LITE, ThreadManager::SCENARIO_NONE);
 
     /** @var  GraphManager */
     protected $graphManager;
-    /** @var  UserManager */
-    protected $userManager;
     /** @var  UsersThreadManager */
     protected $usersThreadManager;
     /** @var  ContentThreadManager */
     protected $contentThreadManager;
     /** @var ProfileModel */
     protected $profileModel;
-    /** @var  GroupModel */
-    protected $groupModel;
-    /** @var Validator */
+    /** @var Translator */
+    protected $translator;
+    /** @var ThreadValidator */
     protected $validator;
 
     /**
@@ -47,7 +44,7 @@ class ThreadManager
      * @param ContentThreadManager $cm
      * @param ProfileModel $profileModel
      * @param Translator $translator
-     * @param Validator $validator
+     * @param ThreadValidator $validator
      */
     public function __construct(
         GraphManager $graphManager,
@@ -55,7 +52,7 @@ class ThreadManager
         ContentThreadManager $cm,
         ProfileModel $profileModel,
         Translator $translator,
-        Validator $validator
+        ThreadValidator $validator
     ) {
         $this->graphManager = $graphManager;
         $this->usersThreadManager = $um;
@@ -76,8 +73,9 @@ class ThreadManager
     {
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(thread:Thread)')
-            ->where('id(thread) = {id}')
-            ->returns('thread');
+            ->where('id(thread) = {id}');
+        $qb->optionalMatch('(thread)-[:IS_FROM_GROUP]->(group:Group)')
+            ->returns('thread', 'id(group) AS groupId');
         $qb->setParameter('id', (integer)$id);
         $result = $qb->getQuery()->getResultSet();
 
@@ -85,10 +83,7 @@ class ThreadManager
             throw new NotFoundHttpException('Thread with id ' . $id . ' not found');
         }
 
-        /** @var Node $threadNode */
-        $threadNode = $result->current()->offsetGet('thread');
-
-        return $this->buildThread($threadNode);
+        return $this->build($result->current());
     }
 
     /**
@@ -139,6 +134,18 @@ class ThreadManager
         $threadNode = $result->current()->offsetExists('thread') ? $result->offsetGet('thread') : null;
 
         return $this->buildThread($threadNode);
+    }
+
+    public function build(Row $row)
+    {
+        $threadNode = $row->offsetGet('thread');
+        $thread = $this->buildThread($threadNode);
+
+        if ($groupId = $row->offsetExists('groupId') ? $row->offsetGet('groupId') : null) {
+            $thread->setGroupId($groupId);
+        };
+
+        return $thread;
     }
 
     /**
@@ -228,7 +235,7 @@ class ThreadManager
                     'category' => ThreadManager::LABEL_THREAD_CONTENT,
                     'filters' => array(
                         'contentFilters' => array(
-                            'type' => array('Creator'),
+                            'type' => array('Creator', 'LinkTwitter'),
                         ),
                     ),
                     'default' => true,
@@ -290,7 +297,7 @@ class ThreadManager
                                 'distance' => 50,
                                 'location' => $location
                             ),
-                            'gender' => array($genderDesired !== 'people' ? $genderDesired : null),
+                            'descriptiveGender' => array($genderDesired !== 'people' ? $genderDesired : null),
                         ),
                         'order' => 'content',
                     ),
@@ -311,27 +318,30 @@ class ThreadManager
                                 'min' => 18,
                                 'max' => 80,
                             ),
-                            'gender' => array($genderDesired !== 'people' ? $genderDesired : null),
+                            'descriptiveGender' => array($genderDesired !== 'people' ? $genderDesired : null),
                         ),
                         'order' => 'content',
                     ),
                     'default' => true,
                 ),
-            )
+            ),
+            ThreadManager::SCENARIO_NONE => array(
+
+            ),
         );
 
         if (!isset($threads[$scenario])) {
             return array();
         }
 
-        $this->fixGenderFilter($threads[$scenario]);
+        $this->fixDescriptiveGenderFilter($threads[$scenario]);
         return $threads[$scenario];
     }
 
-    private function fixGenderFilter(&$threads) {
+    private function fixDescriptiveGenderFilter(&$threads) {
         foreach ($threads as &$thread) {
-            if (isset($thread['filters']['userFilters']) && isset($thread['filters']['userFilters']['gender']) && $thread['filters']['userFilters']['gender'] == array(null)) {
-                unset($thread['filters']['userFilters']['gender']);
+            if (isset($thread['filters']['userFilters']) && isset($thread['filters']['userFilters']['descriptiveGender']) && $thread['filters']['userFilters']['descriptiveGender'] == array(null)) {
+                unset($thread['filters']['userFilters']['descriptiveGender']);
             }
         }
     }
@@ -369,7 +379,7 @@ class ThreadManager
      */
     public function create($userId, $data)
     {
-        $this->validateEditThread($data, $userId);
+        $this->validateOnCreate($data, $userId);
 
         $name = isset($data['name']) ? $data['name'] : null;
         $category = isset($data['category']) ? $data['category'] : null;
@@ -418,7 +428,7 @@ class ThreadManager
      */
     public function update($threadId, $userId, $data)
     {
-        $this->validateEditThread($data, $userId);
+        $this->validateOnUpdate($data, $userId);
 
         $name = isset($data['name']) ? $data['name'] : null;
         $category = isset($data['category']) ? $data['category'] : null;
@@ -447,8 +457,7 @@ class ThreadManager
             return null;
         }
 
-        $threadNode = $result->current()->offsetGet('thread');
-        $thread = $this->buildThread($threadNode);
+        $thread = $this->build($result->current());
 
         return $this->updateFromFilters($thread, $data);
 
@@ -510,11 +519,7 @@ class ThreadManager
             throw new NotFoundHttpException('Thread with id ' . $thread->getId() . ' not found');
         }
 
-        /** @var Node $threadNode */
-        $threadNode = $result->current()->offsetGet('thread');
-
-        return $this->buildThread($threadNode);
-
+        return $this->build($result->current());
     }
 
     public function deleteById($id)
@@ -561,6 +566,55 @@ class ThreadManager
         }
     }
 
+    public function createGroupThread(Group $group, $userId)
+    {
+        $groupData = $this->getGroupThreadData($group, $userId);
+        $thread = $this->create($userId, $groupData);
+        $thread = $this->joinToGroup($thread, $group);
+
+        return $thread;
+    }
+
+    private function joinToGroup(Thread $thread, Group $group)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+        $qb->match('(thread:Thread)')
+            ->where('id(thread) = {threadId}')
+            ->setParameter('threadId', $thread->getId());
+        $qb->match('(group:Group)')
+            ->where('id(group) = {groupId}')
+            ->setParameter('groupId', $group->getId());
+        $qb->set('thread:ThreadGroup');
+        $qb->merge('(thread)-[:IS_FROM_GROUP]->(group)');
+        $qb->returns('thread', 'id(group) AS groupId');
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() < 1) {
+            throw new NotFoundHttpException(sprintf('Thread with id %s or group with id %s not found', $thread->getId(), $group->getId()));
+        }
+
+        return $this->build($result->current());
+    }
+
+    public function getFromUserAndGroup(User $user, Group $group)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+        $qb->match('(user:User)')
+            ->where('user.qnoow_id = {userId}')
+            ->setParameter('userId', $user->getId());
+        $qb->match('(group:Group)')
+            ->where('id(group) = {groupId}')
+            ->setParameter('groupId', $group->getId());
+
+        $qb->match('(u)-[:HAS_THREAD]->(thread:Thread)-[:IS_FROM_GROUP]->(group)')
+            ->returns('thread', 'id(group) AS groupId');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        return $this->build($result->current());
+
+    }
+
     public function getGroupThreadData(Group $group, $userId)
     {
         try {
@@ -580,22 +634,26 @@ class ThreadManager
                     'groups' => array($group->getId()),
                 )
             ),
-            'default' => true,
+            'default' => false,
         );
     }
 
-    private function validateEditThread($data, $userId = null)
+    private function validateOnCreate($data, $userId)
     {
-        if ($userId) {
-            $this->validator->validateUserId($userId);
-        }
-
-        $this->validator->validateEditThread($data, $this->getChoices());
-
+        $data['userId'] = $userId;
+        $this->validator->validateOnCreate($data);
         if (isset($data['filters'])) {
-            $this->usersThreadManager->getFilterUsersManager()->validateFilterUsers($data['filters'], $userId);
+            $this->usersThreadManager->getFilterUsersManager()->validateOnCreate($data['filters'], $userId);
         }
+    }
 
+    private function validateOnUpdate($data, $userId)
+    {
+        $data['userId'] = $userId;
+        $this->validator->validateOnUpdate($data);
+        if (isset($data['filters'])) {
+            $this->usersThreadManager->getFilterUsersManager()->validateOnUpdate($data['filters'], $userId);
+        }
     }
 
     /**
@@ -643,16 +701,6 @@ class ThreadManager
         }
 
         return $this->getById($thread->getId());
-    }
-
-    private function getChoices()
-    {
-        return array(
-            'category' => array(
-                ThreadManager::LABEL_THREAD_USERS,
-                ThreadManager::LABEL_THREAD_CONTENT
-            )
-        );
     }
 
     private function deleteCachedResults(Thread $thread)

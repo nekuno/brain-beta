@@ -2,59 +2,24 @@
 
 namespace Controller\User;
 
-use Model\User\ContentPaginatedModel;
-use Model\User\Group\GroupModel;
-use Model\User\ProfileFilterModel;
+use Model\Exception\ValidationException;
+use Model\User\Content\ContentPaginatedModel;
+use Model\Metadata\UserFilterMetadataManager;
 use Model\User\RateModel;
-use Model\User\UserStatsManager;
+use Model\User\Content\ContentReportModel;
 use Manager\UserManager;
 use Model\User;
-use Service\Recommendator;
+use Service\AuthService;
+use Service\RecommendatorService;
+use Service\UserStatsService;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Model\User\TokensModel;
-use Model\User\SocialNetwork\SocialProfile;
-use ApiConsumer\Factory\ResourceOwnerFactory;
-use ApiConsumer\ResourceOwner\FacebookResourceOwner;
-use Model\User\GhostUser\GhostUserManager;
-use Model\User\SocialNetwork\SocialProfileManager;
 
-/**
- * Class UserController
- * @package Controller
- */
+
 class UserController
 {
-    /**
-     * @param Application $app
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function indexAction(Application $app, Request $request)
-    {
-        $filters = array();
-
-        $referenceUserId = $request->get('referenceUserId');
-        if (null != $referenceUserId) {
-            $filters['referenceUserId'] = $referenceUserId;
-        }
-
-        $profile = $request->get('profile');
-        if (null != $profile) {
-            $filters['profile'] = $profile;
-        }
-
-        /* @var $paginator \Paginator\Paginator */
-        $paginator = $app['paginator'];
-
-        $model = $app['users.manager'];
-
-        $result = $paginator->paginate($filters, $model, $request);
-
-        return $app->json($result);
-    }
 
     /**
      * @param Application $app
@@ -72,14 +37,14 @@ class UserController
 
     /**
      * @param Application $app
-     * @param int $id
+     * @param string $slug
      * @return JsonResponse
      */
-    public function getOtherAction(Application $app, $id)
+    public function getOtherAction(Application $app, $slug)
     {
         /* @var $model UserManager */
         $model = $app['users.manager'];
-        $userArray = $model->getById($id)->jsonSerialize();
+        $userArray = $model->getBySlug($slug)->jsonSerialize();
         $userArray = $model->deleteOtherUserFields($userArray);
 
         if (empty($userArray)) {
@@ -91,33 +56,78 @@ class UserController
 
     /**
      * @param Application $app
+     * @param string $slug
+     * @return JsonResponse
+     */
+    public function getPublicAction(Application $app, $slug)
+    {
+        /* @var $model UserManager */
+        $model = $app['users.manager'];
+        $userArray = $model->getPublicBySlug($slug)->jsonSerialize();
+        $userArray = $model->deleteOtherUserFields($userArray);
+
+        if (empty($userArray)) {
+            return $app->json([], 404);
+        }
+
+        return $app->json($userArray);
+    }
+
+    public function autologinAction(Application $app, Request $request, User $user)
+    {
+        $profile = $app['users.profile.model']->getById($user->getId());
+
+        $locale = $request->query->get('locale');
+        $questionFilters = array('id' => $user->getId(), 'locale' => $locale);
+        $questionsTotal = $app['users.questions.model']->countTotal($questionFilters);
+
+        $returnData = array('user' => $user, 'profile' => $profile, 'questionsTotal' => $questionsTotal);
+
+        return $app->json($returnData);
+    }
+
+
+    /**
+     * @param Application $app
      * @param string $username
      * @throws NotFoundHttpException
      * @return JsonResponse
      */
     public function availableAction(Application $app, $username)
     {
-        /* @var $model UserManager */
-        $model = $app['users.manager'];
-        try {
-            $model->findUserBy(array('usernameCanonical' => mb_strtolower($username)));
-        } catch (NotFoundHttpException $e) {
+        /* @var $user User */
+        $user = $app['user'];
+        if ($user && mb_strtolower($username) === $user->getUsernameCanonical()) {
             return $app->json();
         }
-
-        throw new NotFoundHttpException('Username not available');
-    }
-
-    /**
-     * @param Request $request
-     * @param Application $app
-     * @return JsonResponse
-     */
-    public function validateAction(Request $request, Application $app)
-    {
         /* @var $model UserManager */
         $model = $app['users.manager'];
-        $model->validate($request->request->all());
+        $model->validateUsername(0, $username);
+
+        return $app->json();
+    }
+
+    public function setEnableAction(Request $request, Application $app, User $user)
+    {
+        $enabled = $request->request->get('enabled');
+        /* @var $model UserManager */
+        $model = $app['users.manager'];
+        try{
+            $model->setEnabled($user->getId(), $enabled);
+        } catch (NotFoundHttpException $e)
+        {
+            return $app->json($e->getMessage(), 404);
+        }
+
+        if (!$enabled) {
+
+            /** @var User\Device\DeviceModel $deviceModel */
+            $deviceModel = $app['users.device.model'];
+            $allDevices = $deviceModel->getAll($user->getId());
+            foreach ($allDevices as $device) {
+                $deviceModel->delete($device->toArray());
+            }
+        }
 
         return $app->json();
     }
@@ -126,67 +136,33 @@ class UserController
      * @param Application $app
      * @param Request $request
      * @return JsonResponse
+     * @throws ValidationException
      */
-    public function postAction(Application $app, Request $request)
+    public function registerAction(Application $app, Request $request)
     {
-        $data = $request->request->all();
-        if (isset($data['oauth'])) {
-            $oauthData = $data['oauth'];
-            unset($data['oauth']);
-        }
-        /* @var $userManager UserManager */
-        $userManager = $app['users.manager'];
-        $user = $userManager->create($data);
-
-        if (isset($data['enabled']) && $data['enabled'] === false) {
-            $app['users.ghostuser.manager']->saveAsGhost($user->getId());
-        }
-
-        if (isset($oauthData)) {
-            /* @var $tokensModel TokensModel */
-            $tokensModel = $app['users.tokens.model'];
-            $resourceOwner = $oauthData['resourceOwner'];
-
-            $token = $tokensModel->create($user->getId(), $resourceOwner, $oauthData);
-
-            /* @var $resourceOwnerFactory ResourceOwnerFactory */
-            $resourceOwnerFactory = $app['api_consumer.resource_owner_factory'];
-
-            if ($resourceOwner === TokensModel::FACEBOOK) {
-
-                /* @var $facebookResourceOwner FacebookResourceOwner */
-                $facebookResourceOwner = $resourceOwnerFactory->build(TokensModel::FACEBOOK);
-
-                $token = $facebookResourceOwner->extend($token);
-
-                if (array_key_exists('refreshToken', $token) && is_null($token['refreshToken'])) {
-                    $token = $facebookResourceOwner->forceRefreshAccessToken($token);
-                }
+        try {
+            $data = $request->request->all();
+            if (!isset($data['user']) || !isset($data['profile']) || !isset($data['token']) || !isset($data['oauth']) || !isset($data['trackingData'])) {
+                throw new ValidationException(array('registration' => 'Bad format'));
             }
+            $user = $app['register.service']->register($data['user'], $data['profile'], $data['token'], $data['oauth'], $data['trackingData']);
+        } catch (\Exception $e) {
+            $errorMessage = $this->exceptionMessagesToString($e);
+            $message = \Swift_Message::newInstance()
+                ->setSubject('Nekuno registration error')
+                ->setFrom('enredos@nekuno.com', 'Nekuno')
+                ->setTo($app['support_emails'])
+                ->setContentType('text/html')
+                ->setBody($app['twig']->render('email-notifications/registration-error-notification.html.twig', array(
+                    'e' => $e,
+                    'errorMessage' => $errorMessage,
+                    'data' => json_encode($request->request->all()),
+                )));
 
-            // TODO: This will not be executed since we only use Facebook for registration
-            if ($resourceOwner == TokensModel::TWITTER) {
-                $resourceOwnerObject = $resourceOwnerFactory->build($resourceOwner);
-                $profileUrl = $resourceOwnerObject->getProfileUrl($token);
-                if (!$profileUrl) {
-                    //TODO: Add information about this if it happens
-                    return $app->json($token, 201);
-                }
-                $profile = new SocialProfile($user->getId(), $profileUrl, $resourceOwner);
+            $app['mailer']->send($message);
 
-                /* @var $ghostUserManager GhostUserManager */
-                $ghostUserManager = $app['users.ghostuser.manager'];
-                if ($ghostUser = $ghostUserManager->getBySocialProfile($profile)) {
-                    /* @var $userManager UserManager */
-                    $userManager = $app['users.manager'];
-                    $userManager->fuseUsers($user->getId(), $ghostUser->getId());
-                    $ghostUserManager->saveAsUser($user->getId());
-                } else {
-                    /** @var $socialProfilesManager SocialProfileManager */
-                    $socialProfilesManager = $app['users.socialprofile.manager'];
-                    $socialProfilesManager->addSocialProfile($profile);
-                }
-            }
+            $exceptionMessage = $app['env'] === 'dev' ? $errorMessage . ' ' . $e->getFile() . ' ' . $e->getLine() : "Error registering user";
+            throw new ValidationException(array('registration' => $exceptionMessage));
         }
 
         return $app->json($user, 201);
@@ -228,7 +204,7 @@ class UserController
      */
     public function getMatchingAction(Request $request, Application $app, User $user)
     {
-        $otherUserId = $request->get('id');
+        $otherUserId = $request->get('userId');
 
         if (null === $otherUserId) {
             return $app->json(array(), 400);
@@ -258,7 +234,7 @@ class UserController
      */
     public function getSimilarityAction(Request $request, Application $app, User $user)
     {
-        $otherUserId = $request->get('id');
+        $otherUserId = $request->get('userId');
 
         if (null === $otherUserId) {
             return $app->json(array(), 400);
@@ -320,6 +296,7 @@ class UserController
 
         try {
             $result = $paginator->paginate($filters, $model, $request);
+            $result['totals'] = $model->countAll($user->getId());
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
                 throw $e;
@@ -340,7 +317,7 @@ class UserController
      */
     public function getUserContentCompareAction(Request $request, Application $app, User $user)
     {
-        $otherUserId = $request->get('id');
+        $otherUserId = $request->get('userId');
         $tag = $request->get('tag', array());
         $type = $request->get('type', array());
         $showOnlyCommon = $request->get('showOnlyCommon', 0);
@@ -366,11 +343,12 @@ class UserController
             }
         }
 
-        /* @var $model \Model\User\ContentComparePaginatedModel */
+        /* @var $model \Model\User\Content\ContentComparePaginatedModel */
         $model = $app['users.content.compare.model'];
 
         try {
             $result = $paginator->paginate($filters, $model, $request);
+            $result['totals'] = $model->countAll($otherUserId, $user->getId(), $showOnlyCommon);
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
                 throw $e;
@@ -398,7 +376,7 @@ class UserController
             $search = urldecode($search);
         }
 
-        /* @var $model \Model\User\ContentTagModel */
+        /* @var $model \Model\User\Content\ContentTagModel */
         $model = $app['users.content.tag.model'];
 
         try {
@@ -450,6 +428,27 @@ class UserController
         return $app->json($result, !empty($result) ? 201 : 200);
     }
 
+    public function reportContentAction(Request $request, Application $app, User $user)
+    {
+        $reason = $request->request->get('reason');
+        $reasonText = $request->request->get('reasonText');
+        $contentId = $request->request->get('contentId');
+
+        try {
+            /* @var ContentReportModel $model */
+            $model = $app['users.content.report.model'];
+            $result = $model->report($user->getId(), $contentId, $reason, $reasonText);
+        } catch (\Exception $e) {
+            if ($app['env'] == 'dev') {
+                throw $e;
+            }
+
+            return $app->json(array(), 500);
+        }
+
+        return $app->json($result, 201);
+    }
+
     /**
      * @param Request $request
      * @param Application $app
@@ -459,7 +458,7 @@ class UserController
      */
     public function getUserRecommendationAction(Request $request, Application $app, User $user)
     {
-        /** @var Recommendator $recommendator */
+        /** @var RecommendatorService $recommendator */
         $recommendator = $app['recommendator.service'];
 
         try {
@@ -516,7 +515,7 @@ class UserController
     public function getContentRecommendationAction(Request $request, Application $app, User $user)
     {
 
-        /* @var $recommendator Recommendator */
+        /* @var $recommendator RecommendatorService */
         $recommendator = $app['recommendator.service'];
 
         try {
@@ -606,37 +605,10 @@ class UserController
         $locale = $request->query->get('locale');
         $filters = array();
 
-        /* @var $profileFilterModel ProfileFilterModel */
-        $profileFilterModel = $app['users.profileFilter.model'];
-        $filters['userFilters'] = $profileFilterModel->getFilters($locale);
+        $metadataService = $app['metadata.service'];
+        $filters['userFilters'] = $metadataService->getUserFilterMetadata($locale, $user->getId());
 
-        //user-dependent filters
-
-        /* @var $userFilterModel User\UserFilterModel */
-        $userFilterModel = $app['users.userFilter.model'];
-        $userFilters = $userFilterModel->getFilters($locale);
-
-        //TODO: Move this logic to userFilter during/after QS-982 (remove filter logic from GroupModel)
-        /* @var $groupModel \Model\User\Group\GroupModel */
-        $groupModel = $app['users.groups.model'];
-        $groups = $groupModel->getByUser($user->getId());
-
-        $userFilters['groups']['choices'] = array();
-        foreach ($groups as $group) {
-            $userFilters['groups']['choices'][$group->getId()] = $group->getName();
-        }
-
-        if ($groups = null || $groups == array()) {
-            unset($userFilters['groups']);
-        }
-
-        $filters['userFilters'] += $userFilters;
-
-        // content filters
-
-        /* @var $contentFilterModel User\ContentFilterModel */
-        $contentFilterModel = $app['users.contentFilter.model'];
-        $filters['contentFilters'] = $contentFilterModel->getFilters($locale);
+        $filters['contentFilters'] = $metadataService->getContentFilterMetadata($locale);
 
         return $app->json($filters, 200);
     }
@@ -665,10 +637,9 @@ class UserController
      */
     public function statsAction(Application $app, User $user)
     {
-        /* @var $manager UserStatsManager */
-        $manager = $app['users.stats.manager'];
-
-        $stats = $manager->getStats($user->getId());
+        /** @var UserStatsService $statsService */
+        $statsService = $app['userStats.service'];
+        $stats = $statsService->getStats($user->getId());
 
         return $app->json($stats->toArray());
     }
@@ -682,18 +653,28 @@ class UserController
      */
     public function statsCompareAction(Request $request, Application $app, User $user)
     {
-        $otherUserId = $request->get('id');
-        if (null === $otherUserId) {
-            throw new NotFoundHttpException('User not found');
-        }
-        if ($user->getId() === $otherUserId) {
-            return $app->json(array(), 400);
-        }
-        /* @var $model UserManager */
-        $model = $app['users.manager'];
+        $otherUserId = $request->get('userId');
 
-        $stats = $model->getComparedStats($user->getId(), $otherUserId);
+        /** @var UserStatsService $statsService */
+        $statsService = $app['userStats.service'];
+        $stats = $statsService->getComparedStats($user->getId(), $otherUserId);
 
         return $app->json($stats->toArray());
+    }
+
+    private function exceptionMessagesToString(\Exception $e)
+    {
+        $errorMessage = $e->getMessage();
+        if ($e instanceof ValidationException) {
+            foreach ($e->getErrors() as $errors) {
+                if (is_array($errors)) {
+                    $errorMessage .= "\n" . implode("\n", $errors);
+                } elseif (is_string($errors)) {
+                    $errorMessage .= "\n" . $errors . "\n";
+                }
+            }
+        }
+
+        return $errorMessage;
     }
 }

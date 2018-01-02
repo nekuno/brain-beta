@@ -4,3 +4,5 @@
 /csv
 /pimple.json
 src/ApiConsumer/Fetcher/GetOldTweets/got.jar
+/var/cache
+/var/logs

@@ -1,29 +1,33 @@
 valid_ips: ['127.0.0.1', %dev_custom_ip_1%, %dev_custom_ip_2%, %dev_custom_ip_3%, %dev_custom_ip_4%]
+support_emails: [%support_email_1%, %support_email_2%, %support_email_3%]
 
 secret: %secret%
+instant_api_secret: %instant_api_secret%
 life_time: 5184000 # 60 days
+
+push_public_key: %push_public_key%
+push_private_key: %push_private_key%
+firebase_url: %firebase_url%
+firebase_api_key: %firebase_api_key%
 
 locale.options:
     default: %locale.default%
+
+images_relative_dir: %images_relative_dir%
+
+brain_base_url: %brain_base_url%
 
 instant.host: %instant.host%
 guzzle.verify: %guzzle.verify%
 
 dbs.options:
-    mysql_social:
-        driver: %dbs.mysql_social.driver%
-        host: %dbs.mysql_social.host%
-        dbname: %dbs.mysql_social.dbname%
-        user: %dbs.mysql_social.user%
-        password: %dbs.mysql_social.pass%
-        charset: utf8
     mysql_brain:
         driver: %dbs.mysql_brain.driver%
         host: %dbs.mysql_brain.host%
         dbname: %dbs.mysql_brain.dbname%
         user: %dbs.mysql_brain.user%
         password: %dbs.mysql_brain.pass%
-        charset: utf8
+        charset: utf8mb4
 
 orm.proxies_dir: "%app_root_dir%/../cache/DoctrineProxy"
 orm.ems.default: mysql_brain
@@ -93,6 +97,21 @@ api_consumer.config:
             consumer_secret: %facebook.consumer_secret%
             redirect_uri: %facebook.redirect_uri%
 
+        tumblr:
+            consumer_key: %tumblr.consumer_key%
+            consumer_secret:  %tumblr.consumer_secret%
+            scope: "read"
+            client_credential:
+                application_token: %tumblr.application_token%
+
+        steam:
+            client_credential:
+                application_token: %steam.application_token%
+
+        linkedin:
+            consumer_key: %linkedin.consumer_key%
+            consumer_secret:  %linkedin.consumer_secret%
+
 admin_domain_plus_post: %admin.domain_plus_port%
 social_host: %social.host%
 
@@ -120,3 +139,16 @@ hwi_oauth:
             type:                spotify
             client_id:           %spotify.consumer_key%
             client_secret:       %spotify.consumer_secret%
+        tumblr:
+            type:                oauth1
+            client_id:           %tumblr.consumer_key%
+            client_secret:       %tumblr.consumer_secret%
+            user_response_class: HWI\Bundle\OAuthBundle\OAuth\Response\PathUserResponse
+            paths:
+                identifier:     response.user.name
+                nickname:       response.user.name
+                realname:       response.user.name
+        linkedin:
+            type:                linkedin
+            client_id:           %linkedin.consumer_key%
+            client_secret:       %linkedin.consumer_secret%

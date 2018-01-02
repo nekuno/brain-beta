@@ -3,7 +3,7 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 use Service\UserAggregator;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -91,7 +91,7 @@ class UsersSocialMediaAddCommand extends ApplicationAwareCommand
                         'public' => true,
                         'exclude' => array('twitter_links', 'twitter_favorites'),
                     );
-                    $amqpManager->enqueueMessage($data, 'brain.fetching.links');
+                    $amqpManager->enqueueFetching($data);
                 }
 	            $id = $socialProfile->getUserId();
             }
@@ -101,7 +101,7 @@ class UsersSocialMediaAddCommand extends ApplicationAwareCommand
 			        $output->writeln(sprintf('Group with id %s does not exist', $groupId));
 		        }
 
-			    $this->app['users.groups.model']->addGhostUser($groupId, $id);
+			    $this->app['group.service']->addGhostUser($groupId, $id);
 	        }
 
             $output->writeln('Success!');

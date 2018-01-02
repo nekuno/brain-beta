@@ -2,12 +2,16 @@
 
 namespace ApiConsumer\LinkProcessor\Processor\SpotifyProcessor;
 
-use ApiConsumer\LinkProcessor\Processor\AbstractProcessor;
+use ApiConsumer\Images\ProcessingImage;
+use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\AbstractAPIProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
 use ApiConsumer\ResourceOwner\SpotifyResourceOwner;
 
-abstract class AbstractSpotifyProcessor extends AbstractProcessor
+abstract class AbstractSpotifyProcessor extends AbstractAPIProcessor
 {
+    const SPOTIFY_LABEL = 'LinkSpotify';
+
     /**
      * @var SpotifyUrlParser
      */
@@ -17,6 +21,12 @@ abstract class AbstractSpotifyProcessor extends AbstractProcessor
      * @var SpotifyResourceOwner
      */
     protected $resourceOwner;
+
+    public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
+    {
+        $link = $preprocessedLink->getFirstLink();
+        $link->addAdditionalLabels(self::SPOTIFY_LABEL);
+    }
 
     protected function buildArtistTag($artist)
     {
@@ -72,5 +82,24 @@ abstract class AbstractSpotifyProcessor extends AbstractProcessor
         }
 
         return $artistList;
+    }
+
+    public function getImages(PreprocessedLink $preprocessedLink, array $data)
+    {
+        if (!isset($data['images'])) {
+            return array($this->brainBaseUrl . SpotifyUrlParser::DEFAULT_IMAGE_PATH);
+        }
+
+        $images = array();
+        foreach ($data['images'] as $imageArray) {
+            if (isset($imageArray['url'])) {
+                $image = new ProcessingImage($imageArray['url']);
+                $image->setWidth($imageArray['width']);
+                $image->setHeight($imageArray['height']);
+                $images[] = $image;
+            }
+        }
+
+        return $images;
     }
 }

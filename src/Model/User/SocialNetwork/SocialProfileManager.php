@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: yawmoght
- * Date: 2/11/15
- * Time: 10:34
- */
 
 namespace Model\User\SocialNetwork;
 
@@ -13,7 +7,7 @@ use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
 use Model\User\LookUpModel;
-use Model\User\TokensModel;
+use Model\User\Token\TokensModel;
 
 class SocialProfileManager
 {

@@ -1,7 +1,4 @@
 <?php
-/**
- * @author yawmoght <yawmoght@gmail.com>
- */
 
 namespace Model\Popularity;
 
@@ -36,7 +33,7 @@ class PopularityManager
             ->where('id(l) = {nodeId}')
             ->setParameter('nodeId', (integer)$linkId);
 
-        $qb->merge('(l)-[:HAS_POPULARITY]-(popularity:Popularity)')
+        $qb->merge('(l)-[:HAS_POPULARITY]->(popularity:Popularity)')
             ->with('l', 'popularity')
             ->optionalMatch('(l)<-[likes:LIKES]-(:User)')
             ->with('popularity', 'count(likes) AS total');
@@ -66,7 +63,7 @@ class PopularityManager
             ->where('id(l) = {nodeId}')
             ->setParameter('nodeId', (integer)$linkId);
 
-        $qb->match('(l)-[rel:HAS_POPULARITY]-(popularity:Popularity)')
+        $qb->match('(l)-[rel:HAS_POPULARITY]->(popularity:Popularity)')
             ->delete('rel', 'popularity');
 
         $qb->getQuery()->getResultSet();
@@ -89,8 +86,8 @@ class PopularityManager
             ->setParameter('id', (integer)$userId);
 
         ///migrate old popularities to new format, or create new if link is new///
-        $qb->optionalMatch('(u)-[:LIKES]-(old_link:Link)')
-            ->where('NOT (old_link)-[:HAS_POPULARITY]-()')
+        $qb->optionalMatch('(u)-[:LIKES]->(old_link:Link)')
+            ->where('NOT (old_link)-[:HAS_POPULARITY]->()')
             ->with('u', 'old_link')
             ->with('u', 'collect(old_link) as old_links')
             // Simply merge and set/remove causes error when there are no old links
@@ -168,7 +165,7 @@ class PopularityManager
         }
         $qb->with('link, count(likes) AS amount');
 
-        $qb->match('(link)-[:HAS_POPULARITY]-(popularity:Popularity)');
+        $qb->match('(link)-[:HAS_POPULARITY]->(popularity:Popularity)');
         $qb->returns('   id(popularity) AS id',
             'popularity.popularity AS popularity',
             'popularity.unpopularity AS unpopularity',
@@ -240,7 +237,7 @@ class PopularityManager
         $qb->match('(popularity:Popularity)')
             ->where('popularity.popularity = 1')
             ->with('popularity')
-            ->optionalMatch('(popularity)-[:HAS_POPULARITY]-(:Link)-[:LIKES]-(likes)')
+            ->optionalMatch('(popularity)<-[:HAS_POPULARITY]-(:Link)<-[:LIKES]-(likes)')
             ->returns(' id(popularity) AS id,
                         popularity.popularity AS popularity,
                         popularity.unpopularity AS unpopularity,
@@ -267,7 +264,7 @@ class PopularityManager
 
         ///migrate old popularities to new format, or create new if link is new///
         $qb->optionalMatch('(u)-[:LIKES]-(old_link:Link)')
-            ->where('NOT (old_link)-[:HAS_POPULARITY]-()')
+            ->where('NOT (old_link)-[:HAS_POPULARITY]->()')
             ->with('u', 'old_link')
             ->with('u', 'collect(old_link) as old_links')
             // Simply merge and set/remove causes error when there are no old links
@@ -284,7 +281,7 @@ class PopularityManager
         $qb->match('(u)-[:LIKES]->(link:Link)-[:HAS_POPULARITY]->(popularity:Popularity)')
             ->where('EXISTS(popularity.popularity)');
         $qb->with('link', 'popularity');
-        $qb->optionalMatch('(link)-[likes:LIKES]-(:User)')
+        $qb->optionalMatch('(link)<-[likes:LIKES]-(:User)')
             ->returns(' id(popularity) AS id,
                         popularity.popularity AS popularity,
                         popularity.unpopularity AS unpopularity,
@@ -307,14 +304,14 @@ class PopularityManager
         $qb->match('(popularity:Popularity)')
             ->where('popularity.popularity = 1')
             ->with('popularity')
-            ->optionalMatch('(popularity)-[:HAS_POPULARITY]-(:Link)-[likes:LIKES]-()')
+            ->optionalMatch('(popularity)<-[:HAS_POPULARITY]-(:Link)<-[likes:LIKES]-()')
             ->with('popularity', 'count(likes) AS amount')
             ->orderBy('popularity.popularity DESC')
             //Can´t reliably keep order of collect(popularity) and collect(amount) http://stackoverflow.com/questions/28099125/how-to-unwind-multiple-collections
             ->with('collect(popularity) AS popularities, max(amount) as max')
             ->unwind('popularities AS popularity')
             ->with('popularity', 'max')
-            ->optionalMatch('(popularity)-[:HAS_POPULARITY]-(:Link)-[likes:LIKES]-()')
+            ->optionalMatch('(popularity)<-[:HAS_POPULARITY]-(:Link)<-[likes:LIKES]-()')
             ->with('popularity', 'max', 'count(likes) AS amount')
             ->set(
                 'popularity.popularity = CASE max

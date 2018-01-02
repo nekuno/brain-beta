@@ -2,17 +2,13 @@
 
 namespace Controller;
 
-use Model\LinkModel;
+use Model\Link\LinkModel;
 use Model\User\RateModel;
 use Manager\UserManager;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 
-/**
- * Class FetchController
- *
- * @package Controller
- */
+
 class FetchController
 {
 

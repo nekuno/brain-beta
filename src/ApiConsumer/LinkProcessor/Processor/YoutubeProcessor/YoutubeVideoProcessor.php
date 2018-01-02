@@ -2,49 +2,103 @@
 
 namespace ApiConsumer\LinkProcessor\Processor\YoutubeProcessor;
 
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use Model\Video;
+use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
+use Model\User\Token\Token;
+use Model\Link\Video;
 
 class YoutubeVideoProcessor extends AbstractYoutubeProcessor
 {
-
     public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
     {
         parent::hydrateLink($preprocessedLink, $data);
 
-        $link = $preprocessedLink->getLink();
+        $link = $preprocessedLink->getFirstLink();
         $itemId = $preprocessedLink->getResourceItemId();
 
-        $link->setThumbnail('https://img.youtube.com/vi/' . $itemId . '/mqdefault.jpg');
         $link = Video::buildFromLink($link);
         $link->setEmbedId($itemId);
         $link->setEmbedType('youtube');
 
-        $preprocessedLink->setLink($link);
+        $preprocessedLink->setFirstLink($link);
     }
 
-    function getItemIdFromParser($url)
+    public function getImages(PreprocessedLink $preprocessedLink, array $data)
+    {
+        $itemId = $preprocessedLink->getResourceItemId();
+        $images = $this->buildAPIImages($itemId);
+
+        if (empty($images) || null === $itemId) {
+            $images = $this->buildDefaultImage();
+        }
+
+        return $images;
+    }
+
+    /**
+     * @param $itemId
+     * @return array
+     */
+    protected function buildAPIImages($itemId)
+    {
+        $images = array();
+        foreach ($this->imageData() as $label => $data) {
+            $imageUrl = 'https://img.youtube.com/vi/' . $itemId . '/' . $data['extension'];
+            $image = new ProcessingImage($imageUrl);
+            $image->setLabel($label);
+            $image->setHeight($data['height']);
+            $image->setWidth($data['width']);
+
+            $images[] = $image;
+        }
+
+        return $images;
+    }
+
+    protected function imageData()
+    {
+        return array(
+            ProcessingImage::LABEL_SMALL => array('extension' => 'default.jpg', 'height' => 90, 'width' => 120),
+            ProcessingImage::LABEL_MEDIUM => array('extension' => 'mqdefault.jpg', 'height' => 180, 'width' => 320),
+            ProcessingImage::LABEL_LARGE => array('extension' => 'hqdefault.jpg', 'height' => 720, 'width' => 1280),
+        );
+    }
+
+    /**
+     * @return array
+     */
+    protected function buildDefaultImage()
+    {
+        $imageUrl = array($this->brainBaseUrl . YoutubeUrlParser::DEFAULT_IMAGE_PATH);
+        $images = array(new ProcessingImage($imageUrl));
+
+        return $images;
+    }
+
+    protected function getItemIdFromParser($url)
     {
         return $this->parser->getVideoId($url);
     }
 
-    function addTags(PreprocessedLink $preprocessedLink, array $item)
+    public function addTags(PreprocessedLink $preprocessedLink, array $item)
     {
-        $link = $preprocessedLink->getLink();
+        $link = $preprocessedLink->getFirstLink();
 
         if (isset($item['topicDetails']['topicIds'])) {
             foreach ($item['topicDetails']['topicIds'] as $tagName) {
-                $link->addTag(array(
-                    'name' => $tagName,
-                    'additionalLabels' => array('Freebase'),
-                ));
+                $link->addTag(
+                    array(
+                        'name' => $tagName,
+                        'additionalLabels' => array('Freebase'),
+                    )
+                );
             }
         }
     }
 
-    protected function requestSpecificItem($id)
+    protected function requestSpecificItem($id, Token $token = null)
     {
-        return $this->resourceOwner->requestVideo($id);
+        return $this->resourceOwner->requestVideo($id, $token);
     }
-
 }

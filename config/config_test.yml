@@ -5,9 +5,6 @@ locale.options:
     default: en
 
 dbs.options:
-    mysql_social:
-        driver: pdo_sqlite
-        path: %app_root_dir%/../var/cache/social_data.db
     mysql_brain:
         driver: pdo_sqlite
         path: %app_root_dir%/../var/cache/brain_data.db
@@ -19,5 +16,4 @@ neo4j.options:
     user: %db.neo4j.testing.user%
     pass: %db.neo4j.testing.pass%
 
-swiftmailer.options:
-    disable_delivery: true
+

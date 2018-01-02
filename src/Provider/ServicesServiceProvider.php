@@ -7,15 +7,24 @@ use Service\AMQPManager;
 use Service\AuthService;
 use Service\ChatMessageNotifications;
 use Service\Consistency\ConsistencyCheckerService;
+use Service\DeviceService;
 use Service\EmailNotifications;
+use Service\EventDispatcher;
+use Service\GroupService;
 use Service\ImageTransformations;
-use Service\MigrateSocialInvitations;
+use Service\Links\EnqueueLinksService;
+use Service\MetadataService;
+use Service\Links\MigrateLinksService;
 use Service\NotificationManager;
-use Service\Recommendator;
+use Service\QuestionService;
+use Service\RecommendatorService;
+use Service\RegisterService;
 use Service\SocialNetwork;
 use Service\TokenGenerator;
 use Service\UserAggregator;
-use Service\Validator;
+use Service\UserStatsService;
+use Service\Validator\Validator;
+use Service\Validator\ValidatorFactory;
 use Silex\Application;
 use Silex\ServiceProviderInterface;
 use Silex\Translator;
@@ -32,19 +41,25 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['auth.service'] = $app->share(
             function (Application $app) {
-                return new AuthService($app['users.manager'], $app['security.password_encoder'], $app['security.jwt.encoder'], $app['oauth.service']);
+                return new AuthService($app['users.manager'], $app['security.password_encoder'], $app['security.jwt.encoder'], $app['oauth.service'], $app['dispatcher.service'], $app['users.tokens.model']);
+            }
+        );
+
+        $app['register.service'] = $app->share(
+            function (Application $app) {
+                return new RegisterService($app['users.manager'], $app['users.ghostuser.manager'], $app['users.tokens.model'], $app['users.profile.model'], $app['users.invitations.model'], $app['group.service'], $app['dispatcher']);
             }
         );
 
         $app['chatMessageNotifications.service'] = $app->share(
             function (Application $app) {
-                return new ChatMessageNotifications($app['emailNotification.service'], $app['orm.ems']['mysql_brain'], $app['dbs']['mysql_social'], $app['translator'], $app['users.manager'], $app['users.profile.model']);
+                return new ChatMessageNotifications($app['instant.client'], $app['emailNotification.service'], $app['orm.ems']['mysql_brain'], $app['dbs']['mysql_brain'], $app['translator'], $app['users.manager'], $app['users.profile.model']);
             }
         );
 
         $app['affinityRecalculations.service'] = $app->share(
             function (Application $app) {
-                return new AffinityRecalculations($app['dispatcher'], $app['emailNotification.service'], $app['translator'], $app['neo4j.graph_manager'], $app['links.model'], $app['users.manager'], $app['users.affinity.model']);
+                return new AffinityRecalculations($app['dispatcher.service'], $app['emailNotification.service'], $app['translator'], $app['neo4j.graph_manager'], $app['links.model'], $app['users.manager'], $app['users.affinity.model']);
             }
         );
 
@@ -54,15 +69,15 @@ class ServicesServiceProvider implements ServiceProviderInterface
             }
         );
 
-        $app['migrateSocialInvitations.service'] = $app->share(
-            function (Application $app) {
-                return new MigrateSocialInvitations($app['neo4j.graph_manager'], $app['dbs']['mysql_social']);
-            }
-        );
-
         $app['emailNotification.service'] = $app->share(
             function (Application $app) {
                 return new EmailNotifications($app['mailer'], $app['orm.ems']['mysql_brain'], $app['twig']);
+            }
+        );
+
+        $app['device.service'] = $app->share(
+            function (Application $app) {
+                return new DeviceService($app['guzzle.client'], $app['users.device.model'], $app['users.profile.model'], $app['translator'], $app['firebase_url'], $app['firebase_api_key'], $app['push_public_key'], $app['push_private_key']);
             }
         );
 
@@ -74,11 +89,11 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['recommendator.service'] = $app->share(
             function (Application $app) {
-                return new Recommendator(
+                return new RecommendatorService(
                     $app['paginator'], $app['paginator.content'], $app['users.groups.model'],
                     $app['users.manager'], $app['users.recommendation.users.model'],
-                    $app['users.socialRecommendation.users.model'], $app['users.recommendation.content.model'],
-                    $app['users.recommendation.popularusers.model'], $app['users.recommendation.popularcontent.model']
+                    $app['users.recommendation.content.model'], $app['users.recommendation.popularusers.model'],
+                    $app['users.recommendation.popularcontent.model'], $app['users.shares.manager']
                 );
             }
         );
@@ -92,9 +107,21 @@ class ServicesServiceProvider implements ServiceProviderInterface
             }
         );
 
+        $app['userStats.service'] = $app->share(
+            function (Application $app) {
+                return new UserStatsService( $app['users.stats.manager'], $app['users.groups.model'], $app['users.relations.model'], $app['users.content.model'], $app['users.content.compare.model'], $app['users.shares.manager']);
+            }
+        );
+
         $app['validator.service'] = $app->share(
             function (Application $app) {
-                return new Validator($app['neo4j.graph_manager'], $app['users.profileFilter.model'], $app['users.userFilter.model'], $app['users.contentFilter.model'], $app['fields']);
+                return new Validator($app['neo4j.graph_manager'], $app['fields']);
+            }
+        );
+
+        $app['validator.factory'] = $app->share(
+            function (Application $app) {
+                return new ValidatorFactory($app['neo4j.graph_manager'], $app['metadata.service'], $app['validator.config']);
             }
         );
 
@@ -130,12 +157,47 @@ class ServicesServiceProvider implements ServiceProviderInterface
             }
         );
 
+        $app['enqueueLinks.service'] = $app->share(
+            function (Application $app) {
+                return new EnqueueLinksService($app['links.model'], $app['amqpManager.service']);
+            }
+        );
+
         $app['consistency.service'] = $app->share(
             function (Application $app) {
                 return new ConsistencyCheckerService($app['neo4j.graph_manager'], $app['dispatcher'], $app['consistency']);
             }
         );
 
+        $app['dispatcher.service'] = $app->share(
+            function (Application $app) {
+                return new EventDispatcher($app['dispatcher']);
+            }
+        );
+
+        $app['question.service'] = $app->share(
+            function (Application $app) {
+                return new QuestionService($app['questionnaire.questions.model'], $app['questionnaire.admin.questions.model']);
+            }
+        );
+
+        $app['metadata.service'] = $app->share(
+            function (Application $app) {
+                return new MetadataService($app['users.metadataManager.factory'], $app['users.groups.model'], $app['users.profileOption.manager'], $app['metadata.utilities']);
+            }
+        );
+
+        $app['group.service'] = $app->share(
+            function (Application $app) {
+                return new GroupService($app['users.groups.model'], $app['users.filterusers.manager'], $app['validator.factory']);
+            }
+        );
+        
+        $app['migrateLinks.service'] = $app->share(
+            function (Application $app) {
+                return new MigrateLinksService($app['neo4j.graph_manager']);
+            }
+        );
     }
 
     /**

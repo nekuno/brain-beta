@@ -15,7 +15,6 @@ Para todos los tipos:
 
     required: Si es true comprueba si los datos lo incluyen
     label: Nombre del campo, en varios idiomas
-    labelFilter: Nombre a mostrar en los filtros donde se use este campo, en varios idiomas.
 
 text/textarea:
 
@@ -36,7 +35,7 @@ integer_range:
 
 Comprueba tipo (array)
 
-Comprueba existencia keys min y max y que su tipo (entero)
+Comprueba tipo de min y max si existen
 
 Comprueba que el mínimo no sea superior al máximo
 

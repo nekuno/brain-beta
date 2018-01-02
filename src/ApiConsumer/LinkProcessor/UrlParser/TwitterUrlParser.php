@@ -3,6 +3,7 @@
 namespace ApiConsumer\LinkProcessor\UrlParser;
 
 use ApiConsumer\Exception\UrlNotValidException;
+use Service\LookUp\LookUp;
 
 class TwitterUrlParser extends UrlParser
 {
@@ -11,25 +12,33 @@ class TwitterUrlParser extends UrlParser
     const TWITTER_PIC = 'twitter_pic';
     const TWITTER_TWEET = 'twitter_tweet';
 
+    const DEFAULT_IMAGE_PATH = 'default_images/twitter.png';
+
     public function getUrlType($url)
     {
         if ($this->isTwitterImageUrl($url)) {
             return self::TWITTER_PIC;
         }
-        try{
+        try {
             $this->getStatusId($url);
+
             return self::TWITTER_TWEET;
-        } catch (\Exception $e){}
+        } catch (\Exception $e) {
+        }
 
-        try{
+        try {
             $this->getProfileIdFromIntentUrl($url);
-            return self::TWITTER_INTENT;
-        } catch (\Exception $e){}
 
-        try{
+            return self::TWITTER_INTENT;
+        } catch (\Exception $e) {
+        }
+
+        try {
             $this->getProfileNameFromProfileUrl($url);
+
             return self::TWITTER_PROFILE;
-        } catch (\Exception $e){}
+        } catch (\Exception $e) {
+        }
 
         throw new UrlNotValidException($url);
     }
@@ -40,23 +49,25 @@ class TwitterUrlParser extends UrlParser
      */
     public function getProfileId($url)
     {
-        try{
+        try {
             $intentId = $this->getProfileIdFromIntentUrl($url);
-            return $intentId;
-        } catch (\Exception $e){}
 
-        try{
+            return $intentId;
+        } catch (\Exception $e) {
+        }
+
+        try {
             $profileName = $this->getProfileNameFromProfileUrl($url);
+
             return $profileName;
-        } catch (\Exception $e){}
+        } catch (\Exception $e) {
+        }
 
         throw new UrlNotValidException($url);
     }
 
     protected function getProfileIdFromIntentUrl($url)
     {
-        $this->checkUrlValid($url);
-
         $parts = parse_url($url);
 
         if (isset($parts['path']) && isset($parts['query'])) {
@@ -81,8 +92,6 @@ class TwitterUrlParser extends UrlParser
 
     protected function getProfileNameFromProfileUrl($url)
     {
-        $this->checkUrlValid($url);
-
         $parts = parse_url($url);
 
         if (isset($parts['path'])) {
@@ -94,6 +103,7 @@ class TwitterUrlParser extends UrlParser
                 'intent',
                 'hashtag',
                 'search',
+                'search-home',
                 'who_to_follow',
                 'about',
                 'tos',
@@ -113,8 +123,6 @@ class TwitterUrlParser extends UrlParser
 
     public function getStatusId($url)
     {
-        $this->checkUrlValid($url);
-
         $parts = parse_url($url);
 
         if (isset($parts['path'])) {
@@ -166,23 +174,77 @@ class TwitterUrlParser extends UrlParser
     {
         $url = parent::cleanURL($url);
 
-        $parts = parse_url($url);
+        $this->fixHost($url);
+        $this->fixPath($url);
 
-        if (isset($parts['host']) && $parts['host'] === 'www.twitter.com') {
-            $parts['host'] = 'twitter.com';
-            $url = http_build_url($parts);
+        if (!$this->isTwitterUrl($url)) {
+            throw new UrlNotValidException($url);
         }
 
         return $url;
     }
 
-    public function checkUrlValid($url)
+    protected function fixHost($url)
     {
-        parent::checkUrlValid($url);
+        $parts = parse_url($url);
 
-        if (!$this->isTwitterUrl($url)){
-            throw new UrlNotValidException($url);
+        if (isset($parts['host']) && $parts['host'] === 'www.twitter.com') {
+            $parts['host'] = 'twitter.com';
+        }
+
+        return http_build_url($parts);
+    }
+
+    protected function fixPath($url)
+    {
+        $parts = parse_url($url);
+
+        $path = explode('/', trim($parts['path'], '/'));
+        if (isset($path[3]) && in_array($path[3], array('photo', 'video'))) {
+            $path = array_slice($path, 0, 3);
+            $parts['path'] = implode('/', $path);
+        }
+
+        return http_build_url($parts);
+    }
+
+    public function checkUrlValid($url, $urlDecoded = null)
+    {
+        parent::checkUrlValid($url, $urlDecoded);
+
+        if (!$this->isTwitterUrl($url)) {
+            throw new UrlNotValidException($urlDecoded ?: $url);
         }
     }
 
+    public function buildUserUrl($screenName)
+    {
+        return LookUp::TWITTER_BASE_URL . $screenName;
+    }
+
+    public function getOriginalProfileUrl($data, $default)
+    {
+       return $this->getProfileUrl($data, $default, '');
+    }
+
+    public function getSmallProfileUrl($data, $default)
+    {
+        return $this->getProfileUrl($data, $default);
+    }
+
+    public function getMediumProfileUrl($data, $default)
+    {
+        return $this->getProfileUrl($data, $default, '_bigger');
+    }
+
+    protected function getProfileUrl($data, $default, $replacement = null)
+    {
+        $url =  isset($data['profile_image_url']) ? $data['profile_image_url'] : $default;
+        if (null !== $replacement)
+        {
+            $url = str_replace('_normal', $replacement, $url);
+        }
+
+        return $url;
+    }
 }

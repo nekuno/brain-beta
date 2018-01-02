@@ -9,28 +9,28 @@ use Event\SimilarityProcessEvent;
 use Event\SimilarityProcessStepEvent;
 use Event\UserStatusChangedEvent;
 use Model\Neo4j\Neo4jException;
-use Model\Questionnaire\QuestionModel;
+use Model\User\Question\QuestionModel;
 use Model\User;
 use Model\User\Matching\MatchingModel;
 use Model\User\Similarity\SimilarityModel;
 use Manager\UserManager;
 use PhpAmqpLib\Channel\AMQPChannel;
-use PhpAmqpLib\Message\AMQPMessage;
 use Service\AffinityRecalculations;
-use Symfony\Component\EventDispatcher\EventDispatcher;
+use Service\AMQPManager;
+use Service\EventDispatcher;
+use Service\UserStatsService;
 
-/**
- * Class MatchingCalculatorWorker
- * @package Worker
- */
 class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQConsumerInterface
 {
 
     const TRIGGER_PERIODIC = 'periodic';
-    /**
-     * @var AMQPChannel
-     */
-    protected $channel;
+    const TRIGGER_QUESTION = 'question_answered';
+    const TRIGGER_CONTENT_RATED = 'content_rated';
+    const TRIGGER_PROCESS_FINISHED = 'process_finished';
+    const TRIGGER_MATCHING_EXPIRED = 'matching_expired';
+
+    protected $queue = AMQPManager::MATCHING;
+
     /**
      * @var UserManager
      */
@@ -44,6 +44,10 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
      */
     protected $similarityModel;
     /**
+     * @var UserStatsService
+     */
+    protected $userStatsService;
+    /**
      * @var QuestionModel
      */
     protected $questionModel;
@@ -54,76 +58,43 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
     /**
      * @var Connection
      */
-    protected $connectionSocial;
-    /**
-     * @var Connection
-     */
     protected $connectionBrain;
-    /**
-     * @var EventDispatcher
-     */
-    protected $dispatcher;
 
-    public function __construct(AMQPChannel $channel, UserManager $userManager, MatchingModel $matchingModel, SimilarityModel $similarityModel, QuestionModel $questionModel, AffinityRecalculations $affinityRecalculations, Connection $connectionSocial, Connection $connectionBrain, EventDispatcher $dispatcher)
-    {
-
-        $this->channel = $channel;
+    public function __construct(
+        AMQPChannel $channel,
+        UserManager $userManager,
+        MatchingModel $matchingModel,
+        SimilarityModel $similarityModel,
+        UserStatsService $userStatsService,
+        QuestionModel $questionModel,
+        AffinityRecalculations $affinityRecalculations,
+        Connection $connectionBrain,
+        EventDispatcher $dispatcher
+    ) {
+        parent::__construct($dispatcher, $channel);
         $this->userManager = $userManager;
         $this->matchingModel = $matchingModel;
         $this->similarityModel = $similarityModel;
+        $this->userStatsService = $userStatsService;
         $this->questionModel = $questionModel;
         $this->affinityRecalculations = $affinityRecalculations;
-        $this->connectionSocial = $connectionSocial;
         $this->connectionBrain = $connectionBrain;
-        $this->dispatcher = $dispatcher;
     }
 
     /**
      * { @inheritdoc }
      */
-    public function consume()
+    public function callback(array $data, $trigger)
     {
-
-        $exchangeName = 'brain.topic';
-        $exchangeType = 'topic';
-        $topic = 'brain.matching.*';
-        $queueName = 'brain.matching';
-
-        $this->channel->exchange_declare($exchangeName, $exchangeType, false, true, false);
-        $this->channel->queue_declare($queueName, false, true, false, false);
-        $this->channel->queue_bind($queueName, $exchangeName, $topic);
-        $this->channel->basic_qos(null, 1, null);
-        $this->channel->basic_consume($queueName, '', false, false, false, false, array($this, 'callback'));
-
-        while (count($this->channel->callbacks)) {
-            $this->channel->wait();
-        }
-    }
-
-    /**
-     * { @inheritdoc }
-     */
-    public function callback(AMQPMessage $message)
-    {
-
         // Verify mysql connections are alive
-        if ($this->connectionSocial->ping() === false) {
-            $this->connectionSocial->close();
-            $this->connectionSocial->connect();
-        }
-
         if ($this->connectionBrain->ping() === false) {
             $this->connectionBrain->close();
             $this->connectionBrain->connect();
         }
 
-        $data = json_decode($message->body, true);
-
-        $trigger = $this->getTrigger($message);
-
         switch ($trigger) {
-            case 'content_rated':
-            case 'process_finished':
+            case self::TRIGGER_CONTENT_RATED:
+            case self::TRIGGER_PROCESS_FINISHED:
 
                 $userA = $data['userId'];
                 $this->logger->notice(sprintf('[%s] Calculating matching by trigger "%s" for user "%s"', date('Y-m-d H:i:s'), $trigger, $userA));
@@ -153,6 +124,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                             $this->dispatcher->dispatch(\AppEvents::SIMILARITY_PROCESS_STEP, $similarityProcessStepEvent);
                             $prevPercentage = $percentage;
                         }
+                        $this->userStatsService->updateShares($userA, $userB);
                     }
                     $this->dispatcher->dispatch(\AppEvents::SIMILARITY_PROCESS_FINISH, $similarityProcessEvent);
 
@@ -169,7 +141,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                     $this->dispatchError($e, 'Matching because process finished or content rated');
                 }
                 break;
-            case 'question_answered':
+            case self::TRIGGER_QUESTION:
 
                 $userA = $data['userId'];
                 $questionId = $data['question_id'];
@@ -199,7 +171,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                     $this->dispatchError($e, 'Matching because question answered');
                 }
                 break;
-            case 'matching_expired':
+            case self::TRIGGER_MATCHING_EXPIRED:
 
                 $matchingType = $data['matching_type'];
                 $user1 = $data['user_1_id'];
@@ -225,7 +197,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                     $this->dispatchError($e, 'Matching because matching expired');
                 }
                 break;
-            case $this:: TRIGGER_PERIODIC:
+            case self:: TRIGGER_PERIODIC:
                 $user1 = $data['user_1_id'];
                 $user2 = $data['user_2_id'];
                 $this->logger->notice(sprintf('[%s] Calculating matching by trigger "%s" for users %d - %d', date('Y-m-d H:i:s'), $trigger, $user1, $user2));
@@ -235,6 +207,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                     $matching = $this->matchingModel->calculateMatchingBetweenTwoUsersBasedOnAnswers($user1, $user2);
                     $this->logger->info(sprintf('   Similarity between users %d - %d: %s', $user1, $user2, $similarity['similarity']));
                     $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $user1, $user2, $matching));
+                    $this->userStatsService->updateShares($user1, $user2);
                 } catch (\Exception $e) {
                     $this->logger->error(sprintf('Worker: Error calculating similarity and matching between user %d and user %d with message %s on file %s, line %d', $user1, $user2, $e->getMessage(), $e->getFile(), $e->getLine()));
                     if ($e instanceof Neo4jException) {
@@ -246,10 +219,6 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
             default;
                 throw new \Exception('Invalid matching calculation trigger');
         }
-
-        $message->delivery_info['channel']->basic_ack($message->delivery_info['delivery_tag']);
-
-        $this->memory();
     }
 
     private function processUsersAnsweredQuestion($userA, $usersAnsweredQuestion)
@@ -266,7 +235,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
             if ($userA <> $userB) {
                 $similarity = $this->similarityModel->getSimilarityBy(SimilarityModel::QUESTIONS, $userA, $userB);
                 $matching = $this->matchingModel->calculateMatchingBetweenTwoUsersBasedOnAnswers($userA, $userB);
-                $percentage = round(($userIndex + 1)/$usersCount * 100);
+                $percentage = round(($userIndex + 1) / $usersCount * 100);
                 $this->logger->info(sprintf('   Similarity by questions between users %d - %d: %s', $userA, $userB, $similarity['questions']));
                 $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $userA, $userB, $matching));
                 if ($percentage > $prevPercentage) {
@@ -279,7 +248,8 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
         $this->dispatcher->dispatch(\AppEvents::MATCHING_PROCESS_FINISH, $matchingProcessEvent);
     }
 
-    private function processUserAffinities($userId) {
+    private function processUserAffinities($userId)
+    {
         $this->logger->info(sprintf('   Recalculating affinities for user %d', $userId));
         $this->affinityRecalculations->recalculateAffinities($userId, 100, 20);
         $this->logger->info(sprintf('   Finished recalculating affinities for user %d', $userId));

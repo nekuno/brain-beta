@@ -2,13 +2,16 @@
 
 namespace Tests\ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
 
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\AbstractTwitterProcessor;
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterPicProcessor;
-use ApiConsumer\LinkProcessor\SynonymousParameters;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
+use Model\Link\Link;
+use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
-class TwitterPicProcessorTest extends \PHPUnit_Framework_TestCase
+class TwitterPicProcessorTest extends AbstractProcessorTest
 {
     /**
      * @var TwitterResourceOwner|\PHPUnit_Framework_MockObject_MockObject
@@ -34,7 +37,7 @@ class TwitterPicProcessorTest extends \PHPUnit_Framework_TestCase
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser')
             ->getMock();
 
-        $this->processor = new TwitterPicProcessor($this->resourceOwner, $this->parser);
+        $this->processor = new TwitterPicProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . TwitterUrlParser::DEFAULT_IMAGE_PATH);
     }
 
     /**
@@ -42,11 +45,9 @@ class TwitterPicProcessorTest extends \PHPUnit_Framework_TestCase
      */
     public function testRequestItem($url)
     {
+        $this->setExpectedException('ApiConsumer\Exception\CannotProcessException', 'Twitter pic needs to be scraped');
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
-        $response = $this->processor->requestItem($link);
-
-        $this->assertEquals(array(), $response, 'Asserting response for ' . $url);
+        $this->processor->getResponse($link);
     }
 
     /**
@@ -55,10 +56,9 @@ class TwitterPicProcessorTest extends \PHPUnit_Framework_TestCase
     public function testHydrateLink($url, $expectedArray)
     {
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
         $this->processor->hydrateLink($link, array());
 
-        $this->assertEquals($expectedArray, $link->getLink()->toArray(), 'Asserting correct hydrated link for ' . $url);
+        $this->assertEquals($expectedArray, $link->getFirstLink()->toArray(), 'Asserting correct hydrated link for ' . $url);
     }
 
     /**
@@ -67,14 +67,24 @@ class TwitterPicProcessorTest extends \PHPUnit_Framework_TestCase
     public function testAddTags($url, $response, $expectedTags)
     {
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
         $this->processor->addTags($link, $response);
 
         $tags = $expectedTags;
         sort($tags);
-        $resultTags = $link->getLink()->getTags();
+        $resultTags = $link->getFirstLink()->getTags();
         sort($resultTags);
         $this->assertEquals($tags, $resultTags);
+    }
+
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
     }
 
     public function getBadUrls()
@@ -104,21 +114,13 @@ class TwitterPicProcessorTest extends \PHPUnit_Framework_TestCase
 
     public function getResponseHydration()
     {
+        $expected = new Link();
+        $expected->addAdditionalLabels(AbstractTwitterProcessor::TWITTER_LABEL);
+
         return array(
             array(
                 $this->getStatusUrl(),
-                array(
-                    'title' => null,
-                    'description' => null,
-                    'thumbnail' => null,
-                    'url' => null,
-                    'id' => null,
-                    'tags' => array(),
-                    'created' => null,
-                    'processed' => true,
-                    'language' => null,
-                    'synonymous' => array(),
-                )
+                $expected->toArray(),
             )
         );
     }
@@ -130,6 +132,17 @@ class TwitterPicProcessorTest extends \PHPUnit_Framework_TestCase
                 $this->getStatusUrl(),
                 $this->getStatusResponse(),
                 $this->getStatusTags(),
+            )
+        );
+    }
+
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getStatusUrl(),
+                $this->getStatusResponse(),
+                $this->getProcessingImages()
             )
         );
     }
@@ -147,6 +160,11 @@ class TwitterPicProcessorTest extends \PHPUnit_Framework_TestCase
     public function getStatusTags()
     {
         return array();
+    }
+
+    public function getProcessingImages()
+    {
+        return array ();
     }
 
 }

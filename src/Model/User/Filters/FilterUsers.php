@@ -1,42 +1,40 @@
 <?php
-/**
- * @author yawmoght <yawmoght@gmail.com>
- */
 
 namespace Model\User\Filters;
 
-
 class FilterUsers implements \JsonSerializable
 {
-
-    protected $profileFilters = array();
-    protected $usersFilters = array();
     protected $id;
 
-    public function getProfileFilters()
-    {
-        return $this->profileFilters;
-    }
-
-    public function getUserFilters()
-    {
-        return $this->usersFilters;
-    }
+    protected $values = array();
 
     /**
-     * @param array $profileFilters
+     * FilterUsers constructor.
+     * @param array $metadata
      */
-    public function setProfileFilters($profileFilters)
+    public function __construct(array $metadata)
     {
-        $this->profileFilters = $profileFilters;
+        foreach ($metadata as $key => $value) {
+            $this->values[$key] = null;
+        }
     }
 
-    /**
-     * @param array $usersFilters
-     */
-    public function setUsersFilters($usersFilters)
+    public function get($field)
     {
-        $this->usersFilters = $usersFilters;
+        if (!array_key_exists($field, $this->values)) {
+            return null;
+        }
+
+        return $this->values[$field];
+    }
+
+    public function set($field, $value)
+    {
+        if (!array_key_exists($field, $this->values)) {
+            return;
+        }
+
+        $this->values[$field] = $value;
     }
 
     public function getId()
@@ -49,6 +47,18 @@ class FilterUsers implements \JsonSerializable
         $this->id = $id;
     }
 
+    public function getValues()
+    {
+        $values = $this->values;
+        foreach ($values as $key => $value) {
+            if (!isset($value)) {
+                unset($values[$key]);
+            }
+        }
+
+        return $values;
+    }
+
     /**
      * Specify data which should be serialized to JSON
      * @link http://php.net/manual/en/jsonserializable.jsonserialize.php
@@ -56,13 +66,19 @@ class FilterUsers implements \JsonSerializable
      * which is a value of any type other than a resource.
      * @since 5.4.0
      */
-    function jsonSerialize()
+    public function jsonSerialize()
     {
-        $filters = array_merge($this->getUserFilters(), $this->getProfileFilters());
-        return array(
-            'id' => $this->getId(),
-            'userFilters' => !empty($filters) ? $filters : new \StdClass(),
-        );
+        $idArray = array('id' => $this->getId());
 
+        $values = $this->values;
+        foreach ($values as $key => $value) {
+            if (!isset($value)) {
+                unset($values[$key]);
+            }
+        }
+        $valuesArray = array('userFilters' => $values);
+
+        return $idArray + $valuesArray;
     }
+
 }

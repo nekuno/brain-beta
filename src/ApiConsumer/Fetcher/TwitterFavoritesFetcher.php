@@ -6,12 +6,14 @@ class TwitterFavoritesFetcher extends AbstractTweetsFetcher
 {
     protected $url = 'favorites/list.json';
 
-    protected function getQuery()
+    protected function getQuery($paginationId = null)
     {
-
-        return array(
-            'count' => $this->pageLength,
-            'include_entities' => 'true',
+        return array_merge(
+            parent::getQuery($paginationId),
+            array(
+                'count' => $this->pageLength,
+                'include_entities' => 'true',
+            )
         );
     }
 }

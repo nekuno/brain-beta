@@ -30,7 +30,7 @@ class TokenGenerator
 
     public function generateToken($length = 5)
     {
-        return substr(rtrim(strtr(base64_encode($this->getRandomNumber()), '+/', '-_'), '='), 0, $length);
+        return strtolower(substr(rtrim(strtr(base64_encode($this->getRandomNumber()), '+/', '-_'), '='), 0, $length));
     }
 
     private function getRandomNumber()

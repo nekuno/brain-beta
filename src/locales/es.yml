@@ -1,5 +1,5 @@
 notifications:
-  an_internet_for_you: 'UN INTERNET PARA TI'
+  an_internet_for_you: 'AN INTERNET FOR YOU'
   unsubscribe: 'Cancelar suscripción'
   about_us: 'Sobre nosotros'
   all_rights_reserved: 'Todos los derechos reservados'
@@ -8,10 +8,11 @@ notifications:
     unread:
       subject: 'Tienes mensajes sin leer'
       body:
-        title: 'Tienes %count% mensaje sin leer.|Tienes %count% mensajes sin leer.'
+        title: ' tienes %count% mensaje.|tienes %count% mensajes.'
+        unread: ' tienes %count% mensaje sin leer.|Tienes %count% mensajes sin leer.'
         latest: 'Último mensaje sin leer:|Últimos %count% mensajes sin leer:'
         message: 'Mensaje sin leer del usuario %user% en %datetime%:'
-        linkAnchor: 'Mira todos tus mensages'
+        linkAnchor: 'Leer más'
     exceptional_links:
       subject: 'Hemos encontrado contenido que querrás ver'
       body:
@@ -31,15 +32,27 @@ notifications:
       body:
         message: "¡Acabamos de descubrir que <a href=\"%urlOther%\">%usernameOther%</a> es un follower con un %value%% de %filter% contigo!"
   footer: 'Saludos del equipo de Nekuno'
+push_notifications:
+    message:
+        title: 'Nuevo mensaje de %username%'
+    process_finish:
+        title: 'Proceso finalizado'
+        body: 'Hemos acabado de procesar tu red de %resource%.'
+    both_user_liked:
+        title: '"Like" mutuo'
+        body: '%username% y tú os habéis hecho "like" mutuamente.'
 followers:
   invitation_slogan: '¡Descubre si eres %compatible_or_similar% con %username%!'
   group_name: 'Seguidores de %username%'
 messages:
-  register: '¡Bienvenido! Puedes empezar a explorar la red a través de los hilos que hemos creado para ti. Si quieres mejorarlos, puedes añadir más redes sociales para dejarnos saber lo que te gusta.'
+  register: 'Sólamente cuando eres más tú que nunca; todas las personas a las que les encanta como eres, pueden notar tu existencia. Por esa razón, disfruta de ser tu mismo en Nekuno, porque este es el lugar donde todas esas personas pueden encontrarte. Cuenta conmigo para lo que necesites. nemo ♥'
 types:
   audio: 'Música'
   video: 'Vídeos'
   image: 'Imagenes & Gifs'
+  creator: 'Canales de Twitter'
+  creatorFacebook: 'Canales de Facebook'
+  creatorTwitter: 'Canales de Twitter'
   creator: 'Canales de Twitter'
   link: 'Webs & enlaces'
 threads:

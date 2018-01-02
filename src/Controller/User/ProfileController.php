@@ -2,7 +2,6 @@
 
 namespace Controller\User;
 
-use Model\User\ProfileFilterModel;
 use Model\User\ProfileModel;
 use Model\User\ProfileTagModel;
 use Model\User;
@@ -11,10 +10,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-/**
- * Class ProfileController
- * @package Controller
- */
 class ProfileController
 {
     /**
@@ -42,29 +37,13 @@ class ProfileController
     public function getOtherAction(Request $request, Application $app)
     {
         $locale = $request->query->get('locale');
-        $id = $request->get('id');
+        $id = $request->get('userId');
         /* @var $model ProfileModel */
         $model = $app['users.profile.model'];
 
         $profile = $model->getById($id, $locale);
 
         return $app->json($profile);
-    }
-
-    /**
-     * @param Request $request
-     * @param Application $app
-     * @param User $user
-     * @return JsonResponse
-     */
-    public function postAction(Request $request, Application $app, User $user)
-    {
-        /* @var $model ProfileModel */
-        $model = $app['users.profile.model'];
-
-        $profile = $model->create($user->getId(), $request->request->all());
-
-        return $app->json($profile, 201);
     }
 
     /**
@@ -106,11 +85,10 @@ class ProfileController
      */
     public function getMetadataAction(Request $request, Application $app)
     {
-        $locale = $request->query->get('locale');
+        $locale = $request->query->get('locale', 'en');
 
-        /* @var $model ProfileFilterModel */
-        $model = $app['users.profileFilter.model'];
-        $metadata = $model->getProfileMetadata($locale);
+        $metadataService = $app['metadata.service'];
+        $metadata = $metadataService->getProfileMetadata($locale);
 
         return $app->json($metadata);
     }
@@ -122,11 +100,10 @@ class ProfileController
      */
     public function getCategoriesAction(Request $request, Application $app)
     {
-        $locale = $request->query->get('locale');
+        $locale = $request->query->get('locale', 'en');
 
-        /* @var $model ProfileFilterModel */
-        $model = $app['users.profileFilter.model'];
-        $categories = $model->getProfileCategories($locale);
+        $metadataService = $app['metadata.service'];
+        $categories = $metadataService->getCategoriesMetadata($locale);
 
         return $app->json($categories);
     }
@@ -138,28 +115,12 @@ class ProfileController
      */
     public function getFiltersAction(Request $request, Application $app)
     {
-        $locale = $request->query->get('locale');
+        $locale = $request->query->get('locale', 'en');
 
-        /* @var $model ProfileFilterModel */
-        $model = $app['users.profileFilter.model'];
-        $filters = $model->getFilters($locale);
+        $metadataService = $app['metadata.service'];
+        $filters = $metadataService->getUserFilterMetadata($locale);
 
         return $app->json($filters);
-    }
-
-    /**
-     * @param Request $request
-     * @param Application $app
-     * @return JsonResponse
-     */
-    public function validateAction(Request $request, Application $app)
-    {
-        /* @var $model ProfileModel */
-        $model = $app['users.profile.model'];
-
-        $model->validate($request->request->all());
-
-        return $app->json();
     }
 
     /**

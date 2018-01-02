@@ -3,13 +3,17 @@
 namespace Tests\ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\AbstractTwitterProcessor;
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterProfileProcessor;
-use ApiConsumer\LinkProcessor\SynonymousParameters;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
+use Model\Link\Creator;
+use Model\User\Token\TokensModel;
+use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
-class TwitterProfileProcessorTest extends \PHPUnit_Framework_TestCase
+class TwitterProfileProcessorTest extends AbstractProcessorTest
 {
     /**
      * @var TwitterResourceOwner|\PHPUnit_Framework_MockObject_MockObject
@@ -35,7 +39,7 @@ class TwitterProfileProcessorTest extends \PHPUnit_Framework_TestCase
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser')
             ->getMock();
 
-        $this->processor = new TwitterProfileProcessor($this->resourceOwner, $this->parser);
+        $this->processor = new TwitterProfileProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . TwitterUrlParser::DEFAULT_IMAGE_PATH);
     }
 
     /**
@@ -50,14 +54,13 @@ class TwitterProfileProcessorTest extends \PHPUnit_Framework_TestCase
             ->will($this->throwException(new UrlNotValidException($url)));
 
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
-        $this->processor->requestItem($link);
+        $this->processor->getResponse($link);
     }
 
     /**
      * @dataProvider getProfileForRequestItem
      */
-    public function testRequestItem($url, $id, $profiles)
+    public function testRequestItem($url, $id, $profile)
     {
         $this->parser->expects($this->once())
             ->method('getProfileId')
@@ -65,29 +68,28 @@ class TwitterProfileProcessorTest extends \PHPUnit_Framework_TestCase
 
         $this->resourceOwner->expects($this->once())
             ->method('lookupUsersBy')
-            ->will($this->returnValue($profiles));
+            ->will($this->returnValue($profile));
 
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
-        $response = $this->processor->requestItem($link);
+        $response = $this->processor->getResponse($link);
 
-        $this->assertEquals($response, $profiles[0], 'Asserting correct response for ' . $url);
+        $this->assertEquals($response, $profile, 'Asserting correct response for ' . $url);
     }
 
     /**
      * @dataProvider getResponseHydration
      */
-    public function testHydrateLink($url, $response, $expectedArray)
+    public function testHydrateLink($url, $response, $linkArrays, $expectedArray, $expectedId)
     {
         $this->resourceOwner->expects($this->once())
-            ->method('buildProfileFromLookup')
-            ->will($this->returnValue($response));
+            ->method('buildProfilesFromLookup')
+            ->will($this->returnValue($linkArrays));
 
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
         $this->processor->hydrateLink($link, $response);
 
-        $this->assertEquals($expectedArray, $link->getLink()->toArray(), 'Asserting correct hydrated link for ' . $url);
+        $this->assertEquals($expectedArray, $link->getFirstLink()->toArray(), 'Asserting correct hydrated link for ' . $url);
+        $this->assertEquals($expectedId, $link->getResourceItemId(), 'Asserting correct resourceItemId while hydrating ' . $url);
     }
 
     /**
@@ -96,14 +98,37 @@ class TwitterProfileProcessorTest extends \PHPUnit_Framework_TestCase
     public function testAddTags($url, $response, $expectedTags)
     {
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
         $this->processor->addTags($link, $response);
 
         $tags = $expectedTags;
         sort($tags);
-        $resultTags = $link->getLink()->getTags();
+        $resultTags = $link->getFirstLink()->getTags();
         sort($resultTags);
         $this->assertEquals($tags, $resultTags);
+    }
+
+    /**
+     * @dataProvider getResponseImages
+     * @param $expectedImages ProcessingImage[]
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $this->parser->expects($this->once())
+            ->method('getSmallProfileUrl')
+            ->will($this->returnValue($expectedImages[0]->getUrl()));
+
+        $this->parser->expects($this->once())
+            ->method('getMediumProfileUrl')
+            ->will($this->returnValue($expectedImages[1]->getUrl()));
+
+        $this->parser->expects($this->once())
+            ->method('getOriginalProfileUrl')
+            ->will($this->returnValue($expectedImages[2]->getUrl()));
+
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
     }
 
     public function getBadUrls()
@@ -126,22 +151,22 @@ class TwitterProfileProcessorTest extends \PHPUnit_Framework_TestCase
 
     public function getResponseHydration()
     {
+        $expected = new Creator();
+        $expected->setTitle('yawmoght');
+        $expected->setDescription('Tool developer & data junkie');
+        $expected->setThumbnail('http://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png');
+        $expected->setUrl('https://twitter.com/yawmoght');
+        $expected->setCreated(time() * 1000);
+        $expected->addAdditionalLabels(AbstractTwitterProcessor::TWITTER_LABEL);
+        $expected->setProcessed(true);
+
         return array(
             array(
                 $this->getProfileUrl(),
                 $this->getProfileItemResponse(),
-                array(
-                    'title' => null,
-                    'description' => 'Tool developer & data junkie',
-                    'thumbnail' => null,
-                    'url' => null,
-                    'id' => 34529134,
-                    'tags' => array(),
-                    'created' => null,
-                    'processed' => true,
-                    'language' => null,
-                    'synonymous' => array(),
-                )
+                array($this->getProfileLink()),
+                $expected->toArray(),
+                34529134,
             )
         );
     }
@@ -161,6 +186,17 @@ class TwitterProfileProcessorTest extends \PHPUnit_Framework_TestCase
     {
         return array(
             $this->getProfileItemResponse(),
+        );
+    }
+
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getProfileUrl(),
+                $this->getProfileItemResponse(),
+                $this->getProcessingImages()
+            )
         );
     }
 
@@ -255,6 +291,20 @@ class TwitterProfileProcessorTest extends \PHPUnit_Framework_TestCase
         );
     }
 
+    public function getProfileLink()
+    {
+        return array(
+            'description' => 'Tool developer & data junkie',
+            'url' => 'https://twitter.com/yawmoght',
+            'thumbnail' => "http://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png",
+            'additionalLabels' => array('LinkTwitter', 'Creator'),
+            'resource' => TokensModel::TWITTER,
+            'timestamp' => 1000 * time(),
+            'processed' => 1,
+            'title' => 'yawmoght',
+        );
+    }
+
     public function getNewUrl()
     {
         return 'http://www.nature.com/news/democratic-databases-science-on-github-1.20719';
@@ -273,6 +323,24 @@ class TwitterProfileProcessorTest extends \PHPUnit_Framework_TestCase
     public function getProfileTags()
     {
         return array();
+    }
+
+    public function getProcessingImages()
+    {
+        $smallProcessingImage = new ProcessingImage('https://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW_normal.png');
+        $smallProcessingImage->setHeight(48);
+        $smallProcessingImage->setWidth(48);
+        $smallProcessingImage->setLabel(ProcessingImage::LABEL_SMALL);
+
+        $mediumProcessingImage = new ProcessingImage('https://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW_bigger.png');
+        $mediumProcessingImage->setHeight(73);
+        $mediumProcessingImage->setWidth(73);
+        $mediumProcessingImage->setLabel(ProcessingImage::LABEL_MEDIUM);
+
+        $largeProcessingImage = new ProcessingImage('https://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png');
+        $largeProcessingImage->setLabel(ProcessingImage::LABEL_LARGE);
+
+        return array($smallProcessingImage, $mediumProcessingImage, $largeProcessingImage);
     }
 
 }

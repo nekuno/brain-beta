@@ -2,7 +2,7 @@
 
 namespace Model\User\Recommendation;
 
-class UserPopularRecommendationPaginatedModel extends AbstractUserPaginatedModel
+class UserPopularRecommendationPaginatedModel extends AbstractUserRecommendationPaginatedModel
 {
 
     /**
@@ -20,19 +20,16 @@ class UserPopularRecommendationPaginatedModel extends AbstractUserPaginatedModel
 
     /**
      * Counts the total results from queryset.
-     * @param array $filters
+     * @param array $filtersArray
      * @throws \Exception
      * @return int
      */
-    public function countTotal(array $filters)
+    public function countTotal(array $filtersArray)
     {
-        $id = $filters['id'];
+        $id = $filtersArray['id'];
         $count = 0;
 
-        $filters = $this->profileFilterModel->splitFilters($filters);
-
-        $profileFilters = $this->getProfileFilters($filters['profileFilters']);
-        $userFilters = $this->getUserFilters($filters['userFilters']);
+        $filters = $this->applyFilters($filtersArray);
 
         $qb = $this->gm->createQueryBuilder();
 
@@ -49,7 +46,6 @@ class UserPopularRecommendationPaginatedModel extends AbstractUserPaginatedModel
             (CASE WHEN EXISTS(m.matching_questions) THEN m.matching_questions ELSE 0 END) AS matching_questions,
             (CASE WHEN EXISTS(s.similarity) THEN s.similarity ELSE 0 END) AS similarity'
             )
-            ->where($userFilters['conditions'])
             ->match('(anyUser)<-[:PROFILE_OF]-(p:Profile)');
 
         $qb->optionalMatch('(p)-[:LOCATION]->(l:Location)');
@@ -58,15 +54,12 @@ class UserPopularRecommendationPaginatedModel extends AbstractUserPaginatedModel
         $qb->where(
             array_merge(
                 array('(matching_questions > 0 OR similarity > 0)'),
-                $profileFilters['conditions']
+                $filters['conditions']
             )
         )
             ->with('u', 'anyUser', 'matching_questions', 'similarity', 'p', 'l');
 
-        foreach ($profileFilters['matches'] as $match) {
-            $qb->match($match);
-        }
-        foreach ($userFilters['matches'] as $match) {
+        foreach ($filters['matches'] as $match) {
             $qb->match($match);
         }
 

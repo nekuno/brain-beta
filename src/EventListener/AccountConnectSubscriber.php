@@ -2,9 +2,23 @@
 
 namespace EventListener;
 
+use ApiConsumer\Event\OAuthTokenEvent;
+use ApiConsumer\Factory\ResourceOwnerFactory;
+use ApiConsumer\ResourceOwner\LinkedinResourceOwner;
 use Event\AccountConnectEvent;
+use Event\ProcessLinksEvent;
+use Manager\UserManager;
+use Model\User\GhostUser\GhostUserManager;
+use Model\User\ProfileModel;
+use Model\User\SocialNetwork\SocialProfileManager;
+use Model\User\Token\Token;
+use Model\User\Token\TokensModel;
 use Service\AMQPManager;
+use Service\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Model\User\SocialNetwork\SocialProfile;
+use ApiConsumer\ResourceOwner\FacebookResourceOwner;
+use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 
 class AccountConnectSubscriber implements EventSubscriberInterface
 {
@@ -13,26 +27,172 @@ class AccountConnectSubscriber implements EventSubscriberInterface
      */
     protected $amqpManager;
 
-    public function __construct(AMQPManager $amqpManager)
+    /**
+     * @var UserManager
+     */
+    protected $um;
+
+    /**
+     * @var GhostUserManager
+     */
+    protected $gum;
+
+    /**
+     * @var SocialProfileManager
+     */
+    protected $spm;
+
+    /**
+     * @var ResourceOwnerFactory
+     */
+    protected $resourceOwnerFactory;
+
+    /**
+     * @var TokensModel
+     */
+    protected $tokensModel;
+
+    /**
+     * @var ProfileModel
+     */
+    protected $profileModel;
+
+    /**
+     * @var EventDispatcher
+     */
+    protected $dispatcher;
+
+    public function __construct(AMQPManager $amqpManager, UserManager $um, GhostUserManager $gum, SocialProfileManager $spm, ResourceOwnerFactory $resourceOwnerFactory, TokensModel $tokensModel, ProfileModel $pm, EventDispatcher $dispatcher)
     {
         $this->amqpManager = $amqpManager;
+        $this->um = $um;
+        $this->gum = $gum;
+        $this->spm = $spm;
+        $this->resourceOwnerFactory = $resourceOwnerFactory;
+        $this->tokensModel = $tokensModel;
+        $this->profileModel = $pm;
+        $this->dispatcher = $dispatcher;
     }
 
     public static function getSubscribedEvents()
     {
         return array(
             \AppEvents::ACCOUNT_CONNECTED => array('onAccountConnected'),
+            \AppEvents::TOKEN_PRE_SAVE => array('onTokenSave'),
         );
     }
 
     public function onAccountConnected(AccountConnectEvent $event)
     {
+        $userId = $event->getUserId();
+        $token = $event->getToken();
+        $resourceOwner = $token->getResourceOwner();
+
+        switch ($resourceOwner) {
+            case TokensModel::TWITTER:
+                $this->createTwitterSocialProfile($token, $userId);
+                break;
+            case TokensModel::LINKEDIN:
+                $this->completeProfileWithLinkedin($token, $userId);
+                $this->dispatcher->dispatch(\AppEvents::PROCESS_FINISH, new ProcessLinksEvent($userId, $resourceOwner, array()));
+                break;
+            default:
+                break;
+        }
 
         $message = array(
-            'userId' => $event->getUserId(),
-            'resourceOwner' => $event->getResourceOwner(),
+            'userId' => $userId,
+            'resourceOwner' => $resourceOwner,
         );
 
-        $this->amqpManager->enqueueMessage($message, 'brain.fetching.links');
+        $this->amqpManager->enqueueFetching($message);
+    }
+
+    public function onTokenSave(OAuthTokenEvent $event)
+    {
+        $token = $event->getToken();
+        $resourceOwner = $token->getResourceOwner();
+
+        switch ($resourceOwner) {
+            case TokensModel::FACEBOOK:
+                $this->extendFacebook($token);
+                break;
+            case TokensModel::LINKEDIN:
+                $this->extendLinkedin($token);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private function extendFacebook(Token $token, $attempts = 0)
+    {
+        /* @var $facebookResourceOwner FacebookResourceOwner */
+        $facebookResourceOwner = $this->resourceOwnerFactory->build(TokensModel::FACEBOOK);
+
+        try {
+            $facebookResourceOwner->extend($token);
+            if ($token->getRefreshToken()) {
+                $facebookResourceOwner->forceRefreshAccessToken($token);
+            }
+        } catch (\Exception $e) {
+            if ($attempts < 5) {
+                $this->extendFacebook($token, ++$attempts);
+            }
+        }
+    }
+
+    private function extendLinkedin(Token $token, $attempts = 0)
+    {
+        /* @var $linkedinResourceOwner LinkedinResourceOwner */
+        $linkedinResourceOwner = $this->resourceOwnerFactory->build(TokensModel::LINKEDIN);
+
+        try {
+            $linkedinResourceOwner->forceRefreshAccessToken($token);
+        } catch (\Exception $e) {
+            if ($attempts < 5) {
+                $this->extendLinkedin($token, ++$attempts);
+            }
+        }
+    }
+
+    private function createTwitterSocialProfile(Token $token, $userId)
+    {
+        $resourceOwner = TokensModel::TWITTER;
+        /** @var TwitterResourceOwner $resourceOwnerObject */
+        $resourceOwnerObject = $this->resourceOwnerFactory->build($resourceOwner);
+        $profileUrl = $resourceOwnerObject->requestProfileUrl($token);
+        if ($profileUrl) {
+            $profile = new SocialProfile($userId, $profileUrl, $resourceOwner);
+
+            if ($ghostUser = $this->gum->getBySocialProfile($profile)) {
+                $this->um->fuseUsers($userId, $ghostUser->getId());
+                $this->gum->saveAsUser($userId);
+            } else {
+                $this->spm->addSocialProfile($profile);
+            }
+        }
+    }
+
+    private function completeProfileWithLinkedin(Token $token, $userId)
+    {
+        $resourceOwner = TokensModel::LINKEDIN;
+        /** @var LinkedinResourceOwner $resourceOwnerObject */
+        $resourceOwnerObject = $this->resourceOwnerFactory->build($resourceOwner);
+        $accessToken = array(
+            'access_token' => $token->getOauthToken(),
+            'oauth_token_secret' => $token->getOauthTokenSecret(),
+        );
+        $userInformation = $resourceOwnerObject->getUserInformation($accessToken);
+        $response = $userInformation->getResponse();
+        if (isset($response['industry'])) {
+            $profile = $this->profileModel->getById($userId);
+            if (!isset($profile['industry'])) {
+                try {
+                    $profile['industry'] = $this->profileModel->getIndustryIdFromDescription($response['industry']);
+                    $this->profileModel->update($userId, $profile);
+                } catch (\Exception $e) {}
+            }
+        }
     }
 }

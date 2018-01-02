@@ -1,87 +1,67 @@
 <?php
-/**
- * @author Manolo Salsas <manolez@gmail.com>
- */
+
 namespace Tests\API\Profile;
 
 class ProfileTest extends ProfileAPITest
 {
     public function testProfile()
     {
-        $this->assertProfileOptionsCommandDisplay();
         $this->assertGetProfileWithoutCredentialsResponse();
-        $this->createAndLoginUserA();
+        $this->assertGetCategories();
         $this->assertGetNoneExistentProfileResponse();
-        $this->createAndLoginUserB();
-        $this->assertValidateProfileFormat();
-        $this->assertCreateProfilesResponse();
         $this->assertGetExistentProfileResponse();
         $this->assertGetOwnProfileResponse();
         $this->assertEditOwnProfileResponse();
-        $this->assertGetDeletedProfileResponse();
         $this->assertValidationErrorsResponse();
-        $this->assertCreateComplexProfileResponse();
         $this->assertEditComplexProfileResponse();
         $this->assetsGetProfileMetadataResponse();
         $this->assetsGetProfileFiltersResponse();
         $this->assetsGetProfileTagsResponse();
     }
 
-    protected function assertProfileOptionsCommandDisplay()
-    {
-        $display = $this->runProfileOptionsCommand();
-        $this->assertRegExp('/\n[^0].*\snew\sprofile\soptions\screated\./', $display);
-    }
-
     protected function assertGetProfileWithoutCredentialsResponse()
     {
-        $response = $this->getOtherProfile(2);
+        $response = $this->getOtherProfile(self::OTHER_USER_ID, null);
         $this->assertStatusCode($response, 401, "Get Profile without credentials");
+    }
+
+    protected function assertGetCategories()
+    {
+        $response = $this->getCategories();
+        $formattedResponse = $this->assertJsonResponse($response, 200, "Get categories status");
+        $this->assertArrayOfType('array', $formattedResponse, 'Categories is array of array');
+        
+        $this->arrayHasKey('profile')->evaluate($formattedResponse, 'Categories has profile key');
+        $this->assertArrayOfType('array', $formattedResponse['profile'], 'Categories profile is array of array');
+        foreach ($formattedResponse['profile'] as $item) {
+            $this->assertHasLocaleLabel($item, 'Categories profile field');
+        }
+
+        $this->arrayHasKey('filters')->evaluate($formattedResponse, 'Categories has filter key');
+        $this->assertArrayOfType('array', $formattedResponse['filters'], 'Categories filter is array of array');
+        foreach ($formattedResponse['filters'] as $item) {
+            $this->assertHasLocaleLabel($item, 'Categories filters field');
+        }
     }
 
     protected function assertGetNoneExistentProfileResponse()
     {
-        $response = $this->getOtherProfile(2);
+        $response = $this->getOtherProfile(self::UNDEFINED_USER_ID);
         $this->assertStatusCode($response, 404, "Get none-existent profile");
-    }
-
-    protected function assertValidateProfileFormat()
-    {
-        $profileData = $this->getProfileFixtures();
-        $response = $this->validateProfile($profileData);
-        $this->assertStatusCode($response, 200, "Bad response on validate profile");
-    }
-
-    protected function assertCreateProfilesResponse()
-    {
-        $userData = $this->getUserAFixtures();
-        $this->loginUser($userData);
-        $profileData = $this->getProfileFixtures();
-        $response = $this->createProfile($profileData);
-        $formattedResponse = $this->assertJsonResponse($response, 201, "Create ProfileA");
-        $this->assertProfileFormat($formattedResponse, "Bad profile response on create profile A");
-
-        $userData = $this->getUserBFixtures();
-        $this->loginUser($userData);
-        $response = $this->createProfile($profileData, 2);
-        $formattedResponse = $this->assertJsonResponse($response, 201, "Create ProfileB");
-        $this->assertProfileFormat($formattedResponse, "Bad profile response on create profile B");
     }
 
     protected function assertGetExistentProfileResponse()
     {
-        $userData = $this->getUserAFixtures();
-        $this->loginUser($userData);
-        $response = $this->getOtherProfile(2);
+        $response = $this->getOtherProfile(self::OTHER_USER_ID);
         $formattedResponse = $this->assertJsonResponse($response, 200, "Get existent profile");
-        $this->assertProfileFormat($formattedResponse, "Bad get other profile response");
+        $this->assertProfileFormat($formattedResponse);
     }
 
     protected function assertGetOwnProfileResponse()
     {
         $response = $this->getOwnProfile();
         $formattedResponse = $this->assertJsonResponse($response, 200, "Get own profile");
-        $this->assertProfileFormat($formattedResponse, "Bad own profile response");
+        $this->assertProfileFormat($formattedResponse);
     }
 
     protected function assertEditOwnProfileResponse()
@@ -89,58 +69,40 @@ class ProfileTest extends ProfileAPITest
         $profileData = $this->getEditedProfileFixtures();
         $response = $this->editProfile($profileData);
         $formattedResponse = $this->assertJsonResponse($response, 200, "Edit Profile");
-        $this->assertEditedProfileFormat($formattedResponse, "Bad Profile response on edit profile A");
+        $this->assertEditedProfileFormat($formattedResponse);
 
         $profileData = $this->getProfileFixtures();
         $response = $this->editProfile($profileData);
         $formattedResponse = $this->assertJsonResponse($response, 200, "Edit Profile");
-        $this->assertProfileFormat($formattedResponse, "Bad Profile response on edit profile A");
-    }
-
-    protected function assertGetDeletedProfileResponse()
-    {
-        $response = $this->deleteProfile();
-        $formattedResponse = $this->assertJsonResponse($response, 200, "Delete Profile");
-        $this->assertProfileFormat($formattedResponse, "Bad Profile response on delete profile A");
-
-        $response = $this->getOwnProfile();
-        $this->assertStatusCode($response, 404, "Get deleted profile");
+        $this->assertProfileFormat($formattedResponse);
     }
 
     protected function assertValidationErrorsResponse()
     {
         $profileData = $this->getProfileWithMalformedBirthdayFixtures();
-        $response = $this->createProfile($profileData);
+        $response = $this->editProfile($profileData);
         $formattedResponse = $this->assertJsonResponse($response, 422, "Create Profile with birthday error");
         $this->assertBirthdayValidationErrorFormat($formattedResponse);
 
         $profileData = $this->getProfileWithMalformedLocationFixtures();
-        $response = $this->createProfile($profileData);
+        $response = $this->editProfile($profileData);
         $formattedResponse = $this->assertJsonResponse($response, 422, "Create Profile with location error");
         $this->assertLocationValidationErrorFormat($formattedResponse);
 
         $profileData = $this->getProfileWithMalformedGenderFixtures();
-        $response = $this->createProfile($profileData);
+        $response = $this->editProfile($profileData);
         $formattedResponse = $this->assertJsonResponse($response, 422, "Create Profile with gender error");
         $this->assertGenderValidationErrorFormat($formattedResponse);
 
         $profileData = $this->getProfileWithMalformedOrientationFixtures();
-        $response = $this->createProfile($profileData);
+        $response = $this->editProfile($profileData);
         $formattedResponse = $this->assertJsonResponse($response, 422, "Create Profile with orientation error");
         $this->assertOrientationValidationErrorFormat($formattedResponse);
 
         $profileData = $this->getProfileWithMalformedInterfaceLanguageFixtures();
-        $response = $this->createProfile($profileData);
+        $response = $this->editProfile($profileData);
         $formattedResponse = $this->assertJsonResponse($response, 422, "Create Profile with interfaceLanguage error");
         $this->assertInterfaceLanguageValidationErrorFormat($formattedResponse);
-    }
-
-    protected function assertCreateComplexProfileResponse()
-    {
-        $profileData = $this->getComplexProfileFixtures();
-        $response = $this->createProfile($profileData);
-        $formattedResponse = $this->assertJsonResponse($response, 201, "Create Complex ProfileA");
-        $this->assertComplexProfileFormat($formattedResponse, "Bad complex profile response on create profile A");
     }
 
     protected function assertEditComplexProfileResponse()
@@ -148,36 +110,30 @@ class ProfileTest extends ProfileAPITest
         $profileData = $this->getEditedComplexProfileFixtures();
         $response = $this->editProfile($profileData);
         $formattedResponse = $this->assertJsonResponse($response, 200, "Edit Complex ProfileA");
-        $this->assertEditedComplexProfileFormat($formattedResponse, "Bad complex profile response on edit profile A");
+        $this->assertEditedComplexProfileFormat($formattedResponse);
     }
 
     protected function assetsGetProfileMetadataResponse()
     {
         $response = $this->getProfileMetadata();
         $formattedResponse = $this->assertJsonResponse($response, 200, "Get Profile metadata");
-        $this->assertGetProfileMetadataFormat($formattedResponse, "Bad response on get profile metadata");
+        $this->assertGetProfileMetadataFormat($formattedResponse);
     }
 
     protected function assetsGetProfileFiltersResponse()
     {
         $response = $this->getProfileFilters();
         $formattedResponse = $this->assertJsonResponse($response, 200, "Get Profile filters");
-        $this->assertGetProfileFiltersFormat($formattedResponse, "Bad response on get profile filters");
+        $this->assertGetProfileFiltersFormat($formattedResponse);
     }
 
     protected function assetsGetProfileTagsResponse()
     {
-        $response = $this->getProfileTags('allergy');
-        $formattedResponse = $this->assertJsonResponse($response, 200, "Get Profile tags for allergy type");
-        $this->assertArrayHasKey('items', $formattedResponse, "Profile tag has not items key");
-        $this->assertArrayHasKey(0, $formattedResponse['items'], "Profile tag items has not 0 key");
-        $this->assertGetProfileTagFormat($formattedResponse['items'][0], 'pollen', "Bad response on get profile tags for allergy type");
-
         $response = $this->getProfileTags('profession');
         $formattedResponse = $this->assertJsonResponse($response, 200, "Get Profile tags for profession type");
         $this->assertArrayHasKey('items', $formattedResponse, "Profile tag has not items key");
         $this->assertArrayHasKey(0, $formattedResponse['items'], "Profile tag items has not 0 key");
-        $this->assertGetProfileTagFormat($formattedResponse['items'][0], 'programmer', "Bad response on get profile tags for profession type");
+        $this->assertGetProfileTagFormat($formattedResponse['items'][0], 'writer');
     }
 
     protected function assertProfileFormat($profile)
@@ -201,7 +157,7 @@ class ProfileTest extends ProfileAPITest
         $this->assertEquals(40.4167754, $profile['location']['latitude'], "latitude is not 40.4167754");
         $this->assertEquals('capricorn', $profile['zodiacSign'], "zodiacSign is not capricorn");
         $this->assertEquals('male', $profile['gender'], "gender is not male");
-        $this->assertEquals('heterosexual', $profile['orientation'], "orientation is not heterosexual");
+        $this->assertContains('heterosexual', $profile['orientation'], "orientation is not heterosexual");
         $this->assertEquals('es', $profile['interfaceLanguage'], "interfaceLanguage is not es");
     }
 
@@ -226,7 +182,7 @@ class ProfileTest extends ProfileAPITest
         $this->assertEquals(39.577383, $profile['location']['latitude'], "latitude is not 40.4167754");
         $this->assertEquals('scorpio', $profile['zodiacSign'], "zodiacSign is not scorpio");
         $this->assertEquals('female', $profile['gender'], "gender is not female");
-        $this->assertEquals('homosexual', $profile['orientation'], "orientation is not homosexual");
+        $this->assertContains('homosexual', $profile['orientation'], "orientation is not homosexual");
         $this->assertEquals('en', $profile['interfaceLanguage'], "interfaceLanguage is not en");
     }
 
@@ -273,7 +229,7 @@ class ProfileTest extends ProfileAPITest
         $this->assertEquals(40.4167754, $profile['location']['latitude'], "latitude is not 40.4167754");
         $this->assertEquals('capricorn', $profile['zodiacSign'], "zodiacSign is not capricorn");
         $this->assertEquals('male', $profile['gender'], "gender is not male");
-        $this->assertEquals('heterosexual', $profile['orientation'], "orientation is not heterosexual");
+        $this->assertContains('heterosexual', $profile['orientation'], "orientation is not heterosexual");
         $this->assertEquals('es', $profile['interfaceLanguage'], "interfaceLanguage is not es");
         $this->assertEquals('atheism', $profile['religion']['choice'], "religion choice is not atheism");
         $this->assertEquals('not_important', $profile['religion']['detail'], "religion detail is not not_important");
@@ -317,9 +273,9 @@ class ProfileTest extends ProfileAPITest
         $this->assertArrayHasKey(0, $profile['language'], "Profile has not language[0] key");
         $this->assertArrayHasKey(1, $profile['language'], "Profile has not language[1] key");
         $this->assertArrayHasKey('tag', $profile['language'][0], "Profile has not language[0]['tag'] key");
-        $this->assertArrayHasKey('detail', $profile['language'][0], "Profile has not language[0]['detail'] key");
+        $this->assertArrayHasKey('choice', $profile['language'][0], "Profile has not language[0]['choice'] key");
         $this->assertArrayHasKey('tag', $profile['language'][1], "Profile has not language[1]['tag'] key");
-        $this->assertArrayHasKey('detail', $profile['language'][1], "Profile has not language[1]['detail'] key");
+        $this->assertArrayHasKey('choice', $profile['language'][1], "Profile has not language[1]['choice'] key");
         $this->assertArrayNotHasKey('education', $profile, "Profile has education key");
         $this->assertArrayHasKey('profession', $profile, "Profile has not profession key");
         $this->assertArrayHasKey(0, $profile['profession'], "Profile has not profession[0] key");
@@ -332,7 +288,7 @@ class ProfileTest extends ProfileAPITest
         $this->assertEquals(40.4167754, $profile['location']['latitude'], "latitude is not 40.4167754");
         $this->assertEquals('capricorn', $profile['zodiacSign'], "zodiacSign is not capricorn");
         $this->assertEquals('male', $profile['gender'], "gender is not male");
-        $this->assertEquals('heterosexual', $profile['orientation'], "orientation is not heterosexual");
+        $this->assertContains('heterosexual', $profile['orientation'], "orientation is not heterosexual");
         $this->assertEquals('es', $profile['interfaceLanguage'], "interfaceLanguage is not es");
         $this->assertEquals('agnosticism', $profile['religion']['choice'], "religion choice is not agnosticism");
         $this->assertEquals('important', $profile['religion']['detail'], "religion detail is not important");
@@ -342,27 +298,67 @@ class ProfileTest extends ProfileAPITest
         $this->assertEquals('black', $profile['hairColor'], "hairColor is not black");
         $this->assertEquals('friendship', $profile['relationshipInterest'], "relationshipInterest is not friendship");
         $this->assertRegExp('/^(German)|(Japanese)$/', $profile['language'][0]['tag'], "language[0]['tag'] is not German or Japanese");
-        $this->assertRegExp('/^(professional_working)|(native)$/', $profile['language'][0]['detail'], "language[0]['detail'] is not professional_working or native");
+        $this->assertRegExp('/^(professional_working)|(native)$/', $profile['language'][0]['choice'], "language[0]['choice'] is not professional_working or native");
         $this->assertRegExp('/^(German)|(Japanese)$/', $profile['language'][1]['tag'], "language[1]['tag'] is not German or Japanese");
-        $this->assertRegExp('/^(professional_working)|(native)$/', $profile['language'][1]['detail'], "language[1]['detail'] is not professional_working or native");
+        $this->assertRegExp('/^(professional_working)|(native)$/', $profile['language'][1]['choice'], "language[1]['choice'] is not professional_working or native");
         $this->assertEquals('writer', $profile['profession'][0], "profession[0] detail is not writer");
     }
 
     protected function assertGetProfileMetadataFormat($metadata)
     {
+        $this->assertArrayOfType('array', $metadata, "Metadata is not an array of arrays");
         $this->assertArrayHasKey('birthday', $metadata, "Metadata has not birthday key");
         $this->assertArrayHasKey('location', $metadata, "Metadata has not location key");
         $this->assertArrayHasKey('gender', $metadata, "Metadata has not gender key");
         $this->assertArrayHasKey('orientation', $metadata, "Metadata has not orientation key");
         $this->assertArrayHasKey('interfaceLanguage', $metadata, "Metadata has not interfaceLanguage key");
+        foreach ($metadata as $field)
+        {
+            $this->assertArrayHasKey('label', $field, "Metadata does not have label key");
+            $this->assertArrayHasKey('labelEdit', $field, "Metadata does not have labelEdit key");
+            $this->assertArrayHasKey('required', $field, "Metadata does not have required key");
+            $this->assertArrayHasKey('editable', $field, "Metadata does not have editable key");
+            $this->assertArrayHasKey('type', $field, "Metadata does not have type key");
+            if (in_array($field['type'], array('choice', 'multiple_choices', 'tags_and_choice'))){
+                $this->assertArrayHasKey('choices', $field, 'Metadata does not have required choices');
+                $this->assertArrayOfType('string', $field['choices'], 'Metadata choices are not strings');
+            };
+            if ($field['type'] === 'double_choice'){
+                $this->assertArrayHasKey('doubleChoices', $field, 'Metadata does not have required double choices');
+                $this->assertArrayOfType('array', $field['doubleChoices'], 'Metadata choices are not arrays');
+                foreach ($field['doubleChoices'] as $doubleChoice){
+                    $this->assertArrayOfType('string', $doubleChoice ,'Metadata double choices are not strings');
+                }
+            }
+        }
     }
 
     protected function assertGetProfileFiltersFormat($metadata)
     {
-        foreach ($metadata as $value) {
-            $this->assertArrayHasKey('label', $value, "Filters has not label key");
-            $this->assertArrayNotHasKey('labelFilter', $value, "Filters has labelFilter key");
-            $this->assertArrayNotHasKey('filterable', $value, "Filters has filterable key");
+        $this->assertArrayOfType('array', $metadata, "Metadata is not an array of arrays");
+        $this->assertArrayHasKey('birthday', $metadata, "Metadata has not birthday key");
+        $this->assertArrayHasKey('location', $metadata, "Metadata has not location key");
+        $this->assertNotContains('gender', $metadata, "Filter metadata has gender key");
+        $this->assertArrayHasKey('orientation', $metadata, "Metadata has not orientation key");
+        $this->assertNotContains('interfaceLanguage', $metadata, "Filter metadata has interfaceLanguage key");
+        foreach ($metadata as $field)
+        {
+            $this->assertArrayHasKey('label', $field, "Metadata does not have label key");
+            $this->assertArrayHasKey('labelEdit', $field, "Metadata does not have labelEdit key");
+            $this->assertArrayHasKey('required', $field, "Metadata does not have required key");
+            $this->assertArrayHasKey('editable', $field, "Metadata does not have editable key");
+            $this->assertArrayHasKey('type', $field, "Metadata does not have type key");
+            if (in_array($field['type'], array('choice', 'multiple_choices', 'tags_and_choice'))){
+                $this->assertArrayHasKey('choices', $field, 'Metadata does not have required choices');
+                $this->assertArrayOfType('string', $field['choices'], 'Metadata choices are not strings');
+            };
+            if ($field['type'] === 'double_choice'){
+                $this->assertArrayHasKey('doubleChoices', $field, 'Metadata does not have required double choices');
+                $this->assertArrayOfType('array', $field['doubleChoices'], 'Metadata choices are not arrays');
+                foreach ($field['doubleChoices'] as $doubleChoice){
+                    $this->assertArrayOfType('string', $doubleChoice ,'Metadata double choices are not strings');
+                }
+            }
         }
    }
 
@@ -420,7 +416,7 @@ class ProfileTest extends ProfileAPITest
                 "latitude" => 40.4167754
             ),
             "gender" => "male",
-            "orientation" => "heterosexual",
+            "orientation" => array("heterosexual"),
             "interfaceLanguage" => "es"
         );
     }
@@ -437,7 +433,7 @@ class ProfileTest extends ProfileAPITest
                 "latitude" => 39.577383
             ),
             "gender" => "female",
-            "orientation" => "homosexual",
+            "orientation" => array("homosexual"),
             "interfaceLanguage" => "en"
         );
     }
@@ -466,7 +462,7 @@ class ProfileTest extends ProfileAPITest
             "civilStatus" => "married",
             "hairColor" => "brown",
             "relationshipInterest" => "friendship",
-            "orientation" => "heterosexual",
+            "orientation" => array("heterosexual"),
             "language" => array(
                 array(
                     "tag" => "English",
@@ -513,7 +509,7 @@ class ProfileTest extends ProfileAPITest
             "civilStatus" => "married",
             "hairColor" => "black",
             "relationshipInterest" => "friendship",
-            "orientation" => "heterosexual",
+            "orientation" => array("heterosexual"),
             "language" => array(
                 array(
                     "tag" => "German",
@@ -544,7 +540,7 @@ class ProfileTest extends ProfileAPITest
                 "latitude" => 40.4167754
             ),
             "gender" => "male",
-            "orientation" => "heterosexual",
+            "orientation" => array("heterosexual"),
             "interfaceLanguage" => "es"
         );
     }
@@ -561,7 +557,7 @@ class ProfileTest extends ProfileAPITest
                 "latitude" => 40.4167754
             ),
             "gender" => "male",
-            "orientation" => "heterosexual",
+            "orientation" => array("heterosexual"),
             "interfaceLanguage" => "es"
         );
     }
@@ -578,7 +574,7 @@ class ProfileTest extends ProfileAPITest
                 "latitude" => 40.4167754
             ),
             "gender" => "none-existent",
-            "orientation" => "heterosexual",
+            "orientation" => array("heterosexual"),
             "interfaceLanguage" => "es"
         );
     }
@@ -595,7 +591,7 @@ class ProfileTest extends ProfileAPITest
                 "latitude" => 40.4167754
             ),
             "gender" => "male",
-            "orientation" => "none-existent",
+            "orientation" => array("none-existent"),
             "interfaceLanguage" => "es"
         );
     }
@@ -612,7 +608,7 @@ class ProfileTest extends ProfileAPITest
                 "latitude" => 40.4167754
             ),
             "gender" => "male",
-            "orientation" => "heterosexual",
+            "orientation" => array("heterosexual"),
             "interfaceLanguage" => "none-existent"
         );
     }

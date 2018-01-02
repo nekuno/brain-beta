@@ -3,18 +3,14 @@
 namespace Model\User;
 
 use Event\ContentRatedEvent;
-use Everyman\Neo4j\Client;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
+use Model\User\Token\TokensModel;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
-/**
- * Class RateModel
- *
- * @package Model\User
- */
+
 class RateModel
 {
 
@@ -29,24 +25,17 @@ class RateModel
     protected $dispatcher;
 
     /**
-     * @var \Everyman\Neo4j\Client
-     */
-    protected $client;
-    /**
      * @var \Model\Neo4j\GraphManager
      */
     protected $gm;
 
     /**
      * @param EventDispatcher $dispatcher
-     * @param Client $client
      * @param GraphManager $gm
      */
-    public function __construct(EventDispatcher $dispatcher, Client $client, GraphManager $gm)
+    public function __construct(EventDispatcher $dispatcher, GraphManager $gm)
     {
-
         $this->dispatcher = $dispatcher;
-        $this->client = $client;
         $this->gm = $gm;
     }
 
@@ -106,11 +95,38 @@ class RateModel
 
         $qb->match('(u:User {qnoow_id: { userId }})')
             ->match("(u)-[r:$rate]->(l:Link)")
-            ->returns('r', 'l.url as linkUrl')
+            ->returns('r', 'l.url as linkUrl, u.qnoow_id as userId')
             ->limit('{limit}');
 
         $qb->setParameters(array(
             'userId' => (integer)$userId,
+            'limit' => (integer) $limit,
+        ));
+
+        $rs = $qb->getQuery()->getResultSet();
+
+        $rates = array();
+        foreach ($rs as $row)
+        {
+            $rates[] = $this->buildLike($row);
+        }
+
+        return $rates;
+    }
+
+    public function getRatesByLink($linkUrl, $rate, $limit = 999999)
+    {
+        $this->validate($rate);
+
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(l:Link {url: { linkUrl }})')
+            ->match("(u:User)-[r:$rate]->(l)")
+            ->returns('r', 'l.url as linkUrl, u.qnoow_id as userId')
+            ->limit('{limit}');
+
+        $qb->setParameters(array(
+            'linkUrl' => (integer)$linkUrl,
             'limit' => (integer) $limit,
         ));
 
@@ -331,6 +347,7 @@ class RateModel
             'resources' => $resources,
             'timestamp' => $relationship->getProperty('updatedAt'),
             'linkUrl' => $row->offsetGet('linkUrl'),
+            'userId' => $row->offsetGet('userId'),
             'originContext' => $relationship->getProperty('originContext'),
             'originName' => $relationship->getProperty('originName'),
         );

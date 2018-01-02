@@ -1,15 +1,18 @@
 <?php
 
-namespace Tests\ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
+namespace Tests\ApiConsumer\LinkProcessor\Processor\FacebookProcessor;
 
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\AbstractFacebookProcessor;
 use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookVideoProcessor;
-use ApiConsumer\LinkProcessor\SynonymousParameters;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;
-use Model\User\TokensModel;
+use Model\Link\Video;
+use Model\User\Token\TokensModel;
+use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
-class FacebookVideoProcessorTest extends \PHPUnit_Framework_TestCase
+class FacebookVideoProcessorTest extends AbstractProcessorTest
 {
     /**
      * @var FacebookResourceOwner|\PHPUnit_Framework_MockObject_MockObject
@@ -35,7 +38,7 @@ class FacebookVideoProcessorTest extends \PHPUnit_Framework_TestCase
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser')
             ->getMock();
 
-        $this->processor = new FacebookVideoProcessor($this->resourceOwner, $this->parser);
+        $this->processor = new FacebookVideoProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . FacebookUrlParser::DEFAULT_IMAGE_PATH);
     }
 
     /**
@@ -52,9 +55,8 @@ class FacebookVideoProcessorTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($video));
 
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
         $link->setSource(TokensModel::FACEBOOK);
-        $response = $this->processor->requestItem($link);
+        $response = $this->processor->getResponse($link);
 
         $this->assertEquals($response, $video, 'Asserting correct response for ' . $url);
     }
@@ -65,11 +67,10 @@ class FacebookVideoProcessorTest extends \PHPUnit_Framework_TestCase
     public function testHydrateLink($url, $id, $response, $expectedArray)
     {
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
         $link->setResourceItemId($id);
         $this->processor->hydrateLink($link, $response);
 
-        $this->assertEquals($expectedArray, $link->getLink()->toArray(), 'Asserting correct hydrated link for ' . $url);
+        $this->assertEquals($expectedArray, $link->getFirstLink()->toArray(), 'Asserting correct hydrated link for ' . $url);
     }
 
     /**
@@ -78,14 +79,32 @@ class FacebookVideoProcessorTest extends \PHPUnit_Framework_TestCase
     public function testAddTags($url, $response, $expectedTags)
     {
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
         $this->processor->addTags($link, $response);
 
         $tags = $expectedTags;
         sort($tags);
-        $resultTags = $link->getLink()->getTags();
+        $resultTags = $link->getFirstLink()->getTags();
         sort($resultTags);
         $this->assertEquals($tags, $resultTags);
+    }
+
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $this->resourceOwner->expects($this->once())
+            ->method('requestLargePicture')
+            ->will($this->returnValue($this->getThumbnailUrl()));
+
+        $this->resourceOwner->expects($this->once())
+            ->method('requestSmallPicture')
+            ->will($this->returnValue($this->getThumbnailUrl()));
+
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
     }
 
     public function getBadUrls()
@@ -108,25 +127,19 @@ class FacebookVideoProcessorTest extends \PHPUnit_Framework_TestCase
 
     public function getResponseHydration()
     {
+        $expectedLink = new Video();
+        $expectedLink->setTitle('¡Tu combo de likes más...');
+        $expectedLink->setDescription("¡Tu combo de likes más rápido con el nuevo WIFI! A conectar! #wifigratis");
+        $expectedLink->setEmbedId('1184085874980824');
+        $expectedLink->setEmbedType('facebook');
+        $expectedLink->addAdditionalLabels(AbstractFacebookProcessor::FACEBOOK_LABEL);
+
         return array(
             array(
                 $this->getVideoUrl(),
                 $this->getVideoId(),
                 $this->getVideoItemResponse(),
-                array(
-                    'title' => '¡Tu combo de likes más...',
-                    'description' => "¡Tu combo de likes más rápido con el nuevo WIFI! A conectar! #wifigratis",
-                    'thumbnail' => "https://scontent.xx.fbcdn.net/v/t15.0-10/p160x160/14510760_1184087194980692_2357859444034895872_n.jpg?oh=33727306f052fcee096c281c15c429bf&oe=586D5F95",
-                    'url' => null,
-                    'id' => null,
-                    'tags' => array(),
-                    'created' => null,
-                    'processed' => true,
-                    'language' => null,
-                    'synonymous' => array(),
-                    'embed_type' => 'facebook',
-                    'embed_id' => '1184085874980824'
-                )
+                $expectedLink->toArray(),
             )
         );
     }
@@ -142,6 +155,17 @@ class FacebookVideoProcessorTest extends \PHPUnit_Framework_TestCase
         );
     }
 
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getVideoUrl(),
+                $this->getVideoItemResponse(),
+                $this->getProcessingImages()
+            )
+        );
+    }
+
     public function getVideoResponse()
     {
         return $this->getVideoItemResponse();
@@ -151,7 +175,7 @@ class FacebookVideoProcessorTest extends \PHPUnit_Framework_TestCase
     {
         return array(
             "description" => "¡Tu combo de likes más rápido con el nuevo WIFI! A conectar! #wifigratis",
-            "picture" => "https://scontent.xx.fbcdn.net/v/t15.0-10/p160x160/14510760_1184087194980692_2357859444034895872_n.jpg?oh=33727306f052fcee096c281c15c429bf&oe=586D5F95",
+            "picture" => $this->getThumbnailUrl(),
             "permalink_url" => "/vips/videos/1184085874980824/",
             "id" => "1184085874980824"
         );
@@ -170,6 +194,16 @@ class FacebookVideoProcessorTest extends \PHPUnit_Framework_TestCase
     public function getVideoTags()
     {
         return array();
+    }
+
+    public function getThumbnailUrl()
+    {
+        return "https://scontent.xx.fbcdn.net/v/t15.0-10/p160x160/14510760_1184087194980692_2357859444034895872_n.jpg?oh=33727306f052fcee096c281c15c429bf&oe=586D5F95";
+    }
+
+    public function getProcessingImages()
+    {
+        return array (new ProcessingImage($this->getThumbnailUrl()));
     }
 
 }

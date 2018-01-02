@@ -13,6 +13,14 @@ api_consumer.config:
         spotify:
             class: ApiConsumer\ResourceOwner\SpotifyResourceOwner
             parser_class: ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser
+        tumblr:
+            class: ApiConsumer\ResourceOwner\TumblrResourceOwner
+            parser_class: ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser
+        linkedin:
+            class: ApiConsumer\ResourceOwner\LinkedinResourceOwner
+        steam:
+            class: ApiConsumer\ResourceOwner\SteamResourceOwner
+            parser_class: ApiConsumer\LinkProcessor\UrlParser\SteamUrlParser
     fetcher:
         twitter_links:
             class: ApiConsumer\Fetcher\TwitterLinksFetcher
@@ -41,6 +49,21 @@ api_consumer.config:
         spotify:
             class: ApiConsumer\Fetcher\SpotifyFetcher
             resourceOwner: spotify
+        tumblr_blogs:
+            class: ApiConsumer\Fetcher\TumblrBlogsFetcher
+            resourceOwner: tumblr
+        tumblr_following:
+            class: ApiConsumer\Fetcher\TumblrFollowingFetcher
+            resourceOwner: tumblr
+        tumblr_likes:
+            class: ApiConsumer\Fetcher\TumblrLikesFetcher
+            resourceOwner: tumblr
+        tumblr_posts:
+            class: ApiConsumer\Fetcher\TumblrPostsFetcher
+            resourceOwner: tumblr
+        steam_games:
+            class: ApiConsumer\Fetcher\SteamGamesFetcher
+            resourceOwner: steam
     processor:
         twitter_intent:
             class: ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterIntentProcessor
@@ -61,6 +84,14 @@ api_consumer.config:
 
         facebook_profile:
             class: ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookProfileProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser
+            resourceOwner: facebook
+        facebook_page:
+            class: ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookPageProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser
+            resourceOwner: facebook
+        facebook_status:
+            class: ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookStatusProcessor
             parser: ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser
             resourceOwner: facebook
         facebook_video:
@@ -94,3 +125,44 @@ api_consumer.config:
             parser: ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser
             resourceOwner: google
 
+        tumblr_audio:
+            class: ApiConsumer\LinkProcessor\Processor\TumblrProcessor\TumblrAudioProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser
+            resourceOwner: tumblr
+        tumblr_blog:
+            class: ApiConsumer\LinkProcessor\Processor\TumblrProcessor\TumblrBlogProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser
+            resourceOwner: tumblr
+        tumblr_link:
+            class: ApiConsumer\LinkProcessor\Processor\TumblrProcessor\TumblrLinkProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser
+            resourceOwner: tumblr
+        tumblr_photo:
+            class: ApiConsumer\LinkProcessor\Processor\TumblrProcessor\TumblrPhotoProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser
+            resourceOwner: tumblr
+        tumblr_video:
+            class: ApiConsumer\LinkProcessor\Processor\TumblrProcessor\TumblrVideoProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser
+            resourceOwner: tumblr
+        tumblr_unknown_type_post:
+            class: ApiConsumer\LinkProcessor\Processor\TumblrProcessor\TumblrUnknownTypePostProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser
+            resourceOwner: tumblr
+
+        steam_game:
+            class: ApiConsumer\LinkProcessor\Processor\SteamProcessor\SteamGameProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\SteamUrlParser
+            resourceOwner: steam
+
+        instagram:
+            class: ApiConsumer\LinkProcessor\Processor\InstagramProcessor\InstagramProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\InstagramUrlParser
+        instagram_profile:
+            class: ApiConsumer\LinkProcessor\Processor\InstagramProcessor\InstagramProfileProcessor
+            parser: ApiConsumer\LinkProcessor\UrlParser\InstagramUrlParser
+
+        scrapper:
+            class: ApiConsumer\LinkProcessor\Processor\ScraperProcessor\ScraperProcessor
+        scrapperImage:
+            class: ApiConsumer\LinkProcessor\Processor\ScraperProcessor\ImageScraperProcessor

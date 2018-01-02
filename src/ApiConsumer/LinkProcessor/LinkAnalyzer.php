@@ -4,30 +4,44 @@ namespace ApiConsumer\LinkProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
+use ApiConsumer\LinkProcessor\UrlParser\InstagramUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
+use ApiConsumer\LinkProcessor\UrlParser\SteamUrlParser;
+use ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
 use ApiConsumer\LinkProcessor\UrlParser\UrlParserInterface;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
-use Model\Link;
+use Model\User\Token\TokensModel;
 
 class LinkAnalyzer
 {
     /**
-     * @param PreprocessedLink $link
+     * @param PreprocessedLink $preprocessedLink
      * @return string
      */
-    public static function getProcessorName(PreprocessedLink $link)
+    public static function getProcessorName(PreprocessedLink $preprocessedLink)
     {
-        if ($link->getType()) {
-            return $link->getType();
+        if ($preprocessedLink->getType()) {
+            return $preprocessedLink->getType();
         }
 
-        $url = $link->getCanonical();
+        if ($type = self::getTypeFromId($preprocessedLink)) {
+            return $type;
+        }
 
-        (new UrlParser())->checkUrlValid($url);
+        return self::getProcessorNameFromUrl($preprocessedLink);
+    }
 
-        try{
+    /**
+     * @param PreprocessedLink $preprocessedLink
+     * @return string
+     */
+    protected static function getProcessorNameFromUrl(PreprocessedLink $preprocessedLink)
+    {
+        $url = $preprocessedLink->getUrl();
+
+        try {
             $parser = self::getUrlParser($url);
             $type = $parser->getUrlType($url);
         } catch (UrlNotValidException $e){
@@ -37,9 +51,50 @@ class LinkAnalyzer
         return $type;
     }
 
+    protected static function getTypeFromId(PreprocessedLink $preprocessedLink)
+    {
+        if (self::isFacebook($preprocessedLink->getUrl())) {
+            $parser = new FacebookUrlParser();
+            if ($parser->isStatusId($preprocessedLink->getResourceItemId())) {
+                return FacebookUrlParser::FACEBOOK_STATUS;
+            }
+        }
+
+        return null;
+    }
+
+    public static function getResource($url)
+    {
+
+        if (self::isYouTube($url)) {
+            return TokensModel::GOOGLE;
+        }
+
+        if (self::isSpotify($url)) {
+            return TokensModel::SPOTIFY;
+        }
+
+        if (self::isFacebook($url)) {
+            return TokensModel::FACEBOOK;
+        }
+
+        if (self::isTwitter($url)) {
+            return TokensModel::TWITTER;
+        }
+
+        if (self::isTumblr($url)) {
+            return TokensModel::TUMBLR;
+        }
+        if (self::isSteam($url)) {
+            return TokensModel::STEAM;
+        }
+
+        return null;
+    }
+
     public static function mustResolve(PreprocessedLink $link)
     {
-        return !self::isSpotify($link->getFetched());
+        return !self::isSpotify($link->getUrl());
     }
 
     /**
@@ -49,7 +104,7 @@ class LinkAnalyzer
     //TODO: This is functionally a UrlParserFactory. Probably better to create.
     protected static function getUrlParser($url)
     {
-        (new UrlParser())->checkUrlValid($url);
+        (new UrlParser())->cleanURL($url);
 
         if (self::isYouTube($url)) {
             return new YoutubeUrlParser();
@@ -65,6 +120,18 @@ class LinkAnalyzer
 
         if (self::isTwitter($url)) {
             return new TwitterUrlParser();
+        }
+
+        if (self::isInstagram($url)) {
+            return new InstagramUrlParser();
+        }
+
+        if (self::isTumblr($url)) {
+            return new TumblrUrlParser();
+        }
+
+        if (self::isSteam($url)) {
+            return new SteamUrlParser();
         }
 
         return new UrlParser();
@@ -86,36 +153,45 @@ class LinkAnalyzer
         return $percent > $similarTextPercentage;
     }
 
-    public static function limitTextLengths(Link $link)
+    public static function getUsername($url)
     {
-        $description = $link->getDescription();
-        $description = strlen($description) >= 25 ? mb_substr($description, 0, 22) . '...' : $description;
-        $link->setDescription($description);
+        $parser = self::getUrlParser($url);
 
-        $title = $link->getTitle();
-        $title = strlen($title) >= 25 ? mb_substr($title, 0, 22) . '...' : $title;
-        $link->setTitle($title);
+        return $parser->getUsername($url);
     }
-    
-    //TODO: Improve detection on host, not whole url
+
     private static function isFacebook($url)
     {
-        return strpos($url, 'facebook.com') !== false;
+        return preg_match('/^https?:\/\/(www\.)?facebook\.com\//i', $url);
     }
 
     private static function isTwitter($url)
     {
-        return strpos($url, 'twitter.com') !== false;
+        return preg_match('/^https?:\/\/(www\.|pic\.)?twitter\.com\//i', $url);
     }
 
     private static function isSpotify($url)
     {
-        return strpos($url, 'spotify.com') !== false;
+        return preg_match('/^https?:\/\/(open\.|play\.)?spotify\.com\//i', $url);
     }
 
     private static function isYouTube($url)
     {
-        return strpos($url, 'youtube.com') !== false || strpos($url, 'youtu.be') !== false;
+        return preg_match('/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i', $url);
     }
 
+    private static function isInstagram($url)
+    {
+        return preg_match('/^https?:\/\/(www\.)?instagram\.com\//i', $url);
+    }
+
+    private static function isTumblr($url)
+    {
+        return preg_match('/^https?:\/\/.+\.tumblr\.com\//i', $url);
+    }
+
+    private static function isSteam($url)
+    {
+        return preg_match('/^https?:\/\/.+\.steampowered\.com\//i', $url);
+    }
 }

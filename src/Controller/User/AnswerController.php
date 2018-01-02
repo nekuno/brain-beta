@@ -3,8 +3,9 @@
 namespace Controller\User;
 
 use Event\AnswerEvent;
-use Model\Questionnaire\QuestionModel;
-use Model\User\QuestionPaginatedModel;
+use Model\Metadata\MetadataManager;
+use Model\User\Question\QuestionModel;
+use Model\User\Question\UserAnswerPaginatedModel;
 use Model\User;
 use Silex\Application;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -29,7 +30,7 @@ class AnswerController
         $paginator = $app['paginator'];
 
         $filters = array('id' => $user->getId(), 'locale' => $locale);
-        /* @var $model QuestionPaginatedModel */
+        /* @var $model UserAnswerPaginatedModel */
         $model = $app['users.questions.model'];
 
         $result = $paginator->paginate($filters, $model, $request);
@@ -74,7 +75,7 @@ class AnswerController
         $questionModel = $app['questionnaire.questions.model'];
         $questionModel->setOrUpdateRankingForQuestion($data['questionId']);
 
-        return $app->json($userAnswer);
+        return $app->json($userAnswer, 201);
     }
 
     /**
@@ -97,25 +98,7 @@ class AnswerController
         $questionModel = $app['questionnaire.questions.model'];
         $questionModel->setOrUpdateRankingForQuestion($data['questionId']);
 
-        return $app->json($userAnswer);
-    }
-
-    /**
-     * @param Request $request
-     * @param Application $app
-     * @param User $user
-     * @return JsonResponse
-     * @throws \Exception
-     */
-    public function validateAction(Request $request, Application $app, User $user)
-    {
-        $data = $request->request->all();
-        $data['userId'] = $user->getId();
-        $data['locale'] = $this->getLocale($request, $app['locale.options']['default']);
-
-        $app['users.answers.model']->validate($data);
-
-        return $app->json(array(), 200);
+        return $app->json($userAnswer, 201);
     }
 
     /**
@@ -224,7 +207,7 @@ class AnswerController
 
         $filters = array('id' => $otherUserId, 'id2' => $user->getId(), 'locale' => $locale, 'showOnlyCommon' => $showOnlyCommon);
 
-        /* @var $model \Model\User\OldQuestionComparePaginatedModel */
+        /* @var $model \Model\User\Question\OldQuestionComparePaginatedModel */
         $model = $app['old.users.questions.compare.model'];
 
         try {
@@ -249,7 +232,7 @@ class AnswerController
      */
     public function getUserAnswersCompareAction(Request $request, Application $app, User $user)
     {
-        $otherUserId = $request->attributes->get('id');
+        $otherUserId = $request->attributes->get('userId');
         $locale = $request->query->get('locale');
         $showOnlyCommon = $request->query->get('showOnlyCommon', 0);
 
@@ -262,7 +245,7 @@ class AnswerController
 
         $filters = array('id' => $otherUserId, 'id2' => $user->getId(), 'locale' => $locale, 'showOnlyCommon' => $showOnlyCommon);
 
-        /* @var $model \Model\User\QuestionComparePaginatedModel */
+        /* @var $model \Model\User\Question\QuestionComparePaginatedModel */
         $model = $app['users.questions.compare.model'];
 
         try {
@@ -281,7 +264,8 @@ class AnswerController
     protected function getLocale(Request $request, $defaultLocale)
     {
         $locale = $request->get('locale', $defaultLocale);
-        if (!in_array($locale, array('en', 'es'))) {
+        $validLocales = MetadataManager::$validLocales;
+        if (!in_array($locale, $validLocales)) {
             $locale = $defaultLocale;
         }
 

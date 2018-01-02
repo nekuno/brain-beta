@@ -1,9 +1,8 @@
 <?php
-/**
- * @author Manolo Salsas <manolez@gmail.com>
- */
+
 namespace Model\Parser;
 
+use Model\Metadata\MetadataUtilities;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -118,29 +117,8 @@ class LinkedinParser extends BaseParser
 
     private function translateTypicalLanguage($language)
     {
-        switch ($language) {
-            case 'Español':
-                return 'Spanish';
-            case 'Inglés':
-                return 'English';
-            case 'Francés':
-                return 'French';
-            case 'Alemán':
-                return 'German';
-            case 'Portugués':
-                return 'Portuguese';
-            case 'Italiano':
-                return 'Italian';
-            case 'Chino':
-                return 'Chinese';
-            case 'Japonés':
-                return 'Japanese';
-            case 'Ruso':
-                return 'Russian';
-            case 'Árabe':
-                return 'Arabic';
-            default:
-                return $language;
-        }
+        $utilities = new MetadataUtilities();
+
+        return $utilities->translateTypicalLanguage($language);
     }
 }

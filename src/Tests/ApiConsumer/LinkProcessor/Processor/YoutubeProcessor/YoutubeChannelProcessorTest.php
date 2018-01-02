@@ -3,13 +3,16 @@
 namespace Tests\ApiConsumer\LinkProcessor\Processor\YoutubeProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\AbstractYoutubeProcessor;
 use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\YoutubeChannelProcessor;
-use ApiConsumer\LinkProcessor\SynonymousParameters;
 use ApiConsumer\ResourceOwner\GoogleResourceOwner;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
+use Model\Link\Link;
+use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
-class YoutubeChannelProcessorTest extends \PHPUnit_Framework_TestCase
+class YoutubeChannelProcessorTest extends AbstractProcessorTest
 {
 
     /**
@@ -34,11 +37,10 @@ class YoutubeChannelProcessorTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser')
             ->getMock();
 
-        $this->processor = new YoutubeChannelProcessor($this->resourceOwner, $this->parser);
+        $this->processor = new YoutubeChannelProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . YoutubeUrlParser::DEFAULT_IMAGE_PATH);
     }
 
     /**
@@ -53,8 +55,8 @@ class YoutubeChannelProcessorTest extends \PHPUnit_Framework_TestCase
             ->will($this->throwException(new UrlNotValidException($url)));
 
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
-        $this->processor->requestItem($link);
+        $link->setUrl($url);
+        $this->processor->getResponse($link);
     }
 
     /**
@@ -71,10 +73,9 @@ class YoutubeChannelProcessorTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($channel));
 
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
-        $response = $this->processor->requestItem($link);
+        $response = $this->processor->getResponse($link);
 
-        $this->assertEquals($this->getChannelItemResponse(), $response, 'Asserting correct video response for ' . $url);
+        $this->assertEquals($this->getChannelResponse(), $response, 'Asserting correct video response for ' . $url);
     }
 
     /**
@@ -83,12 +84,11 @@ class YoutubeChannelProcessorTest extends \PHPUnit_Framework_TestCase
     public function testHydrateLink($url, $id, $response, $expectedArray)
     {
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
         $link->setResourceItemId($id);
 
         $this->processor->hydrateLink($link, $response);
 
-        $this->assertEquals($expectedArray, $link->getLink()->toArray(), 'Asserting correct hydrated link for ' . $url);
+        $this->assertEquals($expectedArray, $link->getFirstLink()->toArray(), 'Asserting correct hydrated link for ' . $url);
     }
 
     /**
@@ -97,14 +97,24 @@ class YoutubeChannelProcessorTest extends \PHPUnit_Framework_TestCase
     public function testAddTags($url, $response, $expectedTags)
     {
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
         $this->processor->addTags($link, $response);
 
         $tags = $expectedTags;
         sort($tags);
-        $resultTags = $link->getLink()->getTags();
+        $resultTags = $link->getFirstLink()->getTags();
         sort($resultTags);
         $this->assertEquals($tags, $resultTags);
+    }
+
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
     }
 
     public function getBadUrls()
@@ -127,23 +137,17 @@ class YoutubeChannelProcessorTest extends \PHPUnit_Framework_TestCase
 
     public function getResponseHydration()
     {
+        $expected = new Link();
+        $expected->setTitle('Efecto Pasillo');
+        $expected->setDescription('Canal Oficial de Youtube de Efecto Pasillo.');
+        $expected->addAdditionalLabels(AbstractYoutubeProcessor::YOUTUBE_LABEL);
+
         return array(
             array(
                 $this->getChannelUrl(),
                 $this->getChannelId(),
-                $this->getChannelItemResponse(),
-                array(
-                    'title' => 'Efecto Pasillo',
-                    'description' => 'Canal Oficial de Youtube de Efecto Pasillo.',
-                    'thumbnail' => null,
-                    'url' => null,
-                    'id' => null,
-                    'tags' => array(),
-                    'created' => null,
-                    'processed' => true,
-                    'language' => null,
-                    'synonymous' => array(),
-                )
+                $this->getChannelResponse(),
+                $expected->toArray(),
             )
         );
     }
@@ -159,6 +163,17 @@ class YoutubeChannelProcessorTest extends \PHPUnit_Framework_TestCase
         );
     }
 
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getChannelUrl(),
+                $this->getChannelItemResponse(),
+                $this->getProcessingImages()
+            )
+        );
+    }
+
     public function getEmptyResponses()
     {
         return array(
@@ -166,119 +181,6 @@ class YoutubeChannelProcessorTest extends \PHPUnit_Framework_TestCase
             array(array('items' => '')),
             array(array('items' => null)),
             array(array('items' => array())),
-        );
-    }
-
-    public function getVideoId()
-    {
-        return 'zLgY05beCnY';
-    }
-
-    public function getVideoUrl()
-    {
-        return 'https://www.youtube.com/watch?v=zLgY05beCnY';
-    }
-
-    public function getVideoTags()
-    {
-        return array(
-            0 =>
-                array(
-                    'name' => '/m/0xgt51b',
-                    'additionalLabels' =>
-                        array(
-                            0 => 'Freebase',
-                        ),
-                ),
-        );
-    }
-
-    public function getVideoResponse()
-    {
-        return array(
-            'kind' => 'youtube#videoListResponse',
-            'etag' => '"gMjDJfS6nsym0T-NKCXALC_u_rM/Yifv0474a__DamxRo9SjojBxhAk"',
-            'pageInfo' =>
-                array(
-                    'totalResults' => 1,
-                    'resultsPerPage' => 1,
-                ),
-            'items' =>
-                array(
-                    0 => $this->getVideoItemResponse()
-                ),
-        );
-    }
-
-    public function getVideoItemResponse()
-    {
-        return array(
-            'kind' => 'youtube#video',
-            'etag' => '"gMjDJfS6nsym0T-NKCXALC_u_rM/58qh92rlFH2F5H_uIGQnJ4pDfFM"',
-            'id' => 'zLgY05beCnY',
-            'snippet' =>
-                array(
-                    'publishedAt' => '2014-03-16T17:20:58.000Z',
-                    'channelId' => 'UCSi3NhHZWE7xXAs2NDDAxDg',
-                    'title' => 'Tu peor error',
-                    'description' => 'En Mawi',
-                    'thumbnails' =>
-                        array(
-                            'default' =>
-                                array(
-                                    'url' => 'https://i.ytimg.com/vi/zLgY05beCnY/default.jpg',
-                                    'width' => 120,
-                                    'height' => 90,
-                                ),
-                            'medium' =>
-                                array(
-                                    'url' => 'https://i.ytimg.com/vi/zLgY05beCnY/mqdefault.jpg',
-                                    'width' => 320,
-                                    'height' => 180,
-                                ),
-                            'high' =>
-                                array(
-                                    'url' => 'https://i.ytimg.com/vi/zLgY05beCnY/hqdefault.jpg',
-                                    'width' => 480,
-                                    'height' => 360,
-                                ),
-                            'standard' =>
-                                array(
-                                    'url' => 'https://i.ytimg.com/vi/zLgY05beCnY/sddefault.jpg',
-                                    'width' => 640,
-                                    'height' => 480,
-                                ),
-                            'maxres' =>
-                                array(
-                                    'url' => 'https://i.ytimg.com/vi/zLgY05beCnY/maxresdefault.jpg',
-                                    'width' => 1280,
-                                    'height' => 720,
-                                ),
-                        ),
-                    'channelTitle' => 'Juan Luis Martinez',
-                    'categoryId' => '10',
-                    'liveBroadcastContent' => 'none',
-                ),
-            'statistics' =>
-                array(
-                    'viewCount' => '117',
-                    'likeCount' => '1',
-                    'dislikeCount' => '1',
-                    'favoriteCount' => '0',
-                    'commentCount' => '1',
-                ),
-            'topicDetails' =>
-                array(
-                    'topicIds' =>
-                        array(
-                            0 => '/m/0xgt51b',
-                        ),
-                    'relevantTopicIds' =>
-                        array(
-                            0 => '/m/0h20xml',
-                            1 => '/m/04rlf',
-                        ),
-                ),
         );
     }
 
@@ -433,75 +335,23 @@ class YoutubeChannelProcessorTest extends \PHPUnit_Framework_TestCase
         );
     }
 
-    public function getPlaylistId()
+    public function getProcessingImages()
     {
-        return 'PLcB-8ayo3tzddinO3ob7cEHhUtyyo66mN';
-    }
+        $smallProcessingImage = new ProcessingImage('https://yt3.ggpht.com/-a3qMwcBYLnY/AAAAAAAAAAI/AAAAAAAAAAA/9b8qMAiJUjU/s88-c-k-no/photo.jpg');
+        $smallProcessingImage->setHeight(88);
+        $smallProcessingImage->setWidth(88);
+        $smallProcessingImage->setLabel(ProcessingImage::LABEL_SMALL);
 
-    public function getPlaylistUrl()
-    {
-        return 'https://www.youtube.com/playlist?list=PLcB-8ayo3tzddinO3ob7cEHhUtyyo66mN';
-    }
+        $mediumProcessingImage = new ProcessingImage('https://yt3.ggpht.com/-a3qMwcBYLnY/AAAAAAAAAAI/AAAAAAAAAAA/9b8qMAiJUjU/s240-c-k-no/photo.jpg');
+        $mediumProcessingImage->setHeight(240);
+        $mediumProcessingImage->setWidth(240);
+        $mediumProcessingImage->setLabel(ProcessingImage::LABEL_MEDIUM);
 
-    public function getPlaylistResponse()
-    {
-        return array(
-            'kind' => 'youtube#playlistListResponse',
-            'etag' => '"gMjDJfS6nsym0T-NKCXALC_u_rM/0vbqmRo-1Ho63q-uB86nYn04-bU"',
-            'pageInfo' =>
-                array(
-                    'totalResults' => 1,
-                    'resultsPerPage' => 1,
-                ),
-            'items' =>
-                array(
-                    0 =>
-                        array(
-                            'kind' => 'youtube#playlist',
-                            'etag' => '"gMjDJfS6nsym0T-NKCXALC_u_rM/7VPtzm7_MohJQf_2JJCYB47wLy4"',
-                            'id' => 'PLcB-8ayo3tzddinO3ob7cEHhUtyyo66mN',
-                            'snippet' =>
-                                array(
-                                    'publishedAt' => '2014-05-26T13:57:32.000Z',
-                                    'channelId' => 'UCNvTrGFQXu2h5dxpJdZlySw',
-                                    'title' => 'PelleK plays bad NES-games',
-                                    'description' => '',
-                                    'thumbnails' =>
-                                        array(
-                                            'default' =>
-                                                array(
-                                                    'url' => 'https://i.ytimg.com/vi/02dFn6UK1ak/default.jpg',
-                                                    'width' => 120,
-                                                    'height' => 90,
-                                                ),
-                                            'medium' =>
-                                                array(
-                                                    'url' => 'https://i.ytimg.com/vi/02dFn6UK1ak/mqdefault.jpg',
-                                                    'width' => 320,
-                                                    'height' => 180,
-                                                ),
-                                            'high' =>
-                                                array(
-                                                    'url' => 'https://i.ytimg.com/vi/02dFn6UK1ak/hqdefault.jpg',
-                                                    'width' => 480,
-                                                    'height' => 360,
-                                                ),
-                                            'standard' =>
-                                                array(
-                                                    'url' => 'https://i.ytimg.com/vi/02dFn6UK1ak/sddefault.jpg',
-                                                    'width' => 640,
-                                                    'height' => 480,
-                                                ),
-                                        ),
-                                    'channelTitle' => 'pellekofficial2',
-                                ),
-                            'status' =>
-                                array(
-                                    'privacyStatus' => 'public',
-                                ),
-                        ),
-                ),
-        );
-    }
+        $largeProcessingImage = new ProcessingImage('https://yt3.ggpht.com/-a3qMwcBYLnY/AAAAAAAAAAI/AAAAAAAAAAA/9b8qMAiJUjU/s240-c-k-no/photo.jpg');
+        $largeProcessingImage->setHeight(240);
+        $largeProcessingImage->setWidth(240);
+        $largeProcessingImage->setLabel(ProcessingImage::LABEL_LARGE);
 
+        return array($smallProcessingImage, $mediumProcessingImage, $largeProcessingImage);
+    }
 }

@@ -1,7 +1,5 @@
 <?php
-/**
- * @author Manolo Salsas <manolez@gmail.com>
- */
+
 namespace Controller\Admin\EnterpriseUser;
 
 use Silex\Application;
@@ -36,7 +34,7 @@ class GroupController
             throw new NotFoundHttpException(sprintf('There is not enterprise user with id "%s"', $enterpriseUserId));
         }
 
-        $group = $app['users.groups.model']->create($data);
+        $group = $app['group.service']->create($data);
         $app['users.groups.model']->setCreatedByEnterpriseUser($group->getId(), $enterpriseUserId);
 
         return $app->json($group, 201);
@@ -50,7 +48,7 @@ class GroupController
             throw new NotFoundHttpException(sprintf('There is not enterprise user with id "%s"', $enterpriseUserId));
         }
 
-        $group = $app['users.groups.model']->update($id, $data);
+        $group = $app['group.service']->update($id, $data);
 
         return $app->json($group);
     }
@@ -74,7 +72,14 @@ class GroupController
             throw new NotFoundHttpException(sprintf('There is not enterprise user with id "%s"', $enterpriseUserId));
         }
 
-        $app['users.groups.model']->validate($data);
+        $model = $app['users.groups.model'];
+        if (isset($data['id'])) {
+            $groupId = $data['id'];
+            unlink($data['id']);
+            $model->validateOnUpdate($data, $groupId);
+        } else {
+            $model->validateOnCreate($data);
+        }
 
         return $app->json();
     }

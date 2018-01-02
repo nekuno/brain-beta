@@ -3,13 +3,16 @@
 namespace Tests\ApiConsumer\LinkProcessor\Processor\SpotifyProcessor;
 
 use ApiConsumer\Exception\UrlNotValidException;
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\AbstractSpotifyProcessor;
 use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\SpotifyArtistProcessor;
-use ApiConsumer\LinkProcessor\SynonymousParameters;
 use ApiConsumer\ResourceOwner\SpotifyResourceOwner;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
+use Model\Link\Link;
+use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
-class SpotifyArtistProcessorTest extends \PHPUnit_Framework_TestCase
+class SpotifyArtistProcessorTest extends AbstractProcessorTest
 {
     /**
      * @var SpotifyResourceOwner|\PHPUnit_Framework_MockObject_MockObject
@@ -35,7 +38,7 @@ class SpotifyArtistProcessorTest extends \PHPUnit_Framework_TestCase
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser')
             ->getMock();
 
-        $this->processor = new SpotifyArtistProcessor($this->resourceOwner, $this->parser);
+        $this->processor = new SpotifyArtistProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . SpotifyUrlParser::DEFAULT_IMAGE_PATH);
     }
 
     /**
@@ -50,8 +53,7 @@ class SpotifyArtistProcessorTest extends \PHPUnit_Framework_TestCase
             ->will($this->throwException(new UrlNotValidException($url)));
 
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
-        $this->processor->requestItem($link);
+        $this->processor->getResponse($link);
     }
 
     /**
@@ -68,8 +70,7 @@ class SpotifyArtistProcessorTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($artist));
 
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
-        $response = $this->processor->requestItem($link);
+        $response = $this->processor->getResponse($link);
 
         $this->assertEquals($artist, $response, 'Asserting correct artist response for ' . $url);
     }
@@ -80,10 +81,9 @@ class SpotifyArtistProcessorTest extends \PHPUnit_Framework_TestCase
     public function testHydrateLink($url, $response, $expectedArray)
     {
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
         $this->processor->hydrateLink($link, $response);
 
-        $this->assertEquals($expectedArray, $link->getLink()->toArray(), 'Asserting correct hydrated link for ' . $url);
+        $this->assertEquals($expectedArray, $link->getFirstLink()->toArray(), 'Asserting correct hydrated link for ' . $url);
     }
 
     /**
@@ -92,14 +92,24 @@ class SpotifyArtistProcessorTest extends \PHPUnit_Framework_TestCase
     public function testAddTags($url, $response, $expectedTags)
     {
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
         $this->processor->addTags($link, $response);
 
         $tags = $expectedTags;
         sort($tags);
-        $resultTags = $link->getLink()->getTags();
+        $resultTags = $link->getFirstLink()->getTags();
         sort($resultTags);
         $this->assertEquals($tags, $resultTags);
+    }
+
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
     }
 
     public function getBadUrls()
@@ -122,22 +132,15 @@ class SpotifyArtistProcessorTest extends \PHPUnit_Framework_TestCase
 
     public function getResponseHydration()
     {
+        $expected = new Link();
+        $expected->setTitle('Charlie Parker');
+        $expected->addAdditionalLabels(AbstractSpotifyProcessor::SPOTIFY_LABEL);
+
         return array(
             array(
                 $this->getArtistUrl(),
                 $this->getArtistResponse(),
-                array(
-                    'title' => 'Charlie Parker',
-                    'description' => null,
-                    'thumbnail' => null,
-                    'url' => null,
-                    'id' => null,
-                    'tags' => array(),
-                    'created' => null,
-                    'processed' => true,
-                    'language' => null,
-                    'synonymous' => array(),
-                )
+                $expected->toArray(),
             )
         );
     }
@@ -149,6 +152,17 @@ class SpotifyArtistProcessorTest extends \PHPUnit_Framework_TestCase
                 $this->getArtistUrl(),
                 $this->getArtistResponse(),
                 $this->getArtistTags(),
+            )
+        );
+    }
+
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getArtistUrl(),
+                $this->getArtistResponse(),
+                $this->getProcessingImages()
             )
         );
     }
@@ -239,5 +253,13 @@ class SpotifyArtistProcessorTest extends \PHPUnit_Framework_TestCase
                         ),
                 ),
         );
+    }
+
+    public function getProcessingImages()
+    {
+        $processingImage = new ProcessingImage('https://i.scdn.co/image/e2bd9ef3de6d7fa43ed877388249c6415e76a9c4');
+        $processingImage->setWidth(1000);
+        $processingImage->setHeight(1198);
+        return array ($processingImage);
     }
 }

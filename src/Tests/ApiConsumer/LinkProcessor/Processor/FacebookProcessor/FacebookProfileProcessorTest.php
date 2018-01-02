@@ -1,15 +1,18 @@
 <?php
 
-namespace Tests\ApiConsumer\LinkProcessor\Processor\TwitterProcessor;
+namespace Tests\ApiConsumer\LinkProcessor\Processor\FacebookProcessor;
 
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\AbstractFacebookProcessor;
 use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookProfileProcessor;
-use ApiConsumer\LinkProcessor\SynonymousParameters;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;
-use Model\User\TokensModel;
+use Model\Link\Link;
+use Model\User\Token\TokensModel;
+use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
-class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
+class FacebookProfileProcessorTest extends AbstractProcessorTest
 {
     /**
      * @var FacebookResourceOwner|\PHPUnit_Framework_MockObject_MockObject
@@ -35,30 +38,29 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
         $this->parser = $this->getMockBuilder('ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser')
             ->getMock();
 
-        $this->processor = new FacebookProfileProcessor($this->resourceOwner, $this->parser);
+        $this->processor = new FacebookProfileProcessor($this->resourceOwner, $this->parser, $this->brainBaseUrl . FacebookUrlParser::DEFAULT_IMAGE_PATH);
     }
 
     /**
      * @dataProvider getProfileForRequestItem
      */
-    public function testRequestItem($url, $id, $isStatus, $profiles)
+    public function testRequestItem($url, $id, $isStatus, $profile)
     {
         $this->parser->expects($this->any())
             ->method('isStatusId')
             ->will($this->returnValue($isStatus));
 
         $this->resourceOwner->expects($this->once())
-            ->method('requestPage')
-            ->will($this->returnValue($profiles));
+            ->method('requestProfile')
+            ->will($this->returnValue($profile));
 
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
         $link->setResourceItemId($id);
         $link->setType(FacebookUrlParser::FACEBOOK_PAGE);
         $link->setSource(TokensModel::FACEBOOK);
-        $response = $this->processor->requestItem($link);
+        $response = $this->processor->getResponse($link);
 
-        $this->assertEquals($response, $profiles, 'Asserting correct response for ' . $url);
+        $this->assertEquals($response, $profile, 'Asserting correct response for ' . $url);
     }
 
     /**
@@ -67,10 +69,9 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
     public function testHydrateLink($url, $response, $expectedArray)
     {
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
         $this->processor->hydrateLink($link, $response);
 
-        $this->assertEquals($expectedArray, $link->getLink()->toArray(), 'Asserting correct hydrated link for ' . $url);
+        $this->assertEquals($expectedArray, $link->getFirstLink()->toArray(), 'Asserting correct hydrated link for ' . $url);
     }
 
     /**
@@ -79,14 +80,24 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
     public function testAddTags($url, $response, $expectedTags)
     {
         $link = new PreprocessedLink($url);
-        $link->setCanonical($url);
         $this->processor->addTags($link, $response);
 
         $tags = $expectedTags;
         sort($tags);
-        $resultTags = $link->getLink()->getTags();
+        $resultTags = $link->getFirstLink()->getTags();
         sort($resultTags);
         $this->assertEquals($tags, $resultTags);
+    }
+
+    /**
+     * @dataProvider getResponseImages
+     */
+    public function testGetImages($url, $response, $expectedImages)
+    {
+        $link = new PreprocessedLink($url);
+        $images = $this->processor->getImages($link, $response);
+
+        $this->assertEquals($expectedImages, $images, 'Images gotten from response');
     }
 
     public function getBadUrls()
@@ -110,22 +121,15 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
 
     public function getResponseHydration()
     {
+        $expectedLink = new Link();
+        $expectedLink->setTitle($this->getTitle());
+        $expectedLink->setDescription($this->getTitle());
+        $expectedLink->addAdditionalLabels(AbstractFacebookProcessor::FACEBOOK_LABEL);
         return array(
             array(
                 $this->getProfileUrl(),
                 $this->getProfileItemResponse(),
-                array(
-                    'title' => 'VIPS',
-                    'description' => $this->getDescription(),
-                    'thumbnail' => "https://scontent.xx.fbcdn.net/v/t1.0-1/p200x200/14462778_1189395474449864_8356688914233163542_n.png?oh=7896407a8bda6664154139d74b76892c&oe=5862D54B",
-                    'url' => null,
-                    'id' => null,
-                    'tags' => array(),
-                    'created' => null,
-                    'processed' => true,
-                    'language' => null,
-                    'synonymous' => array(),
-                )
+                $expectedLink->toArray()
             )
         );
     }
@@ -141,6 +145,17 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
         );
     }
 
+    public function getResponseImages()
+    {
+        return array(
+            array(
+                $this->getProfileUrl(),
+                $this->getProfileItemResponse(),
+                $this->getProcessingImages()
+            )
+        );
+    }
+
     public function getProfileResponse()
     {
         return $this->getProfileItemResponse();
@@ -149,27 +164,15 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
     public function getProfileItemResponse()
     {
         return array(
-            "name" => "VIPS",
-            "description" => $this->getDescription(),
+            "name" => $this->getTitle(),
             "picture" => array(
                 "data" => array(
                     "is_silhouette" => false,
-                    "url" => "https://scontent.xx.fbcdn.net/v/t1.0-1/p200x200/14462778_1189395474449864_8356688914233163542_n.png?oh=7896407a8bda6664154139d74b76892c&oe=5862D54B",
+                    "url" => $this->getThumbnailUrl(),
                 )
             ),
-            "id" => "166849216704500"
+            "id" => "10153571968389307"
         );
-    }
-
-    public function getDescription()
-    {
-        return "En VIPS tenemos comida para todos los gustos.
-
-                                Más de 60 platos que puedes disfrutar durante tus desayunos, comidas, meriendas y cenas. Variados entrantes como nuestras Patatas VIPS ideales para compartir, sabrosas ensaladas como la Louisiana o la César, sandwiches como nuestro popular VIPS Club, sabrosas hamburguesas como la Manhattan, tiernas carnes como el Lomo Alto de novillo argentino y deliciosos postres y batidos. Además, para las comidas de diario podrás disfrutar de un completo Menú del día.
-
-                                Todo ello con una insuperable relación calidad - precio y servicio WI-FI
-
-                                ¡Te esperamos!";
     }
 
     public function getProfileUrl()
@@ -187,4 +190,18 @@ class FacebookProfileProcessorTest extends \PHPUnit_Framework_TestCase
         return array();
     }
 
+    public function getThumbnailUrl()
+    {
+        return "https://scontent.xx.fbcdn.net/v/t1.0-1/p200x200/1936476_10154428007884307_1240327335205953613_n.jpg?oh=2f4b121a7b7baf85328495f15ebd368e&oe=594A6F24";
+    }
+
+    public function getProcessingImages()
+    {
+        return array (new ProcessingImage($this->getThumbnailUrl()));
+    }
+
+    public function getTitle()
+    {
+        return "Roberto Martinez Pallarola";
+    }
 }

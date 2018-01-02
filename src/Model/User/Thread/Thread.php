@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: yawmoght
- * Date: 4/12/15
- * Time: 11:07
- */
 
 namespace Model\User\Thread;
 
@@ -27,6 +21,8 @@ class Thread implements \JsonSerializable
     protected $totalResults;
     
     protected $recommendationUrl;
+
+    protected $groupId;
 
     function __construct($id, $name)
     {
@@ -162,6 +158,22 @@ class Thread implements \JsonSerializable
         $this->recommendationUrl = $recommendationUrl;
     }
 
+    /**
+     * @return mixed
+     */
+    public function getGroupId()
+    {
+        return $this->groupId;
+    }
+
+    /**
+     * @param mixed $groupId
+     */
+    public function setGroupId($groupId)
+    {
+        $this->groupId = $groupId;
+    }
+
     
     /**
      * Specify data which should be serialized to JSON
@@ -181,6 +193,7 @@ class Thread implements \JsonSerializable
             'cached' => $this->getCached(),
             'recommendationUrl' => $this->getRecommendationUrl(),
             'totalResults' => $this->getTotalResults(),
+            'groupId' => $this->getGroupId()
         );
     }
 

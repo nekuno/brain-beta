@@ -3,7 +3,8 @@
 namespace ApiConsumer\LinkProcessor\Processor\YoutubeProcessor;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use Model\Video;
+use Model\User\Token\Token;
+use Model\Link\Video;
 
 class YoutubePlaylistProcessor extends AbstractYoutubeProcessor
 {
@@ -14,11 +15,11 @@ class YoutubePlaylistProcessor extends AbstractYoutubeProcessor
     {
         parent::hydrateLink($preprocessedLink, $data);
 
-        $link = Video::buildFromLink($preprocessedLink->getLink());
+        $link = Video::buildFromLink($preprocessedLink->getFirstLink());
         $link->setEmbedId($preprocessedLink->getResourceItemId());
         $link->setEmbedType('youtube');
 
-        $preprocessedLink->setLink($link);
+        $preprocessedLink->setFirstLink($link);
     }
 
     function getItemIdFromParser($url)
@@ -26,9 +27,9 @@ class YoutubePlaylistProcessor extends AbstractYoutubeProcessor
         return $this->parser->getPlaylistId($url);
     }
 
-    protected function requestSpecificItem($id)
+    protected function requestSpecificItem($id, Token $token = null)
     {
-        return $this->resourceOwner->requestPlaylist($id);
+        return $this->resourceOwner->requestPlaylist($id, $token);
     }
 
 }

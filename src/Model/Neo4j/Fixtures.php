@@ -2,10 +2,10 @@
 
 namespace Model\Neo4j;
 
-use Model\LinkModel;
-use Model\Questionnaire\QuestionModel;
+use Model\Link\LinkModel;
+use Model\User\Question\QuestionModel;
 use Model\User;
-use Model\User\AnswerModel;
+use Model\User\Question\AnswerManager;
 use Model\User\ProfileModel;
 use Model\User\RateModel;
 use Manager\UserManager;
@@ -14,6 +14,7 @@ use Model\User\Group\GroupModel;
 use Model\User\InvitationModel;
 use Model\User\PrivacyModel;
 use Psr\Log\LoggerInterface;
+use Service\GroupService;
 use Silex\Application;
 
 class Fixtures
@@ -57,7 +58,12 @@ class Fixtures
     protected $qm;
 
     /**
-     * @var AnswerModel
+     * @var User\Question\QuestionCorrelationManager
+     */
+    protected $correlationManager;
+
+    /**
+     * @var AnswerManager
      */
     protected $am;
 
@@ -80,6 +86,11 @@ class Fixtures
      * @var GroupModel
      */
     protected $gpm;
+
+    /**
+     * @var GroupService
+     */
+    protected $groupService;
 
     /**
      * @var InvitationModel
@@ -108,9 +119,11 @@ class Fixtures
         $this->um = $app['users.manager'];
         $this->eu = $app['enterpriseUsers.model'];
         $this->gpm = $app['users.groups.model'];
+        $this->groupService = $app['group.service'];
         $this->im = $app['users.invitations.model'];
         $this->lm = $app['links.model'];
         $this->qm = $app['questionnaire.questions.model'];
+        $this->correlationManager = $app['users.questionCorrelation.manager'];
         $this->am = $app['users.answers.model'];
         $this->pm = $app['users.profile.model'];
         $this->prim = $app['users.privacy.model'];
@@ -135,6 +148,7 @@ class Fixtures
         $this->loadPrivacyOptions();
         $this->loadUsers();
         $this->loadEnterpriseUsers();
+        $this->loadInvitations();
         $this->loadGroups();
         $createdLinks = $this->loadLinks();
         $this->loadTags();
@@ -175,14 +189,13 @@ class Fixtures
             $this->um->create(
                 array(
                     'username' => 'user' . $i,
-                    'plainPassword' => 'userpass',
                     'email' => 'user' . $i . '@nekuno.com',
                 )
             );
             $profileData = array(
                 'birthday' => '1970-01-01',
                 'gender' => 'male',
-                'orientation' => 'heterosexual',
+                'orientation' => array('heterosexual'),
                 'interfaceLanguage' => 'es',
                 'location' => array(
                     'latitude' => 40.4167754,
@@ -212,13 +225,27 @@ class Fixtures
         }
     }
 
+    protected function loadInvitations()
+    {
+        $this->logger->notice('Loading generic invitation');
+
+        $invitationData = array(
+            'orientationRequired' => false,
+            'available' => 10000,
+            'token' => 'join',
+        );
+
+        $this->im->create($invitationData);
+
+    }
+
     protected function loadGroups()
     {
         $this->logger->notice(sprintf('Loading %d enterprise groups and invitations', self::NUM_OF_ENTERPRISE_USERS));
 
         for ($i = 1; $i <= self::NUM_OF_ENTERPRISE_USERS; $i++) {
 
-            $group = $this->gpm->create(
+            $group = $this->groupService->createGroup(
                 array(
                     'name' => 'group ' . $i,
                     'html' => $this->getHTMLFixture(),
@@ -247,14 +274,14 @@ class Fixtures
                     break;
                 }
                 $this->im->consume($invitation['invitation']['token'], $user->getId());
-                $this->gpm->addUser($group->getId(), $user->getId());
+                $this->groupService->addUser($group->getId(), $user->getId());
             }
         }
 
         $this->logger->notice(sprintf('Loading %d groups', self::NUM_OF_GROUPS - self::NUM_OF_ENTERPRISE_USERS));
 
         for ($i = self::NUM_OF_ENTERPRISE_USERS + 1; $i <= self::NUM_OF_GROUPS - self::NUM_OF_ENTERPRISE_USERS; $i++) {
-            $this->gpm->create(
+            $this->groupService->createGroup(
                 array(
                     'name' => 'group ' . $i,
                     'html' => $this->getHTMLFixture(),
@@ -563,8 +590,8 @@ Duis venenatis porta arcu sed luctus. Quisque eu mi sit amet tellus porttitor vu
     private function calculateRegisterQuestions()
     {
         $this->logger->notice('Calculating uncorrelated questions');
-        $result = $this->qm->getUncorrelatedQuestions();
-        $this->qm->setDivisiveQuestions($result['questions']);
+        $result = $this->correlationManager->getUncorrelatedQuestions();
+        $this->correlationManager->setDivisiveQuestions($result['questions']);
         $this->logger->notice(sprintf('Obtained and saved %d questions', count($result['questions'])));
 
     }

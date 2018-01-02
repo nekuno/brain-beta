@@ -1,7 +1,4 @@
 <?php
-/**
- * @author yawmoght <yawmoght@gmail.com>
- */
 
 namespace EventListener;
 
@@ -10,6 +7,7 @@ use Model\User\Group\GroupModel;
 use Model\User\InvitationModel;
 use Model\User\ProfileModel;
 use Manager\UserManager;
+use Service\GroupService;
 use Silex\Translator;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -24,6 +22,11 @@ class PrivacySubscriber implements EventSubscriberInterface
      * @var GroupModel
      */
     protected $groupModel;
+
+    /**
+     * @var GroupService
+     */
+    protected $groupService;
 
     /**
      * @var InvitationModel
@@ -49,15 +52,17 @@ class PrivacySubscriber implements EventSubscriberInterface
      * PrivacySubscriber constructor.
      * @param Translator $translator
      * @param GroupModel $groupModel
+     * @param GroupService $groupService
      * @param UserManager $userManager
      * @param ProfileModel $profileModel
      * @param InvitationModel $invitationModel
      * @param $socialhost
      */
-    public function __construct(Translator $translator, GroupModel $groupModel, UserManager $userManager, ProfileModel $profileModel, InvitationModel $invitationModel, $socialhost)
+    public function __construct(Translator $translator, GroupModel $groupModel, GroupService $groupService, UserManager $userManager, ProfileModel $profileModel, InvitationModel $invitationModel, $socialhost)
     {
         $this->translator = $translator;
         $this->groupModel = $groupModel;
+        $this->groupService = $groupService;
         $this->userManager = $userManager;
         $this->profileModel = $profileModel;
         $this->invitationModel = $invitationModel;
@@ -105,10 +110,10 @@ class PrivacySubscriber implements EventSubscriberInterface
 
             if (isset($groupsFollowers[0])) {
                 $groupId = $groupsFollowers[0];
-                $group = $this->groupModel->update($groupId, $groupData);
+                $group = $this->groupService->updateGroup($groupId, $groupData);
                 $this->invitationModel->setAvailableInvitations($group->getInvitation()['invitation_token'], InvitationModel::MAX_AVAILABLE);
             } else {
-                $group = $this->groupModel->create($groupData);
+                $group = $this->groupService->createGroup($groupData);
                 $url = $influencer->getPhoto()->getUrl();
                 $compatibleOrSimilar = $typeMatching === 'compatibility' ? 'compatible' : 'similar';
                 $slogan = $this->translator->trans('followers.invitation_slogan', array('%username%' => $influencer->getUsername(), '%compatible_or_similar%' => $compatibleOrSimilar));

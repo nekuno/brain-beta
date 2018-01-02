@@ -1,17 +1,11 @@
 <?php
-/**
- * @author adrian.web.dev@gmail.com
- */
 
 namespace Worker;
 
 
 use PhpAmqpLib\Message\AMQPMessage;
 
-/**
- * Interface RabbitMQConsumerInterface
- * @package Worker
- */
+
 interface RabbitMQConsumerInterface {
 
     /**
@@ -25,5 +19,5 @@ interface RabbitMQConsumerInterface {
      * @param AMQPMessage $message
      * @return mixed
      */
-    public function callback(AMQPMessage $message);
+    public function callbackWrapper(AMQPMessage $message);
 }

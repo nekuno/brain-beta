@@ -8,7 +8,7 @@ use Model\Neo4j\Neo4jException;
 use Model\User\Group\GroupModel;
 use Model\User\Thread\ThreadManager;
 use Manager\UserManager;
-use Service\Recommendator;
+use Service\RecommendatorService;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -63,39 +63,40 @@ class UsersThreadsCreateCommand extends ApplicationAwareCommand
 
         /* @var $threadManager ThreadManager */
         $threadManager = $this->app['users.threads.manager'];
-        /* @var $recommendator Recommendator */
+        /* @var $recommendator RecommendatorService */
         $recommendator = $this->app['recommendator.service'];
         /* @var $groupModel GroupModel */
         $groupModel = $this->app['users.groups.model'];
 
         foreach ($users as $user) {
 
-            if ($user->isGuest()){
+            if ($user->isGuest()) {
                 continue;
             }
 
             $output->writeln('-----------------------------------------------------------------------');
-            $threads = $threadManager->getDefaultThreads($user, $scenario);
-
-            if ($groupsOption) {
-                $groups = $groupModel->getAllByUserId($user->getId());
-
-                foreach ($groups as $group) {
-                    $threads[] = $threadManager->getGroupThreadData($group, $user->getId());
-                }
-            }
 
             if ($clear) {
                 $existingThreads = $threadManager->getByUser($user->getId());
                 foreach ($existingThreads as $existingThread) {
 //                    if ($existingThread->getDefault() == true) {
-                        $threadManager->deleteById($existingThread->getId());
+                    $threadManager->deleteById($existingThread->getId());
 //                    }
                 }
                 $output->writeln(sprintf('Deleted threads for user %d', $user->getId()));
             }
 
+            if ($groupsOption) {
+                $groups = $groupModel->getAllByUserId($user->getId());
+
+                foreach ($groups as $group) {
+                    $threadManager->createGroupThread($group, $user->getId());
+                }
+                $output->writeln(sprintf('Created %d group threads for user %d', count($groups), $user->getId()));
+            }
+
             try {
+                $threads = $threadManager->getDefaultThreads($user, $scenario);
                 $createdThreads = $threadManager->createBatchForUser($user->getId(), $threads);
                 $output->writeln('Added threads for scenario ' . $scenario . ' and user with id ' . $user->getId());
                 foreach ($createdThreads as $createdThread) {

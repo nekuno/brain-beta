@@ -7,25 +7,41 @@ use ApiConsumer\Exception\UrlNotValidException;
 class UrlParser implements UrlParserInterface
 {
     const SCRAPPER = 'scrapper';
+    const IMAGESCRAPPER = 'scrapperImage';
 
-    public function checkUrlValid($url)
+    protected $imageExtensions = array('jpg', 'jpeg', 'tif', 'tiff', 'gif', 'png', 'bmp', 'pbm', 'pgm', 'ppm', 'webp', 'hdr', 'heif', 'heic', 'bpg', 'ico', 'cgm', 'svg', 'gbm');
+
+    public function checkUrlValid($url, $urlDecoded = null)
     {
+        $toCheck = $this->removeSpecialCharacters($url);
         //TODO: Check https://mathiasbynens.be/demo/url-regex for improvements
-        if (!filter_var($url, FILTER_VALIDATE_URL)) {
-            throw new UrlNotValidException($url);
+        if (!filter_var($toCheck, FILTER_VALIDATE_URL)) {
+            throw new UrlNotValidException($urlDecoded ?: $url);
         }
+    }
+
+//    protec
+
+    protected function removeSpecialCharacters($url)
+    {
+        $path = parse_url($url, PHP_URL_PATH);
+        $encoded_path = array_map('urlencode', explode('/', $path));
+        $url = str_replace($path, implode('/', $encoded_path), $url);
+
+        return $url;
     }
 
     public function cleanURL($url)
     {
         $url = $this->removeSpecialEndingChars($url);
-        $url = $this->fixCodification($url);
-        $this->checkUrlValid($url);
+        $urlDecoded = $this->fixCodification($url);
+        $this->checkUrlValid($url, $urlDecoded);
 
-        return $this->removeEndingChars($url);
+        return $this->removeEndingChars($urlDecoded);
     }
 
     // Regex from https://gist.github.com/gruber/8891611
+
     /**
      * @param $string
      * @return array
@@ -71,8 +87,34 @@ class UrlParser implements UrlParserInterface
 
     public function getUrlType($url)
     {
-        $this->checkUrlValid($url);
+        if ($this->isImageUrl($url)) {
+            return UrlParser::IMAGESCRAPPER;
+        }
 
         return UrlParser::SCRAPPER;
+    }
+
+    protected function isImageUrl($url)
+    {
+        $extensionsString = implode('|', $this->imageExtensions);
+        $regexp = '/\/[^\/]+\.(' . $extensionsString . ')[^\/]*$/i';
+        $match = preg_match($regexp, $url);
+
+        return !!$match;
+    }
+
+    /**
+     * @param $url
+     * @return string | null
+     */
+    public function getUsername($url)
+    {
+        if (null == $url) {
+            //TODO: throw UrlNotValidException
+            return null;
+        }
+        $parts = explode('/', $url);
+
+        return end($parts);
     }
 }

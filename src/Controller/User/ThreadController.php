@@ -1,14 +1,11 @@
 <?php
-/**
- * @author Roberto M. Pallarola <yawmoght@gmail.com>
- */
 
 namespace Controller\User;
 
+use Model\User\Thread\Thread;
 use Model\User\Thread\ThreadPaginatedModel;
 use Model\User;
 use Paginator\Paginator;
-use Service\Recommendator;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -22,13 +19,13 @@ class ThreadController
      *
      * @param Application $app
      * @param Request $request
-     * @param string $id threadId
+     * @param string $threadId threadId
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      * @throws \Exception
      */
-    public function getRecommendationAction(Application $app, Request $request, $id)
+    public function getRecommendationAction(Application $app, Request $request, $threadId)
     {
-        $thread = $app['users.threads.manager']->getById($id);
+        $thread = $app['users.threads.manager']->getById($threadId);
 
         $result = $this->getRecommendations($app, $thread, $request);
         if (!is_array($result)) {
@@ -77,51 +74,31 @@ class ThreadController
         return $app->json($thread, 201);
     }
 
-    public function createDefaultAction(Application $app, User $user)
-    {
-        $threadManager = $app['users.threads.manager'];
-
-        $threads = $threadManager->getDefaultThreads($user, User\Thread\ThreadManager::SCENARIO_DEFAULT_LITE);
-        try{
-            $createdThreads = $threadManager->createBatchForUser($user->getId(), $threads);
-        } catch (\Exception $e) {
-            sleep(5);
-            $createdThreads = $threadManager->createBatchForUser($user->getId(), $threads);
-        }
-
-        if (count($createdThreads) < count ($threads) ) {
-            sleep(5);
-            $createdThreads = $threadManager->createBatchForUser($user->getId(), $threads);
-        }
-
-        return $app->json($createdThreads, 201);
-    }
-
     /**
      * @param Application $app
      * @param Request $request
      * @param User $user
-     * @param integer $id
+     * @param integer $threadId
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      * @throws \Exception
      */
-    public function putAction(Application $app, Request $request, User $user, $id)
+    public function putAction(Application $app, Request $request, User $user, $threadId)
     {
-        $thread = $app['users.threads.manager']->update($id, $user->getId(), $request->request->all());
+        $thread = $app['users.threads.manager']->update($threadId, $user->getId(), $request->request->all());
 
         return $app->json($thread, 201);
     }
 
     /**
      * @param Application $app
-     * @param integer $id
+     * @param integer $threadId
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      * @throws \Exception
      */
-    public function deleteAction(Application $app, $id)
+    public function deleteAction(Application $app, $threadId)
     {
         try {
-            $relationships = $app['users.threads.manager']->deleteById($id);
+            $relationships = $app['users.threads.manager']->deleteById($threadId);
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
                 throw $e;
@@ -140,27 +117,30 @@ class ThreadController
      * @return array|string string if got an exception in production environment
      * @throws \Exception
      */
-    protected function getRecommendations($app, $thread, Request $request) {
-        /** @var Recommendator $recommendator */
+    protected function getRecommendations(Application $app, Thread $thread, Request $request)
+    {
+
         $recommendator = $app['recommendator.service'];
         try {
             $result = $recommendator->getRecommendationFromThreadAndRequest($thread, $request);
-
-            if (!$request->get('offset')){
-                $app['users.threads.manager']->cacheResults($thread,
-                    array_slice($result['items'], 0, 20),
-                    $result['pagination']['total']);
-            }
-
+//            $this->cacheRecommendations($app, $thread, $request, $result);
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
                 throw $e;
             } else {
                 return $e->getMessage();
-
             }
         }
 
         return $result;
+    }
+
+    protected function cacheRecommendations(Application $app, Thread $thread, Request $request, array $result)
+    {
+        $isFirstPage = !$request->get('offset');
+        if ($isFirstPage) {
+            $firstResults = array_slice($result['items'], 0, 20);
+            $app['users.threads.manager']->cacheResults($thread, $firstResults, $result['pagination']['total']);
+        }
     }
 }

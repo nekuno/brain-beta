@@ -4,11 +4,11 @@ namespace Model\User\Recommendation;
 
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
-use Model\LinkModel;
+use Model\Link\LinkModel;
 use Model\User\Affinity\AffinityModel;
 use Model\Neo4j\GraphManager;
 use Service\ImageTransformations;
-use Service\Validator;
+use Service\Validator\FilterContentValidator;
 
 class ContentRecommendationPaginatedModel extends AbstractContentPaginatedModel
 {
@@ -22,10 +22,10 @@ class ContentRecommendationPaginatedModel extends AbstractContentPaginatedModel
      * @param GraphManager $gm
      * @param AffinityModel $am
      * @param LinkModel $lm
-     * @param Validator $validator
+     * @param FilterContentValidator $validator
      * @param ImageTransformations $it
      */
-    public function __construct(GraphManager $gm, AffinityModel $am, LinkModel $lm, Validator $validator, ImageTransformations $it)
+    public function __construct(GraphManager $gm, AffinityModel $am, LinkModel $lm, FilterContentValidator $validator, ImageTransformations $it)
     {
         parent::__construct($gm, $lm, $validator, $it);
         $this->am = $am;
@@ -38,9 +38,7 @@ class ContentRecommendationPaginatedModel extends AbstractContentPaginatedModel
      */
     public function validateFilters(array $filters)
     {
-        $userId = isset($filters['id'])? $filters['id'] : null;
-        $this->validator->validateUserId($userId);
-
+        $filters['userId'] = isset($filters['id'])? $filters['id'] : null;
         return parent::validateFilters($filters);
     }
 

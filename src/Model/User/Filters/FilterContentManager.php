@@ -1,39 +1,28 @@
 <?php
-/**
- * @author yawmoght <yawmoght@gmail.com>
- */
 
 namespace Model\User\Filters;
 
 
 use Everyman\Neo4j\Node;
 use Model\Neo4j\GraphManager;
-use Model\User\ContentFilterModel;
-use Service\Validator;
+use Service\Validator\FilterContentValidator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class FilterContentManager
 {
-
     /**
      * @var GraphManager
      */
     protected $graphManager;
 
     /**
-     * @var ContentFilterModel
-     */
-    protected $contentFilterModel;
-
-    /**
-     * @var Validator
+     * @var FilterContentValidator
      */
     protected $validator;
 
-    public function __construct(GraphManager $graphManager, ContentFilterModel $contentFilterModel, Validator $validator)
+    public function __construct(GraphManager $graphManager, FilterContentValidator $validator)
     {
         $this->graphManager = $graphManager;
-        $this->contentFilterModel = $contentFilterModel;
         $this->validator = $validator;
     }
 
@@ -66,7 +55,7 @@ class FilterContentManager
     public function updateFilterContentByThreadId($id, $filtersArray)
     {
         $contentFilters = isset($filtersArray['contentFilters']) ? $filtersArray['contentFilters'] : array();
-        $this->validator->validateEditFilterContent($contentFilters, $this->getChoices());
+        $this->validator->validateOnUpdate($contentFilters);
 
         $filters = $this->buildFiltersContent();
 
@@ -99,16 +88,6 @@ class FilterContentManager
         $this->saveType($filters->getId(), $type);
 
         return true;
-    }
-
-    //TODO: LinkModel->getValidTypes() is the same
-    protected function getChoices()
-    {
-        return array(
-            'type' => array(
-                'Link', 'Audio', 'Video', 'Image', 'Creator'
-            )
-        );
     }
 
     /**

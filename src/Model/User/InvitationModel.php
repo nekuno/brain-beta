@@ -8,28 +8,25 @@ use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 use Model\User\Group\Group;
 use Service\TokenGenerator;
-use Service\Validator;
+use Service\Validator\InvitationValidator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-/**
- * Class InvitationModel
- * @package Model\User
- */
+
 class InvitationModel
 {
 
     /**
-     * @var TokenGenerator
+     * @var TokenGenerator $tokenGenerator
      */
     protected $tokenGenerator;
 
     /**
-     * @var GraphManager
+     * @var GraphManager $gm
      */
     protected $gm;
 
     /**
-     * @var Validator
+     * @var InvitationValidator $validator
      */
     protected $validator;
 
@@ -40,7 +37,7 @@ class InvitationModel
 
     const MAX_AVAILABLE = 9999999999;
 
-    public function __construct(TokenGenerator $tokenGenerator, GraphManager $gm, Validator $validator, $adminDomain)
+    public function __construct(TokenGenerator $tokenGenerator, GraphManager $gm, InvitationValidator $validator, $adminDomain)
     {
         $this->tokenGenerator = $tokenGenerator;
         $this->gm = $gm;
@@ -217,6 +214,7 @@ class InvitationModel
         return $invitations;
     }
 
+    //Too many ifs, divide in methods (createFromUser, createFromAdmin, createFromGroup...)
     public function create(array $data)
     {
         $this->validateCreate($data);
@@ -243,6 +241,9 @@ class InvitationModel
                         $exists = $this->existsToken($token);
                     } while ($exists);
                     $qb->set('inv.token = "' . $token . '"');
+                    continue;
+                } else if ($data['token']) {
+                    $qb->set('inv.token = toLower("' . $data['token'] . '")');
                     continue;
                 }
             }
@@ -458,7 +459,7 @@ class InvitationModel
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(inv:Invitation)', '(u:User)')
-            ->where('inv.token = { token } AND coalesce(inv.available, 0) > 0 AND u.qnoow_id = { userId }')
+            ->where('toLower(inv.token) = toLower({ token }) AND coalesce(inv.available, 0) > 0 AND u.qnoow_id = { userId }')
             ->optionalMatch('(inv)-[:HAS_GROUP]->(g:Group)')
             ->createUnique('(u)-[r:CONSUMED_INVITATION]->(inv)')
             ->set('inv.available = inv.available - 1', 'inv.consumed = inv.consumed + 1')
@@ -590,16 +591,18 @@ class InvitationModel
 
     /**
      * @param $token
+     * @param $excludedId
      * @return bool
      * @throws \Model\Neo4j\Neo4jException
      */
-    public function existsToken($token)
+    public function existsToken($token, $excludedId = null)
     {
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(invitation:Invitation)')
-            ->where('invitation.token = { token }')
+            ->where('toLower(invitation.token) = toLower({ token }) AND NOT id(invitation) = { excludedId }')
             ->setParameter('token', (string)$token)
+            ->setParameter('excludedId', (int)$excludedId)
             ->returns('invitation');
 
         $query = $qb->getQuery();
@@ -628,15 +631,15 @@ class InvitationModel
 
         $result = $query->getResultSet();
 
-        return $result->current()->offsetGet('token') === $token;
+        return strtolower($result->current()->offsetGet('token')) === strtolower($token);
     }
 
-    public function validateToken($token)
+    public function validateTokenAvailable($token)
     {
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(inv:Invitation)')
-            ->where('inv.token = { token } AND coalesce(inv.available, 0) > 0')
+            ->where('toLower(inv.token) = toLower({ token }) AND coalesce(inv.available, 0) > 0')
             ->optionalMatch('(inv)-[:HAS_GROUP]->(g:Group)')
             ->returns('inv AS invitation', 'g AS group')
             ->setParameters(
@@ -649,6 +652,9 @@ class InvitationModel
 
         $result = $query->getResultSet();
 
+        if ($result->count() === 0 && substr($token, 0, 12) === "shared_user-") {
+            $result = $this->createFromSharedUser($token);
+        }
         if ($result->count() > 0) {
             /* @var $row Row */
             $row = $result->current();
@@ -661,11 +667,7 @@ class InvitationModel
 
     public function validateUpdate(array $data)
     {
-        if ( isset($data['invitationId']) && !$this->existsInvitation($data['invitationId'])) {
-                throw new ValidationException(array('invitatonId' => 'Invalid invitation ID'));
-        }
-
-        $this->validator->validateInvitation($data, true);
+        $this->validator->validateOnUpdate($data);
     }
 
     /**
@@ -674,18 +676,7 @@ class InvitationModel
      */
     public function validateCreate(array $data)
     {
-        if (isset($data['token'])){
-            $token = $data['token'];
-            if (!is_string($token) && !is_numeric($token)) {
-                $fieldErrors[] = 'token must be a string or a numeric';
-            }
-
-            if (isset($data['invitationId']) && $this->existsToken($token) && !$this->isTokenFromInvitationId($token, $data['invitationId'])) {
-                    $fieldErrors[] = 'token already exists';
-            }
-        }
-
-        $this->validator->validateInvitation($data, false);
+        $this->validator->validateOnCreate($data);
     }
 
 
@@ -780,5 +771,25 @@ class InvitationModel
         $row = $result->current();
 
         return (integer)$row->offsetGet('available');
+    }
+
+    private function createFromSharedUser($token)
+    {
+        $otherUserId = substr($token, 12);
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match('(u:User {qnoow_id: { otherUserId }})')
+            ->merge('(u)-[:CREATED_INVITATION]-(inv:Invitation:InvitationSharedUser {token: { token }})')
+            ->set('inv.available = COALESCE(inv.available, 10000) - 1', 'inv.consumed = COALESCE(inv.consumed, 0) + 1', 'inv.createdAt = COALESCE(inv.createdAt , timestamp())', 'inv.orientationRequired = true')
+            ->returns('inv AS invitation')
+            ->setParameters(
+                array(
+                    'otherUserId' => (integer)$otherUserId,
+                    'token' => (string)$token,
+                )
+            );
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        return $result;
     }
 }

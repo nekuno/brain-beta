@@ -5,13 +5,10 @@ namespace Provider;
 use ApiConsumer\Factory\FetcherFactory;
 use ApiConsumer\Factory\ProcessorFactory;
 use ApiConsumer\Fetcher\FetcherService;
-use ApiConsumer\Fetcher\GetOldTweets\GetOldTweets;
 use ApiConsumer\Fetcher\ProcessorService;
-use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\Registry\Registry;
 use ApiConsumer\Factory\ResourceOwnerFactory;
 use Igorw\Silex\ConfigServiceProvider;
-use ApiConsumer\Fetcher\GetOldTweets\TweetManager;
 use Psr\Log\LoggerAwareInterface;
 use Silex\Application;
 use Silex\ServiceProviderInterface;
@@ -59,13 +56,13 @@ class ApiConsumerServiceProvider implements ServiceProviderInterface
 
         $app['api_consumer.processor'] = $app->share(
             function($app) {
-                return new ProcessorService($app['api_consumer.fetcher'], $app['api_consumer.link_processor'], $app['links.model'], $app['dispatcher'], $app['users.rate.model'], $app['api_consumer.link_processor.link_resolver']);
+                return new ProcessorService($app['api_consumer.fetcher'], $app['api_consumer.link_processor'], $app['links.model'], $app['dispatcher.service'], $app['users.rate.model'], $app['api_consumer.link_processor.link_resolver']);
             }
         );
 
         $app['api_consumer.processor_factory'] = $app->share(
             function ($app) {
-                $processorFactory = new ProcessorFactory($app['api_consumer.resource_owner_factory'], $app['api_consumer.link_processor.processor.scrapper'], $app['api_consumer.config']['processor']);
+                $processorFactory = new ProcessorFactory($app['api_consumer.resource_owner_factory'], $app['api_consumer.link_processor.goutte_factory'], $app['api_consumer.config']['processor'], $app['brain_base_url']);
 
                 return $processorFactory;
             }
@@ -77,6 +74,8 @@ class ApiConsumerServiceProvider implements ServiceProviderInterface
                 $fetcher = new FetcherService(
                     $app['api_consumer.fetcher_factory'],
                     $app['dispatcher'],
+                    $app['users.tokens.model'],
+                    $app['users.socialprofile.manager'],
                     $app['api_consumer.config']['fetcher']
                 );
 
@@ -85,22 +84,6 @@ class ApiConsumerServiceProvider implements ServiceProviderInterface
                 }
 
                 return $fetcher;
-            }
-        );
-
-        $app['tweet_manager'] = $app->share(
-            function ($app) {
-                $tweetManager = new TweetManager($app['guzzle.client']);
-
-                return $tweetManager;
-            }
-        );
-
-        $app['get_old_tweets'] = $app->share(
-            function ($app) {
-                $getoldtweets = new GetOldTweets(new TwitterUrlParser(), $app['tweet_manager']);
-
-                return $getoldtweets;
             }
         );
     }

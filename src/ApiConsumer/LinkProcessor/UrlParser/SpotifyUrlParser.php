@@ -10,11 +10,10 @@ class SpotifyUrlParser extends UrlParser
     const ALBUM_URL = 'spotify_album';
     const ALBUM_TRACK_URL = 'spotify_album_track';
     const ARTIST_URL = 'spotify_artist';
+    const DEFAULT_IMAGE_PATH = 'default_images/spotify.png';
 
     public function getUrlType($url)
     {
-        $this->checkUrlValid($url);
-
         $parsedUrl = parse_url($url);
 
         if (isset($parsedUrl['path'])) {
@@ -49,8 +48,6 @@ class SpotifyUrlParser extends UrlParser
      */
     public function getSpotifyId($url)
     {
-        $this->checkUrlValid($url);
-
         $parsedUrl = parse_url($url);
 
         if (isset($parsedUrl['path'])) {

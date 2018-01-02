@@ -3,14 +3,15 @@
 namespace ApiConsumer\Exception;
 
 
+use Model\User\Token\Token;
+
 class TokenException extends \RuntimeException
 {
+    /** @var  Token */
     protected $token;
 
     /**
-     * Get token
-     *
-     * @return array
+     * @return Token
      */
     public function getToken()
     {
@@ -18,9 +19,7 @@ class TokenException extends \RuntimeException
     }
 
     /**
-     * Set token
-     *
-     * @param array $token token
+     * @param Token $token
      */
     public function setToken($token)
     {
