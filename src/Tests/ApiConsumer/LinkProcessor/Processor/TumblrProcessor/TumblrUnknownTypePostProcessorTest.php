@@ -76,15 +76,14 @@ class TumblrUnknownTypePostProcessorTest extends AbstractProcessorTest
     /**
      * @dataProvider getResponseHydration
      */
-    public function testHydrateLink($url, $response, $expectedArray)
+    public function testHydrateLink($url, $response)
     {
+        $this->setExpectedException('ApiConsumer\Exception\UrlChangedException', 'Url changed from https://acabrillanes.tumblr.com/post/167585735597/javascriptpro-redux-vs-mobx-which-is-best-for to https://school.geekwall.in/p/SJR96izJM/redux-vs-mobx-which-is-best-for-your-project');
         $link = new PreprocessedLink($url);
         $firstLink = Link::buildFromArray(array('url' => $url));
         $link->setFirstLink($firstLink);
         $this->processor->setType('photo');
         $this->processor->hydrateLink($link, $response);
-
-        $this->assertEquals($expectedArray, $link->getFirstLink()->toArray(), 'Asserting correct hydrated link for ' . $url);
     }
 
     /**
