@@ -4,11 +4,9 @@ namespace Controller\User;
 
 use Model\Exception\ValidationException;
 use Model\User\Content\ContentPaginatedModel;
-use Model\Metadata\ProfileMetadataManager;
 use Model\Metadata\UserFilterMetadataManager;
 use Model\User\Rate\RateModel;
 use Model\User\Content\ContentReportModel;
-use Model\User\Stats\UserStatsCalculator;
 use Manager\UserManager;
 use Model\User;
 use Service\AuthService;
@@ -607,37 +605,10 @@ class UserController
         $locale = $request->query->get('locale');
         $filters = array();
 
-        /* @var $profileFilterModel ProfileMetadataManager */
-        $profileFilterModel = $app['users.profileFilter.model'];
-        $filters['userFilters'] = $profileFilterModel->getMetadata($locale);
+        $metadataService = $app['metadata.service'];
+        $filters['userFilters'] = $metadataService->getUserFilterMetadata($locale, $user->getId());
 
-        //user-dependent filters
-
-        /* @var $userFilterModel UserFilterMetadataManager */
-        $userFilterModel = $app['users.userFilter.model'];
-        $userFilters = $userFilterModel->getMetadata($locale);
-
-        //TODO: Move this logic to userFilter during/after QS-982 (remove filter logic from GroupModel)
-        /* @var $groupModel \Model\User\Group\GroupModel */
-        $groupModel = $app['users.groups.model'];
-        $groups = $groupModel->getByUser($user->getId());
-
-        $userFilters['groups']['choices'] = array();
-        foreach ($groups as $group) {
-            $userFilters['groups']['choices'][$group->getId()] = $group->getName();
-        }
-
-        if ($groups = null || $groups == array()) {
-            unset($userFilters['groups']);
-        }
-
-        $filters['userFilters'] += $userFilters;
-
-        // content filters
-
-        /* @var $contentFilterModel \Model\Metadata\ContentFilterMetadataManager */
-        $contentFilterModel = $app['users.contentFilter.model'];
-        $filters['contentFilters'] = $contentFilterModel->getMetadata($locale);
+        $filters['contentFilters'] = $metadataService->getContentFilterMetadata($locale);
 
         return $app->json($filters, 200);
     }

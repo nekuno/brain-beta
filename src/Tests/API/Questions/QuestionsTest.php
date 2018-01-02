@@ -96,4 +96,72 @@ class QuestionsTest extends QuestionsAPITest
         );
     }
 
+    protected function getCreateQuestionDataFromAdminA()
+    {
+        return array(
+            'textEs' => 'Question text in Spanish',
+            'textEn' => 'Question text in English',
+            'answer1Es' => 'Answer 1 text in Spanish',
+            'answer1En' => 'Answer 1 text in English',
+            'answer2Es' => 'Answer 2 text in Spanish',
+            'answer2En' => 'Answer 2 text in English',
+        );
+    }
+
+    protected function getCreateQuestionDataFromAdmin1Answer()
+    {
+        return array(
+            'textEs' => 'Question text in Spanish',
+            'textEn' => 'Question text in English',
+            'answer1Es' => 'Answer 1 text in Spanish',
+            'answer1En' => 'Answer 1 text in English',
+        );
+    }
+
+    protected function getCreateQuestionDataFromAdmin7Answers()
+    {
+        return array(
+            'textEs' => 'Question text in Spanish',
+            'textEn' => 'Question text in English',
+            'answer1Es' => 'Answer 1 text in Spanish',
+            'answer1En' => 'Answer 1 text in English',
+            'answer2Es' => 'Answer 2 text in Spanish',
+            'answer2En' => 'Answer 2 text in English',
+            'answer3Es' => 'Answer 3 text in Spanish',
+            'answer3En' => 'Answer 3 text in English',
+            'answer4Es' => 'Answer 4 text in Spanish',
+            'answer4En' => 'Answer 4 text in English',
+            'answer5Es' => 'Answer 5 text in Spanish',
+            'answer5En' => 'Answer 5 text in English',
+            'answer6Es' => 'Answer 6 text in Spanish',
+            'answer6En' => 'Answer 6 text in English',
+            'answer7Es' => 'Answer 7 text in Spanish',
+            'answer7En' => 'Answer 7 text in English',
+        );
+    }
+
+    protected function getCreateQuestionDataFromAdminInvalidLocale()
+    {
+        return array(
+            'textEs' => 'Question text in Spanish',
+            'textEn' => 'Question text in English',
+            'answer1Sp' => 'Answer 1 text in Spanish',
+            'answer1En' => 'Answer 1 text in English',
+            'answer2Es' => 'Answer 2 text in Spanish',
+            'answer2En' => 'Answer 2 text in English',
+        );
+    }
+
+    protected function getCreateQuestionDataFromAdminInvalidText()
+    {
+        return array(
+            'textEs' => array('Question text in Spanish'),
+            'textEn' => 'Question text in English',
+            'answer1Es' => 'Answer 1 text in Spanish',
+            'answer1En' => 'Answer 1 text in English',
+            'answer2Es' => 'Answer 2 text in Spanish',
+            'answer2En' => 'Answer 2 text in English',
+        );
+    }
+
 }

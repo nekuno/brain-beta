@@ -2,6 +2,8 @@
 
 namespace Service;
 
+use Model\Metadata\MetadataManager;
+use Model\User\Question\Admin\QuestionAdminDataFormatter;
 use Model\User\Question\Admin\QuestionAdminManager;
 use Model\User\Question\QuestionModel;
 
@@ -17,6 +19,8 @@ class QuestionService
      */
     protected $questionAdminManager;
 
+    protected $questionAdminDataFormatter;
+
     /**
      * @param QuestionModel $questionModel
      * @param QuestionAdminManager $questionAdminManager
@@ -25,62 +29,25 @@ class QuestionService
     {
         $this->questionModel = $questionModel;
         $this->questionAdminManager = $questionAdminManager;
+        $this->questionAdminDataFormatter = new QuestionAdminDataFormatter();
     }
 
     public function createQuestion(array $data)
     {
-//        $dataSets = $this->multilingualToLocales($data);
-
+        $data = $this->questionAdminDataFormatter->getCreateData($data);
         $created = $this->questionAdminManager->create($data);
         $questionId = $created->getQuestionId();
-//        $dataSets[1]['questionId'] = $questionId;
-//        $this->questionModel->update($dataSets[1]);
 
         return $this->getOneMultilanguage($questionId);
     }
 
-    //TODO: Write custom update query in QuestionAdminManager
-    public function updateMultilanguage(array $data)
+    public function updateQuestion(array $data)
     {
-        $dataSets = $this->multilingualToLocales($data);
+        $data = $this->questionAdminDataFormatter->getUpdateData($data);
+        $created = $this->questionAdminManager->update($data);
+        $questionId = $created->getQuestionId();
 
-        foreach ($dataSets as $dataSet)
-        {
-            $this->questionModel->update($dataSet);
-//            $updated[] = $this->questionAdminManager->getById($questionUpdated['id']);
-        }
-
-        return $this->getOneMultilanguage($data['questionId']);
-    }
-
-    protected function multilingualToLocales(array $data)
-    {
-        $localesData = array();
-        $localesAvailable = array('es', 'en');
-
-        $questionId = isset($data['questionId']) ? $data['questionId'] : null;
-        foreach ($localesAvailable as $locale) {
-
-            $result = array('locale' => $locale);
-            if ($questionId) {
-                $result['questionId'] = $questionId;
-            }
-
-            $answers = array();
-            for ($i = 1; $i <= 6; $i++) {
-                $answerTextLabel = 'answer' . $i . ucfirst($locale);
-                $answerIdLabel = 'answer' . $i . 'Id';
-                $answers[] = array('answerId' => $data[$answerIdLabel], 'text' => $data[$answerTextLabel]);
-            }
-            $result['answers'] = $answers;
-
-            $questionTextLabel = 'text' . ucfirst($locale);
-            $result['text'] = $data[$questionTextLabel];
-
-            $localesData[] = $result;
-        }
-
-        return $localesData;
+        return $this->getOneMultilanguage($questionId);
     }
 
     public function getById($questionId, $locale)

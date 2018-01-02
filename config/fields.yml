@@ -49,7 +49,7 @@ categories:
         - label:
             en: Others
             es: Otros
-          fields: [income, diet, pets, profession, allergy, sons, zodiacSign, handicap]
+          fields: [income, diet, pets, profession, allergy, sons, zodiacSign, handicap, industry]
         - label:
             en: Description
             es: Descripción
@@ -78,7 +78,7 @@ categories:
         - label:
             en: Others
             es: Otros
-          fields: [income, diet, pets, profession, allergy, sons, zodiacSign, handicap]
+          fields: [income, diet, pets, profession, allergy, sons, zodiacSign, handicap, industry]
 profile:
     description:
         type: textarea
@@ -184,6 +184,12 @@ profile:
             en: 'Height (cm)'
             es: 'Altura (cm)'
         labelEdit: *heightLabel
+    industry:
+        type: choice
+        label: &industryLabel
+            en: 'Industry'
+            es: 'Sector'
+        labelEdit: *industryLabel
     allergy:
         type: tags
         label:
@@ -578,8 +584,6 @@ user_filter:
         label:
             en: 'Minimum similarity (%)'
             es: 'Similaridad mínima (%)'
-
-profile_filter:
     birthday:
         type: birthday_range
         label:
@@ -646,6 +650,10 @@ profile_filter:
     diet:
         type: multiple_choices
         label: *dietLabel
+    industry:
+        type: multiple_choices
+        label: *industryLabel
+        max_choices: 10
     orientation:
         type: multiple_choices
         label: *orientationLabel
@@ -690,6 +698,18 @@ questions:
         type: array
         min: 2
         max: 6
+
+questions_admin:
+    answerTexts:
+        required: true
+        type: array
+        min: 2
+        max: 6
+    questionTexts:
+        required: true
+        type: array
+        min: 2
+        max : 2
 
 answers:
     questionId:

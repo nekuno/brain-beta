@@ -40,23 +40,23 @@ class RegisterService
     protected $im;
 
     /**
-     * @var GroupModel
+     * @var GroupService
      */
-    protected $gm;
+    protected $groupService;
 
     /**
      * @var Dispatcher
      */
     protected $dispatcher;
 
-    public function __construct(UserManager $um, GhostUserManager $gum, TokensModel $tm, ProfileModel $pm, InvitationModel $im, GroupModel $gm, Dispatcher $dispatcher)
+    public function __construct(UserManager $um, GhostUserManager $gum, TokensModel $tm, ProfileModel $pm, InvitationModel $im, GroupService $groupService, Dispatcher $dispatcher)
     {
         $this->um = $um;
         $this->gum = $gum;
         $this->tm = $tm;
         $this->pm = $pm;
         $this->im = $im;
-        $this->gm = $gm;
+        $this->groupService = $groupService;
         $this->dispatcher = $dispatcher;
     }
 
@@ -88,7 +88,7 @@ class RegisterService
             $profile = $this->pm->update($user->getId(), $profileData);
         }
         if (isset($invitation['invitation']['group'])) {
-            $this->gm->addUser($invitation['invitation']['group']->getId(), $user->getId());
+            $this->groupService->addUser($invitation['invitation']['group']->getId(), $user->getId());
         }
         $this->dispatcher->dispatch(\AppEvents::USER_REGISTERED, new UserRegisteredEvent($user, $profile, $invitation, $token, $trackingData));
 

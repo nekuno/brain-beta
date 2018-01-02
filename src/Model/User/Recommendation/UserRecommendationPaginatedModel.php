@@ -10,26 +10,23 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
 
     /**
      * Slices the query according to $offset, and $limit.
-     * @param array $filters
+     * @param array $filtersArray
      * @param int $offset
      * @param int $limit
      * @throws \Exception
      * @return array
      */
-    public function slice(array $filters, $offset, $limit)
+    public function slice(array $filtersArray, $offset, $limit)
     {
-        $id = $filters['id'];
+        $id = $filtersArray['id'];
 
         $orderQuery = ' matching_questions DESC, similarity DESC, id ';
-        if (isset($filters['userFilters']['order']) && $filters['userFilters']['order'] == 'similarity') {
+        if (isset($filtersArray['userFilters']['order']) && $filtersArray['userFilters']['order'] == 'similarity') {
             $orderQuery = '  similarity DESC, matching_questions DESC, id ';
-            unset($filters['userFilters']['order']);
+            unset($filtersArray['userFilters']['order']);
         }
 
-        $filters = $this->profileFilterModel->splitFilters($filters);
-
-        $profileFilters = $this->getProfileFilters($filters['profileFilters']);
-        $userFilters = $this->getUserFilters($filters['userFilters']);
+        $appliedFilters = $this->applyFilters($filtersArray);
 
         $return = array('items' => array());
 
@@ -61,15 +58,10 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
         $qb->optionalMatch('(p)-[:LOCATION]->(l:Location)');
 
         $qb->with('u, anyUser, hasCommonObjectives, matching_questions, similarity, p, l');
-        $qb->where($profileFilters['conditions'])
-            ->with('u', 'anyUser', 'hasCommonObjectives', 'matching_questions', 'similarity', 'p', 'l');
-        $qb->where( $userFilters['conditions'])
+        $qb->where($appliedFilters['conditions'])
             ->with('u', 'anyUser', 'hasCommonObjectives', 'matching_questions', 'similarity', 'p', 'l');
 
-        foreach ($profileFilters['matches'] as $match) {
-            $qb->match($match);
-        }
-        foreach ($userFilters['matches'] as $match) {
+        foreach ($appliedFilters['matches'] as $match) {
             $qb->match($match);
         }
 
@@ -108,10 +100,10 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
         if ($needContent) {
 
             $foreign = 0;
-            if (isset($filters['foreign'])) {
-                $foreign = $filters['foreign'];
+            if (isset($filtersArray['foreign'])) {
+                $foreign = $filtersArray['foreign'];
             }
-            $foreignResult = $this->getForeignContent($filters, $needContent, $foreign);
+            $foreignResult = $this->getForeignContent($filtersArray, $needContent, $foreign);
             $return['items'] = array_merge($return['items'], $foreignResult['items']);
             $return['newForeign'] = $foreignResult['foreign'];
         }
@@ -119,11 +111,11 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
         $needContent = $this->needMoreContent($limit, $return);
         if ($needContent) {
             $ignored = 0;
-            if (isset($filters['ignored'])) {
-                $ignored = $filters['ignored'];
+            if (isset($filtersArray['ignored'])) {
+                $ignored = $filtersArray['ignored'];
             }
 
-            $ignoredResult = $this->getIgnoredContent($filters, $needContent, $ignored);
+            $ignoredResult = $this->getIgnoredContent($filtersArray, $needContent, $ignored);
             $return['items'] = array_merge($return['items'], $ignoredResult['items']);
             $return['newIgnored'] = $ignoredResult['ignored'];
         }
@@ -133,19 +125,15 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
 
     /**
      * Counts the total results from queryset.
-     * @param array $filters
-     * @throws \Exception
+     * @param array $filtersArray
      * @return int
      */
-    public function countTotal(array $filters)
+    public function countTotal(array $filtersArray)
     {
-        $id = $filters['id'];
+        $id = $filtersArray['id'];
         $count = 0;
 
-        $filters = $this->profileFilterModel->splitFilters($filters);
-
-        $profileFilters = $this->getProfileFilters($filters['profileFilters']);
-        $userFilters = $this->getUserFilters($filters['userFilters']);
+        $filters = $this->applyFilters($filtersArray);
 
         $qb = $this->gm->createQueryBuilder();
 
@@ -167,15 +155,10 @@ class UserRecommendationPaginatedModel extends AbstractUserRecommendationPaginat
         $qb->optionalMatch('(p)-[:LOCATION]->(l:Location)');
 
         $qb->with('u, anyUser, matching_questions, similarity, p, l');
-        $qb->where($profileFilters['conditions'])
-            ->with('u', 'anyUser', 'matching_questions', 'similarity', 'p', 'l');
-        $qb->where( $userFilters['conditions'])
+        $qb->where($filters['conditions'])
             ->with('u', 'anyUser', 'matching_questions', 'similarity', 'p', 'l');
 
-        foreach ($profileFilters['matches'] as $match) {
-            $qb->match($match);
-        }
-        foreach ($userFilters['matches'] as $match) {
+        foreach ($filters['matches'] as $match) {
             $qb->match($match);
         }
 

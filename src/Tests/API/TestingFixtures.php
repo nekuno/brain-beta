@@ -14,6 +14,7 @@ use Model\User\Rate\RateModel;
 use Model\User\Group\GroupModel;
 use Model\User\InvitationModel;
 use Psr\Log\LoggerInterface;
+use Service\GroupService;
 use Service\RegisterService;
 use Silex\Application;
 
@@ -71,9 +72,9 @@ class TestingFixtures
     protected $pm;
 
     /**
-     * @var GroupModel
+     * @var GroupService
      */
-    protected $gpm;
+    protected $groupService;
 
     /**
      * @var InvitationModel
@@ -90,7 +91,7 @@ class TestingFixtures
         $this->gm = $app['neo4j.graph_manager'];
         $this->constraints = $app['neo4j.constraints'];
         $this->registerService = $app['register.service'];
-        $this->gpm = $app['users.groups.model'];
+        $this->groupService = $app['group.service'];
         $this->im = $app['users.invitations.model'];
         $this->lm = $app['links.model'];
         $this->qm = $app['questionnaire.questions.model'];
@@ -184,7 +185,7 @@ class TestingFixtures
     {
         $this->logger->notice('Loading testing group');
 
-        $group = $this->gpm->create(
+        $group = $this->groupService->createGroup(
             array(
                 'name' => 'testing group',
                 'html' => $this->getHTMLFixture(),

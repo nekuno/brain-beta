@@ -24,7 +24,9 @@ class Token implements \JsonSerializable
 
     public function __construct($data = array())
     {
-        $this->setOauthToken($data['oauthToken']);
+        if (isset($data['oauthToken'])) {
+            $this->setOauthToken($data['oauthToken']);
+        }
         $this->setResourceOwner($data['resourceOwner']);
         $this->setResourceId($data['resourceId']);
 

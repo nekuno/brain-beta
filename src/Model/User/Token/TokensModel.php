@@ -21,6 +21,8 @@ class TokensModel
     CONST GOOGLE = 'google';
     CONST SPOTIFY = 'spotify';
     CONST LINKEDIN = 'linkedin';
+    CONST TUMBLR = 'tumblr';
+    CONST STEAM = 'steam';
 
     /**
      * @var EventDispatcher
@@ -51,6 +53,9 @@ class TokensModel
             self::TWITTER,
             self::GOOGLE,
             self::SPOTIFY,
+            self::TUMBLR,
+            self::LINKEDIN,
+            self::STEAM,
         );
     }
 
@@ -388,6 +393,9 @@ class TokensModel
     public function getOauth1Token($resourceOwner, $accessToken)
     {
         $type = Configuration::getResourceOwnerType($resourceOwner);
+        if ($resourceOwner === 'tumblr') {
+            $type = 'oauth1';
+        }
         if ($type == 'oauth1' && $accessToken) {
             $oauthToken = substr($accessToken, 0, strpos($accessToken, ':'));
             $oauthTokenSecret = substr($accessToken, strpos($accessToken, ':') + 1, strpos($accessToken, '@') - strpos($accessToken, ':') - 1);

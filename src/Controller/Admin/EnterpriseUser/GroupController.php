@@ -34,7 +34,7 @@ class GroupController
             throw new NotFoundHttpException(sprintf('There is not enterprise user with id "%s"', $enterpriseUserId));
         }
 
-        $group = $app['users.groups.model']->create($data);
+        $group = $app['group.service']->create($data);
         $app['users.groups.model']->setCreatedByEnterpriseUser($group->getId(), $enterpriseUserId);
 
         return $app->json($group, 201);
@@ -48,7 +48,7 @@ class GroupController
             throw new NotFoundHttpException(sprintf('There is not enterprise user with id "%s"', $enterpriseUserId));
         }
 
-        $group = $app['users.groups.model']->update($id, $data);
+        $group = $app['group.service']->update($id, $data);
 
         return $app->json($group);
     }
