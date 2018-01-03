@@ -11,18 +11,19 @@ class ConsistencyChecker
 {
     public function checkNode(ConsistencyNodeData $nodeData, ConsistencyNodeRule $rule)
     {
-        $this->checkNodeRelationships($nodeData, $rule->getRelationships());
+        $this->checkNodeRelationships($nodeData, $rule);
         $this->checkProperties($nodeData->getProperties(), $nodeData->getId(), $rule->getProperties());
     }
 
     /**
      * @param ConsistencyNodeData $nodeData
-     * @param array $relationshipRules
+     * @param ConsistencyNodeRule $rule
      * @internal param array $totalRelationships
      * @internal param $nodeId
      */
-    protected function checkNodeRelationships(ConsistencyNodeData $nodeData,  array $relationshipRules)
+    protected function checkNodeRelationships(ConsistencyNodeData $nodeData,  ConsistencyNodeRule $rule)
     {
+        $relationshipRules = $rule->getRelationships();
         $nodeId = $nodeData->getId();
         foreach ($relationshipRules as $relationshipRule) {
             $rule = new ConsistencyRelationshipRule($relationshipRule);
@@ -77,9 +78,7 @@ class ConsistencyChecker
                 $this->checkProperties($relationship->getProperties(), $relationship->getId(), $rule->getProperties());
             }
 
-            if (!empty($errors)) {
-                throw new ValidationException($errors, 'Node relationships consistency error for node ' . $nodeId);
-            }
+            $this->throwErrors($errors, $nodeId);
         }
     }
 
@@ -165,9 +164,7 @@ class ConsistencyChecker
                 }
             }
 
-            if (!empty($errors)) {
-                throw new ValidationException($errors, 'Properties consistency error for element ' . $id);
-            }
+            $this->throwErrors($errors, $id);
         }
     }
 
@@ -193,5 +190,12 @@ class ConsistencyChecker
         }
 
         return array($incoming, $outgoing);
+    }
+
+    protected function throwErrors(array $errors, $id)
+    {
+        if (!empty($errors)) {
+            throw new ValidationException($errors, 'Properties consistency error for element ' . $id);
+        }
     }
 }
