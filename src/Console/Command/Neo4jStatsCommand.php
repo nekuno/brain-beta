@@ -3,6 +3,7 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
+use Model\Popularity\PopularityManager;
 use Model\User;
 use Manager\UserManager;
 use Silex\Application;
@@ -146,6 +147,7 @@ class Neo4jStatsCommand extends ApplicationAwareCommand
         $path = $this->buildFilePath('popularity');
         $output->writeln('Getting popularities');
 
+        /** @var PopularityManager $popularityManager */
         $popularityManager = $this->app['popularity.manager'];
 
         $maxPopularity = $popularityManager->getMaxPopularity();

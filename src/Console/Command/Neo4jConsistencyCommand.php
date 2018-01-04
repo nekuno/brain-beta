@@ -16,21 +16,24 @@ class Neo4jConsistencyCommand extends ApplicationAwareCommand
     {
         $this->setName('neo4j:consistency')
             ->setDescription('Detects database consistency')
-            ->addOption('status', null, InputOption::VALUE_NONE, 'Check users status', null)
             ->addOption('label', null, InputOption::VALUE_REQUIRED, 'Check only nodes with that label', null)
-            ->addOption('solve', null, InputOption::VALUE_NONE, 'Solve problems where possible', null);
+            ->addOption('solve', null, InputOption::VALUE_NONE, 'Solve problems where possible')
+            ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Node limit to analyze', null)
+            ->addOption('offset', null, InputOption::VALUE_REQUIRED, 'Offset start', 0);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $solve = $input->getOption('solve');
         $label = $input->getOption('label');
+        $limit = (integer)$input->getOption('limit');
+        $offset = (integer)$input->getOption('offset');
 
 
         /** @var ConsistencyCheckerService $consistencyChecker */
         $consistencyChecker = $this->app['consistency.service'];
 
-        $errors = $consistencyChecker->getDatabaseErrors($label);
+        $errors = $consistencyChecker->getDatabaseErrors($label, $offset, $limit);
         $this->outputErrors($errors, $output);
 
         if ($solve) {

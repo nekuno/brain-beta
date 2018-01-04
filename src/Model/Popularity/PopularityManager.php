@@ -55,20 +55,6 @@ class PopularityManager
         return $this->buildOne($result->current());
     }
 
-    public function deleteOneByLink($linkId)
-    {
-        $qb = $this->gm->createQueryBuilder();
-
-        $qb->match('(l:Link)')
-            ->where('id(l) = {nodeId}')
-            ->setParameter('nodeId', (integer)$linkId);
-
-        $qb->match('(l)-[rel:HAS_POPULARITY]->(popularity:Popularity)')
-            ->delete('rel', 'popularity');
-
-        $qb->getQuery()->getResultSet();
-    }
-
     public function updatePopularityByUser($userId)
     {
         $max_popularity = $this->getMaxPopularity();
@@ -91,7 +77,7 @@ class PopularityManager
             ->with('u', 'old_link')
             ->with('u', 'collect(old_link) as old_links')
             // Simply merge and set/remove causes error when there are no old links
-            ->add('FOREACH', '(old_link in old_links | MERGE (old_link)-[:HAS_POPULARITY]->(new_pop:Popularity)
+            ->for_each('(old_link in old_links | MERGE (old_link)-[:HAS_POPULARITY]->(new_pop:Popularity)
                                                       SET new_pop.popularity = CASE WHEN EXISTS(old_link.popularity) THEN old_link.popularity ELSE 0 END
                                                       SET new_pop.unpopularity = CASE WHEN EXISTS(old_link.unpopularity) THEN old_link.unpopularity ELSE 1 END
                                                       SET new_pop.timestamp = CASE WHEN EXISTS(old_link.popularity_timestamp) THEN old_link.popularity_timestamp ELSE 0 END
@@ -145,15 +131,31 @@ class PopularityManager
             $this->updateMaxPopularity();
         }
 
+        foreach ($popularities as $popularity)
+        {
+            if ($popularity->getAmount() <= 1){
+                $linkId = $popularity->getId();
+                $this->deleteOneByLink($linkId);
+            }
+        }
+
         return true;
     }
 
-    /**
-     * @param $userId
-     * @param bool $countGhost
-     * @return Popularity[]
-     * @throws \Model\Neo4j\Neo4jException
-     */
+    public function deleteOneByLink($linkId)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(l:Link)')
+            ->where('id(l) = {nodeId}')
+            ->setParameter('nodeId', (integer)$linkId);
+
+        $qb->match('(l)-[rel:HAS_POPULARITY]->(popularity:Popularity)')
+            ->delete('rel', 'popularity');
+
+        $qb->getQuery()->getResultSet();
+    }
+
     public function getPopularitiesByUser($userId, $countGhost = true)
     {
         $qb = $this->gm->createQueryBuilder();
@@ -268,7 +270,7 @@ class PopularityManager
             ->with('u', 'old_link')
             ->with('u', 'collect(old_link) as old_links')
             // Simply merge and set/remove causes error when there are no old links
-            ->add('FOREACH', '(old_link in old_links | MERGE (old_link)-[:HAS_POPULARITY]->(new_pop:Popularity)
+            ->for_each('(old_link in old_links | MERGE (old_link)-[:HAS_POPULARITY]->(new_pop:Popularity)
                                                       SET new_pop.popularity = CASE WHEN EXISTS(old_link.popularity) THEN old_link.popularity ELSE 0 END
                                                       SET new_pop.unpopularity = CASE WHEN EXISTS(old_link.unpopularity) THEN old_link.unpopularity ELSE 1 END
                                                       SET new_pop.timestamp = CASE WHEN EXISTS(old_link.popularity_timestamp) THEN old_link.popularity_timestamp ELSE 0 END

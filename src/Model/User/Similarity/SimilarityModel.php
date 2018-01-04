@@ -436,16 +436,14 @@ class SimilarityModel
             ->where('NOT (userB)-[:LIKES]->(l1)')
             ->with('userA', 'userB', 'valid', 'common, l1')
             ->optionalMatch('(l1)-[:HAS_POPULARITY]-(popularity:Popularity)')
-            ->where('(EXISTS(l1.popularity) OR EXISTS(popularity.popularity))')
-            ->with('userA, userB, valid, common, SUM(l1.popularity) + SUM(popularity.popularity) AS onlyUserA');
+            ->with('userA, userB, valid, common, SUM(COALESCE(popularity.popularity, 0)) AS onlyUserA');
 
         $qb
             ->optionalMatch('(userB)-[:LIKES]-(l2:Link)')
             ->where('NOT (userA)-[:LIKES]->(l2)')
             ->with('userA', 'userB', 'valid', 'common, onlyUserA, l2')
             ->optionalMatch('(l2)-[:HAS_POPULARITY]-(popularity:Popularity)')
-            ->where('EXISTS(l2.popularity) OR EXISTS(popularity.popularity)')
-            ->with(' userA, userB, valid, common, onlyUserA, SUM(l2.popularity) + SUM(popularity.popularity) AS onlyUserB');
+            ->with(' userA, userB, valid, common, onlyUserA, SUM(COALESCE(popularity.popularity, 0)) AS onlyUserB');
 
         $qb
             ->with('userA, userB, valid, sqrt( common / (onlyUserA + common)) * sqrt( common / (onlyUserB + common)) AS similarity')

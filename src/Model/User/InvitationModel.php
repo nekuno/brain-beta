@@ -291,7 +291,7 @@ class InvitationModel
                 $qb->with('user', 'inv', 'g')
                     ->optionalMatch('(gf:GroupFollowers)')
                     ->with('user', 'inv', 'g', 'collect(gf) as gfs')
-                    ->add('FOREACH', '( g in gfs | SET user.available_invitations = { userAvailable } )');
+                    ->for_each('( g in gfs | SET user.available_invitations = { userAvailable } )');
             }
 
             $qb->setParameter('userId', (integer)$data['userId']);
