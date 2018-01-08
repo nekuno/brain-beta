@@ -91,8 +91,7 @@ class LinkResolver
     {
         /* TODO: Remove this quick fix, put here because of Curl not firing error 52 (empty response) */
         $host = parse_url($resolution->getStartingUrl(), PHP_URL_HOST);
-        $firstLetter = substr($host, 0, 1);
-        if (strtoupper($firstLetter) == $firstLetter || $host == 'imprint.printmag.com') {
+        if (!$host || $host == 'imprint.printmag.com') {
             throw new \Exception('This url would not return data');
         }
         /* End of quick fix */

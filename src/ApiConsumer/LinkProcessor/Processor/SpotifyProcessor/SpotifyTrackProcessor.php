@@ -15,7 +15,7 @@ class SpotifyTrackProcessor extends AbstractSpotifyProcessor
         $id = $this->getItemId($preprocessedLink->getUrl());
         $preprocessedLink->setResourceItemId($id);
 
-        $track = $this->resourceOwner->requestTrack($id);
+        $track = $this->resourceOwner->requestTrack($id, $preprocessedLink->getToken());
 
         return $track;
     }
