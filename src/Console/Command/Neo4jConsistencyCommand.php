@@ -5,6 +5,10 @@ namespace Console\Command;
 use Console\ApplicationAwareCommand;
 use Service\Consistency\ConsistencyCheckerService;
 use Service\Consistency\ConsistencyErrors\ConsistencyError;
+use Service\Consistency\ConsistencyErrors\MissingPropertyConsistencyError;
+use Service\Consistency\ConsistencyErrors\RelationshipAmountConsistencyError;
+use Service\Consistency\ConsistencyErrors\RelationshipOtherLabelConsistencyError;
+use Service\Consistency\ConsistencyErrors\ReverseRelationshipConsistencyError;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -29,7 +33,6 @@ class Neo4jConsistencyCommand extends ApplicationAwareCommand
         $limit = (integer)$input->getOption('limit');
         $offset = (integer)$input->getOption('offset');
 
-
         /** @var ConsistencyCheckerService $consistencyChecker */
         $consistencyChecker = $this->app['consistency.service'];
 
@@ -50,16 +53,82 @@ class Neo4jConsistencyCommand extends ApplicationAwareCommand
      */
     private function outputErrors(array $errors, OutputInterface $output)
     {
+        $missingPropertyErrors = array();
+        $reverseRelationshipErrors = array();
+        $relationshipAmountConsistencyErrors = array();
+        $relationshipOtherLabelConsistencyErrors = array();
+        $generalErrors = array();
+
         foreach ($errors as $error) {
-            if ($error->isSolved()){
-                $output->writeln('SOLVED: '. $error->getMessage());
-            } else {
-                $output->writeln($error->getMessage());
+            if ($error->isSolved()) {
+                $output->writeln('SOLVED: ' . $error->getMessage());
+                continue;
             }
+
+            switch ($error::NAME) {
+                case MissingPropertyConsistencyError::NAME:
+                    /** @var $error MissingPropertyConsistencyError */
+                    $missingPropertyErrors[$error->getPropertyName()][] = $error->getNodeId();
+                    break;
+                case ReverseRelationshipConsistencyError::NAME:
+                    /** @var $error ReverseRelationshipConsistencyError */
+                    $reverseRelationshipErrors[] = $error->getRelationshipId();
+                    break;
+                case RelationshipAmountConsistencyError::NAME:
+                    /** @var $error RelationshipAmountConsistencyError */
+                    $relationshipAmountConsistencyErrors[$error->getType()][$error->getMessage()][] = $error->getNodeId();
+                    break;
+                case RelationshipOtherLabelConsistencyError::NAME:
+                    /** @var $error RelationshipOtherLabelConsistencyError */
+                    $relationshipOtherLabelConsistencyErrors[$error->getMessage()][] = $error->getRelationshipId();
+                    break;
+                default:
+                    $generalErrors[] = array('nodeId' => $error->getNodeId(), 'message' => $error->getMessage());
+                    break;
+            }
+        }
+
+        foreach ($missingPropertyErrors as $propertyName => $nodeIds) {
+            $this->outputErrorIds('Missing property: ' . $propertyName, $nodeIds, $output);
+        }
+
+        $this->outputErrorIds('Reverse relationships', $reverseRelationshipErrors, $output);
+
+        foreach ($relationshipAmountConsistencyErrors as $type => $typeErrors) {
+            foreach ($typeErrors as $message => $nodeIds) {
+                $this->outputErrorIds('Relationships of type ' . $type . ' with message ' . $message, $nodeIds, $output);
+            }
+        }
+
+        foreach ($relationshipOtherLabelConsistencyErrors as $message => $nodeIds) {
+            $this->outputErrorIds('Relationships with messsage ' . $message, $nodeIds, $output);
+        }
+
+        $this->outputGeneralErrors($generalErrors, $output);
+    }
+
+    protected function outputErrorIds($title, array $ids, OutputInterface $output)
+    {
+        if (empty($ids)) {
+            return;
+        }
+
+        $output->writeln('-----------');
+        $output->writeln($title);
+        $output->writeln('Ids:');
+        $output->writeln(json_encode($ids));
+    }
+
+    protected function outputGeneralErrors($errors, OutputInterface $output)
+    {
+        foreach ($errors as $error) {
+            $output->writeln('----------');
+            $output->writeln('Node id: ' . $error['nodeId']);
+            $output->writeln('Message: ' . $error['message']);
         }
     }
 
-    //TODO: Move to UserConsistencyChecker
+//TODO: Move to UserConsistencyChecker
     /**
      * @param $users array
      * @param $force boolean
@@ -105,7 +174,7 @@ class Neo4jConsistencyCommand extends ApplicationAwareCommand
 //
 //    }
 
-    //TODO: Move to ProfileConsistencyChecker
+//TODO: Move to ProfileConsistencyChecker
     /**
      * @param $users array
      * @param $force boolean
