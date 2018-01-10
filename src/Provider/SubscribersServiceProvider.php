@@ -43,7 +43,7 @@ class SubscribersServiceProvider implements ServiceProviderInterface
         $dispatcher->addSubscriber(new OAuthTokenSubscriber($app['users.tokens.model'], $app['mailer'], $app['monolog'], $app['amqp']));
         $dispatcher->addSubscriber(new AccountConnectSubscriber($app['amqpManager.service'], $app['users.manager'], $app['users.ghostuser.manager'], $app['users.socialprofile.manager'], $app['api_consumer.resource_owner_factory'], $app['users.tokens.model'], $app['users.profile.model'], $app['dispatcher.service']));
         $dispatcher->addSubscriber(new UserTrackingSubscriber($app['users.tracking.model']));
-        $dispatcher->addSubscriber(new UserSubscriber($app['users.threads.manager'], $app['chatMessageNotifications.service'], $app['instant.client']));
+        $dispatcher->addSubscriber(new UserSubscriber($app['users.threads.manager'], $app['chatMessageNotifications.service'], $app['instant.connection.service']));
         $dispatcher->addSubscriber(new ChannelSubscriber($app['userAggregator.service']));
         $dispatcher->addSubscriber(new UserDataStatusSubscriber($app['users.tokenStatus.manager'], $app['amqpManager.service']));
         $dispatcher->addSubscriber(new UserAnswerSubscriber($app['amqpManager.service']));

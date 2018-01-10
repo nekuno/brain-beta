@@ -2,6 +2,7 @@
 
 namespace Model;
 
+use Model\User\Photo\ProfilePhoto;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 class User implements UserInterface, \JsonSerializable

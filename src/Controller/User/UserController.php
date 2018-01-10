@@ -5,7 +5,7 @@ namespace Controller\User;
 use Model\Exception\ValidationException;
 use Model\User\Content\ContentPaginatedModel;
 use Model\Metadata\UserFilterMetadataManager;
-use Model\User\RateModel;
+use Model\User\Rate\RateModel;
 use Model\User\Content\ContentReportModel;
 use Manager\UserManager;
 use Model\User;

@@ -12,9 +12,11 @@ use Service\EmailNotifications;
 use Service\EventDispatcher;
 use Service\GroupService;
 use Service\ImageTransformations;
+use Service\InstantConnection;
 use Service\Links\EnqueueLinksService;
 use Service\MetadataService;
 use Service\Links\MigrateLinksService;
+use Service\LinkService;
 use Service\NotificationManager;
 use Service\QuestionService;
 use Service\RecommendatorService;
@@ -22,6 +24,7 @@ use Service\RegisterService;
 use Service\SocialNetwork;
 use Service\TokenGenerator;
 use Service\UserAggregator;
+use Service\UserService;
 use Service\UserStatsService;
 use Service\Validator\Validator;
 use Service\Validator\ValidatorFactory;
@@ -42,6 +45,18 @@ class ServicesServiceProvider implements ServiceProviderInterface
         $app['auth.service'] = $app->share(
             function (Application $app) {
                 return new AuthService($app['users.manager'], $app['security.password_encoder'], $app['security.jwt.encoder'], $app['oauth.service'], $app['dispatcher.service'], $app['users.tokens.model']);
+            }
+        );
+
+        $app['user.service'] = $app->share(
+            function (Application $app) {
+                return new UserService($app['users.manager'], $app['users.profile.model'], $app['users.tokens.model'], $app['users.tokenStatus.manager'], $app['users.rate.model'], $app['link.service'], $app['instant.connection.service'], $app['users.photo.manager'], $app['users.gallery.manager']);
+            }
+        );
+
+        $app['link.service'] = $app->share(
+            function (Application $app) {
+                return new LinkService($app['links.model'], $app['popularity.manager']);
             }
         );
 
@@ -109,7 +124,7 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['userStats.service'] = $app->share(
             function (Application $app) {
-                return new UserStatsService( $app['users.stats.manager'], $app['users.groups.model'], $app['users.relations.model'], $app['users.content.model'], $app['users.content.compare.model'], $app['users.shares.manager']);
+                return new UserStatsService($app['users.stats.manager'], $app['users.groups.model'], $app['users.relations.model'], $app['users.content.model'], $app['users.content.compare.model'], $app['users.shares.manager']);
             }
         );
 
@@ -196,6 +211,12 @@ class ServicesServiceProvider implements ServiceProviderInterface
         $app['migrateLinks.service'] = $app->share(
             function (Application $app) {
                 return new MigrateLinksService($app['neo4j.graph_manager']);
+            }
+        );
+
+        $app['instant.connection.service'] = $app->share(
+            function (Application $app) {
+                return new InstantConnection($app['instant.client']);
             }
         );
     }

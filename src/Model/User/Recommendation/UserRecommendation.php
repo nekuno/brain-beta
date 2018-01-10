@@ -2,7 +2,7 @@
 
 namespace Model\User\Recommendation;
 
-use Model\ProfilePhoto;
+use Model\User\Photo\ProfilePhoto;
 
 class UserRecommendation implements \JsonSerializable
 {

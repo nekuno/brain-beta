@@ -104,6 +104,10 @@ api_consumer.config:
             client_credential:
                 application_token: %tumblr.application_token%
 
+        steam:
+            client_credential:
+                application_token: %steam.application_token%
+
         linkedin:
             consumer_key: %linkedin.consumer_key%
             consumer_secret:  %linkedin.consumer_secret%

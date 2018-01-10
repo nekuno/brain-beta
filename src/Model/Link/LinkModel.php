@@ -347,7 +347,7 @@ class LinkModel
             }
         }
 
-        $qb->remove('l:Audio:Video:Image:Creator');
+        $qb->remove('l:Audio:Video:Image:Creator:Game');
         if (isset($data['additionalLabels'])) {
             foreach ($data['additionalLabels'] as $label) {
                 $qb->set('l:' . $label);
@@ -408,7 +408,7 @@ class LinkModel
             if (in_array(Link::WEB_LABEL, $data['additionalLabels'])) {
                 return false;
             }
-            if (count(array_intersect(array(Audio::AUDIO_LABEL, Video::VIDEO_LABEL, Creator::CREATOR_LABEL, Image::IMAGE_LABEL), $data['additionalLabels']))){
+            if (count(array_intersect(array(Audio::AUDIO_LABEL, Video::VIDEO_LABEL, Creator::CREATOR_LABEL, Image::IMAGE_LABEL, Game::GAME_LABEL), $data['additionalLabels']))){
                 return false;
             }
         }
@@ -564,11 +564,6 @@ class LinkModel
         $oldLink = $this->findLinkByUrl($oldUrl);
         $newLink = $this->findLinkByUrl($newUrl);
 
-//        var_dump('fusing');
-        var_dump($oldUrl);
-//        var_dump($oldLink);
-        var_dump($newUrl);
-//        var_dump($newLink);
         $this->gm->fuseNodes($oldLink['id'], $newLink['id']);
 
         $this->changeUrl($oldUrl, $newUrl);
@@ -1002,7 +997,7 @@ class LinkModel
     //TODO: Refactor this to use locale keys or move them to fields.yml
     public static function getValidTypes()
     {
-        return array('Audio', 'Video', 'Image', 'Link', 'Creator', 'Web', 'LinkFacebook', 'LinkTwitter', 'LinkYoutube', 'LinkSpotify', 'LinkInstagram', 'LinkTumblr');
+        return array('Audio', 'Video', 'Image', 'Link', 'Creator', 'Game', 'Web', 'LinkFacebook', 'LinkTwitter', 'LinkYoutube', 'LinkSpotify', 'LinkInstagram', 'LinkTumblr', 'LinkSteam');
     }
 
     public function buildOptionalTypesLabel($filters)

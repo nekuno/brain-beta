@@ -1,6 +1,6 @@
 <?php
 
-namespace Model\User;
+namespace Model\User\Rate;
 
 use Event\ContentRatedEvent;
 use Everyman\Neo4j\Query\Row;
@@ -166,6 +166,33 @@ class RateModel
         }
 
         return $this->buildLike($rs->current());
+    }
+
+    /**
+     * @param $userId
+     * @return array[]
+     */
+    public function deleteAllLinksByUser($userId)
+    {
+        $rate = self::LIKE;
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match("(u:User)-[r:$rate]->(l:Link)<-[like:$rate]-(otherUser:User)")
+            ->where('u.qnoow_id = {userId}', 'id(otherUser) <> id(u)')
+            ->setParameter('userId', (integer)$userId)
+            ->with('r, l.url AS url, count(like) AS remainingLikes');
+
+        $qb->delete('r')
+            ->returns('url', 'remainingLikes');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        $urls = array();
+        foreach ($result as $row)
+        {
+            $urls[] = array('url' => $row->offsetGet('url'), 'likes' => $row->offsetGet('remainingLikes'));
+        }
+
+        return $urls;
     }
 
     /**

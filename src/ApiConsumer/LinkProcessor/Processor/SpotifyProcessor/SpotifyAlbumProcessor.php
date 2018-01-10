@@ -10,8 +10,7 @@ class SpotifyAlbumProcessor extends AbstractSpotifyProcessor
     protected function requestItem(PreprocessedLink $preprocessedLink)
     {
         $id = $this->getItemId($preprocessedLink->getUrl());
-
-        $album = $this->resourceOwner->requestAlbum($id);
+        $album = $this->resourceOwner->requestAlbum($id, $preprocessedLink->getToken());
 
         return $album;
     }

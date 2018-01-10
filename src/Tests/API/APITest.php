@@ -66,7 +66,7 @@ abstract class APITest extends WebTestCase
         $app['users.tokens.model'] = $app->share(
             function ($app) {
                 $validator = $app['validator.factory']->build('tokens');
-                return new TokensModelMockUp($app['dispatcher'], $app['neo4j.graph_manager'], $app['users.tokenStatus.manager'], $validator);
+                return new TokensModelMockUp($app['dispatcher'], $app['neo4j.graph_manager'], $validator);
             }
         );
 

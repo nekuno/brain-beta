@@ -30,7 +30,7 @@ class ConsistencySubscriber implements EventSubscriberInterface
     {
         $linkId = $event->getId();
 
-        $this->popularityManager->deleteOneByLink($linkId);
+        $this->popularityManager->deleteOneByLinkId($linkId);
         $this->popularityManager->updatePopularity($linkId);
     }
 }

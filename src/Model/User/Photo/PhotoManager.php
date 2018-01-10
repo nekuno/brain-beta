@@ -1,15 +1,11 @@
 <?php
 
-namespace Manager;
+namespace Model\User\Photo;
 
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Model\Exception\ValidationException;
-use Model\GroupPhoto;
 use Model\Neo4j\GraphManager;
-use Model\GalleryPhoto;
-use Model\Photo;
-use Model\ProfilePhoto;
 use Model\User;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -21,6 +17,8 @@ class PhotoManager
      */
     protected $gm;
 
+    protected $galleryManager;
+
     /**
      * @var string
      */
@@ -31,9 +29,10 @@ class PhotoManager
      */
     protected $host;
 
-    public function __construct(GraphManager $gm, $base, $host)
+    public function __construct(GraphManager $gm, GalleryManager $galleryManager, $base, $host)
     {
         $this->gm = $gm;
+        $this->galleryManager = $galleryManager;
         $this->base = $base;
         $this->host = $host;
     }
@@ -110,22 +109,10 @@ class PhotoManager
 
     public function create(User $user, $file)
     {
-
         // Validate
         $extension = $this->validate($file);
 
-        // Save file
-        $name = sha1(uniqid($user->getUsernameCanonical() . '_' . time(), true)) . '.' . $extension;
-        $folder = 'uploads/gallery/' . md5($user->getId()) . '/';
-        if (!is_dir($this->base . $folder)) {
-            mkdir($this->base . $folder, 0775);
-        }
-        $path = $folder . $name;
-        $saved = file_put_contents($this->base . $path, $file);
-
-        if ($saved === false) {
-            throw new ValidationException(array('photo' => 'File can not be saved'));
-        }
+        $path = $this->galleryManager->save($file, $user, $extension);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(u:User {qnoow_id: { id }})')
@@ -192,7 +179,6 @@ class PhotoManager
 
     public function remove($id)
     {
-
         $photo = $this->getById($id);
 
         $qb = $this->gm->createQueryBuilder();

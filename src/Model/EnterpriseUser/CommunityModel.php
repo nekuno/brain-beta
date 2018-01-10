@@ -3,7 +3,7 @@
 namespace Model\EnterpriseUser;
 
 use Everyman\Neo4j\Query\Row;
-use Manager\PhotoManager;
+use Model\User\Photo\PhotoManager;
 use Model\Neo4j\GraphManager;
 use Manager\UserManager;
 

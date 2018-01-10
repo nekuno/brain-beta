@@ -42,10 +42,7 @@ class TumblrBlogsFetcher extends AbstractFetcher
                 continue;
             }
             $id = TumblrUrlParser::getBlogId($item['url']);
-            $link = array(
-                'url' => $item['url'],
-                'title' => $item['title'],
-            );
+            $link = array('url' => $item['url']);
             $preprocessedLink = new PreprocessedLink($link['url']);
             $preprocessedLink->setFirstLink(Creator::buildFromArray($link));
             $preprocessedLink->setType(TumblrUrlParser::TUMBLR_BLOG);
