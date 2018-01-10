@@ -135,22 +135,14 @@ class TumblrResourceOwner extends GenericOAuth1ResourceOwner
     {
         $url = "blog/$blogId/info";
 
-        if ($token && $token->getResourceOwner() === TokensModel::TUMBLR) {
-            return $this->request($url, array(), $token);
-        }
-
-        return $this->requestAsClient($url);
+        return $this->request($url, array(), $token);
     }
 
     public function requestBlogAvatar($blogId, $size, Token $token = null)
     {
         try {
             $url = "blog/$blogId/avatar/$size";
-            if ($token && $token->getResourceOwner() === TokensModel::TUMBLR) {
-                $response = $this->requestAsUser($url, array(), $token);
-            } else {
-                $response = $this->requestAsClient($url);
-            }
+            $response = $this->request($url, array(), $token);
         } catch (RequestException $e) {
             return TumblrUrlParser::DEFAULT_IMAGE_PATH;
         }
@@ -165,11 +157,7 @@ class TumblrResourceOwner extends GenericOAuth1ResourceOwner
             'id' => $postId
         );
 
-        if ($token && $token->getResourceOwner() === TokensModel::TUMBLR) {
-            return $this->request($url, $query, $token);
-        }
-
-        return $this->requestAsClient($url, $query);
+        return $this->request($url, $query, $token);
     }
 
     public function requestPosts($blogId, Token $token = null)

@@ -24,7 +24,6 @@ class TumblrBlogProcessor extends AbstractTumblrProcessor
 
     public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
     {
-
         parent::hydrateLink($preprocessedLink, $data);
         $link = $preprocessedLink->getFirstLink();
         $creator = Creator::buildFromArray($link->toArray());

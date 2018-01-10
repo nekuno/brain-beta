@@ -10,7 +10,7 @@ class SpotifyArtistProcessor extends AbstractSpotifyProcessor
     {
         $id = $this->getItemId($preprocessedLink->getUrl());
 
-        $artist = $this->resourceOwner->requestArtist($id);
+        $artist = $this->resourceOwner->requestArtist($id, $preprocessedLink->getToken());
 
         return $artist;
     }

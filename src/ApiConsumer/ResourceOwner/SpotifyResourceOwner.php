@@ -2,8 +2,10 @@
 
 namespace ApiConsumer\ResourceOwner;
 
+use ApiConsumer\Exception\TokenException;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\SpotifyResourceOwner as SpotifyResourceOwnerBase;
+use Model\User\Token\Token;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use Buzz\Message\RequestInterface as HttpRequestInterface;
 
@@ -26,6 +28,33 @@ class SpotifyResourceOwner extends SpotifyResourceOwnerBase
     public function canRequestAsClient()
     {
         return true;
+    }
+
+    public function requestAsClient($url, array $query = array())
+    {
+        $consumerKey = $this->getOption('consumer_key');
+        $consumerSecret = $this->getOption('consumer_secret');
+
+        $headers = array('Authorization: Basic ' . base64_encode($consumerKey . ':' . $consumerSecret));
+        $accessTokenUrl = $this->getOption('access_token_url');
+        $response = $this->httpRequest($accessTokenUrl, 'grant_type=client_credentials', $headers, HttpRequestInterface::METHOD_POST);
+        $content = $this->getResponseContent($response);
+
+        if (isset($content['access_token'])) {
+            $clientToken = $content['access_token'];
+            $url = $this->getOption('base_url') . $url;
+
+            $headers = array();
+            if (!empty($clientToken)) {
+                $headers = array('Authorization: Bearer ' . $clientToken);
+            }
+
+            $response = $this->httpRequest($this->normalizeUrl($url, $query), null, $headers);
+
+            return $this->getResponseContent($response);
+        }
+
+       throw new TokenException('Cannot get application token');
     }
 
     /**
@@ -62,26 +91,26 @@ class SpotifyResourceOwner extends SpotifyResourceOwnerBase
 		return $this->getResponseContent($response);
 	}
 
-	public function requestTrack($trackId)
+	public function requestTrack($trackId, Token $token = null)
     {
         $urlTrack = 'tracks/' . $trackId;
-        $track = $this->requestAsClient($urlTrack, array());
+        $track = $this->request($urlTrack, array(), $token);
 
         return $track;
     }
 
-    public function requestAlbum($albumId)
+    public function requestAlbum($albumId, Token $token = null)
     {
         $urlAlbum = 'albums/' . $albumId;
-        $album = $this->requestAsClient($urlAlbum, array());
+        $album = $this->request($urlAlbum, array(), $token);
 
         return $album;
     }
 
-    public function requestArtist($artistId)
+    public function requestArtist($artistId, Token $token = null)
     {
         $urlArtist = 'artists/' . $artistId;
-        $artist = $this->requestAsClient($urlArtist, array());
+        $artist = $this->request($urlArtist, array(), $token);
 
         return $artist;
     }
