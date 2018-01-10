@@ -5,7 +5,7 @@ namespace Model\User\Group;
 use Event\GroupEvent;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
-use Manager\PhotoManager;
+use Model\User\Photo\PhotoManager;
 use Model\Neo4j\GraphManager;
 use Service\Validator\GroupValidator;
 use Service\Validator\ValidatorInterface;

@@ -3,7 +3,7 @@
 namespace Model\User\Group;
 
 use Everyman\Neo4j\Node;
-use Model\GroupPhoto;
+use Model\User\Photo\GroupPhoto;
 use Model\User\Filters\FilterUsers;
 
 class Group implements \JsonSerializable

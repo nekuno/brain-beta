@@ -139,7 +139,7 @@ class ProfileModel
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(user:User)<-[:PROFILE_OF]-(profile:Profile)')
             ->where('user.qnoow_id = { id }')
-            ->setParameter('id', $id)
+            ->setParameter('id', (integer)$id)
             ->optionalMatch('(profile)-[r]-()')
             ->delete('r, profile');
 
@@ -169,7 +169,8 @@ class ProfileModel
 
     public function validateOnRemove($userId)
     {
-        $this->validator->validateOnDelete($userId);
+        $data = array('userId' => $userId);
+        $this->validator->validateOnDelete($data);
     }
 
     public function build(Row $row, $locale = null)

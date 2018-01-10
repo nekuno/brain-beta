@@ -5,7 +5,7 @@ namespace Console\Command;
 use Console\ApplicationAwareCommand;
 use Model\Link\Link;
 use Model\User;
-use Model\User\RateModel;
+use Model\User\Rate\RateModel;
 use Manager\UserManager;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;

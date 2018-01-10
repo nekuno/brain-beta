@@ -2,7 +2,8 @@
 
 namespace Provider;
 
-use Manager\PhotoManager;
+use Model\User\Photo\GalleryManager;
+use Model\User\Photo\PhotoManager;
 use Model\EnterpriseUser\EnterpriseUserModel;
 use Model\Link\LinkModel;
 use Model\Metadata\CategoryMetadataManager;
@@ -40,7 +41,7 @@ use Model\User\ProfileTagModel;
 use Model\User\Question\QuestionComparePaginatedModel;
 use Model\User\Question\Admin\QuestionsAdminPaginatedModel;
 use Model\User\Question\UserAnswerPaginatedModel;
-use Model\User\RateModel;
+use Model\User\Rate\RateModel;
 use Model\User\Recommendation\ContentPopularRecommendationPaginatedModel;
 use Model\User\Recommendation\ContentRecommendationPaginatedModel;
 use Model\User\Recommendation\ContentRecommendationTagModel;
@@ -61,6 +62,7 @@ use Model\User\Token\TokenStatus\TokenStatusManager;
 use Model\User\UserDisabledPaginatedModel;
 use Model\User\Stats\UserStatsCalculator;
 use Manager\UserManager;
+use Model\User\UserPaginatedModel;
 use Model\User\UserTrackingModel;
 use Security\UserProvider;
 use Service\Validator\FilterUsersValidator;
@@ -102,7 +104,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
 
                 $validator = $app['validator.factory']->build('tokens');
-                return new TokensModel($app['dispatcher'], $app['neo4j.graph_manager'], $app['users.tokenStatus.manager'], $validator);
+                return new TokensModel($app['dispatcher'], $app['neo4j.graph_manager'], $validator);
             }
         );
 
@@ -273,6 +275,12 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
 
                 return new PopularityPaginatedModel($app['neo4j.graph_manager'], $app['popularity.manager']);
+            }
+        );
+
+        $app['users.paginated.model'] = $app->share(
+            function($app) {
+                return new UserPaginatedModel($app['neo4j.graph_manager'], $app['users.manager']);
             }
         );
 
@@ -522,7 +530,13 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.photo.manager'] = $app->share(
             function ($app) {
 
-                return new PhotoManager($app['neo4j.graph_manager'], $app['images_web_dir'], $app['params']['social.host']);
+                return new PhotoManager($app['neo4j.graph_manager'], $app['users.gallery.manager'], $app['images_web_dir'], $app['params']['social.host']);
+            }
+        );
+
+        $app['users.gallery.manager'] = $app->share(
+            function($app) {
+                return new GalleryManager($app['images_web_dir']);
             }
         );
 

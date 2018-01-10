@@ -564,11 +564,6 @@ class LinkModel
         $oldLink = $this->findLinkByUrl($oldUrl);
         $newLink = $this->findLinkByUrl($newUrl);
 
-//        var_dump('fusing');
-        var_dump($oldUrl);
-//        var_dump($oldLink);
-        var_dump($newUrl);
-//        var_dump($newLink);
         $this->gm->fuseNodes($oldLink['id'], $newLink['id']);
 
         $this->changeUrl($oldUrl, $newUrl);

@@ -47,7 +47,7 @@ class QuestionAdminManager
         $result = $query->getResultSet();
 
         if ($result->count() < 1) {
-            throw new NotFoundHttpException('Question for admin not found');
+            throw new NotFoundHttpException(sprintf('Question %d for admin not found', $id));
         }
 
         /* @var $row Row */
