@@ -9,7 +9,6 @@ use Model\Link\LinkModel;
 use Model\Metadata\CategoryMetadataManager;
 use Model\Metadata\MetadataManagerFactory;
 use Model\Metadata\MetadataUtilities;
-use Model\Metadata\ProfileMetadataManager;
 use Model\Popularity\PopularityManager;
 use Model\Popularity\PopularityPaginatedModel;
 use Model\User\ContactModel;
@@ -53,10 +52,10 @@ use Model\User\Shares\SharesManager;
 use Model\User\Similarity\SimilarityModel;
 use Model\User\SocialNetwork\LinkedinSocialNetworkModel;
 use Model\User\SocialNetwork\SocialProfileManager;
-use Model\User\Thread\ContentThreadManager;
+use Model\User\Thread\ThreadCachedManager;
+use Model\User\Thread\ThreadDataManager;
 use Model\User\Thread\ThreadManager;
 use Model\User\Thread\ThreadPaginatedModel;
-use Model\User\Thread\UsersThreadManager;
 use Model\User\Token\TokensModel;
 use Model\User\Token\TokenStatus\TokenStatusManager;
 use Model\User\UserDisabledPaginatedModel;
@@ -444,36 +443,32 @@ class ModelsServiceProvider implements ServiceProviderInterface
             }
         );
 
-        $app['users.threadusers.manager'] = $app->share(
-            function ($app) {
-
-                return new UsersThreadManager($app['neo4j.graph_manager'], $app['users.filterusers.manager'], $app['users.manager'], $app['users.recommendation.users.model']);
-            }
-        );
-
-        $app['users.threadcontent.manager'] = $app->share(
-            function ($app) {
-
-                return new ContentThreadManager($app['neo4j.graph_manager'], $app['links.model'], $app['users.filtercontent.manager'], $app['users.recommendation.content.model']);
-            }
-        );
-
         $app['users.threads.manager'] = $app->share(
             function ($app) {
                 $validator = $app['validator.factory']->build('threads');
 
                 return new ThreadManager(
-                    $app['neo4j.graph_manager'], $app['users.threadusers.manager'],
-                    $app['users.threadcontent.manager'], $app['users.profile.model'],
-                    $app['translator'], $validator
+                    $app['neo4j.graph_manager'], $validator
                 );
+            }
+        );
+
+        $app['users.threadData.manager'] = $app->share(
+            function ($app) {
+                return new ThreadDataManager($app['users.profile.model'], $app['translator']);
+            }
+        );
+
+        $app['users.threadCached.manager'] = $app->share(
+            function ($app) {
+                return new ThreadCachedManager($app['neo4j.graph_manager'], $app['users.recommendation.users.model'], $app['users.recommendation.content.model'], $app['links.model']);
             }
         );
 
         $app['users.threads.paginated.model'] = $app->share(
             function ($app) {
 
-                return new ThreadPaginatedModel($app['neo4j.graph_manager'], $app['users.threads.manager']);
+                return new ThreadPaginatedModel($app['neo4j.graph_manager']);
             }
         );
 

@@ -97,6 +97,23 @@ class FilterUsersManager
         $this->validator->validateOnUpdate($filters, $userId);
     }
 
+    public function delete(FilterUsers $filters)
+    {
+        $filterId = $filters->getId();
+
+        $qb = $this->graphManager->createQueryBuilder();
+        $qb->match('(filter:FilterUsers)')
+            ->where('id(filter) = {id}')
+            ->with('filter')
+            ->setParameter('id', (integer)$filterId);
+
+        $qb->detachDelete('filter');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        return $result->count() >= 1;
+    }
+
     /**
      * @param FilterUsers $filters
      * @return bool

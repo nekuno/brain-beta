@@ -25,7 +25,7 @@ class ThreadController
      */
     public function getRecommendationAction(Application $app, Request $request, $threadId)
     {
-        $thread = $app['users.threads.manager']->getById($threadId);
+        $thread = $app['threads.service']->getByThreadId($threadId);
 
         $result = $this->getRecommendations($app, $thread, $request);
         if (!is_array($result)) {
@@ -56,6 +56,11 @@ class ThreadController
 
         $result = $paginator->paginate($filters, $model, $request);
 
+        foreach ($result['items'] as $key=>$threadId){
+            $thread = $app['threads.service']->getByThreadId($threadId);
+            $result['items'][$key] = $thread;
+        }
+
         return $app->json($result);
     }
 
@@ -69,7 +74,7 @@ class ThreadController
      */
     public function postAction(Application $app, Request $request, User $user)
     {
-        $thread = $app['users.threads.manager']->create($user->getId(), $request->request->all());
+        $thread = $app['threads.service']->createThread($user->getId(), $request->request->all());
 
         return $app->json($thread, 201);
     }
@@ -84,7 +89,7 @@ class ThreadController
      */
     public function putAction(Application $app, Request $request, User $user, $threadId)
     {
-        $thread = $app['users.threads.manager']->update($threadId, $user->getId(), $request->request->all());
+        $thread = $app['threads.service']->updateThread($threadId, $user->getId(), $request->request->all());
 
         return $app->json($thread, 201);
     }
@@ -98,7 +103,7 @@ class ThreadController
     public function deleteAction(Application $app, $threadId)
     {
         try {
-            $relationships = $app['users.threads.manager']->deleteById($threadId);
+            $relationships = $app['threads.service']->deleteById($threadId);
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
                 throw $e;
@@ -140,7 +145,7 @@ class ThreadController
         $isFirstPage = !$request->get('offset');
         if ($isFirstPage) {
             $firstResults = array_slice($result['items'], 0, 20);
-            $app['users.threads.manager']->cacheResults($thread, $firstResults, $result['pagination']['total']);
+            $app['threads.service']->cacheResults($thread, $firstResults, $result['pagination']['total']);
         }
     }
 }

@@ -9,6 +9,7 @@ use Model\User\Group\GroupModel;
 use Model\User\Thread\ThreadManager;
 use Manager\UserManager;
 use Service\RecommendatorService;
+use Service\ThreadService;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -63,6 +64,8 @@ class UsersThreadsCreateCommand extends ApplicationAwareCommand
 
         /* @var $threadManager ThreadManager */
         $threadManager = $this->app['users.threads.manager'];
+        /** @var ThreadService $threadService */
+        $threadService = $this->app['threads.service'];
         /* @var $recommendator RecommendatorService */
         $recommendator = $this->app['recommendator.service'];
         /* @var $groupModel GroupModel */
@@ -77,7 +80,7 @@ class UsersThreadsCreateCommand extends ApplicationAwareCommand
             $output->writeln('-----------------------------------------------------------------------');
 
             if ($clear) {
-                $existingThreads = $threadManager->getByUser($user->getId());
+                $existingThreads = $threadManager->getAllByUserId($user->getId());
                 foreach ($existingThreads as $existingThread) {
 //                    if ($existingThread->getDefault() == true) {
                     $threadManager->deleteById($existingThread->getId());
@@ -90,14 +93,13 @@ class UsersThreadsCreateCommand extends ApplicationAwareCommand
                 $groups = $groupModel->getAllByUserId($user->getId());
 
                 foreach ($groups as $group) {
-                    $threadManager->createGroupThread($group, $user->getId());
+                    $threadService->createGroupThread($group, $user->getId());
                 }
                 $output->writeln(sprintf('Created %d group threads for user %d', count($groups), $user->getId()));
             }
 
             try {
-                $threads = $threadManager->getDefaultThreads($user, $scenario);
-                $createdThreads = $threadManager->createBatchForUser($user->getId(), $threads);
+                $createdThreads = $threadService->createDefaultThreads($user, $scenario);
                 $output->writeln('Added threads for scenario ' . $scenario . ' and user with id ' . $user->getId());
                 foreach ($createdThreads as $createdThread) {
 

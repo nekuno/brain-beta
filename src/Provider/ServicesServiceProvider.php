@@ -22,6 +22,7 @@ use Service\QuestionService;
 use Service\RecommendatorService;
 use Service\RegisterService;
 use Service\SocialNetwork;
+use Service\ThreadService;
 use Service\TokenGenerator;
 use Service\UserAggregator;
 use Service\UserService;
@@ -110,6 +111,12 @@ class ServicesServiceProvider implements ServiceProviderInterface
                     $app['users.recommendation.content.model'], $app['users.recommendation.popularusers.model'],
                     $app['users.recommendation.popularcontent.model'], $app['users.shares.manager']
                 );
+            }
+        );
+
+        $app['threads.service'] = $app->share(
+            function( Application $app) {
+                return new ThreadService($app['users.threads.manager'], $app['users.filterusers.manager'], $app['users.filtercontent.manager'], $app['users.threadCached.manager'], $app['users.threadData.manager']);
             }
         );
 
