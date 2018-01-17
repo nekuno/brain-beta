@@ -5,24 +5,27 @@ namespace Service\Consistency;
 use Model\Exception\ValidationException;
 use Service\Consistency\ConsistencyErrors\ConsistencyError;
 use Service\Consistency\ConsistencyErrors\MissingPropertyConsistencyError;
+use Service\Consistency\ConsistencyErrors\RelationshipAmountConsistencyError;
+use Service\Consistency\ConsistencyErrors\RelationshipOtherLabelConsistencyError;
 use Service\Consistency\ConsistencyErrors\ReverseRelationshipConsistencyError;
 
 class ConsistencyChecker
 {
     public function checkNode(ConsistencyNodeData $nodeData, ConsistencyNodeRule $rule)
     {
-        $this->checkNodeRelationships($nodeData, $rule->getRelationships());
+        $this->checkNodeRelationships($nodeData, $rule);
         $this->checkProperties($nodeData->getProperties(), $nodeData->getId(), $rule->getProperties());
     }
 
     /**
      * @param ConsistencyNodeData $nodeData
-     * @param array $relationshipRules
+     * @param ConsistencyNodeRule $rule
      * @internal param array $totalRelationships
      * @internal param $nodeId
      */
-    protected function checkNodeRelationships(ConsistencyNodeData $nodeData,  array $relationshipRules)
+    protected function checkNodeRelationships(ConsistencyNodeData $nodeData,  ConsistencyNodeRule $rule)
     {
+        $relationshipRules = $rule->getRelationships();
         $nodeId = $nodeData->getId();
         foreach ($relationshipRules as $relationshipRule) {
             $rule = new ConsistencyRelationshipRule($relationshipRule);
@@ -32,15 +35,12 @@ class ConsistencyChecker
             $errors = array();
 
             $count = count($totalRelationships);
-            if ($count < $rule->getMinimum()) {
-                $error = new ConsistencyError();
-                $error->setMessage(sprintf('Amount of relationships %d is less than %d allowed', $count, $rule->getMinimum()));
-                $errors[] = $error;
-            }
-
-            if ($count > $rule->getMaximum()) {
-                $error = new ConsistencyError();
-                $error->setMessage(sprintf('Amount of relationships %d is more than %d allowed', $count, $rule->getMaximum()));
+            if ($count < $rule->getMinimum() || $count > $rule->getMaximum()) {
+                $error = new RelationshipAmountConsistencyError();
+                $error->setCurrentAmount($count);
+                $error->setMinimum($rule->getMinimum());
+                $error->setMaximum($rule->getMaximum());
+                $error->setType($rule->getType());
                 $errors[] = $error;
             }
 
@@ -52,8 +52,10 @@ class ConsistencyChecker
                 $otherNodeLabels = $relationship->getStartNodeLabels();
 
                 if (!in_array($rule->getOtherNode(), $otherNodeLabels)) {
-                    $error = new ConsistencyError();
-                    $error->setMessage(sprintf('Label of node for relationship %d is not correct', $relationship->getId()));
+                    $error = new RelationshipOtherLabelConsistencyError();
+                    $error->setType($relationship->getType());
+                    $error->setOtherNodeLabel($rule->getOtherNode());
+                    $error->setRelationshipId($relationship->getId());
                     $errors[] = $error;
                 }
 
@@ -77,9 +79,7 @@ class ConsistencyChecker
                 $this->checkProperties($relationship->getProperties(), $relationship->getId(), $rule->getProperties());
             }
 
-            if (!empty($errors)) {
-                throw new ValidationException($errors, 'Node relationships consistency error for node ' . $nodeId);
-            }
+            $this->throwErrors($errors, $nodeId);
         }
     }
 
@@ -165,9 +165,7 @@ class ConsistencyChecker
                 }
             }
 
-            if (!empty($errors)) {
-                throw new ValidationException($errors, 'Properties consistency error for element ' . $id);
-            }
+            $this->throwErrors($errors, $id);
         }
     }
 
@@ -193,5 +191,12 @@ class ConsistencyChecker
         }
 
         return array($incoming, $outgoing);
+    }
+
+    protected function throwErrors(array $errors, $id)
+    {
+        if (!empty($errors)) {
+            throw new ValidationException($errors, 'Properties consistency error for element ' . $id);
+        }
     }
 }

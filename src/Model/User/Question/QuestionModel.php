@@ -198,7 +198,7 @@ class QuestionModel
         $qb->match('(u:User {qnoow_id: { userId }})')
             ->create('(q:Question)-[c:CREATED_BY]->(u)')
             ->set("q.text_$locale = { text }", 'q.timestamp = timestamp()', 'q.ranking = 0', 'c.timestamp = timestamp()')
-            ->add('FOREACH', "(answer in {answers}| CREATE (a:Answer {text_$locale: answer})-[:IS_ANSWER_OF]->(q))")
+            ->for_each("(answer in {answers}| CREATE (a:Answer {text_$locale: answer})-[:IS_ANSWER_OF]->(q))")
             ->returns('q')
             ->setParameters($data);
 

@@ -6,11 +6,13 @@ use Service\Consistency\ConsistencyNodeRule;
 
 class ConsistencyError
 {
+    const NAME = 'Consistency Error';
     protected $data;
     protected $rule;
     protected $nodeId;
     protected $solved = false;
     protected $message = null;
+
 
     /**
      * @return mixed

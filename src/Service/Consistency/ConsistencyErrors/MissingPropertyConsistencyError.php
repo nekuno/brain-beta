@@ -4,6 +4,8 @@ namespace Service\Consistency\ConsistencyErrors;
 
 class MissingPropertyConsistencyError extends ConsistencyError
 {
+    const NAME = 'Missing property';
+
     protected $propertyName;
 
     /**
@@ -32,7 +34,7 @@ class MissingPropertyConsistencyError extends ConsistencyError
 
     public function getMessage()
     {
-        return sprintf('Missing property %s on node %d', $this->propertyName, $this->nodeId);
+        return sprintf('Missing property %s', $this->propertyName);
     }
 
 }

@@ -317,6 +317,17 @@ class QueryBuilder
 
         return $this->add('unwind', implode(', ', $unwinds));
     }
+    
+    public function for_each($foreach = null)
+    {
+        if (empty($foreach)){
+            return $this;
+        }
+
+        $foreachs = is_array($foreach) ? $foreach : func_get_args();
+
+        return $this->add('foreach', implode(', ', $foreachs));
+    }
 
     /**
      * @param mixed $orderBy
