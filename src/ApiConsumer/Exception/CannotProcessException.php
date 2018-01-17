@@ -7,6 +7,7 @@ use Exception;
 class CannotProcessException extends \RuntimeException
 {
     protected $url;
+    protected $canScrape = true;
 
     public function __construct($url, $message = "", $code = 0, Exception $previous = null)
     {
@@ -31,5 +32,20 @@ class CannotProcessException extends \RuntimeException
         $this->url = $url;
     }
 
+    /**
+     * @return bool
+     */
+    public function canScrape()
+    {
+        return $this->canScrape;
+    }
+
+    /**
+     * @param bool $canScrape
+     */
+    public function setCanScrape($canScrape)
+    {
+        $this->canScrape = $canScrape;
+    }
 
 }
