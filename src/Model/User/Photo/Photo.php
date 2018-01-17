@@ -1,6 +1,6 @@
 <?php
 
-namespace Model;
+namespace Model\User\Photo;
 
 abstract class Photo implements \JsonSerializable
 {

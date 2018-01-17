@@ -13,6 +13,7 @@ use Model\Neo4j\Neo4jException;
 use Model\User;
 use Model\User\GhostUser\GhostUserManager;
 use Model\User\LookUpModel;
+use Model\User\Photo\PhotoManager;
 use Model\User\SocialNetwork\SocialProfile;
 use Model\User\Token\TokensModel;
 use Model\User\UserStatusModel;
@@ -365,6 +366,7 @@ class UserManager
         return $this->findUserBy(array('confirmationToken' => $token));
     }
 
+    //TODO: Move to Validator
     public function validate(array $data, $isUpdate = false)
     {
 
@@ -504,7 +506,7 @@ class UserManager
     /**
      * @param array $data
      * @return User
-     * @throws Neo4jException
+     * @throws \Exception
      */
     public function create(array $data)
     {
@@ -558,6 +560,20 @@ class UserManager
         $this->dispatcher->dispatch(\AppEvents::USER_UPDATED, new UserEvent($user));
 
         return $user;
+    }
+
+    public function delete($userId)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(u:User)')
+            ->where('u.qnoow_id = {userId}')
+            ->setParameter('userId', (integer)$userId);
+        $qb->detachDelete('u');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        return $result->count();
     }
 
     public function setEnabled($userId, $enabled, $fromAdmin = false)
@@ -993,7 +1009,7 @@ class UserManager
 
     public function save(array $data)
     {
-        $userId = $data['userId'];
+        $userId = (integer)$data['userId'];
         unset($data['userId']);
 
         $this->updateCanonicalFields($data);

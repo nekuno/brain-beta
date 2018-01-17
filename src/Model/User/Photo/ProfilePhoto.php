@@ -1,6 +1,6 @@
 <?php
 
-namespace Model;
+namespace Model\User\Photo;
 
 class ProfilePhoto extends Photo
 {

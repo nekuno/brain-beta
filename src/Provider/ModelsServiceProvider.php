@@ -2,13 +2,13 @@
 
 namespace Provider;
 
-use Manager\PhotoManager;
+use Model\User\Photo\GalleryManager;
+use Model\User\Photo\PhotoManager;
 use Model\EnterpriseUser\EnterpriseUserModel;
 use Model\Link\LinkModel;
 use Model\Metadata\CategoryMetadataManager;
 use Model\Metadata\MetadataManagerFactory;
 use Model\Metadata\MetadataUtilities;
-use Model\Metadata\ProfileMetadataManager;
 use Model\Popularity\PopularityManager;
 use Model\Popularity\PopularityPaginatedModel;
 use Model\User\ContactModel;
@@ -40,7 +40,7 @@ use Model\User\ProfileTagModel;
 use Model\User\Question\QuestionComparePaginatedModel;
 use Model\User\Question\Admin\QuestionsAdminPaginatedModel;
 use Model\User\Question\UserAnswerPaginatedModel;
-use Model\User\RateModel;
+use Model\User\Rate\RateModel;
 use Model\User\Recommendation\ContentPopularRecommendationPaginatedModel;
 use Model\User\Recommendation\ContentRecommendationPaginatedModel;
 use Model\User\Recommendation\ContentRecommendationTagModel;
@@ -52,15 +52,16 @@ use Model\User\Shares\SharesManager;
 use Model\User\Similarity\SimilarityModel;
 use Model\User\SocialNetwork\LinkedinSocialNetworkModel;
 use Model\User\SocialNetwork\SocialProfileManager;
-use Model\User\Thread\ContentThreadManager;
+use Model\User\Thread\ThreadCachedManager;
+use Model\User\Thread\ThreadDataManager;
 use Model\User\Thread\ThreadManager;
 use Model\User\Thread\ThreadPaginatedModel;
-use Model\User\Thread\UsersThreadManager;
 use Model\User\Token\TokensModel;
 use Model\User\Token\TokenStatus\TokenStatusManager;
 use Model\User\UserDisabledPaginatedModel;
 use Model\User\Stats\UserStatsCalculator;
 use Manager\UserManager;
+use Model\User\UserPaginatedModel;
 use Model\User\UserTrackingModel;
 use Security\UserProvider;
 use Service\Validator\FilterUsersValidator;
@@ -102,7 +103,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
 
                 $validator = $app['validator.factory']->build('tokens');
-                return new TokensModel($app['dispatcher'], $app['neo4j.graph_manager'], $app['users.tokenStatus.manager'], $validator);
+                return new TokensModel($app['dispatcher'], $app['neo4j.graph_manager'], $validator);
             }
         );
 
@@ -276,6 +277,12 @@ class ModelsServiceProvider implements ServiceProviderInterface
             }
         );
 
+        $app['users.paginated.model'] = $app->share(
+            function($app) {
+                return new UserPaginatedModel($app['neo4j.graph_manager'], $app['users.manager']);
+            }
+        );
+
         $app['users.recommendation.users.model'] = $app->share(
             function ($app) {
 
@@ -436,36 +443,32 @@ class ModelsServiceProvider implements ServiceProviderInterface
             }
         );
 
-        $app['users.threadusers.manager'] = $app->share(
-            function ($app) {
-
-                return new UsersThreadManager($app['neo4j.graph_manager'], $app['users.filterusers.manager'], $app['users.manager'], $app['users.recommendation.users.model']);
-            }
-        );
-
-        $app['users.threadcontent.manager'] = $app->share(
-            function ($app) {
-
-                return new ContentThreadManager($app['neo4j.graph_manager'], $app['links.model'], $app['users.filtercontent.manager'], $app['users.recommendation.content.model']);
-            }
-        );
-
         $app['users.threads.manager'] = $app->share(
             function ($app) {
                 $validator = $app['validator.factory']->build('threads');
 
                 return new ThreadManager(
-                    $app['neo4j.graph_manager'], $app['users.threadusers.manager'],
-                    $app['users.threadcontent.manager'], $app['users.profile.model'],
-                    $app['translator'], $validator
+                    $app['neo4j.graph_manager'], $validator
                 );
+            }
+        );
+
+        $app['users.threadData.manager'] = $app->share(
+            function ($app) {
+                return new ThreadDataManager($app['users.profile.model'], $app['translator']);
+            }
+        );
+
+        $app['users.threadCached.manager'] = $app->share(
+            function ($app) {
+                return new ThreadCachedManager($app['neo4j.graph_manager'], $app['users.recommendation.users.model'], $app['users.recommendation.content.model'], $app['links.model']);
             }
         );
 
         $app['users.threads.paginated.model'] = $app->share(
             function ($app) {
 
-                return new ThreadPaginatedModel($app['neo4j.graph_manager'], $app['users.threads.manager']);
+                return new ThreadPaginatedModel($app['neo4j.graph_manager']);
             }
         );
 
@@ -522,7 +525,13 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.photo.manager'] = $app->share(
             function ($app) {
 
-                return new PhotoManager($app['neo4j.graph_manager'], $app['images_web_dir'], $app['params']['social.host']);
+                return new PhotoManager($app['neo4j.graph_manager'], $app['users.gallery.manager'], $app['images_web_dir'], $app['params']['social.host']);
+            }
+        );
+
+        $app['users.gallery.manager'] = $app->share(
+            function($app) {
+                return new GalleryManager($app['images_web_dir']);
             }
         );
 

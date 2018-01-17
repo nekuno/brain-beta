@@ -3,9 +3,9 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
-use Manager\PhotoManager;
+use Model\User\Photo\PhotoManager;
 use Manager\UserManager;
-use Model\Photo;
+use Model\User\Photo\Photo;
 use Model\User;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;

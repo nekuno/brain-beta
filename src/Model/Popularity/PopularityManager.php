@@ -58,6 +58,20 @@ class PopularityManager
         return $popularity;
     }
 
+    public function deleteOneByUrl($url)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(l:Link)')
+            ->where('l.url = {url}')
+            ->setParameter('url', $url);
+
+        $qb->match('(l)-[rel:HAS_POPULARITY]->(popularity:Popularity)')
+            ->delete('rel', 'popularity');
+
+        $qb->getQuery()->getResultSet();
+    }
+
     public function updatePopularityByUser($userId)
     {
         $max_popularity = $this->getMaxPopularity();

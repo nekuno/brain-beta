@@ -111,7 +111,7 @@ trait AbstractResourceOwnerTrait
      */
     public function request($url, array $query = array(), Token $token = null)
     {
-        if (null != $token) {
+        if (null != $token && $token->getResourceOwner() === $this->getName()) {
             return $this->requestAsUser($url, $query, $token);
         } else {
             return $this->requestAsClient($url, $query);

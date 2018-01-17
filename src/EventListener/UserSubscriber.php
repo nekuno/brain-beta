@@ -7,30 +7,27 @@ use Event\ProfileEvent;
 use Event\UserEvent;
 use Event\UserRegisteredEvent;
 use GuzzleHttp\Exception\RequestException;
+use Model\User\Group\Group;
 use Model\User\Thread\ThreadManager;
 use Service\ChatMessageNotifications;
+use Service\InstantConnection;
+use Service\ThreadService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use GuzzleHttp\Client;
 
 class UserSubscriber implements EventSubscriberInterface
 {
-    /**
-     * @var ThreadManager
-     */
-    protected $threadManager;
+    protected $threadService;
 
     protected $chat;
 
-    /**
-     * @var Client
-     */
-    protected $client;
+    protected $instantConnection;
 
-    public function __construct(ThreadManager $threadManager, ChatMessageNotifications $chat, Client $client)
+    public function __construct(ThreadService $threadService, ChatMessageNotifications $chat, InstantConnection $instantConnection)
     {
-        $this->threadManager = $threadManager;
+        $this->threadService = $threadService;
         $this->chat = $chat;
-        $this->client = $client;
+        $this->instantConnection = $instantConnection;
     }
 
     public static function getSubscribedEvents()
@@ -54,7 +51,7 @@ class UserSubscriber implements EventSubscriberInterface
         $userId = $groupEvent->getUserId();
         $group = $groupEvent->getGroup();
 
-        $this->threadManager->createGroupThread($group, $userId);
+        $this->threadService->createGroupThread($group, $userId);
     }
 
     public function onGroupRemoved(GroupEvent $groupEvent)
@@ -88,26 +85,29 @@ class UserSubscriber implements EventSubscriberInterface
     public function onUserRegistered(UserRegisteredEvent $event)
     {
         $user = $event->getUser();
-        $threads = $this->threadManager->getDefaultThreads($user, ThreadManager::SCENARIO_DEFAULT_LITE);
+        $scenario = ThreadManager::SCENARIO_DEFAULT_LITE;
+        $this->threadService->createDefaultThreads($user->getId(), $scenario);
+
+        $this->checkIfGroupRegister($event);
+    }
+
+    protected function checkIfGroupRegister(UserRegisteredEvent $event)
+    {
+        $user = $event->getUser();
         $invitation = $event->getInvitation();
 
-        $groupId = isset($invitation['invitation']['group']) ? $invitation['invitation']['group']->getId() : null;
+        /** @var Group $group */
+        $group = isset($invitation['invitation']['group']) ? $invitation['invitation']['group'] : null;
 
-        if ($groupId) {
-            $threads[0]['filters']['userFilters']['groups'] = array($groupId);
+        if ($group) {
+            $this->threadService->createGroupThread($group, $user->getId());
         }
-
-        $this->threadManager->createBatchForUser($user->getId(), $threads);
     }
 
     public function onUserPhotoChanged(UserEvent $event)
     {
         $user = $event->getUser();
         $json = array('userId' => $user->getId());
-        try {
-            $this->client->post('api/user/clear', array('json' => $json));
-        } catch (RequestException $e) {
-
-        }
+        $this->instantConnection->clearUser($json);
     }
 }

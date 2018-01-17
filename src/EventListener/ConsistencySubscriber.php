@@ -29,6 +29,8 @@ class ConsistencySubscriber implements EventSubscriberInterface
     public function onLink(ConsistencyEvent $event)
     {
         $linkId = $event->getId();
+
+        $this->popularityManager->deleteOneByLinkId($linkId);
         $this->popularityManager->updatePopularity($linkId);
     }
 }

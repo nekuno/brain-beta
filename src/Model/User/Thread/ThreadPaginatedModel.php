@@ -5,24 +5,17 @@ namespace Model\User\Thread;
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
 use Paginator\PaginatedInterface;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ThreadPaginatedModel implements PaginatedInterface
 {
-    /**
-     * @var ThreadManager
-     */
-    protected $threadManager;
-
     /**
      * @var GraphManager
      */
     protected $graphManager;
 
-    public function __construct(GraphManager $gm, ThreadManager $threadManager)
+    public function __construct(GraphManager $gm)
     {
         $this->graphManager = $gm;
-        $this->threadManager = $threadManager;
     }
 
     /**
@@ -42,7 +35,7 @@ class ThreadPaginatedModel implements PaginatedInterface
      * @param array $filters
      * @param int $offset
      * @param int $limit
-     * @return Thread[]
+     * @return array
      */
     public function slice(array $filters, $offset, $limit)
     {
@@ -57,22 +50,21 @@ class ThreadPaginatedModel implements PaginatedInterface
         );
 
         $qb->match('(user:User {qnoow_id: { userId }})')
-            ->match('(user)-[:HAS_THREAD]->(thread:Thread)');
-        $qb->optionalMatch('(thread)-[:IS_FROM_GROUP]->(group:Group)')
-            ->returns('thread', 'id(group) AS groupId')
+            ->match('(user)-[:HAS_THREAD]->(thread:Thread)')
+            ->returns('id(thread) AS id')
             ->orderBy('thread.updatedAt DESC')
             ->skip('{offset}')
             ->limit('{limit}');
 
         $result = $qb->getQuery()->getResultSet();
 
-        $threads = array();
+        $threadIds = array();
         foreach ($result as $row) {
             /* @var $row Row */
-            $threads[] = $this->threadManager->build($row);
+            $threadIds[] = $row->offsetGet('id');
         }
 
-        return $threads;
+        return $threadIds;
     }
 
     /**

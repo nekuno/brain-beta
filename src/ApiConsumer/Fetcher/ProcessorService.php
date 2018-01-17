@@ -20,7 +20,7 @@ use GuzzleHttp\Exception\RequestException;
 use Model\Link\Creator;
 use Model\Link\LinkModel;
 use Model\Neo4j\Neo4jException;
-use Model\User\RateModel;
+use Model\User\Rate\RateModel;
 use Model\User\Token\TokensModel;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
@@ -197,7 +197,6 @@ class ProcessorService implements LoggerAwareInterface
 
             return array();
         }
-
         $this->addSynonymous($preprocessedLink);
         $this->checkCreator($preprocessedLink);
 
@@ -277,7 +276,7 @@ class ProcessorService implements LoggerAwareInterface
             $this->resolve($preprocessedLink);
         } catch (CouldNotResolveException $e) {
             $this->logError($e, sprintf('resolving url %s while reprocessing', $preprocessedLink->getUrl()));
-            $links = $this->overwrite($preprocessedLink);
+            $links = $this->overwriteWithUnprocessed($preprocessedLink);
 
             return $links;
         } catch (UrlChangedException $e) {
@@ -366,6 +365,12 @@ class ProcessorService implements LoggerAwareInterface
         try {
             $links = $this->linkProcessor->process($preprocessedLink);
         } catch (CannotProcessException $e) {
+            if (!$e->canScrape()) {
+                $this->overwriteWithUnprocessed($preprocessedLink);
+                $preprocessedLink->setLinks(array());
+
+                return;
+            }
             $links = $this->scrape($preprocessedLink);
         } catch (RequestException $e) {
             $this->logError($e, 'requesting while processing from linkProcessor');
@@ -491,7 +496,7 @@ class ProcessorService implements LoggerAwareInterface
         return $preprocessedLink->getLinks();
     }
 
-    private function overwrite(PreprocessedLink $preprocessedLink)
+    private function overwriteWithUnprocessed(PreprocessedLink $preprocessedLink)
     {
         $links = $this->getUnprocessedLinks($preprocessedLink);
         $updatedLinks = array();

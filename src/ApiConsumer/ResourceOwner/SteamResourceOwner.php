@@ -3,6 +3,8 @@
 namespace ApiConsumer\ResourceOwner;
 
 use ApiConsumer\Exception\TokenException;
+use ApiConsumer\LinkProcessor\UrlParser\SteamUrlParser;
+use Buzz\Exception\RequestException;
 use Buzz\Message\Response as HttpResponse;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\AbstractResourceOwner;
 use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
@@ -25,7 +27,7 @@ class SteamResourceOwner extends AbstractResourceOwner
 
     public function canRequestAsClient()
     {
-        return false;
+        return true;
     }
 
     public function requestAsClient($url, array $query = array())
@@ -97,6 +99,19 @@ class SteamResourceOwner extends AbstractResourceOwner
         $query = array('appid' => $gameId);
 
         return $this->requestAsClient($url, $query);
+    }
+
+    public function requestGameImage($appId)
+    {
+        try {
+            $url = "https://steamcdn-a.akamaihd.net/steam/apps/$appId/header.jpg";
+            $response = $this->httpRequest($url);
+            $content = $this->getResponseContent($response);
+        } catch (RequestException $e) {
+            return SteamUrlParser::DEFAULT_IMAGE_PATH;
+        }
+
+        return isset($content['errors']) ? SteamUrlParser::DEFAULT_IMAGE_PATH : $url;
     }
 
     /**

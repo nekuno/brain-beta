@@ -1,22 +1,19 @@
 <?php
 
-
 namespace ApiConsumer\EventListener;
 
 use Event\FetchEvent;
 use Event\ProcessLinkEvent;
 use Event\ProcessLinksEvent;
-use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\RequestException;
 use Service\DeviceService;
+use Service\InstantConnection;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class FetchLinksInstantSubscriber implements EventSubscriberInterface
 {
-    /**
-     * @var ClientInterface
-     */
-    protected $client;
+
+    protected $instantConnection;
 
     /**
      * @var DeviceService
@@ -33,15 +30,14 @@ class FetchLinksInstantSubscriber implements EventSubscriberInterface
      */
     protected $links;
 
-    public function __construct(ClientInterface $client, DeviceService $deviceService)
+    public function __construct(InstantConnection $instantConnection, DeviceService $deviceService)
     {
-        $this->client = $client;
+        $this->instantConnection = $instantConnection;
         $this->deviceService = $deviceService;
     }
 
     public static function getSubscribedEvents()
     {
-
         return array(
             \AppEvents::FETCH_START => array('onFetchStart'),
             \AppEvents::FETCH_FINISH => array('onFetchFinish'),
@@ -54,21 +50,13 @@ class FetchLinksInstantSubscriber implements EventSubscriberInterface
     public function onFetchStart(FetchEvent $event)
     {
         $json = array('userId' => $event->getUser(), 'resource' => $event->getResourceOwner());
-        try {
-            $this->client->post('api/fetch/start', array('json' => $json));
-        } catch (RequestException $e) {
-
-        }
+        $this->instantConnection->fetchStart($json);
     }
 
     public function onFetchFinish(FetchEvent $event)
     {
         $json = array('userId' => $event->getUser(), 'resource' => $event->getResourceOwner());
-        try {
-            $this->client->post('api/fetch/finish', array('json' => $json));
-        } catch (RequestException $e) {
-
-        }
+        $this->instantConnection->fetchFinish($json);
     }
 
     public function onProcessStart(ProcessLinksEvent $event)
@@ -76,32 +64,26 @@ class FetchLinksInstantSubscriber implements EventSubscriberInterface
         $this->current = 0;
         $this->links = count($event->getLinks());
         $json = array('userId' => $event->getUser(), 'resource' => $event->getResourceOwner());
-        try {
-            $this->client->post('api/process/start', array('json' => $json));
-        } catch (RequestException $e) {
-
-        }
+        $this->instantConnection->processStart($json);
     }
 
     public function onProcessLink(ProcessLinkEvent $event)
     {
         $percentage = floor($this->current++ / $this->links * 100);
         $json = array('userId' => $event->getUser(), 'resource' => $event->getResourceOwner(), 'percentage' => $percentage);
-        try {
-            $this->client->post('api/process/link', array('json' => $json));
-        } catch (RequestException $e) {
+        $this->instantConnection->processLink($json);
 
-        }
     }
 
     public function onProcessFinish(ProcessLinksEvent $event)
     {
         $jsonProcess = array('userId' => $event->getUser(), 'resource' => $event->getResourceOwner());
+        $this->instantConnection->processFinish($jsonProcess);
+
         $pushData = array(
             'resource' => $event->getResourceOwner(),
         );
         try {
-            $this->client->post('api/process/finish', array('json' => $jsonProcess));
             $this->deviceService->pushMessage($pushData, $event->getUser(), DeviceService::PROCESS_FINISH_CATEGORY);
         } catch (RequestException $e) {
 

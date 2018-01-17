@@ -129,7 +129,7 @@ class Neo4jStatsCommand extends ApplicationAwareCommand
         $output->writeln('Getting likes per user');
 
         foreach ($users as $user) {
-            $rates = $this->app['users.rate.model']->getRatesByUser($user->getId(), User\RateModel::LIKE);
+            $rates = $this->app['users.rate.model']->getRatesByUser($user->getId(), User\Rate\RateModel::LIKE);
             $output->writeln(sprintf('Got %d likes from user %d ', count($rates), $user->getId()));
             $this->likesPerUserDistribution[intval(floor(count($rates) / 10))]++;
         }
