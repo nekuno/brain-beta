@@ -38,4 +38,9 @@ abstract class AbstractScraperProcessor implements ProcessorInterface
     {
         return null;
     }
+
+    public function isLinkWorking($url)
+    {
+        return true;
+    }
 }

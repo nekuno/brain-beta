@@ -121,4 +121,12 @@ class YoutubeVideoProcessor extends AbstractYoutubeProcessor
         return  $emptyItems && $oneResult;
     }
 
+    public function isLinkWorking($url)
+    {
+        $preprocessedLink = new PreprocessedLink($url);
+        $response = $this->requestItem($preprocessedLink);
+
+        return $this->isValidResponse($response) && !$this->isDisabledVideoResponse($response);
+    }
+
 }

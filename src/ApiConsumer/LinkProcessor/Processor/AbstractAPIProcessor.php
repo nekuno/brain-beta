@@ -78,4 +78,9 @@ abstract class AbstractAPIProcessor implements ProcessorInterface
         return $url;
     }
 
+    public function isLinkWorking($url)
+    {
+        return true;
+    }
+
 }
