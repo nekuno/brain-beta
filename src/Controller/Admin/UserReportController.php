@@ -61,6 +61,14 @@ class UserReportController
         return $app->json($result, !empty($result) ? 201 : 200);
     }
 
+    public function getDisabledByIdAction($id, Application $app)
+    {
+        $model = $app['users.disabled.paginated.model'];
+        $result = $model->getById($id);
+
+        return $app->json($result);
+    }
+
     public function enableAction(Application $app, $id)
     {
         return $this->setEnabled($app, $id, true);

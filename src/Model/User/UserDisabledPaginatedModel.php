@@ -53,4 +53,19 @@ class UserDisabledPaginatedModel implements PaginatedInterface
 
         return $result->current()->offsetGet('count');
     }
+
+    public function getById($id)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(u:UserDisabled)')
+            ->where('u.qnoow_id = { id }');
+
+        $qb->returns('u')
+            ->setParameter('id', (integer)$id);
+
+        $result = $qb->getQuery()->getResultSet();
+
+        return $this->userManager->build($result->current());
+    }
 }

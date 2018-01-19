@@ -52,6 +52,7 @@ $admin->get('/users/{id}/tracking', 'admin.userTracking.controller:getAction');
 $admin->get('/users/csv', 'admin.userTracking.controller:getCsvAction');
 $admin->get('/users/reported', 'admin.userReport.controller:getReportedAction');
 $admin->get('/users/disabled', 'admin.userReport.controller:getDisabledAction');
+$admin->get('/users/disabled/{id}', 'admin.userReport.controller:getDisabledByIdAction');
 $admin->post('/users/{id}/enable', 'admin.userReport.controller:enableAction');
 $admin->post('/users/{id}/disable', 'admin.userReport.controller:disableAction');
 
