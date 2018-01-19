@@ -273,7 +273,7 @@ class GroupModel
                     'id' => (integer)$id,
                     'name' => $data['name'],
                     'html' => $data['html'],
-                    'image_path' => $data['image_path'],
+                    'image_path' => isset($data['image_path']) ? $data['image_path'] : null,
                     'date' => $data['date'] ? (int)$data['date'] : null,
                     'address' => $data['location']['address'],
                     'latitude' => $data['location']['latitude'],

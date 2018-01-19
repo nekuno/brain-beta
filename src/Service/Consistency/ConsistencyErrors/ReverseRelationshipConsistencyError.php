@@ -4,6 +4,8 @@ namespace Service\Consistency\ConsistencyErrors;
 
 class ReverseRelationshipConsistencyError extends ConsistencyError
 {
+    const NAME = 'Reverse Relationship';
+
     protected $relationshipId;
 
     /**

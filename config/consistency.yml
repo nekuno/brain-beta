@@ -201,6 +201,27 @@ link:
             direction: outgoing
             otherNode: Popularity
             maximum: 1
+        affinity:
+            type: AFFINITY
+            direction: incoming
+            otherNode: User
+        likes:
+            type: LIKES
+            direction: incoming
+            otherNode: User
+        tagged:
+            type: TAGGED
+            diretion: outgoing
+            otherNode: Tag
+
+    properties:
+        url:
+            required: true
+
+web:
+    label: Web
+    checkerClass: Service\Consistency\WebConsistencyChecker
+
 
 question:
     label: Question
@@ -232,4 +253,31 @@ question:
             direction: outgoing
             otherNode: User
             maximum: 1
+
+answer:
+    label: Answer
+
+    properties:
+        text_en:
+            required: true
+        text_es:
+            required: true
+
+    relationships:
+        is_answer_of:
+            type: IS_ANSWER_OF
+            direction: outgoing
+            otherNode: Question
+            minimum: 1
+            maximum: 1
+
+        answers:
+            type: ANSWERS
+            direction: incoming
+            otherNode: User
+
+        accepts:
+            type: ACCEPTS
+            direction: incoming
+            otherNode: User
 

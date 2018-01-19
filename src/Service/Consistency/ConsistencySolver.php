@@ -93,7 +93,7 @@ class ConsistencySolver
         $startId = $relationship->getStartNode()->getId();
         $endId = $relationship->getEndNode()->getId();
 
-        
+        $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(startNode)')
             ->where('id(startNode) = {startNodeId}')
             ->setParameter('startNodeId', (integer)$startId);

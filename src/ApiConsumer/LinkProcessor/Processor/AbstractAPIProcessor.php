@@ -32,11 +32,15 @@ abstract class AbstractAPIProcessor implements ProcessorInterface
     {
         $response = $this->requestItem($preprocessedLink);
 
+        $this->checkValidResponse($preprocessedLink, $response);
+        return $response;
+    }
+
+    protected function checkValidResponse(PreprocessedLink $preprocessedLink, array $response)
+    {
         if (!$this->isValidResponse($response)){
             throw new CannotProcessException($preprocessedLink->getUrl(), sprintf('Response for url %s is not valid', $preprocessedLink->getUrl()));
         }
-
-        return $response;
     }
 
     abstract protected function requestItem(PreprocessedLink $preprocessedLink);
@@ -72,6 +76,11 @@ abstract class AbstractAPIProcessor implements ProcessorInterface
     protected function getItemIdFromParser($url)
     {
         return $url;
+    }
+
+    public function isLinkWorking($url)
+    {
+        return true;
     }
 
 }

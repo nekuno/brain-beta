@@ -35,4 +35,6 @@ interface ProcessorInterface
      */
     public function getImages(PreprocessedLink $preprocessedLink, array $data);
 
+    public function isLinkWorking($url);
+
 } 

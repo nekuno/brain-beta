@@ -29,12 +29,11 @@ class ConsistencyCheckerService
         $this->consistencyNodeRetriever = new ConsistencyNodeRetriever($this->graphManager);
     }
 
-    public function getDatabaseErrors($label = null)
+    public function getDatabaseErrors($label = null, $offset = 0, $limit = null)
     {
         //dispatch consistency start
         $this->dispatcher->dispatch(\AppEvents::CONSISTENCY_START);
         $paginationSize = 1000;
-        $offset = 0;
 
         $errorList = array();
         do {
@@ -45,10 +44,12 @@ class ConsistencyCheckerService
                 $errorList = array_merge($errorList, $nodeErrors);
             }
 
-            $offset += $paginationSize;
             $moreResultsAvailable = count($nodes) >= $paginationSize;
+            $limitReached = $limit ? $offset >= $limit : false;
 
-        } while ($moreResultsAvailable);
+            $offset += $paginationSize;
+
+        } while ($moreResultsAvailable && !$limitReached);
 
         //dispatch consistency end
         $this->dispatcher->dispatch(\AppEvents::CONSISTENCY_END);

@@ -54,8 +54,9 @@ class FilterContentManager
 
     public function updateFilterContentByThreadId($id, $filtersArray)
     {
+        //TODO: Check json structure
         $contentFilters = isset($filtersArray['contentFilters']) ? $filtersArray['contentFilters'] : array();
-        $this->validator->validateOnUpdate($contentFilters);
+        $this->validateOnUpdate($contentFilters);
 
         $filters = $this->buildFiltersContent();
 
@@ -88,6 +89,28 @@ class FilterContentManager
         $this->saveType($filters->getId(), $type);
 
         return true;
+    }
+
+    public function validateOnUpdate($filters)
+    {
+        $this->validator->validateOnUpdate($filters);
+    }
+
+    public function delete(FilterContent $filters)
+    {
+        $filterId = $filters->getId();
+
+        $qb = $this->graphManager->createQueryBuilder();
+        $qb->match('(filter:FilterContent)')
+            ->where('id(filter) = {id}')
+            ->with('filter')
+            ->setParameter('id', (integer)$filterId);
+
+        $qb->detachDelete('filter');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        return $result->count() >= 1;
     }
 
     /**

@@ -185,4 +185,12 @@ class ScraperProcessor extends AbstractScraperProcessor
             }
         }
     }
+
+    public function isLinkWorking($url)
+    {
+        $response = $this->client->getClient()->head($url);
+
+        return $response->getStatusCode() > 200 && $response->getStatusCode() < 300;
+    }
+
 }

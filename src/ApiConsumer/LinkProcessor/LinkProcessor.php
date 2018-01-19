@@ -6,6 +6,7 @@ use ApiConsumer\Factory\ProcessorFactory;
 use ApiConsumer\Images\ImageAnalyzer;
 use ApiConsumer\LinkProcessor\Processor\BatchProcessorInterface;
 use ApiConsumer\LinkProcessor\Processor\ProcessorInterface;
+use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\YoutubeVideoProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use Model\Link\Link;
 use Model\User\Token\Token;
@@ -184,5 +185,17 @@ class LinkProcessor
         }
 
         return $links;
+    }
+
+    public function isLinkWorking($url)
+    {
+        $processor = $this->selectProcessor($url);
+
+        $needsSpecialCheck = $processor instanceof YoutubeVideoProcessor;
+        if (!($needsSpecialCheck)){
+            $processor = $this->processorFactory->buildScrapperProcessor('scrapper');
+        }
+
+        return $processor->isLinkWorking($url);
     }
 }
