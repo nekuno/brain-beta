@@ -190,6 +190,11 @@ class ContentReportModel extends ContentPaginatedModel
         return $response;
     }
 
+    public function validateFilters(array $filters)
+    {
+        return true;
+    }
+
     /**
      * Report a content
      * @param $userId
