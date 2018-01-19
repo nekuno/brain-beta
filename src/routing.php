@@ -77,6 +77,13 @@ $controllers
             return (int)$id;
         }
     )
+    ->assert('enterpriseUserId', '\d+')
+    ->convert(
+        'enterpriseUserId',
+        function ($id) {
+            return (int)$id;
+        }
+    )
     ->assert('from', '\d+')
     ->convert(
         'from',

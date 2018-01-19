@@ -29,7 +29,7 @@ class GroupController
     {
         $data = $request->request->all();
 
-        $group = $app['group.service']->create($data);
+        $group = $app['group.service']->createGroup($data);
 
         return $app->json($group, 201);
     }
@@ -38,7 +38,7 @@ class GroupController
     {
         $data = $request->request->all();
 
-        $group = $app['group.service']->update($id, $data);
+        $group = $app['group.service']->updateGroup($id, $data);
 
         return $app->json($group);
     }
@@ -54,10 +54,10 @@ class GroupController
     {
         $data = $request->request->all();
 
-        $model = $app['users.groups.model'];
+        $model = $app['group.service'];
         if (isset($data['id'])) {
             $groupId = $data['id'];
-            unlink($data['id']);
+            unset($data['id']);
             $model->validateOnUpdate($data, $groupId);
         } else {
             $model->validateOnCreate($data);
