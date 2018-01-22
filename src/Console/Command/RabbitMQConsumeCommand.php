@@ -274,7 +274,7 @@ class RabbitMQConsumeCommand extends ApplicationAwareCommand
         );
         $dispatcher = $this->getDispatcher($subscribers);
 
-        $worker = new LinksCheckWorker($channel, $dispatcher, $this->app['links.model']);
+        $worker = new LinksCheckWorker($channel, $dispatcher, $this->app['links.model'], $this->app['api_consumer.link_processor']);
         $worker->setLogger($this->logger);
         $this->noticeStart($worker);
 
