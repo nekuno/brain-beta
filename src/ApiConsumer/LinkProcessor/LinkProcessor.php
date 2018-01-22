@@ -189,13 +189,21 @@ class LinkProcessor
 
     public function isLinkWorking($url)
     {
-        $processor = $this->selectProcessor($url);
+        $preprocessedLink = new PreprocessedLink($url);
+        $processor = $this->selectProcessor($preprocessedLink);
 
         $needsSpecialCheck = $processor instanceof YoutubeVideoProcessor;
         if (!($needsSpecialCheck)){
             $processor = $this->processorFactory->buildScrapperProcessor('scrapper');
         }
 
-        return $processor->isLinkWorking($url);
+        try {
+            $isLinkWorking = $processor->isLinkWorking($url);
+        } catch (\Exception $e)
+        {
+            $isLinkWorking = false;
+        }
+
+        return $isLinkWorking;
     }
 }
