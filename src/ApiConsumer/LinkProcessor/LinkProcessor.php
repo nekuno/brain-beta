@@ -189,6 +189,10 @@ class LinkProcessor
 
     public function isLinkWorking($url)
     {
+        if (!$url){
+            return false;
+        }
+        
         $preprocessedLink = new PreprocessedLink($url);
         $processor = $this->selectProcessor($preprocessedLink);
 

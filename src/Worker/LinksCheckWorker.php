@@ -39,23 +39,26 @@ class LinksCheckWorker extends LoggerAwareWorker implements RabbitMQConsumerInte
         $checkEvent = new CheckEvent($url);
         $this->dispatcher->dispatch(\AppEvents::CHECK_START, $checkEvent);
 
-        if ($this->linkProcessor->isLinkWorking($url)){
+        if (!$this->linkProcessor->isLinkWorking($url)) {
             $this->linkModel->setProcessed($url, false);
             $checkEvent->setError(sprintf('Bad response status code for url "%s"', $url));
             $this->dispatcher->dispatch(\AppEvents::CHECK_ERROR, $checkEvent);
+
+            return;
         }
 
         $thumbnail = $link->getThumbnailLarge();
-        if ($this->linkProcessor->isLinkWorking($thumbnail)){
+        if (!$this->linkProcessor->isLinkWorking($thumbnail)) {
             $this->linkModel->setProcessed($url, false);
-            $checkEvent->setError(sprintf('Response status code "%s" for thumbnail "%s" for url "%s"', $thumbnail, $url));
+            $checkEvent->setError(sprintf('Bad response status code for thumbnail "%s" for url "%s"', $thumbnail, $url));
             $this->dispatcher->dispatch(\AppEvents::CHECK_ERROR, $checkEvent);
+
+            return;
         }
 
 //        $this->client->setDefaultOption('verify', false);
 //        $this->client->setDefaultOption('connect_timeout', 10);
 
         $this->dispatcher->dispatch(\AppEvents::CHECK_SUCCESS, $checkEvent);
-        return true;
     }
 }

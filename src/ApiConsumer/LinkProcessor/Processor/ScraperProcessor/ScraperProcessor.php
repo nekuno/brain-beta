@@ -190,7 +190,7 @@ class ScraperProcessor extends AbstractScraperProcessor
     {
         $response = $this->client->getClient()->head($url);
 
-        return $response->getStatusCode() > 200 && $response->getStatusCode() < 300;
+        return $response->getStatusCode() >= 200 && $response->getStatusCode() < 300;
     }
 
 }
