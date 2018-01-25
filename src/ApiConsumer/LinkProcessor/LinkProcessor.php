@@ -189,8 +189,8 @@ class LinkProcessor
 
     public function isLinkWorking($url)
     {
-        if (!$url){
-            return false;
+        if (!$url || $url === ''){
+            return true;
         }
         
         $preprocessedLink = new PreprocessedLink($url);
