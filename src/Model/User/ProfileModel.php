@@ -8,7 +8,6 @@ use Model\Metadata\ProfileMetadataManager;
 use Model\Neo4j\GraphManager;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
-use Everyman\Neo4j\Label;
 use Model\Exception\ValidationException;
 use Service\Validator\ProfileValidator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -20,16 +19,18 @@ class ProfileModel
     const MAX_TAGS_AND_CHOICE_LENGTH = 15;
     protected $gm;
     protected $profileOptionManager;
+    protected $profileTagManager;
     protected $profileMetadataManager;
     protected $metadataUtilities;
     protected $dispatcher;
     protected $validator;
 
-    public function __construct(GraphManager $gm, ProfileMetadataManager $profileMetadataManager, ProfileOptionManager $profileOptionManager, MetadataUtilities $metadataUtilities, EventDispatcher $dispatcher, ProfileValidator $validator)
+    public function __construct(GraphManager $gm, ProfileMetadataManager $profileMetadataManager, ProfileOptionManager $profileOptionManager, ProfileTagModel $profileTagModel, MetadataUtilities $metadataUtilities, EventDispatcher $dispatcher, ProfileValidator $validator)
     {
         $this->gm = $gm;
         $this->profileMetadataManager = $profileMetadataManager;
         $this->profileOptionManager = $profileOptionManager;
+        $this->profileTagManager = $profileTagModel;
         $this->metadataUtilities = $metadataUtilities;
         $this->dispatcher = $dispatcher;
         $this->validator = $validator;
@@ -220,7 +221,7 @@ class ProfileModel
         return array($userNode, $profileNode);
     }
 
-    //TODO: Divide in saveProfileData and saveProfileOptionsData
+    //TODO: Divide in saveProfileData and saveProfileOptionsData and saveProfileTagsData
     protected function saveProfileData($id, array $data)
     {
         $metadata = $this->profileMetadataManager->getMetadata();
@@ -328,37 +329,9 @@ class ProfileModel
                         break;
                     case 'tags_and_choice':
                         if (is_array($fieldValue)) {
-                            $qbTagsAndChoice = $this->gm->createQueryBuilder();
-                            $qbTagsAndChoice->match('(profile:Profile)-[:PROFILE_OF]->(u:User)')
-                                ->where('u.qnoow_id = { id }')
-                                ->setParameter('id', (int)$id)
-                                ->with('profile');
-
-                            $qbTagsAndChoice->optionalMatch('(profile)<-[tagsAndChoiceOptionRel:TAGGED]-(:' . $this->metadataUtilities->typeToLabel($fieldName) . ')')
-                                ->delete('tagsAndChoiceOptionRel');
-
-                            $savedTags = array();
-                            foreach ($fieldValue as $index => $value) {
-                                $tagValue = $fieldName === 'language' ?
-                                    $this->metadataUtilities->getLanguageFromTag($value['tag']) :
-                                    $value['tag'];
-                                if (in_array($tagValue, $savedTags)) {
-                                    continue;
-                                }
-                                $choice = !is_null($value['choice']) ? $value['choice'] : '';
-                                $tagLabel = 'tag_' . $index;
-                                $tagParameter = $fieldName . '_' . $index;
-                                $choiceParameter = $fieldName . '_choice_' . $index;
-
-                                $qbTagsAndChoice->with('profile')
-                                    ->merge('(' . $tagLabel . ':ProfileTag:' . $this->metadataUtilities->typeToLabel($fieldName) . ' {name: { ' . $tagParameter . ' }})')
-                                    ->merge('(profile)<-[:TAGGED {detail: {' . $choiceParameter . '}}]-(' . $tagLabel . ')')
-                                    ->setParameter($tagParameter, $tagValue)
-                                    ->setParameter($choiceParameter, $choice);
-                                $savedTags[] = $tagValue;
-                            }
-                            $query = $qbTagsAndChoice->getQuery();
-                            $query->getResultSet();
+                            $tagLabel = $this->metadataUtilities->typeToLabel($fieldName);
+                            $interfaceLanguage = $this->getInterfaceLocale($id);
+                            $this->profileTagManager->setTagsAndChoice($id, $interfaceLanguage, $fieldName, $tagLabel, $fieldValue);
                         }
 
                         break;
@@ -388,19 +361,15 @@ class ProfileModel
                         $query->getResultSet();
                         break;
                     case 'tags':
+                        $tagLabel = $this->metadataUtilities->typeToLabel($fieldName);
+
                         if (isset($tags[$fieldName])) {
-                            foreach ($tags[$fieldName] as $tag) {
-                                $qb->optionalMatch('(profile)<-[tagRel:TAGGED]-(tag:' . $this->metadataUtilities->typeToLabel($fieldName) . ' {name: "' . $tag . '" })')
-                                    ->delete('tagRel')
-                                    ->with('profile');
-                            }
+                            $this->profileTagManager->deleteTagRelationships($id, $tagLabel, $tags[$fieldName]);
                         }
+
                         if (is_array($fieldValue) && !empty($fieldValue)) {
-                            foreach ($fieldValue as $tag) {
-                                $qb->merge('(tag:ProfileTag:' . $this->metadataUtilities->typeToLabel($fieldName) . ' {name: "' . $tag . '" })')
-                                    ->merge('(profile)<-[:TAGGED]-(tag)')
-                                    ->with('profile');
-                            }
+                            $interfaceLanguage = $this->getInterfaceLocale($id);
+                            $this->profileTagManager->addTags($id, $interfaceLanguage, $tagLabel, $fieldValue);
                         }
 
                         break;
@@ -439,5 +408,22 @@ class ProfileModel
         }
 
         throw new NotFoundHttpException(sprintf("Description %s not found", $description));
+    }
+
+    protected function getInterfaceLocale($userId)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(profile:Profile)-[:PROFILE_OF]->(u:User)')
+            ->where('u.qnoow_id = { id }')
+            ->setParameter('id', (int)$userId)
+            ->with('profile');
+
+        $qb->match('(profile)-[:OPTION_OF]-(i:InterfaceLanguage)')
+            ->returns('i.id AS locale');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        return $result->offsetGet('locale');
     }
 }

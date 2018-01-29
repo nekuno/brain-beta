@@ -2,6 +2,7 @@
 
 namespace Provider;
 
+use Model\LanguageText\LanguageTextManager;
 use Model\User\Photo\GalleryManager;
 use Model\User\Photo\PhotoManager;
 use Model\EnterpriseUser\EnterpriseUserModel;
@@ -118,7 +119,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
                 $profileValidator = $app['validator.factory']->build('profile');
 
-                return new ProfileModel($app['neo4j.graph_manager'], $app['users.profileMetadata.manager'], $app['users.profileOption.manager'], $app['metadata.utilities'],  $app['dispatcher'], $profileValidator);
+                return new ProfileModel($app['neo4j.graph_manager'], $app['users.profileMetadata.manager'], $app['users.profileOption.manager'], $app['users.profile.tag.model'], $app['metadata.utilities'],  $app['dispatcher'], $profileValidator);
             }
         );
 
@@ -182,7 +183,14 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.profile.tag.model'] = $app->share(
             function ($app) {
 
-                return new ProfileTagModel($app['neo4j.client']);
+                return new ProfileTagModel($app['neo4j.client'], $app['neo4j.graph_manager'], $app['users.languageText.manager'], $app['metadata.utilities']);
+            }
+        );
+
+        $app['users.languageText.manager'] = $app->share(
+            function ($app) {
+
+                return new LanguageTextManager($app['neo4j.graph_manager']);
             }
         );
 

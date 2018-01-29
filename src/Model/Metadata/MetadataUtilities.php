@@ -29,49 +29,6 @@ class MetadataUtilities
         return $this->translateTypicalLanguage($this->formatLanguage($tag));
     }
 
-    //TODO: Refactor this translation functions
-    public function translateTypicalLanguage($language)
-    {
-        switch ($language) {
-            case 'Español':
-                return 'Spanish';
-            case 'Castellano':
-                return 'Spanish';
-            case 'Inglés':
-                return 'English';
-            case 'Ingles':
-                return 'English';
-            case 'Francés':
-                return 'French';
-            case 'Frances':
-                return 'French';
-            case 'Alemán':
-                return 'German';
-            case 'Aleman':
-                return 'German';
-            case 'Portugués':
-                return 'Portuguese';
-            case 'Portugues':
-                return 'Portuguese';
-            case 'Italiano':
-                return 'Italian';
-            case 'Chino':
-                return 'Chinese';
-            case 'Japonés':
-                return 'Japanese';
-            case 'Japones':
-                return 'Japanese';
-            case 'Ruso':
-                return 'Russian';
-            case 'Árabe':
-                return 'Arabic';
-            case 'Arabe':
-                return 'Arabic';
-            default:
-                return $language;
-        }
-    }
-
     public function translateLanguageToLocale($language, $locale)
     {
         if ($locale === 'en') {
