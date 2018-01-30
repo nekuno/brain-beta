@@ -275,9 +275,9 @@ class FilterUsersManager
                     $qb->optionalMatch("(filter)-[old_tag_rel:FILTERS_BY]->(:$tagLabelName)")
                         ->delete("old_tag_rel");
                     if ($value) {
-                        foreach ($value as $singleValue) {
-                            $qb->merge("(tag$fieldName$singleValue:$tagLabelName{name:'$singleValue'})");
-                            $qb->merge("(filter)-[:FILTERS_BY]->(tag$fieldName$singleValue)");
+                        foreach ($value as $tag) {
+                            $qb->merge("(tag$fieldName$tag:$tagLabelName:ProfileTag)<-[:TEXT_OF]-(:TextLanguage{text:'$tag'})");
+                            $qb->merge("(filter)-[:FILTERS_BY]->(tag$fieldName$tag)");
                         }
                     }
                     $qb->with('filter');
@@ -292,7 +292,7 @@ class FilterUsersManager
                             $tag = $singleValue['tag'];
                             $choice = isset($singleValue['choice']) ? $singleValue['choice'] : '';
 
-                            $qb->merge("(tag$fieldName$tag:$tagLabelName:ProfileTag{name:'$tag'})");
+                            $qb->merge("(tag$fieldName$tag:$tagLabelName:ProfileTag)<-[:TEXT_OF]-(:TextLanguage{text:'$tag'})");
                             $qb->merge("(filter)-[tag_rel$fieldName$tag:FILTERS_BY]->(tag$fieldName$tag)")
                                 ->set("tag_rel$fieldName$tag.detail = {detail$fieldName$tag}");
                             $qb->setParameter("detail$fieldName$tag", $choice);
@@ -309,7 +309,7 @@ class FilterUsersManager
                         foreach ($value as $singleValue) {
                             $tag = $singleValue['tag'];
                             $choices = isset($singleValue['choices']) ? $singleValue['choices'] : '';
-                            $qb->merge("(tag$fieldName$tag:$tagLabelName:ProfileTag{name:'$tag'})");
+                            $qb->merge("(tag$fieldName$tag:$tagLabelName:ProfileTag)<-[:TEXT_OF]-(:TextLanguage{text:'$tag'})");
                             $qb->merge("(filter)-[tag_rel$fieldName$tag:FILTERS_BY]->(tag$fieldName$tag)")
                                 ->set("tag_rel$fieldName$tag.detail = {detail$fieldName$tag}");
                             $qb->setParameter("detail$fieldName$tag", $choices);

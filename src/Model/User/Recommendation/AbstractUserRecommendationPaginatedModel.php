@@ -245,7 +245,9 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
                         break;
                     case 'tags':
                         $tagLabelName = $this->metadataUtilities->typeToLabel($name);
-                        $matches[] = "(p)<-[:TAGGED]-(tag$name:$tagLabelName) WHERE tag$name.name = '$value'";
+                        $matchQuery = "(p)<-[:TAGGED]-(tag$name:$tagLabelName)";
+                        $whereQuery = " (tag$name)<-[:TEXT_OF]-(:TextLanguage{text: '$value'})";
+                        $matches[] = $matchQuery . ' WHERE (' . $whereQuery . ')';
                         break;
                     case 'tags_and_choice':
                         $tagLabelName = $this->metadataUtilities->typeToLabel($name);
@@ -254,7 +256,7 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
                         foreach ($value as $dataValue) {
                             $tagValue = $dataValue['tag'];
                             $choice = isset($dataValue['choices']) ? $dataValue['choices'] : null;
-                            $whereQuery = " tag$name.name = '$tagValue'";
+                            $whereQuery = " (tag$name)<-[:TEXT_OF]-(:TextLanguage{text: '$tagValue'})";
                             if (!null == $choice) {
                                 $whereQuery .= " AND rel$name.detail = '$choice'";
                             }
@@ -271,7 +273,7 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
                             $tagValue = $dataValue['tag'];
                             $choices = isset($dataValue['choices']) ? $dataValue['choices'] : array();
 
-                            $whereQuery = " tag$name.name = '$tagValue'";
+                            $whereQuery = " (tag$name)<-[:TEXT_OF]-(:TextLanguage{text: '$tagValue'})";
                             if (!empty($choices)) {
                                 $choices = json_encode($choices);
                                 $whereQuery .= " AND rel$name.detail IN $choices ";
