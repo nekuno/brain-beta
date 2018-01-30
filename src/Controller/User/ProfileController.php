@@ -13,18 +13,16 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class ProfileController
 {
     /**
-     * @param Request $request
      * @param Application $app
      * @param User $user
      * @return JsonResponse
      */
-    public function getAction(Request $request, Application $app, User $user)
+    public function getAction(Application $app, User $user)
     {
-        $locale = $request->query->get('locale');
         /* @var $model ProfileModel */
         $model = $app['users.profile.model'];
 
-        $profile = $model->getById($user->getId(), $locale);
+        $profile = $model->getById($user->getId());
 
         return $app->json($profile);
     }
@@ -36,12 +34,11 @@ class ProfileController
      */
     public function getOtherAction(Request $request, Application $app)
     {
-        $locale = $request->query->get('locale');
         $id = $request->get('userId');
         /* @var $model ProfileModel */
         $model = $app['users.profile.model'];
 
-        $profile = $model->getById($id, $locale);
+        $profile = $model->getById($id);
 
         return $app->json($profile);
     }

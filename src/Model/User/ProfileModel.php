@@ -38,11 +38,10 @@ class ProfileModel
 
     /**
      * @param int $id
-     * @param mixed $locale
      * @return array
      * @throws NotFoundHttpException
      */
-    public function getById($id, $locale = null)
+    public function getById($id)
     {
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(user:User)<-[:PROFILE_OF]-(profile:Profile)')
@@ -66,7 +65,7 @@ class ProfileModel
         /* @var $row Row */
         $row = $result->current();
 
-        return $this->build($row, $locale);
+        return $this->build($row);
     }
 
     /**
@@ -174,7 +173,7 @@ class ProfileModel
         $this->validator->validateOnDelete($data);
     }
 
-    public function build(Row $row, $locale = null)
+    public function build(Row $row)
     {
         /* @var $node Node */
         $node = $row->offsetGet('profile');
@@ -191,7 +190,7 @@ class ProfileModel
         }
 
         $profile += $this->profileOptionManager->buildOptions($row->offsetGet('options'));
-        $profile += $this->profileOptionManager->buildTags($row, $locale);
+        $profile += $this->profileOptionManager->buildTags($row);
 
         return $profile;
     }

@@ -289,9 +289,7 @@ class FilterUsersManager
 
                     if ($value) {
                         foreach ($value as $singleValue) {
-                            $tag = $fieldName === 'language' ?
-                                $this->metadataUtilities->getLanguageFromTag($singleValue['tag']) :
-                                $singleValue['tag'];
+                            $tag = $singleValue['tag'];
                             $choice = isset($singleValue['choice']) ? $singleValue['choice'] : '';
 
                             $qb->merge("(tag$fieldName$tag:$tagLabelName:ProfileTag{name:'$tag'})");
@@ -309,9 +307,7 @@ class FilterUsersManager
 
                     if ($value) {
                         foreach ($value as $singleValue) {
-                            $tag = $fieldName === 'language' ?
-                                $this->metadataUtilities->getLanguageFromTag($singleValue['tag']) :
-                                $singleValue['tag'];
+                            $tag = $singleValue['tag'];
                             $choices = isset($singleValue['choices']) ? $singleValue['choices'] : '';
                             $qb->merge("(tag$fieldName$tag:$tagLabelName:ProfileTag{name:'$tag'})");
                             $qb->merge("(filter)-[tag_rel$fieldName$tag:FILTERS_BY]->(tag$fieldName$tag)")

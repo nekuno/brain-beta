@@ -24,52 +24,6 @@ class MetadataUtilities
         return $labelField[$locale];
     }
 
-    public function getLanguageFromTag($tag)
-    {
-        return $this->translateTypicalLanguage($this->formatLanguage($tag));
-    }
-
-    public function translateLanguageToLocale($language, $locale)
-    {
-        if ($locale === 'en') {
-            return $language;
-        }
-        if ($locale === 'es') {
-            switch ($language) {
-                case 'Spanish':
-                    return 'Español';
-                case 'English':
-                    return 'Inglés';
-                case 'French':
-                    return 'Francés';
-                case 'German':
-                    return 'Alemán';
-                case 'Portuguese':
-                    return 'Portugués';
-                case 'Italian':
-                    return 'Italiano';
-                case 'Chinese':
-                    return 'Chino';
-                case 'Japanese':
-                    return 'Japonés';
-                case 'Russian':
-                    return 'Ruso';
-                case 'Arabic':
-                    return 'Árabe';
-            }
-        }
-
-        return $language;
-    }
-
-    protected function formatLanguage($typeName)
-    {
-        $firstCharacter = mb_strtoupper(mb_substr($typeName, 0, 1, 'UTF-8'), 'UTF-8');
-        $restString = mb_strtolower(mb_substr($typeName, 1, null, 'UTF-8'), 'UTF-8');
-
-        return $firstCharacter . $restString;
-    }
-
     public function getBirthdayRangeFromAgeRange($min = null, $max = null, $nowDate = null)
     {
         $return = array('max' => null, 'min' => null);

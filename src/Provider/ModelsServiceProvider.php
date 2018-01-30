@@ -183,7 +183,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.profile.tag.model'] = $app->share(
             function ($app) {
 
-                return new ProfileTagModel($app['neo4j.client'], $app['neo4j.graph_manager'], $app['users.languageText.manager'], $app['metadata.utilities']);
+                return new ProfileTagModel($app['neo4j.client'], $app['neo4j.graph_manager'], $app['users.languageText.manager']);
             }
         );
 

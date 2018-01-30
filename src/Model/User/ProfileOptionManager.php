@@ -226,7 +226,7 @@ class ProfileOptionManager
         return $tags;
     }
 
-    public function buildTags(Row $row, $locale = null)
+    public function buildTags(Row $row)
     {
         $tags = $row->offsetGet('tags');
         $tagsResult = array();
@@ -247,14 +247,7 @@ class ProfileOptionManager
                         $tagResult['tag'] = $tag->getProperty('name');
                         $tagResult['choice'] = $detail;
                     }
-                    if ($typeName === 'language') {
-                        if (is_null($detail)) {
-                            $tagResult = array();
-                            $tagResult['tag'] = $tag->getProperty('name');
-                            $tagResult['choice'] = '';
-                        }
-                        $tagResult['tag'] = $this->metadataUtilities->translateLanguageToLocale($tagResult['tag'], $locale);
-                    }
+
                     $tagsResult[$typeName][] = $tagResult;
                 }
             }

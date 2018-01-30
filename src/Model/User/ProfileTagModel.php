@@ -19,20 +19,16 @@ class ProfileTagModel
 
     protected $languageTextManager;
 
-    protected $metadataUtilities;
-
     /**
      * @param \Everyman\Neo4j\Client $client
      * @param GraphManager $graphManager
      * @param LanguageTextManager $languageTextManager
-     * @param MetadataUtilities $metadataUtilities
      */
-    public function __construct(Client $client, GraphManager $graphManager, LanguageTextManager $languageTextManager, MetadataUtilities $metadataUtilities)
+    public function __construct(Client $client, GraphManager $graphManager, LanguageTextManager $languageTextManager)
     {
         $this->client = $client;
         $this->graphManager = $graphManager;
         $this->languageTextManager = $languageTextManager;
-        $this->metadataUtilities = $metadataUtilities;
     }
 
     /**
@@ -198,11 +194,8 @@ class ProfileTagModel
 
         $savedTags = array();
         foreach ($tags as $index => $value) {
-            //TODO: Move this case to different method/type
             //TODO: Check if index is unnecesary due to with('profile') erasing previous node names
-            $tagValue = $fieldName === 'language' ?
-                $this->metadataUtilities->getLanguageFromTag($value['tag']) :
-                $value['tag'];
+            $tagValue = $value['tag'];
             $tagName = $tagValue['name'];
             $tagId = isset($tagValue['googleGraphId']) ? $tagValue['googleGraphId'] : null;
             if ($tagId) {

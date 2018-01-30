@@ -252,9 +252,7 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
                         $matchQuery = "(p)<-[rel$name:TAGGED]-(tag$name:ProfileTag:$tagLabelName)";
                         $whereQueries = array();
                         foreach ($value as $dataValue) {
-                            $tagValue = $name === 'language' ?
-                                $this->metadataUtilities->getLanguageFromTag($dataValue['tag']) :
-                                $dataValue['tag'];
+                            $tagValue = $dataValue['tag'];
                             $choice = isset($dataValue['choices']) ? $dataValue['choices'] : null;
                             $whereQuery = " tag$name.name = '$tagValue'";
                             if (!null == $choice) {
@@ -270,9 +268,7 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
                         $matchQuery = "(p)<-[rel$name:TAGGED]-(tag$name:ProfileTag:$tagLabelName)";
                         $whereQueries = array();
                         foreach ($value as $dataValue) {
-                            $tagValue = $name === 'language' ?
-                                $this->metadataUtilities->getLanguageFromTag($dataValue['tag']) :
-                                $dataValue['tag'];
+                            $tagValue = $dataValue['tag'];
                             $choices = isset($dataValue['choices']) ? $dataValue['choices'] : array();
 
                             $whereQuery = " tag$name.name = '$tagValue'";
