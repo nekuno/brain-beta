@@ -36,6 +36,47 @@ class ProfileTagModel
     }
 
     /**
+     * @param int $limit
+     * @return array[]
+     * @throws \Exception
+     */
+    public function findAllOld($limit = 99999)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(tag:ProfileTag)--(:Profile)-[r]-(i:InterfaceLanguage)')
+            ->with('tag', 'i.id AS locale', 'count(r) AS amount')
+            ->returns('id(tag) AS id, tag.name AS name', 'locale', 'amount')
+            ->limit((integer)$limit);
+
+        $result = $qb->getQuery()->getResultSet();
+
+        $tags = array();
+        foreach ($result as $row)
+        {
+            $id = $row->offsetGet('id');
+            $name = $row->offsetGet('name');
+            $locale = $row->offsetGet('locale');
+            $amount = $row->offsetGet('amount');
+            $tags[] = array('id' => $id, 'name' => $name, 'locale' => $locale, 'amount' => $amount);
+        }
+
+        return $tags;
+    }
+
+    public function deleteName($tagId)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(tag:ProfileTag)')
+            ->where('id(tag) = {tagId}')
+            ->setParameter('tagId', (integer)$tagId)
+            ->remove('tag.name');
+
+        $qb->getQuery()->getResultSet();
+    }
+
+    /**
      * Get a list of recommended tag
      * @param $type
      * @param $startingWith
@@ -104,7 +145,7 @@ class ProfileTagModel
             ->where('u.qnoow_id = { id }')
             ->setParameter('id', (int)$userId)
             ->with('profile');
-
+//TODO: After this is called, delete text nodes
         foreach ($tags as $tag) {
             $qb->optionalMatch('(profile)<-[tagRel:TAGGED]-(tag:' . $tagLabel . ' {name: "' . $tag . '" })')
                 ->delete('tagRel')
@@ -118,8 +159,6 @@ class ProfileTagModel
 
     public function addTags($userId, $locale, $tagLabel, $tags)
     {
-        $localeLabel = $this->languageTextManager->localeToLabel($locale);
-
         $qb = $this->graphManager->createQueryBuilder();
 
         $qb->match('(profile:Profile)-[:PROFILE_OF]->(u:User)')
@@ -132,7 +171,7 @@ class ProfileTagModel
             $tagId = isset($tag['googleGraphId']) ? $tag['googleGraphId'] : null;
 
 //            $qb->merge('(tag:ProfileTag:' . $tagLabel . ' {name: "' . $tagName . '" })')
-            $qb->merge("(tag:ProfileTag: $tagLabel )<-[TEXT_OF]-( : $localeLabel {text: $tagName})");
+            $qb->merge("(tag:ProfileTag: $tagLabel )<-[TEXT_OF]-(:TextLanguage {text: $tagName, locale: $locale})");
             if ($tagId) {
                 $qb->set("tag.googleGraphId = '$tagId'");
             }
@@ -147,8 +186,6 @@ class ProfileTagModel
 
     public function setTagsAndChoice($userId, $locale, $fieldName, $tagLabel, $tags)
     {
-        $localeLabel = $this->languageTextManager->localeToLabel($locale);
-
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(profile:Profile)-[:PROFILE_OF]->(u:User)')
             ->where('u.qnoow_id = { id }')
@@ -181,9 +218,9 @@ class ProfileTagModel
 
             $qb->with('profile')
 //                ->merge('(' . $tagLabel . ':ProfileTag:' . $tagLabel . ' {name: { ' . $tagParameter . ' }})')
-                ->merge("($tagLabel :ProfileTag: $tagLabel )<-[TEXT_OF]-( $localeLabel {text: { $tagParameter }})")
+                ->merge("($tagLabel :ProfileTag: $tagLabel )<-[TEXT_OF]-( :TextLanguage {text: { $tagParameter }, locale: $locale})")
                 ->merge('(profile)<-[:TAGGED {detail: {' . $choiceParameter . '}}]-(' . $tagLabel . ')')
-                ->setParameter($tagParameter, $tagValue)
+                ->setParameter($tagParameter, $tagName)
                 ->setParameter($choiceParameter, $choice);
             $savedTags[] = $tagValue;
         }
