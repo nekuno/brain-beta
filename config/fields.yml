@@ -185,11 +185,12 @@ profile:
             es: 'Altura (cm)'
         labelEdit: *heightLabel
     industry:
-        type: choice
+        type: multiple_choices
         label: &industryLabel
             en: 'Industry'
             es: 'Sector'
         labelEdit: *industryLabel
+        max_choices: 3
     allergy:
         type: tags
         label:
