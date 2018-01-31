@@ -5,7 +5,6 @@ namespace Model\User;
 use Everyman\Neo4j\Client;
 use Everyman\Neo4j\Cypher\Query;
 use Model\LanguageText\LanguageTextManager;
-use Model\Metadata\MetadataUtilities;
 use Model\Neo4j\GraphManager;
 
 class ProfileTagModel
@@ -142,11 +141,15 @@ class ProfileTagModel
             ->setParameter('id', (int)$userId)
             ->with('profile');
 //TODO: After this is called, delete text nodes
-        foreach ($tags as $tag) {
-            $qb->optionalMatch('(profile)<-[tagRel:TAGGED]-(tag:' . $tagLabel . ' {name: "' . $tag . '" })')
+        foreach ($tags as $index=>$tag) {
+            $tagName = $tag['name'];
+            $qb->optionalMatch("(profile)<-[tagRel:TAGGED]-(tag:ProfileTag: $tagLabel )<-[:TEXT_OF]-(:TextLanguage {text:{tag$index}})")
+                ->setParameter("tag$index", $tagName)
                 ->delete('tagRel')
                 ->with('profile');
         }
+
+        $qb->returns('profile');
 
         $result = $qb->getQuery()->getResultSet();
 
@@ -167,13 +170,15 @@ class ProfileTagModel
             $tagId = isset($tag['googleGraphId']) ? $tag['googleGraphId'] : null;
 
 //            $qb->merge('(tag:ProfileTag:' . $tagLabel . ' {name: "' . $tagName . '" })')
-            $qb->merge("(tag:ProfileTag: $tagLabel )<-[TEXT_OF]-(:TextLanguage {text: $tagName, locale: $locale})");
+            $qb->merge("(tag:ProfileTag: $tagLabel )<-[:TEXT_OF]-(:TextLanguage {text: '$tagName', locale: '$locale'})");
             if ($tagId) {
                 $qb->set("tag.googleGraphId = '$tagId'");
             }
             $qb->merge('(profile)<-[:TAGGED]-(tag)')
                 ->with('profile');
         }
+
+        $qb->returns('profile');
 
         $result = $qb->getQuery()->getResultSet();
 
@@ -211,7 +216,7 @@ class ProfileTagModel
 
             $qb->with('profile')
 //                ->merge('(' . $tagLabel . ':ProfileTag:' . $tagLabel . ' {name: { ' . $tagParameter . ' }})')
-                ->merge("($tagLabel :ProfileTag: $tagLabel )<-[TEXT_OF]-( :TextLanguage {text: { $tagParameter }, locale: $locale})")
+                ->merge("($tagLabel :ProfileTag: $tagLabel )<-[:TEXT_OF]-( :TextLanguage {text: { $tagParameter }, locale: $locale})")
                 ->merge('(profile)<-[:TAGGED {detail: {' . $choiceParameter . '}}]-(' . $tagLabel . ')')
                 ->setParameter($tagParameter, $tagName)
                 ->setParameter($choiceParameter, $choice);

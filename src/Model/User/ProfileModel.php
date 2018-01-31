@@ -49,8 +49,8 @@ class ProfileModel
             ->setParameter('id', (integer)$id)
             ->optionalMatch('(profile)<-[optionOf:OPTION_OF]-(option:ProfileOption)')
             ->with('profile', 'collect(distinct {option: option, detail: (CASE WHEN EXISTS(optionOf.detail) THEN optionOf.detail ELSE null END)}) AS options')
-            ->optionalMatch('(profile)<-[tagged:TAGGED]-(tag:ProfileTag)')
-            ->with('profile', 'options', 'collect(distinct {tag: tag, tagged: tagged}) AS tags')
+            ->optionalMatch('(profile)<-[tagged:TAGGED]-(tag:ProfileTag)-[:TEXT_OF]-(text:TextLanguage)')
+            ->with('profile', 'options', 'collect(distinct {tag: tag, tagged: tagged, text: text}) AS tags')
             ->optionalMatch('(profile)-[:LOCATION]->(location:Location)')
             ->returns('profile', 'options', 'tags', 'location')
             ->limit(1);
@@ -423,6 +423,6 @@ class ProfileModel
 
         $result = $qb->getQuery()->getResultSet();
 
-        return $result->offsetGet('locale');
+        return $result->current()->offsetGet('locale');
     }
 }

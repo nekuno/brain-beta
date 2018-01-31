@@ -232,6 +232,7 @@ class ProfileOptionManager
         $tagsResult = array();
         /** @var Row $tagData */
         foreach ($tags as $tagData) {
+            $text = $tagData->offsetGet('text');
             $tag = $tagData->offsetGet('tag');
             $tagged = $tagData->offsetGet('tagged');
             $labels = $tag ? $tag->getLabels() : array();
@@ -240,12 +241,13 @@ class ProfileOptionManager
             foreach ($labels as $label) {
                 if ($label->getName() && $label->getName() != 'ProfileTag') {
                     $typeName = $this->metadataUtilities->labelToType($label->getName());
-                    $tagResult = $tag->getProperty('name');
                     $detail = $tagged->getProperty('detail');
                     if (!is_null($detail)) {
                         $tagResult = array();
-                        $tagResult['tag'] = $tag->getProperty('name');
+                        $tagResult['tag'] = array('name' => $text->getProperty('text'));
                         $tagResult['choice'] = $detail;
+                    } else {
+                        $tagResult = array('name' => $text->getProperty('text'));
                     }
 
                     $tagsResult[$typeName][] = $tagResult;

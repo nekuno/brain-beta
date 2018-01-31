@@ -420,7 +420,6 @@ class FilterUsersManager
      * Creates array ready to use as profileFilter from neo4j
      * @param $filterId
      * @return array ready to use in recommendation
-     * @throws \Model\Neo4j\Neo4jException
      */
     private function getFilters($filterId)
     {
