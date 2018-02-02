@@ -66,7 +66,7 @@ class ThreadService
         $filters = $this->getFiltersData($data);
 
         try{
-            $this->validateFilters($data, $thread->getId());
+            $this->validateFilters($data, $thread->getId(), $userId);
         } catch (ValidationException $e)
         {
             $this->deleteById($thread->getId());
@@ -102,7 +102,7 @@ class ThreadService
 
     public function updateThread($threadId, $userId, array $data)
     {
-        $this->validateFilters($data, $threadId);
+        $this->validateFilters($data, $threadId, $userId);
         //TODO: remove userId, get from thread?
         $thread = $this->threadManager->update($threadId, $userId, $data);
         $filters = $this->getFiltersData($data);
@@ -152,14 +152,14 @@ class ThreadService
         }
     }
 
-    protected function validateFilters($data, $threadId)
+    protected function validateFilters($data, $threadId, $userId = null)
     {
         $filters = $this->getFiltersData($data);
 
         $thread = $this->threadManager->getById($threadId);
         if ($thread instanceof UsersThread)
         {
-            $this->filterUsersManager->validateOnUpdate($filters);
+            $this->filterUsersManager->validateOnUpdate($filters, $userId);
         } else {
             $this->filterContentManager->validateOnUpdate($filters);
         }
