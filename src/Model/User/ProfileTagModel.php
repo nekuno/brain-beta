@@ -210,15 +210,16 @@ class ProfileTagModel
                 continue;
             }
             $choice = !is_null($value['choice']) ? $value['choice'] : '';
-            $tagLabel = 'tag_' . $index;
+            $tagIndex = 'tag_' . $index;
             $tagParameter = $fieldName . '_' . $index;
             $choiceParameter = $fieldName . '_choice_' . $index;
 
             $qb->with('profile')
 //                ->merge('(' . $tagLabel . ':ProfileTag:' . $tagLabel . ' {name: { ' . $tagParameter . ' }})')
-                ->merge("($tagLabel :ProfileTag: $tagLabel )<-[:TEXT_OF]-( :TextLanguage {text: { $tagParameter }, locale: $locale})")
-                ->merge('(profile)<-[:TAGGED {detail: {' . $choiceParameter . '}}]-(' . $tagLabel . ')')
+                ->merge("($tagIndex :ProfileTag: $tagLabel )<-[:TEXT_OF]-( :TextLanguage {text: { $tagParameter }, locale: {localeTag$index}})")
+                ->merge('(profile)<-[:TAGGED {detail: {' . $choiceParameter . '}}]-(' . $tagIndex . ')')
                 ->setParameter($tagParameter, $tagName)
+                ->setParameter('localeTag'.$index, $locale)
                 ->setParameter($choiceParameter, $choice);
             $savedTags[] = $tagValue;
         }
