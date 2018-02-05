@@ -49,11 +49,23 @@ categories:
         - label:
             en: Others
             es: Otros
-          fields: [income, diet, pets, profession, allergy, sons, zodiacSign, handicap, industry]
+          fields: [income, diet, pets, allergy, sons, zodiacSign, handicap]
         - label:
             en: Description
             es: Descripción
           fields: [description, descriptionImportant, descriptionTime, descriptionSkills, descriptionNotice, descriptionFan, descriptionLive, descriptionThinking, descriptionFriday, descriptionMessage]
+        - label:
+            en: Work, ideas and projects
+            es: Trabajo, ideas y proyectos
+          fields: [profession, industry]
+        - label:
+            en: Hobbies
+            es: Aficiones
+          fields: [sports, games, creative]
+        - label:
+            en: Leisure
+            es: Ocio
+          fields: [leisureMoney, leisureTime, tickets, activities, travelling]
     filters:
         - label:
             en: Basic
@@ -78,7 +90,19 @@ categories:
         - label:
             en: Others
             es: Otros
-          fields: [income, diet, pets, profession, allergy, sons, zodiacSign, handicap, industry]
+          fields: [income, diet, pets, allergy, sons, zodiacSign, handicap]
+        - label:
+            en: Work, ideas and projects
+            es: Trabajo, ideas y proyectos
+          fields: [profession, industry]
+        - label:
+            en: Hobbies
+            es: Aficiones
+          fields: [sports, games, creative]
+        - label:
+            en: Leisure
+            es: Ocio
+          fields: [leisureMoney, leisureTime, tickets, activities, travelling]
 profile:
     mode:
         type: choice
@@ -433,6 +457,7 @@ profile:
             en: 'Skills'
             es: 'Habilidades profesionales'
         labelEdit: *professionLabel
+        max: 10
     education:
         type: tags
         label: &educationLabel
@@ -446,6 +471,59 @@ profile:
             es: 'Ubicación'
         labelEdit: *locationLabel
         notErasable: true
+    sports:
+        type: tags
+        label: &sportsLabel
+            en: 'Sports and physical'
+            es: 'Deportes y físico'
+        labelEdit: *sportsLabel
+    games:
+        type: tags
+        label: &gamesLabel
+            en: 'Videogames and board games'
+            es: 'Videojuegos y juegos de mesa'
+        labelEdit: *gamesLabel
+    creative:
+        type: tags
+        label: &creativeLabel
+            en: 'Creative'
+            es: 'Creativo'
+        labelEdit: *creativeLabel
+    leisureMoney:
+        type: multiple_choices
+        label: &leisureMoneyLabel
+            en: 'Money'
+            es: 'Dinero'
+        labelEdit: *leisureMoneyLabel
+        min_choices: 1
+        max_choices: 2
+    leisureTime:
+        type: multiple_choices
+        label: &leisureTimeLabel
+            en: 'Time'
+            es: 'Tiempo'
+        labelEdit: *leisureTimeLabel
+        min_choices: 1
+        max_choices: 2
+    tickets:
+        type: choice
+        label: &ticketsLabel
+            en: 'Tickets'
+            es: 'Entradas'
+        labelEdit: *ticketsLabel
+    activities:
+        type: choice
+        label: &activitiesLabel
+            en: 'Activities'
+            es: 'Actividades'
+        labelEdit: *activitiesLabel
+    travelling:
+        type: choice
+        label: &travellingLabel
+            en: 'Travelling'
+            es: 'Viajes'
+        labelEdit: *travellingLabel
+    
 content:
     type:
         type: choice

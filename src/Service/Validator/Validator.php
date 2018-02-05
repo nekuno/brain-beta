@@ -257,6 +257,11 @@ class Validator implements ValidatorInterface
                         }
                         break;
                     case 'tags':
+                        if (isset($fieldData['max'])) {
+                            if (count($dataValue) > $fieldData['max']) {
+                                $fieldErrors[] = sprintf('Option length "%s" is too long. "%s" is the maximum', count($dataValue), $fieldData['max']);
+                            }
+                        }
                         break;
                     case 'tags_and_choice':
                         if (!is_array($dataValue)) {
