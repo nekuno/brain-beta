@@ -405,6 +405,23 @@ class ProfileOptions implements LoggerAwareInterface
                     'name_es' => 'Otros',
                 ),
             ),
+            'Mode' => array(
+                array(
+                    'id' => 'assist',
+                    'name_en' => 'Assist',
+                    'name_es' => 'Asistir',
+                ),
+                array(
+                    'id' => 'explore',
+                    'name_en' => 'Explore',
+                    'name_es' => 'Explorar',
+                ),
+                array(
+                    'id' => 'contact',
+                    'name_en' => 'Contact',
+                    'name_es' => 'Contactar',
+                ),
+            ),
             'Objective' => array(
                 array(
                     'id' => 'human-contact',

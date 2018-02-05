@@ -80,6 +80,13 @@ categories:
             es: Otros
           fields: [income, diet, pets, profession, allergy, sons, zodiacSign, handicap, industry]
 profile:
+    mode:
+        type: choice
+        label: &modeLabel
+            en: 'Mode'
+            es: 'Modo'
+        notErasable: true
+        hidden: true
     description:
         type: textarea
         min: 0
