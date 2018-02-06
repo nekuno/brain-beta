@@ -1,0 +1,58 @@
+<?php
+
+namespace Model\Location;
+
+use Everyman\Neo4j\Node;
+use Everyman\Neo4j\Query\Row;
+use Model\Neo4j\GraphManager;
+
+class LocationManager
+{
+    protected $graphManager;
+
+    /**
+     * LocationManager constructor.
+     * @param $graphManager
+     */
+    public function __construct(GraphManager $graphManager)
+    {
+        $this->graphManager = $graphManager;
+    }
+
+    public function createLocation($locationData)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->create('(location:Location {latitude: { latitude }, longitude: { longitude }, address: { address }, locality: { locality }, country: { country }})')
+            ->setParameter('latitude', $locationData['latitude'])
+            ->setParameter('longitude', $locationData['longitude'])
+            ->setParameter('address', $locationData['address'])
+            ->setParameter('locality', $locationData['locality'])
+            ->setParameter('country', $locationData['country'])
+            ->returns('location');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        $location = $this->buildLocation($result->current());
+
+        return $location;
+    }
+
+    public function buildLocation(Row $row)
+    {
+        /** @var Node $locationNode */
+        $locationNode = $row->offsetGet('location');
+        $properties = $locationNode->getProperties();
+
+        $location = new Location();
+        $location->setId($locationNode->getId());
+        $location->setLatitude($properties['latitude']);
+        $location->setLongitude($properties['longitude']);
+        $location->setAddress($properties['address']);
+        $location->setCountry($properties['country']);
+        $location->setLocality($properties['locality']);
+
+        return $location;
+    }
+
+}

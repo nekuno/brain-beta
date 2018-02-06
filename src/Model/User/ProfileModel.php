@@ -3,6 +3,7 @@
 namespace Model\User;
 
 use Event\ProfileEvent;
+use Model\Location\LocationManager;
 use Model\Metadata\MetadataUtilities;
 use Model\Metadata\ProfileMetadataManager;
 use Model\Neo4j\GraphManager;
@@ -21,16 +22,26 @@ class ProfileModel
     protected $profileOptionManager;
     protected $profileTagManager;
     protected $profileMetadataManager;
+    protected $locationManager;
     protected $metadataUtilities;
     protected $dispatcher;
     protected $validator;
 
-    public function __construct(GraphManager $gm, ProfileMetadataManager $profileMetadataManager, ProfileOptionManager $profileOptionManager, ProfileTagModel $profileTagModel, MetadataUtilities $metadataUtilities, EventDispatcher $dispatcher, ProfileValidator $validator)
-    {
+    public function __construct(
+        GraphManager $gm,
+        ProfileMetadataManager $profileMetadataManager,
+        ProfileOptionManager $profileOptionManager,
+        ProfileTagModel $profileTagModel,
+        LocationManager $locationManager,
+        MetadataUtilities $metadataUtilities,
+        EventDispatcher $dispatcher,
+        ProfileValidator $validator
+    ) {
         $this->gm = $gm;
         $this->profileMetadataManager = $profileMetadataManager;
         $this->profileOptionManager = $profileOptionManager;
         $this->profileTagManager = $profileTagModel;
+        $this->locationManager = $locationManager;
         $this->metadataUtilities = $metadataUtilities;
         $this->dispatcher = $dispatcher;
         $this->validator = $validator;
@@ -50,9 +61,7 @@ class ProfileModel
             ->optionalMatch('(profile)<-[optionOf:OPTION_OF]-(option:ProfileOption)')
             ->with('profile', 'collect(distinct {option: option, detail: (CASE WHEN EXISTS(optionOf.detail) THEN optionOf.detail ELSE null END)}) AS options')
             ->optionalMatch('(profile)<-[tagged:TAGGED]-(tag:ProfileTag)-[:TEXT_OF]-(text:TextLanguage)')
-            ->with('profile', 'options', 'collect(distinct {tag: tag, tagged: tagged, text: text}) AS tags')
-            ->optionalMatch('(profile)-[:LOCATION]->(location:Location)')
-            ->returns('profile', 'options', 'tags', 'location')
+            ->returns('profile', 'options', 'collect(distinct {tag: tag, tagged: tagged, text: text}) AS tags')
             ->limit(1);
 
         $query = $qb->getQuery();
@@ -178,21 +187,68 @@ class ProfileModel
         /* @var $node Node */
         $node = $row->offsetGet('profile');
         $profile = $node->getProperties();
-        /* @var $location Node */
-        $location = $row->offsetGet('location');
-        if ($location && count($location->getProperties()) > 0) {
-            $profile['location'] = $location->getProperties();
-            if (isset($profile['location']['locality']) && $profile['location']['locality'] === 'N/A') {
-                $profile['location']['locality'] = $profile['location']['address'];
-            }
-        } else {
-            $location = null;
-        }
+
+        $profileId = $node->getId();
+        $profile += $this->getLocation($profileId);
+        $profile += $this->getTravelling($profileId);
 
         $profile += $this->profileOptionManager->buildOptions($row->offsetGet('options'));
         $profile += $this->profileOptionManager->buildTags($row);
 
         return $profile;
+    }
+
+    protected function getLocation($profileId)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(profile:Profile)')
+            ->where("id(profile) = $profileId")
+            ->with('profile')
+            ->limit(1);
+
+        $qb->match('(profile)-[:LOCATION]-(location:Location)')
+            ->returns('location');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() == 0) {
+            return array();
+        }
+
+        $location = $this->locationManager->buildLocation($result->current());
+
+        //TODO: Check if can return object
+        return array('location' => $location->jsonSerialize());
+    }
+
+    protected function getTravelling($profileId)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(profile:Profile)')
+            ->where("id(profile) = $profileId")
+            ->with('profile')
+            ->limit(1);
+
+        $qb->match('(profile)-[:TRAVELLING]-(location:Location)')
+            ->returns('location');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() == 0) {
+            return array();
+        }
+
+        $locations = array();
+        foreach ($result as $row)
+        {
+            $location = $this->locationManager->buildLocation($row);
+            $locations[] = $location->jsonSerialize();
+        }
+
+        //TODO: Check if can return object
+        return array('travelling' => $locations);
     }
 
     protected function getUserAndProfileNodesById($id)
@@ -275,19 +331,33 @@ class ProfileModel
                             ->with('profile');
                         break;
                     case 'location':
-                        $qb->optionalMatch('(profile)-[rLocation:LOCATION]->(oldLocation:Location)')
-                            ->delete('rLocation', 'oldLocation')
+                        $qb->optionalMatch('(profile)-[:LOCATION]->(oldLocation:Location)')
+                            ->detachDelete('oldLocation')
                             ->with('profile');
 
-                        $qb->create('(location:Location {latitude: { latitude }, longitude: { longitude }, address: { address }, locality: { locality }, country: { country }})')
+                        $location = $this->locationManager->createLocation($fieldValue);
+                        $locationId = $location->getId();
+                        $qb->match('(location:Location)')
+                            ->where("id(location) = $locationId")
                             ->createUnique('(profile)-[:LOCATION]->(location)')
-                            ->setParameter('latitude', $fieldValue['latitude'])
-                            ->setParameter('longitude', $fieldValue['longitude'])
-                            ->setParameter('address', $fieldValue['address'])
-                            ->setParameter('locality', $fieldValue['locality'])
-                            ->setParameter('country', $fieldValue['country'])
                             ->with('profile');
                         break;
+                    case 'multiple_locations':
+                        $qb->optionalMatch('(profile)-[:TRAVELLING]->(oldTravelling:Location)')
+                            ->detachDelete('oldTravelling')
+                            ->with('profile');
+
+                        foreach ($fieldValue as $index => $locationData) {
+                            $location = $this->locationManager->createLocation($locationData);
+                            $locationId = $location->getId();
+                            $qb->match('(location:Location)')
+                                ->where("id(location) = $locationId")
+                                ->createUnique('(profile)-[:TRAVELLING]->(location)')
+                                ->with('profile');
+                        }
+
+                        break;
+
                     case 'choice':
                         if (isset($currentOptions[$fieldName])) {
                             $qb->optionalMatch('(profile)<-[optionRel:OPTION_OF]-(:' . $this->metadataUtilities->typeToLabel($fieldName) . ')')
