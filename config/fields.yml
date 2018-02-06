@@ -51,10 +51,6 @@ categories:
             es: Otros
           fields: [income, diet, pets, allergy, sons, zodiacSign, handicap]
         - label:
-            en: Description
-            es: Descripción
-          fields: [description, descriptionImportant, descriptionTime, descriptionSkills, descriptionNotice, descriptionFan, descriptionLive, descriptionThinking, descriptionFriday, descriptionMessage]
-        - label:
             en: Work, ideas and projects
             es: Trabajo, ideas y proyectos
           fields: [profession, industry]
@@ -66,6 +62,11 @@ categories:
             en: Leisure
             es: Ocio
           fields: [leisureMoney, leisureTime, tickets, activities, travelling]
+        - label:
+            en: Description
+            es: Descripción
+          fields: [description, descriptionImportant, descriptionTime, descriptionSkills, descriptionNotice, descriptionFan, descriptionLive, descriptionThinking, descriptionFriday, descriptionMessage]
+
     filters:
         - label:
             en: Basic
@@ -221,7 +222,7 @@ profile:
             en: 'Industry'
             es: 'Sector'
         labelEdit: *industryLabel
-        max_choices: 3
+        max: 3
     allergy:
         type: tags
         label:
@@ -300,14 +301,14 @@ profile:
             en: 'Gender'
             es: 'Género'
         labelEdit: *descriptiveGenderLabel
-        max_choices: 5
+        max: 5
     objective:
         type: multiple_choices
         label: &objectiveLabel
             en: 'Objectives'
             es: 'Objetivos'
         labelEdit: *objectiveLabel
-        min_choices: 1
+        min: 1
         notErasable: true
     hairColor:
         type: choice
@@ -495,16 +496,16 @@ profile:
             en: 'Money'
             es: 'Dinero'
         labelEdit: *leisureMoneyLabel
-        min_choices: 1
-        max_choices: 2
+        min: 1
+        max: 2
     leisureTime:
         type: multiple_choices
         label: &leisureTimeLabel
             en: 'Time'
             es: 'Tiempo'
         labelEdit: *leisureTimeLabel
-        min_choices: 1
-        max_choices: 2
+        min: 1
+        max: 2
     tickets:
         type: choice
         label: &ticketsLabel
@@ -518,7 +519,7 @@ profile:
             es: 'Actividades'
         labelEdit: *activitiesLabel
     travelling:
-        type: choice
+        type: multiple_locations
         label: &travellingLabel
             en: 'Travelling'
             es: 'Viajes'
@@ -635,7 +636,7 @@ tokens:
 content_filter:
     type:
         type: multiple_choices
-        max_choices: 5
+        max: 5
         label:
             en: 'Type of content (Music, images, etc…)'
             es: 'Tipo de contenido (Música, imágenes, etc…)'
@@ -739,7 +740,7 @@ user_filter:
     industry:
         type: multiple_choices
         label: *industryLabel
-        max_choices: 10
+        max: 10
     orientation:
         type: multiple_choices
         label: *orientationLabel

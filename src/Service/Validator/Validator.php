@@ -124,16 +124,8 @@ class Validator implements ValidatorInterface
                         if (!is_array($dataValue)) {
                             $fieldErrors[] = 'Must be an array';
                         } else {
-                            if (isset($fieldData['min'])) {
-                                if (count($dataValue) < $fieldData['min']) {
-                                    $fieldErrors[] = 'Array length must be greater than ' . $fieldData['min'];
-                                }
-                            }
-                            if (isset($fieldData['max'])) {
-                                if (count($dataValue) > $fieldData['max']) {
-                                    $fieldErrors[] = 'Array length must be less than ' . $fieldData['max'];
-                                }
-                            }
+                            $fieldErrors[] = $this->validateMin($dataValue, $fieldData);
+                            $fieldErrors[] = $this->validateMax($dataValue, $fieldData);
                         }
                         break;
                     case 'birthday_range':
@@ -257,19 +249,14 @@ class Validator implements ValidatorInterface
                         }
                         break;
                     case 'tags':
-                        if (isset($fieldData['max'])) {
-                            if (count($dataValue) > $fieldData['max']) {
-                                $fieldErrors[] = sprintf('Option length "%s" is too long. "%s" is the maximum', count($dataValue), $fieldData['max']);
-                            }
-                        }
+                        $fieldErrors[] = $this->validateMax($dataValue, $fieldData, self::MAX_TAGS_AND_CHOICE_LENGTH);
                         break;
                     case 'tags_and_choice':
                         if (!is_array($dataValue)) {
                             $fieldErrors[] = 'Tags and choice value must be an array';
                         }
-                        if (count($dataValue) > self::MAX_TAGS_AND_CHOICE_LENGTH) {
-                            $fieldErrors[] = sprintf('Tags and choice length "%s" is too long. "%s" is the maximum', count($dataValue), self::MAX_TAGS_AND_CHOICE_LENGTH);
-                        }
+                        $fieldErrors[] = $this->validateMax($dataValue, $fieldData, self::MAX_TAGS_AND_CHOICE_LENGTH);
+
                         foreach ($dataValue as $tagAndChoice) {
                             if (!isset($tagAndChoice['tag']) || !array_key_exists('choice', $tagAndChoice)) {
                                 $fieldErrors[] = sprintf('Tag and choice must be defined for tags and choice type');
@@ -283,9 +270,8 @@ class Validator implements ValidatorInterface
                         if (!is_array($dataValue)) {
                             $fieldErrors[] = 'Tags and multiple choices value must be an array';
                         }
-                        if (count($dataValue) > self::MAX_TAGS_AND_CHOICE_LENGTH) {
-                            $fieldErrors[] = sprintf('Tags and multiple choices length "%s" is too long. "%s" is the maximum', count($dataValue), self::MAX_TAGS_AND_CHOICE_LENGTH);
-                        }
+                        $fieldErrors[] = $this->validateMax($dataValue, $fieldData, self::MAX_TAGS_AND_CHOICE_LENGTH);
+
                         foreach ($dataValue as $tagAndMultipleChoices) {
                             if (!isset($tagAndMultipleChoices['tag']) || !array_key_exists('choices', $tagAndMultipleChoices)) {
                                 $fieldErrors[] = sprintf('Tag and choices must be defined for tags and multiple choices type');
@@ -306,16 +292,9 @@ class Validator implements ValidatorInterface
                             continue;
                         }
 
-                        if (isset($fieldData['max_choices'])) {
-                            if (count($dataValue) > $fieldData['max_choices']) {
-                                $fieldErrors[] = sprintf('Option length "%s" is too long. "%s" is the maximum', count($dataValue), $fieldData['max_choices']);
-                            }
-                        }
-                        if (isset($fieldData['min_choices'])) {
-                            if (count($dataValue) < $fieldData['min_choices']) {
-                                $fieldErrors[] = sprintf('Option length "%s" is too short. "%s" is the minimum', count($dataValue), $fieldData['min_choices']);
-                            }
-                        }
+                        $fieldErrors[] = $this->validateMin($dataValue, $fieldData);
+                        $fieldErrors[] = $this->validateMax($dataValue, $fieldData);
+
                         foreach ($dataValue as $singleValue) {
                             if (!in_array($singleValue, $multipleChoices)) {
                                 $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $singleValue, implode("', '", $multipleChoices));
@@ -325,6 +304,14 @@ class Validator implements ValidatorInterface
                     case 'location':
                         foreach ($this->validateLocation($dataValue) as $error) {
                             $fieldErrors[] = $error;
+                        }
+                        break;
+                    case 'multiple_locations':
+                        $errors = array();
+                        foreach ($dataValue as $value) {
+                            foreach ($this->validateLocation($value) as $error) {
+                                $fieldErrors[] = $error;
+                            }
                         }
 
                         break;
@@ -397,8 +384,14 @@ class Validator implements ValidatorInterface
      */
     protected function throwException($errors)
     {
-        foreach ($errors as $field => $fieldErrors){
-            if (empty($fieldErrors)){
+        foreach ($errors as $field => &$fieldErrors) {
+            foreach ($fieldErrors as $index => $fieldError) {
+                if (is_array($fieldError) && empty($fieldError)) {
+                    unset($fieldErrors[$index]);
+                }
+            }
+
+            if (empty($fieldErrors)) {
                 unset($errors[$field]);
             }
         }
@@ -461,6 +454,34 @@ class Validator implements ValidatorInterface
         }
 
         return $errors;
+    }
+
+    protected function validateMax($value, $fieldData, $forceMax = null)
+    {
+        if (!isset($fieldData['max']) && $forceMax === null) {
+            return array();
+        }
+
+        $max = $forceMax !== null ? $forceMax : $fieldData['max'];
+        if (count($value) > $max) {
+            return array(sprintf('Option length "%s" is too long. "%s" is the maximum', count($value), $max));
+        }
+
+        return array();
+    }
+
+    protected function validateMin(array $value, $fieldData, $forceMin = null)
+    {
+        if (!isset($fieldData['min']) && $forceMin === null) {
+            return array();
+        }
+
+        $min = $forceMin !== null ? $forceMin : $fieldData['min'];
+        if (count($value) < $min) {
+            return array(sprintf('Option length "%s" is too short. "%s" is the minimum', count($value), $min));
+        }
+
+        return array();
     }
 
 }

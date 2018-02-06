@@ -132,7 +132,7 @@ profile:
         label:
             en: 'Descriptive gender'
             es: 'Género descriptivo'
-        max_choices: 5
+        max: 5
         filterable: false
     hairColor:
         type: choice
