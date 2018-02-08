@@ -1496,6 +1496,33 @@ class ProfileOptions implements LoggerAwareInterface
                     'name_es' => 'Otra',
                 ),
             ),
+            'LeisureTime' => array(
+                array(
+                    'id' => '1-hour',
+                    'name_en' => '1 hour',
+                    'name_es' => '1 hora',
+                ),
+                array(
+                    'id' => '3-hours',
+                    'name_en' => '3 hours',
+                    'name_es' => '3 horas',
+                ),
+                array(
+                    'id' => 'all-day',
+                    'name_en' => 'All day',
+                    'name_es' => 'Todo el día',
+                ),
+                array(
+                    'id' => 'weekend',
+                    'name_en' => 'A weekend',
+                    'name_es' => 'Un fin de semana',
+                ),
+                array(
+                    'id' => 'week-or-more',
+                    'name_en' => 'A week or more',
+                    'name_es' => 'Una semana o más',
+                ),
+            ),
         );
 
         foreach ($options as $type => $values) {
