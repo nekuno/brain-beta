@@ -4,7 +4,10 @@ namespace Model\User;
 
 use Everyman\Neo4j\Client;
 use Everyman\Neo4j\Cypher\Query;
+use Everyman\Neo4j\Label;
+use Everyman\Neo4j\Query\Row;
 use Model\LanguageText\LanguageTextManager;
+use Model\Metadata\MetadataUtilities;
 use Model\Neo4j\GraphManager;
 
 class ProfileTagModel
@@ -18,16 +21,19 @@ class ProfileTagModel
 
     protected $languageTextManager;
 
+    protected $metadataUtilities;
+
     /**
      * @param \Everyman\Neo4j\Client $client
      * @param GraphManager $graphManager
      * @param LanguageTextManager $languageTextManager
      */
-    public function __construct(Client $client, GraphManager $graphManager, LanguageTextManager $languageTextManager)
+    public function __construct(Client $client, GraphManager $graphManager, LanguageTextManager $languageTextManager, MetadataUtilities $metadataUtilities)
     {
         $this->client = $client;
         $this->graphManager = $graphManager;
         $this->languageTextManager = $languageTextManager;
+        $this->metadataUtilities = $metadataUtilities;
     }
 
     /**
@@ -132,6 +138,21 @@ class ProfileTagModel
         return $response;
     }
 
+    public function deleteAllTagRelationships($userId)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(profile:Profile)-[:PROFILE_OF]->(u:User)')
+            ->where('u.qnoow_id = { id }')
+            ->setParameter('id', (int)$userId)
+            ->with('profile');
+
+        $qb->match('(profile)-[tagRel:TAGGED]-(:ProfileTag)')
+            ->delete('tagRel');
+
+        $qb->getQuery()->getResultSet();
+    }
+
     public function deleteTagRelationships($userId, $tagLabel, $tags)
     {
         $qb = $this->graphManager->createQueryBuilder();
@@ -225,5 +246,37 @@ class ProfileTagModel
         }
         $query = $qb->getQuery();
         $query->getResultSet();
+    }
+
+    public function buildTags(Row $row)
+    {
+        $tags = $row->offsetGet('tags');
+        $tagsResult = array();
+        /** @var Row $tagData */
+        foreach ($tags as $tagData) {
+            $text = $tagData->offsetGet('text');
+            $tag = $tagData->offsetGet('tag');
+            $tagged = $tagData->offsetGet('tagged');
+            $labels = $tag ? $tag->getLabels() : array();
+
+            /* @var Label $label */
+            foreach ($labels as $label) {
+                if ($label->getName() && $label->getName() != 'ProfileTag') {
+                    $typeName = $this->metadataUtilities->labelToType($label->getName());
+                    $detail = $tagged->getProperty('detail');
+                    if (!is_null($detail)) {
+                        $tagResult = array();
+                        $tagResult['tag'] = array('name' => $text->getProperty('text'));
+                        $tagResult['choice'] = $detail;
+                    } else {
+                        $tagResult = array('name' => $text->getProperty('text'));
+                    }
+
+                    $tagsResult[$typeName][] = $tagResult;
+                }
+            }
+        }
+
+        return $tagsResult;
     }
 } 

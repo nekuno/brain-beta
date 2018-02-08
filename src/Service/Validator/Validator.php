@@ -362,6 +362,12 @@ class Validator implements ValidatorInterface
                             $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $dataValue, implode("', '", array('similarity', 'matching')));
                         }
                         break;
+                    case 'multiple_fields':
+                        $internalMetadata = $fieldData['metadata'];
+                        $fieldErrors += $this->validateMetadata($data, $internalMetadata, $dataChoices);
+                        break;
+                    default:
+                        break;
                 }
             } else {
                 if (isset($fieldData['required']) && $fieldData['required'] === true) {

@@ -103,7 +103,7 @@ categories:
         - label:
             en: Leisure
             es: Ocio
-          fields: [leisureMoney, leisureTime, tickets, activities, travelling]
+          fields: [leisureMoney, leisureTime, tickets, activities, travelling, leisurePlan]
 profile:
     mode:
         type: choice
@@ -524,6 +524,47 @@ profile:
             en: 'Travelling'
             es: 'Viajes'
         labelEdit: *travellingLabel
+    leisurePlan:
+        type: multiple_fields
+        label: &leisurePlanLabel
+            en: 'Plan'
+            es: 'Plan'
+        labelEdit: *travellingLabel
+        max: 3
+        metadata:
+            name:
+                type: string
+                required: true
+                label: &proposalNameLabel
+                    en: 'Name'
+                    es: 'Nombre'
+                labelEdit: *proposalNameLabel
+    proposal:
+        type: multiple_fields
+        label: &proposalLabel
+            en: 'Proposal'
+            es: 'Propuesta'
+        labelEdit: *proposalLabel
+        max: 3
+        metadata:
+            name:
+                type: string
+                required: true
+                label: &proposalNameLabel
+                    en: 'Name'
+                    es: 'Nombre'
+                labelEdit: *proposalNameLabel
+            industry:
+                type: tags
+                max: 3
+                label: *industryLabel
+                labelEdit: *industryLabel
+            profession:
+                type: tags
+                max: 10
+                label: *professionLabel
+                labelEdit: *professionLabel
+
     
 content:
     type:
