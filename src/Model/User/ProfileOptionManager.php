@@ -34,7 +34,7 @@ class ProfileOptionManager
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(option:ProfileOption)')
             ->returns("head(filter(x IN labels(option) WHERE x <> 'ProfileOption')) AS labelName, option.id AS id")
-            ->orderBy('labelName');
+            ->orderBy('option.order');
 
         $query = $qb->getQuery();
         $result = $query->getResultSet();
@@ -85,7 +85,7 @@ class ProfileOptionManager
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(option:ProfileOption)')
             ->returns("head(filter(x IN labels(option) WHERE x <> 'ProfileOption')) AS labelName, option.id AS id, option." . $translationField . " AS name")
-            ->orderBy('labelName');
+            ->orderBy('option.order');
 
         $query = $qb->getQuery();
         $result = $query->getResultSet();
@@ -97,7 +97,10 @@ class ProfileOptionManager
             $optionId = $row->offsetGet('id');
             $optionName = $row->offsetGet('name');
 
-            $choiceOptions[$typeName][$optionId] = $optionName;
+            $choiceOptions[$typeName][] = array(
+                'id' => $optionId,
+                'text' => $optionName
+            );
         }
 
         $this->options[$translationField] = $choiceOptions;

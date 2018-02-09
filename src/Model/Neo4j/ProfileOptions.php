@@ -1501,26 +1501,31 @@ class ProfileOptions implements LoggerAwareInterface
                     'id' => '1-hour',
                     'name_en' => '1 hour',
                     'name_es' => '1 hora',
+                    'order' => 0
                 ),
                 array(
                     'id' => '3-hours',
                     'name_en' => '3 hours',
                     'name_es' => '3 horas',
+                    'order' => 1
                 ),
                 array(
                     'id' => 'all-day',
                     'name_en' => 'All day',
                     'name_es' => 'Todo el día',
+                    'order' => 2
                 ),
                 array(
                     'id' => 'weekend',
                     'name_en' => 'A weekend',
                     'name_es' => 'Un fin de semana',
+                    'order' => 3
                 ),
                 array(
                     'id' => 'week-or-more',
                     'name_en' => 'A week or more',
                     'name_es' => 'Una semana o más',
+                    'order' => 4
                 ),
             ),
         );
@@ -1532,7 +1537,9 @@ class ProfileOptions implements LoggerAwareInterface
                     'name_es' => $value['name_es'],
                     'name_en' => $value['name_en'],
                 );
-                $this->processOption($type, $id, $names);
+                $order = isset($value['order']) ? $value['order'] : null;
+
+                $this->processOption($type, $id, $names, $order);
             }
         }
 
@@ -1543,16 +1550,17 @@ class ProfileOptions implements LoggerAwareInterface
      * @param $type
      * @param $id
      * @param $names
+     * @param $order
      * @throws \Exception
      */
-    public function processOption($type, $id, $names)
+    public function processOption($type, $id, $names, $order = null)
     {
 
         $this->result->incrementTotal();
 
         if ($this->optionExists($type, $id)) {
 
-            if ($this->optionExists($type, $id, $names)) {
+            if ($this->optionExists($type, $id, $names, $order)) {
 
                 $this->logger->info(sprintf('Skipping, Already exists ProfileOption:%s id: "%s", name_en: "%s", name_es: "%s"', $type, $id, $names['name_en'], $names['name_es']));
 
@@ -1562,7 +1570,12 @@ class ProfileOptions implements LoggerAwareInterface
                 $this->logger->info(sprintf('Updating ProfileOption:%s id: "%s", name_en: "%s", name_es: "%s"', $type, $id, $names['name_en'], $names['name_es']));
                 $parameters = array('type' => $type, 'id' => $id);
                 $parameters = array_merge($parameters, $names);
-                $cypher = "MATCH (o:ProfileOption) WHERE {type} IN labels(o) AND o.id = {id} SET o.name_en = {name_en}, o.name_es = {name_es} RETURN o;";
+                $cypher = "MATCH (o:ProfileOption) WHERE {type} IN labels(o) AND o.id = {id} SET o.name_en = {name_en}, o.name_es = {name_es}";
+                if ($order !== null) {
+                    $cypher .= " SET o.order = {order}";
+                    $parameters['order'] = $order;
+                }
+                $cypher .= " RETURN o;";
 
                 $query = $this->gm->createQuery($cypher, $parameters);
                 $query->getResultSet();
@@ -1574,7 +1587,11 @@ class ProfileOptions implements LoggerAwareInterface
             $this->logger->info(sprintf('Creating ProfileOption:%s id: "%s", name_en: "%s", name_es: "%s"', $type, $id, $names['name_en'], $names['name_es']));
             $parameters = array('id' => $id);
             $parameters = array_merge($parameters, $names);
-            $cypher = "CREATE (:ProfileOption:" . $type . " { id: {id}, name_en: {name_en}, name_es: {name_es} })";
+            $cypher = "CREATE (o:ProfileOption:" . $type . " { id: {id}, name_en: {name_en}, name_es: {name_es} })";
+            if ($order !== null) {
+                $cypher .= " SET o.order = {order}";
+                $parameters['order'] = $order;
+            }
 
             $query = $this->gm->createQuery($cypher, $parameters);
             $query->getResultSet();
@@ -1585,18 +1602,23 @@ class ProfileOptions implements LoggerAwareInterface
      * @param $type
      * @param $id
      * @param array $names
+     * @param $order
      * @return boolean
      * @throws \Exception
      */
-    public function optionExists($type, $id, $names = array())
+    public function optionExists($type, $id, $names = array(), $order = null)
     {
         $parameters = array('type' => $type, 'id' => $id);
         $cypher = "MATCH (o:ProfileOption) WHERE {type} IN labels(o) AND o.id = {id}\n";
         if (!empty($names)) {
             $parameters = array_merge($parameters, $names);
-            $cypher .= "AND o.name_es = {name_es} AND o.name_en = {name_en}\n";
+            $cypher .= "AND o.name_es = {name_es} AND o.name_en = {name_en}";
         }
-        $cypher .= "RETURN o;";
+        if ($order !== null) {
+            $cypher .= " AND o.order = {order}";
+            $parameters['order'] = $order;
+        }
+        $cypher .= " RETURN o;";
 
         $query = $this->gm->createQuery($cypher, $parameters);
         $result = $query->getResultSet();
