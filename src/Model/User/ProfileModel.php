@@ -363,7 +363,7 @@ class ProfileModel
         throw new NotFoundHttpException(sprintf("Description %s not found", $description));
     }
 
-    protected function getInterfaceLocale($userId)
+    public function getInterfaceLocale($userId)
     {
         $qb = $this->gm->createQueryBuilder();
 

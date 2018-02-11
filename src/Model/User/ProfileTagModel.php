@@ -59,6 +59,13 @@ class ProfileTagModel
             $name = $row->offsetGet('name');
             $locale = $row->offsetGet('locale');
             $amount = $row->offsetGet('amount');
+
+            $isAlreadyMigrated = $name === null;
+            if ($isAlreadyMigrated)
+            {
+                continue;
+            }
+
             $tags[] = array('id' => $id, 'name' => $name, 'locale' => $locale, 'amount' => $amount);
         }
 

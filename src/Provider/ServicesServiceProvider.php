@@ -81,7 +81,7 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['socialNetwork.service'] = $app->share(
             function (Application $app) {
-                return new SocialNetwork($app['users.socialNetwork.linkedin.model'], $app['users.lookup.model'], $app['api_consumer.fetcher_factory']);
+                return new SocialNetwork($app['users.socialNetwork.linkedin.model'], $app['users.lookup.model'], $app['users.profile.tag.model'], $app['users.profile.model'], $app['api_consumer.fetcher_factory']);
             }
         );
 

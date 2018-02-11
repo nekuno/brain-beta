@@ -26,6 +26,11 @@ class MigrateProfileTagCommand extends ApplicationAwareCommand
         $profileTagManager = $this->app['users.profile.tag.model'];
         /** @var LanguageTextManager $languageTextManager */
         $languageTextManager = $this->app['users.languageText.manager'];
+
+        $linkedInModel = $this->app['users.socialNetwork.linkedin.model'];
+        $linkedInModel->migrateAllLanguagesOld();
+        $linkedInModel->migrateAllSkillsOld();
+
         $tags = $profileTagManager->findAllOld();
 
         $output->writeln(count($tags) . ' tags with different locales found');

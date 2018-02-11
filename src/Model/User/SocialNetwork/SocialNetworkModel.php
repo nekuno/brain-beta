@@ -27,5 +27,5 @@ abstract class SocialNetworkModel
 
     abstract public function set($id, $profileUrl, LoggerInterface $logger = null);
 
-    abstract protected function get($profileUrl, LoggerInterface $logger = null);
+    abstract public function getData($profileUrl, LoggerInterface $logger = null);
 }
