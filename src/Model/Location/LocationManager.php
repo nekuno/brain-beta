@@ -21,24 +21,14 @@ class LocationManager
 
     public function createLocation($locationData)
     {
-        if ($locationData === null || empty($locationData)){
-            $locationData = array(
-                'latitude' => null,
-                'longitude' => null,
-                'address' => null,
-                'locality' => null,
-                'country' => null,
-            );
-        }
-        
         $qb = $this->graphManager->createQueryBuilder();
 
         $qb->create('(location:Location {latitude: { latitude }, longitude: { longitude }, address: { address }, locality: { locality }, country: { country }})')
-            ->setParameter('latitude', $locationData['latitude'])
-            ->setParameter('longitude', $locationData['longitude'])
-            ->setParameter('address', $locationData['address'])
-            ->setParameter('locality', $locationData['locality'])
-            ->setParameter('country', $locationData['country'])
+            ->setParameter('latitude', isset($locationData['latitude']) ? $locationData['latitude'] : null)
+            ->setParameter('longitude', isset($locationData['longitude']) ? $locationData['longitude'] : null)
+            ->setParameter('address', isset($locationData['address']) ? $locationData['address'] : null)
+            ->setParameter('locality', isset($locationData['locality']) ? $locationData['locality'] : null)
+            ->setParameter('country', isset($locationData['country']) ? $locationData['country'] : null)
             ->returns('location');
 
         $result = $qb->getQuery()->getResultSet();
@@ -56,11 +46,11 @@ class LocationManager
 
         $location = new Location();
         $location->setId($locationNode->getId());
-        $location->setLatitude( isset($properties['latitude']) ? $properties['latitude'] : null);
-        $location->setLongitude( isset($properties['longitude']) ? $properties['longitude'] : null);
-        $location->setAddress( isset($properties['address']) ? $properties['address'] : null);
-        $location->setLocality( isset($properties['locality']) ? $properties['locality'] : null);
-        $location->setCountry( isset($properties['country']) ? $properties['country'] : null);
+        $location->setLatitude(isset($properties['latitude']) ? $properties['latitude'] : null);
+        $location->setLongitude(isset($properties['longitude']) ? $properties['longitude'] : null);
+        $location->setAddress(isset($properties['address']) ? $properties['address'] : null);
+        $location->setLocality(isset($properties['locality']) ? $properties['locality'] : null);
+        $location->setCountry(isset($properties['country']) ? $properties['country'] : null);
 
         return $location;
     }

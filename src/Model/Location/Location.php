@@ -109,19 +109,25 @@ class Location implements \JsonSerializable
 
     public function jsonSerialize()
     {
-        $location = array(
-            'latitude' => $this->latitude,
-            'longitude' => $this->longitude,
-            'address' => $this->address,
-            'locality' => $this->locality,
-            'country' => $this->country,
-        );
+        $location = array();
 
-        if ($location['locality'] === 'N/A') {
-            $location['locality'] = $location['address'];
+        if (isset($this->latitude)) {
+            $location['latitude'] = $this->latitude;
+        }
+        if (isset($this->longitude)) {
+            $location['longitude'] = $this->longitude;
+        }
+        if (isset($this->address)) {
+            $location['address'] = $this->address;
+        }
+        if (isset($this->locality)) {
+            $location['locality'] = $this->locality === 'N/A' ? $this->address : $this->locality;
+        }
+        if (isset($this->country)) {
+            $location['country'] = $this->country;
         }
 
-        return $location;
+        return empty($location) ? null : $location;
     }
 
 }

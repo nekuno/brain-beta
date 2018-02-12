@@ -90,9 +90,9 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
 
         $qb->optionalMatch('(p)-[:LOCATION]->(l:Location)');
 
-        $qb->with('anyUser, p, l, matching_questions', 'similarity');
+        $qb->with('anyUser, p, matching_questions', 'similarity');
         $qb->where($filters['conditions'])
-            ->with('anyUser', 'p', 'l', 'matching_questions', 'similarity');
+            ->with('anyUser', 'p', 'matching_questions', 'similarity');
 
         foreach ($filters['matches'] as $match) {
             $qb->match($match);
@@ -113,7 +113,7 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
             ->with('anyUser, p, matching_questions', 'similarity', 'options', 'collect(distinct {tag: tag, tagged: tagged}) AS tags')
             ->optionalMatch('(anyUser)<-[likes:LIKES]-(:User)')
             ->with('anyUser, p, matching_questions', 'similarity', 'options', 'tags', 'count(likes) as popularity')
-            ->with('anyUser', 'options', 'tags', 'popularity', 'p', 'l', 'matching_questions', 'similarity');
+            ->with('anyUser', 'options', 'tags', 'popularity', 'p', 'matching_questions', 'similarity');
 
         $qb->returns(
             'anyUser.qnoow_id AS id',
@@ -384,7 +384,9 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
 
             $profile = $this->profileModel->build($row);
             $user->setProfile($profile);
-            $user->setLocation($profile['location']);
+            if (isset($profile['location'])) {
+                $user->setLocation($profile['location']);
+            }
 
             $response[] = $user;
         }
