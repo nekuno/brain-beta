@@ -21,6 +21,16 @@ class LocationManager
 
     public function createLocation($locationData)
     {
+        if ($locationData === null || empty($locationData)){
+            $locationData = array(
+                'latitude' => null,
+                'longitude' => null,
+                'address' => null,
+                'locality' => null,
+                'country' => null,
+            );
+        }
+        
         $qb = $this->graphManager->createQueryBuilder();
 
         $qb->create('(location:Location {latitude: { latitude }, longitude: { longitude }, address: { address }, locality: { locality }, country: { country }})')
@@ -46,11 +56,11 @@ class LocationManager
 
         $location = new Location();
         $location->setId($locationNode->getId());
-        $location->setLatitude($properties['latitude']);
-        $location->setLongitude($properties['longitude']);
-        $location->setAddress($properties['address']);
-        $location->setCountry($properties['country']);
-        $location->setLocality($properties['locality']);
+        $location->setLatitude( isset($properties['latitude']) ? $properties['latitude'] : null);
+        $location->setLongitude( isset($properties['longitude']) ? $properties['longitude'] : null);
+        $location->setAddress( isset($properties['address']) ? $properties['address'] : null);
+        $location->setLocality( isset($properties['locality']) ? $properties['locality'] : null);
+        $location->setCountry( isset($properties['country']) ? $properties['country'] : null);
 
         return $location;
     }
