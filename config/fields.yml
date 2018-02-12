@@ -493,16 +493,17 @@ profile:
     leisureMoney:
         type: multiple_choices
         label: &leisureMoneyLabel
-            en: 'Money'
-            es: 'Dinero'
+            en: 'Money for leisure'
+            es: 'Dinero para ocio'
         labelEdit: *leisureMoneyLabel
-        min: 1
-        max: 2
+        min: 0
+        max: 4
+        isRange: true
     leisureTime:
         type: multiple_choices
         label: &leisureTimeLabel
-            en: 'Time'
-            es: 'Tiempo'
+            en: 'Leisure time'
+            es: 'Tiempo de ocio'
         labelEdit: *leisureTimeLabel
         min: 0
         max: 5

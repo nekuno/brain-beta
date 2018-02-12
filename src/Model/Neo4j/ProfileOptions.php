@@ -1528,6 +1528,32 @@ class ProfileOptions implements LoggerAwareInterface
                     'order' => 4
                 ),
             ),
+            'LeisureMoney' => array(
+                array(
+                    'id' => 'free',
+                    'name_en' => 'Free',
+                    'name_es' => 'Gratis',
+                    'order' => 0
+                ),
+                array(
+                    'id' => 'cheap',
+                    'name_en' => 'Cheap',
+                    'name_es' => 'Barato',
+                    'order' => 1
+                ),
+                array(
+                    'id' => 'quality',
+                    'name_en' => 'Quality',
+                    'name_es' => 'De calidad',
+                    'order' => 2
+                ),
+                array(
+                    'id' => 'luxurious',
+                    'name_en' => 'Luxurious',
+                    'name_es' => 'Lujoso',
+                    'order' => 3
+                ),
+            ),
         );
 
         foreach ($options as $type => $values) {
