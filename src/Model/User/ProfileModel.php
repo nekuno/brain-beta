@@ -377,6 +377,10 @@ class ProfileModel
 
         $result = $qb->getQuery()->getResultSet();
 
+        if ($result->count() == 0) {
+            return 'en';
+        }
+
         return $result->current()->offsetGet('locale');
     }
 
