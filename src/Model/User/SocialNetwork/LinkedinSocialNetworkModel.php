@@ -31,11 +31,11 @@ class LinkedinSocialNetworkModel extends SocialNetworkModel
     {
         $qb = $this->gm->createQueryBuilder();
 
-        $qb->match('(skill:Skill)<-[rel:HAS_SKILL]-(:User)-[:HAS_PROFILE]->(profile:Profile)')
+        $qb->match('(skill:Skill)<-[rel:HAS_SKILL]-(:User)<-[:PROFILE_OF]-(profile:Profile)')
             ->where('NOT (skill:ProfileTag)');
 
-        $qb->set('(skill:ProfileTag)')
-            ->remove('(skill:Skill)')
+        $qb->set('skill:ProfileTag:Profession')
+            ->remove('skill:Skill')
             ->merge('(skill)<-[:TAGGED]-(profile)')
             ->delete('rel');
 
@@ -46,11 +46,10 @@ class LinkedinSocialNetworkModel extends SocialNetworkModel
     {
         $qb = $this->gm->createQueryBuilder();
 
-        $qb->match('(language:Language)<-[rel:SPEAKS_LANGUAGE]-(:User)-[:HAS_PROFILE]->(profile:Profile)')
+        $qb->match('(language:Language)<-[rel:SPEAKS_LANGUAGE]-(:User)<-[:PROFILE_OF]-(profile:Profile)')
             ->where('NOT (language:ProfileTag)');
 
-        $qb->set('(language:ProfileTag)')
-            ->remove('(language:Language)')
+        $qb->set('language:ProfileTag')
             ->merge('(language)<-[:TAGGED]-(profile)')
             ->delete('rel');
 

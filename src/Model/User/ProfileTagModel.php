@@ -45,7 +45,8 @@ class ProfileTagModel
     {
         $qb = $this->graphManager->createQueryBuilder();
 
-        $qb->match('(tag:ProfileTag)--(:Profile)-[r]-(i:InterfaceLanguage)')
+        $qb->match('(tag:ProfileTag)')
+            ->optionalMatch('(tag)--(:Profile)-[r]-(i:InterfaceLanguage)')
             ->with('tag', 'i.id AS locale', 'count(r) AS amount')
             ->returns('id(tag) AS id, tag.name AS name', 'locale', 'amount')
             ->limit((integer)$limit);
@@ -53,16 +54,14 @@ class ProfileTagModel
         $result = $qb->getQuery()->getResultSet();
 
         $tags = array();
-        foreach ($result as $row)
-        {
+        foreach ($result as $row) {
             $id = $row->offsetGet('id');
             $name = $row->offsetGet('name');
-            $locale = $row->offsetGet('locale');
+            $locale = $row->offsetGet('locale') ?: 'es';
             $amount = $row->offsetGet('amount');
 
             $isAlreadyMigrated = $name === null;
-            if ($isAlreadyMigrated)
-            {
+            if ($isAlreadyMigrated) {
                 continue;
             }
 
@@ -169,7 +168,7 @@ class ProfileTagModel
             ->setParameter('id', (int)$userId)
             ->with('profile');
 //TODO: After this is called, delete text nodes
-        foreach ($tags as $index=>$tag) {
+        foreach ($tags as $index => $tag) {
             $tagName = $tag['name'];
             $qb->optionalMatch("(profile)<-[tagRel:TAGGED]-(tag:ProfileTag: $tagLabel )<-[:TEXT_OF]-(:TextLanguage {text:{tag$index}})")
                 ->setParameter("tag$index", $tagName)
@@ -247,7 +246,7 @@ class ProfileTagModel
                 ->merge("($tagIndex :ProfileTag: $tagLabel )<-[:TEXT_OF]-( :TextLanguage {text: { $tagParameter }, locale: {localeTag$index}})")
                 ->merge('(profile)<-[:TAGGED {detail: {' . $choiceParameter . '}}]-(' . $tagIndex . ')')
                 ->setParameter($tagParameter, $tagName)
-                ->setParameter('localeTag'.$index, $locale)
+                ->setParameter('localeTag' . $index, $locale)
                 ->setParameter($choiceParameter, $choice);
             $savedTags[] = $tagValue;
         }

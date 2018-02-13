@@ -32,11 +32,9 @@ class MigrateProfileTagCommand extends ApplicationAwareCommand
         $linkedInModel->migrateAllSkillsOld();
 
         $tags = $profileTagManager->findAllOld();
-
         $output->writeln(count($tags) . ' tags with different locales found');
 
         $tags = $this->selectProbableLocale($tags);
-
         $output->writeln(count($tags) . ' different tags found');
 
         foreach ($tags as $tag)

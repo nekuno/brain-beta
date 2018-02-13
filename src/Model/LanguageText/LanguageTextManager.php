@@ -25,7 +25,7 @@ class LanguageTextManager
             ->with('node')
             ->limit(1);
 
-        $qb->merge("(t: TextLanguage{text: {text}, locale: {locale})")
+        $qb->merge("(t: TextLanguage{text: {text}, locale: {locale}})")
             ->setParameter('text', $text)
             ->setParameter('locale', $locale);
 
