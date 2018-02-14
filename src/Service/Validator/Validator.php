@@ -86,7 +86,8 @@ class Validator implements ValidatorInterface
             $fieldErrors = array();
             $choices = $this->buildChoices($dataChoices, $fieldData, $fieldName);
 
-            if (isset($data[$fieldName])) {
+            $isDataSet = isset($data[$fieldName]) && !(is_array($data[$fieldName]) && empty($data[$fieldName]));
+            if ($isDataSet) {
 
                 $dataValue = $data[$fieldName];
                 switch ($fieldData['type']) {
