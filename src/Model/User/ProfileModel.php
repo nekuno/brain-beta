@@ -318,6 +318,7 @@ class ProfileModel
         $metadata = $this->profileMetadataManager->getMetadata();
         $currentOptions = $this->profileOptionManager->getUserProfileOptions($userId);
         $this->profileTagManager->deleteAllTagRelationships($userId);
+        $this->deleteAllMultipleFields($userId);
 
         if (isset($data['objective']) && in_array('human-contact', $data['objective'])) {
             $data['orientationRequired'] = true;
@@ -387,12 +388,13 @@ class ProfileModel
     /**
      * @param $userId
      * @param array $data
-     * @param $metadata
-     * @param $qb
-     * @param $currentOptions
+     * @param array $metadata
+     * @param QueryBuilder $qb
+     * @param array $currentOptions
+     * @param null $forceProfileId
      * @throws \Exception
      */
-    protected function saveDataByType($userId, array $data, array $metadata, QueryBuilder $qb, array $currentOptions)
+    protected function saveDataByType($userId, array $data, array $metadata, QueryBuilder $qb, array $currentOptions, $forceProfileId = null)
     {
         foreach ($data as $fieldName => $fieldValue) {
             if (isset($metadata[$fieldName])) {
@@ -474,11 +476,7 @@ class ProfileModel
                         }
                         break;
                     case 'double_choice':
-                        $qbDoubleChoice = $this->gm->createQueryBuilder();
-                        $qbDoubleChoice->match('(profile:Profile)-[:PROFILE_OF]->(u:User)')
-                            ->where('u.qnoow_id = { id }')
-                            ->setParameter('id', (int)$userId)
-                            ->with('profile');
+                        $qbDoubleChoice = $this->getQbWithProfile($userId, $forceProfileId);
 
                         if (isset($currentOptions[$fieldName])) {
                             $qbDoubleChoice->optionalMatch('(profile)<-[doubleChoiceOptionRel:OPTION_OF]-(:' . $this->metadataUtilities->typeToLabel($fieldName) . ')')
@@ -507,11 +505,7 @@ class ProfileModel
 
                         break;
                     case 'multiple_choices':
-                        $qbMultipleChoices = $this->gm->createQueryBuilder();
-                        $qbMultipleChoices->match('(profile:Profile)-[:PROFILE_OF]->(u:User)')
-                            ->where('u.qnoow_id = { id }')
-                            ->setParameter('id', (int)$userId)
-                            ->with('profile');
+                        $qbMultipleChoices = $this->getQbWithProfile($userId, $forceProfileId);
 
                         if (isset($currentOptions[$fieldName])) {
                             $qbMultipleChoices->optionalMatch('(profile)<-[optionRel:OPTION_OF]-(:' . $this->metadataUtilities->typeToLabel($fieldName) . ')')
@@ -543,22 +537,61 @@ class ProfileModel
                     case 'multiple_fields':
                         $fieldLabel = $this->metadataUtilities->typeToLabel($fieldName);
 
-                        $multiQb = $this->gm->createQueryBuilder();
-                        $multiQb->match('(realProfile:Profile)-[:PROFILE_OF]->(u:User)')
-                            ->where('u.qnoow_id = { id }')
-                            ->setParameter('id', (int)$userId)
-                            ->with('realProfile');
+                        foreach ($fieldValue as $index => $multiValue){
+                            $multiQb = $this->getQbWithProfile($userId, $forceProfileId);
+                            $multiQb->create("(profile)<-[:MULTIPLE_FIELDS_OF]-(profileMulti:$fieldLabel)")
+                                ->returns('id(profileMulti) AS id');
+                            $result = $multiQb->getQuery()->getResultSet();
+                            $profileMultiId = $result->current()->offsetGet('id');
 
-                        $multiQb->match("(realProfile)<-[:MULTIPLE_FIELDS_OF]-(profile:$fieldLabel)")
-                            ->with('profile');
+                            $multiQb = $this->getQbWithProfile($userId, $profileMultiId);
+                            $internalMetadata = $metadata[$fieldName]['metadata'];
+                            $this->saveDataByType($userId, $multiValue, $internalMetadata, $multiQb, $currentOptions, $profileMultiId);
 
-                        $internalMetadata = $metadata[$fieldName]['metadata'];
-                        $this->saveDataByType($userId, $fieldValue, $internalMetadata, $multiQb, $currentOptions);
+                            $multiQb->returns('profile');
+                            $multiQb->getQuery()->getResultSet();
+                        }
+
                         break;
                     default:
                         break;
                 }
             }
         }
+    }
+
+    protected function getQbWithProfile($userId, $forceProfileId)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        if ($forceProfileId)
+        {
+            $qb->match('(profile)')
+                ->where('id(profile) = { id }')
+                ->setParameter('id', (int)$forceProfileId)
+                ->with('profile');
+        } else {
+            $qb->match('(profile:Profile)-[:PROFILE_OF]->(u:User)')
+                ->where('u.qnoow_id = { id }')
+                ->setParameter('id', (int)$userId)
+                ->with('profile');
+        }
+
+        return $qb;
+    }
+
+    protected function deleteAllMultipleFields($userId)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(profile:Profile)-[:PROFILE_OF]->(u:User)')
+            ->where('u.qnoow_id = { id }')
+            ->setParameter('id', (int)$userId)
+            ->with('profile');
+
+        $qb->match('(profile)<-[rel:MULTIPLE_FIELDS_OF]-()')
+            ->delete('rel');
+
+        $qb->getQuery()->getResultSet();
     }
 }

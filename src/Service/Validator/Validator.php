@@ -365,7 +365,10 @@ class Validator implements ValidatorInterface
                         break;
                     case 'multiple_fields':
                         $internalMetadata = $fieldData['metadata'];
-                        $fieldErrors += $this->validateMetadata($data, $internalMetadata, $dataChoices);
+                        foreach ($dataValue as $multiData)
+                        {
+                            $this->validateMetadata($multiData, $internalMetadata, $dataChoices);
+                        }
                         break;
                     default:
                         break;

@@ -535,8 +535,9 @@ profile:
         max: 3
         metadata:
             name:
-                type: string
+                type: textarea
                 required: true
+                max: 100
                 label: &proposalNameLabel
                     en: 'Name'
                     es: 'Nombre'
@@ -552,6 +553,7 @@ profile:
             name:
                 type: textarea
                 required: true
+                max: 100
                 label: &proposalNameLabel
                     en: 'Name'
                     es: 'Nombre'
