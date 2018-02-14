@@ -21,6 +21,13 @@ class UserFilterMetadataManager extends MetadataManager
         $publicField['editable'] = isset($values['editable']) ? $values['editable'] : true;
         $publicField['hidden'] = isset($values['hidden']) ? $values['hidden'] : false;
 
+        if ($publicField['type'] === 'multiple_fields') {
+            foreach ($publicField['metadata'] as $key => $value) {
+                $publicField['metadata'][$key]['label'] = $this->metadataUtilities->getLocaleString($value['label'], $locale);
+                $publicField['metadata'][$key]['labelEdit'] = $this->metadataUtilities->getLocaleString($value['labelEdit'], $locale);
+            }
+        }
+
         return $publicField;
     }
 }

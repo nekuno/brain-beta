@@ -111,6 +111,11 @@ class MetadataService
                     $field['max'] = isset($field['max']) ? $field['max'] : 999;
                     $field['min'] = isset($field['min']) ? $field['min'] : 0;
                     break;
+                case 'multiple_fields':
+                    $field['metadata'] = $this->addChoices($field['metadata'], $choices, $locale);
+                    $field['max'] = isset($field['max']) ? $field['max'] : 999;
+                    $field['min'] = isset($field['min']) ? $field['min'] : 0;
+                    break;
                 case 'tags_and_choice':
                     $field = $this->mergeSingleChoices($field, $name, $choices);
                     $field = $this->fixSingleChoicesLocale($field, $locale);

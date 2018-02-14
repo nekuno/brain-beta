@@ -53,7 +53,7 @@ categories:
         - label:
             en: Work, ideas and projects
             es: Trabajo, ideas y proyectos
-          fields: [profession, industry]
+          fields: [profession, industry, proposal]
         - label:
             en: Hobbies
             es: Aficiones
@@ -550,14 +550,14 @@ profile:
         max: 3
         metadata:
             name:
-                type: string
+                type: textarea
                 required: true
                 label: &proposalNameLabel
                     en: 'Name'
                     es: 'Nombre'
                 labelEdit: *proposalNameLabel
             industry:
-                type: tags
+                type: multiple_choices
                 max: 3
                 label: *industryLabel
                 labelEdit: *industryLabel
