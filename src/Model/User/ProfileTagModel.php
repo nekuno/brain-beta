@@ -212,12 +212,84 @@ class ProfileTagModel
         return $result->count();
     }
 
+    public function addTagsToNode($nodeId, $locale, $tagLabel, $tags)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(profile)')
+            ->where('id(profile) = { id }')
+            ->setParameter('id', (int)$nodeId)
+            ->with('profile');
+
+        foreach ($tags as $tag) {
+            $tagName = $tag['name'];
+            $tagId = isset($tag['googleGraphId']) ? $tag['googleGraphId'] : null;
+
+//            $qb->merge('(tag:ProfileTag:' . $tagLabel . ' {name: "' . $tagName . '" })')
+            $qb->merge("(tag:ProfileTag: $tagLabel )<-[:TEXT_OF]-(:TextLanguage {text: '$tagName', locale: '$locale'})");
+            if ($tagId) {
+                $qb->set("tag.googleGraphId = '$tagId'");
+            }
+            $qb->merge('(profile)<-[:TAGGED]-(tag)')
+                ->with('profile');
+        }
+
+        $qb->returns('profile');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        return $result->count();
+    }
+
     public function setTagsAndChoice($userId, $locale, $fieldName, $tagLabel, $tags)
     {
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(profile:Profile)-[:PROFILE_OF]->(u:User)')
             ->where('u.qnoow_id = { id }')
             ->setParameter('id', (int)$userId)
+            ->with('profile');
+
+        //TODO: Call this->delete and then this method just create
+        $qb->optionalMatch('(profile)<-[tagsAndChoiceOptionRel:TAGGED]-(:' . $tagLabel . ')')
+            ->delete('tagsAndChoiceOptionRel');
+
+        $savedTags = array();
+        foreach ($tags as $index => $value) {
+            //TODO: Check if index is unnecesary due to with('profile') erasing previous node names
+            $tagValue = $value['tag'];
+            $tagName = $tagValue['name'];
+            $tagId = isset($tagValue['googleGraphId']) ? $tagValue['googleGraphId'] : null;
+            if ($tagId) {
+                $qb->set("tag.googleGraphId = '$tagId'");
+            }
+            if (in_array($tagValue, $savedTags)) {
+                continue;
+            }
+            $choice = !is_null($value['choice']) ? $value['choice'] : '';
+            $tagIndex = 'tag_' . $index;
+            $tagParameter = $fieldName . '_' . $index;
+            $choiceParameter = $fieldName . '_choice_' . $index;
+
+            $qb->with('profile')
+//                ->merge('(' . $tagLabel . ':ProfileTag:' . $tagLabel . ' {name: { ' . $tagParameter . ' }})')
+                ->merge("($tagIndex :ProfileTag: $tagLabel )<-[:TEXT_OF]-( :TextLanguage {text: { $tagParameter }, locale: {localeTag$index}})")
+                ->merge('(profile)<-[:TAGGED {detail: {' . $choiceParameter . '}}]-(' . $tagIndex . ')')
+                ->setParameter($tagParameter, $tagName)
+                ->setParameter('localeTag' . $index, $locale)
+                ->setParameter($choiceParameter, $choice);
+            $savedTags[] = $tagValue;
+        }
+        $query = $qb->getQuery();
+        $query->getResultSet();
+    }
+
+    public function setTagsAndChoiceToNode($nodeId, $locale, $fieldName, $tagLabel, $tags)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(profile)')
+            ->where('id(profile) = { id }')
+            ->setParameter('id', (int)$nodeId)
             ->with('profile');
 
         //TODO: Call this->delete and then this method just create

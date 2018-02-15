@@ -500,7 +500,12 @@ class ProfileModel
                         if (is_array($fieldValue)) {
                             $tagLabel = $this->metadataUtilities->typeToLabel($fieldName);
                             $interfaceLanguage = $this->getInterfaceLocale($userId);
-                            $this->profileTagManager->setTagsAndChoice($userId, $interfaceLanguage, $fieldName, $tagLabel, $fieldValue);
+                            if ($forceProfileId)
+                            {
+                                $this->profileTagManager->setTagsAndChoiceToNode($forceProfileId, $interfaceLanguage, $fieldName, $tagLabel, $fieldValue);
+                            } else {
+                                $this->profileTagManager->setTagsAndChoice($userId, $interfaceLanguage, $fieldName, $tagLabel, $fieldValue);
+                            }
                         }
 
                         break;
@@ -530,7 +535,12 @@ class ProfileModel
 
                         if (is_array($fieldValue) && !empty($fieldValue)) {
                             $interfaceLanguage = $this->getInterfaceLocale($userId);
-                            $this->profileTagManager->addTags($userId, $interfaceLanguage, $tagLabel, $fieldValue);
+                            if ($forceProfileId)
+                            {
+                                $this->profileTagManager->addTagsToNode($forceProfileId, $interfaceLanguage, $tagLabel, $fieldValue);
+                            } else {
+                                $this->profileTagManager->addTags($userId, $interfaceLanguage, $tagLabel, $fieldValue);
+                            }
                         }
 
                         break;
