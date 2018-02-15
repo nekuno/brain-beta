@@ -265,6 +265,7 @@ profile:
             en: 'Languages'
             es: 'Idiomas'
         labelEdit: *languageLabel
+        schema: Language
         choiceLabel: &languageChoiceLabel
             en: 'Level'
             es: 'Nivel'
@@ -484,6 +485,7 @@ profile:
             en: 'Videogames and board games'
             es: 'Videojuegos y juegos de mesa'
         labelEdit: *gamesLabel
+        schema: VideoGame
     creative:
         type: tags
         label: &creativeLabel
