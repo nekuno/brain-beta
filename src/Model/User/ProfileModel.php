@@ -546,7 +546,7 @@ class ProfileModel
                         break;
                     case 'multiple_fields':
                         $fieldLabel = $this->metadataUtilities->typeToLabel($fieldName);
-
+                        $fieldValue = $fieldValue ?: array();
                         foreach ($fieldValue as $index => $multiValue){
                             $multiQb = $this->getQbWithProfile($userId, $forceProfileId);
                             $multiQb->create("(profile)<-[:MULTIPLE_FIELDS_OF]-(profileMulti:$fieldLabel)")
