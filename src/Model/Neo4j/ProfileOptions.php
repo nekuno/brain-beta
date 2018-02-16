@@ -1554,6 +1554,90 @@ class ProfileOptions implements LoggerAwareInterface
                     'order' => 3
                 ),
             ),
+            'Tickets' => array(
+                array(
+                    'id' => 'theater-dance',
+                    'name_en' => 'Theater and dance',
+                    'name_es' => 'Teatro y danza',
+                ),
+                array(
+                    'id' => 'concerts-music',
+                    'name_en' => 'Concerts and music',
+                    'name_es' => 'Conciertos y música',
+                ),
+                array(
+                    'id' => 'museums-exhibitions',
+                    'name_en' => 'Museums and exhibitions',
+                    'name_es' => 'Museos y exposiciones',
+                ),
+                array(
+                    'id' => 'circus',
+                    'name_en' => 'Circus',
+                    'name_es' => 'Circo',
+                ),
+                array(
+                    'id' => 'cinema',
+                    'name_en' => 'Cinema',
+                    'name_es' => 'Cine',
+                ),
+                array(
+                    'id' => 'sports-events',
+                    'name_en' => 'Sports events',
+                    'name_es' => 'Eventos de deportes',
+                ),
+                array(
+                    'id' => 'theme-parks',
+                    'name_en' => 'Theme parks',
+                    'name_es' => 'Parques temáticos',
+                ),
+                array(
+                    'id' => 'conferences',
+                    'name_en' => 'Conferences',
+                    'name_es' => 'Conferencias',
+                ),
+                array(
+                    'id' => 'thematic-fairs',
+                    'name_en' => 'Thematic fairs',
+                    'name_es' => 'Ferias temáticas',
+                ),
+            ),
+            'Activity' => array(
+                array(
+                    'id' => 'restaurants',
+                    'name_en' => 'Restaurants',
+                    'name_es' => 'Restaurantes',
+                ),
+                array(
+                    'id' => 'massages-spa',
+                    'name_en' => 'Massages and Spa',
+                    'name_es' => 'Masajes y Spas',
+                ),
+                array(
+                    'id' => 'hairdressing-beauty',
+                    'name_en' => 'Hairdressing and beauty',
+                    'name_es' => 'Peluquería y belleza',
+                ),
+                array(
+                    'id' => 'hiking',
+                    'name_en' => 'Hiking',
+                    'name_es' => 'Rutas y excursiones',
+                ),
+                array(
+                    'id' => 'wine-tasting',
+                    'name_en' => 'Wine tasting',
+                    'name_es' => 'Catas de vinos',
+                ),
+                array(
+                    'id' => 'courses',
+                    'name_en' => 'Courses',
+                    'name_es' => 'Cursos',
+                ),
+                array(
+                    'id' => 'scheduled-adventures',
+                    'name_en' => 'Scheduled adventures',
+                    'name_es' => 'Aventuras programadas',
+                ),
+            ),
         );
 
         foreach ($options as $type => $values) {

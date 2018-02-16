@@ -61,7 +61,7 @@ categories:
         - label:
             en: Leisure
             es: Ocio
-          fields: [leisureMoney, leisureTime, tickets, activities, travelling]
+          fields: [leisureMoney, leisureTime, tickets, activity, travelling, leisurePlan]
         - label:
             en: Description
             es: Descripción
@@ -103,7 +103,7 @@ categories:
         - label:
             en: Leisure
             es: Ocio
-          fields: [leisureMoney, leisureTime, tickets, activities, travelling, leisurePlan]
+          fields: [leisureMoney, leisureTime, tickets, activity, travelling]
 profile:
     mode:
         type: choice
@@ -511,17 +511,17 @@ profile:
         max: 5
         isRange: true
     tickets:
-        type: choice
+        type: multiple_choices
         label: &ticketsLabel
             en: 'Tickets'
             es: 'Entradas'
         labelEdit: *ticketsLabel
-    activities:
-        type: choice
-        label: &activitiesLabel
+    activity:
+        type: multiple_choices
+        label: &activityLabel
             en: 'Activities'
             es: 'Actividades'
-        labelEdit: *activitiesLabel
+        labelEdit: *activityLabel
     travelling:
         type: multiple_locations
         label: &travellingLabel
@@ -531,24 +531,24 @@ profile:
     leisurePlan:
         type: multiple_fields
         label: &leisurePlanLabel
-            en: 'Plan'
-            es: 'Plan'
-        labelEdit: *travellingLabel
+            en: 'Planes'
+            es: 'Planes'
+        labelEdit: *leisurePlanLabel
         max: 3
         metadata:
             name:
                 type: textarea
                 required: true
                 max: 100
-                label: &proposalNameLabel
-                    en: 'Name'
-                    es: 'Nombre'
-                labelEdit: *proposalNameLabel
+                label: &leisurePlanNameLabel
+                    en: 'Plan description'
+                    es: 'Descripción del plan'
+                labelEdit: *leisurePlanNameLabel
     proposal:
         type: multiple_fields
         label: &proposalLabel
-            en: 'Proposal'
-            es: 'Propuesta'
+            en: 'Proposals'
+            es: 'Propuestas'
         labelEdit: *proposalLabel
         max: 3
         metadata:
@@ -557,8 +557,8 @@ profile:
                 required: true
                 max: 100
                 label: &proposalNameLabel
-                    en: 'Name'
-                    es: 'Nombre'
+                    en: 'Proposal description'
+                    es: 'Descripción de la propuesta'
                 labelEdit: *proposalNameLabel
             industry:
                 type: multiple_choices
