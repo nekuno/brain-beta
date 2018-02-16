@@ -357,4 +357,25 @@ class ProfileTagModel
 
         return $tagsResult;
     }
+
+    public function mergeTag($label, $googleGraphId = null)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        if ($googleGraphId)
+        {
+            $qb->merge("(tag:ProfileTag:$label{googleGraphId: {id}})")
+                ->setParameter('id', $googleGraphId);
+        } else {
+            $qb->create("(tag:ProfileTag:$label)");
+        }
+
+        $qb->returns('id(tag) AS id');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        $tagId = $result->current()->offsetGet('id');
+
+        return array('id' => $tagId, 'googleGraphId' => $googleGraphId);
+    }
 } 

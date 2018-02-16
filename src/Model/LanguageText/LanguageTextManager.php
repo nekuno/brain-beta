@@ -36,6 +36,26 @@ class LanguageTextManager
         return $this->buildOne($result);
     }
 
+    public function findNodeWithText($label, $locale, $text)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match("(node:$label)--(:TextLanguage{text:{text}, locale:{locale}})")
+            ->setParameter('text', $text)
+            ->setParameter('locale', $locale);
+
+        $qb->returns("id(node) AS id");
+
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() == 0)
+        {
+            return null;
+        }
+
+        return $result->current()->offsetGet('id');
+    }
+
     protected function buildOne(ResultSet $resultSet)
     {
         $row = $resultSet->current();
