@@ -46,7 +46,318 @@ class ProfileTags implements LoggerAwareInterface
         $this->result = new OptionsResult();
 
         $tags = array(
-            'Sport' => array(
+
+            'Allergy' => array(
+                array(
+                    'locales' => array(
+                        'es' => 'Polen',
+                        'en' => 'Pollen'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Ácaros',
+                        'en' => 'Mites'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Pelo de animal',
+                        'en' => 'Animal hair'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Picaduras de insectos',
+                        'en' => 'Insect bites'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Moho',
+                        'en' => 'Mold'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Gluten',
+                        'en' => 'Gluten'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Lactosa',
+                        'en' => 'Lactose'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Marisco',
+                        'en' => 'Shellfish'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Látex',
+                        'en' => 'Latex'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Penicilina',
+                        'en' => 'Penicillin'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Cucarachas',
+                        'en' => 'Cockroaches'
+                    ),
+                ),
+            ),
+            'Handicap' => array(
+                array(
+                    'locales' => array(
+                        'es' => 'ADD',
+                        'en' => 'ADD'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Afasia',
+                        'en' => 'Aphasia'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Apraxia',
+                        'en' => 'Apraxia'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Procesamiento auditivo',
+                        'en' => 'Auditory processing'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Autismo',
+                        'en' => 'Autism'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Fibrosis cística',
+                        'en' => 'Cystic fibrosis'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Parálisis cerebral',
+                        'en' => 'Cerebral palsy'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Retrasos del desarrollo',
+                        'en' => 'Developmental delays'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Síndrome de Down',
+                        'en' => 'Down Syndrome'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Dislexia',
+                        'en' => 'Dyslexia'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Desórdenes emocionales',
+                        'en' => 'Emotional disorders'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Síndrome de alcoholismo fetal',
+                        'en' => 'Fetal alcohol syndrome'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Discapacidad auditiva',
+                        'en' => 'Hearing impairment'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Dificultades de aprendizaje',
+                        'en' => 'Learning disabilities'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Retraso mental',
+                        'en' => 'Mental retardation'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Problemas neurológicos',
+                        'en' => 'Neurological disabilities'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Trastorno convulsivo',
+                        'en' => 'Seizure disorder'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Discapacidad visual',
+                        'en' => 'Visual impairment'
+                    ),
+                ),
+            ),
+            'Sports' => array(
+                array(
+                    'locales' => array(
+                        'es' => 'Buceo',
+                        'en' => 'Diving'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Natación',
+                        'en' => 'Swimming'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Natación sincronizada',
+                        'en' => 'Synchronized swimming'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Water polo',
+                        'en' => 'Water polo'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Baloncesto',
+                        'en' => 'Basketball'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Canoa',
+                        'en' => 'Canoe'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'BMX',
+                        'en' => 'BMX'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Ciclismo de montaña',
+                        'en' => 'Mountain biking'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Ciclismo',
+                        'en' => 'Cycling'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Gimnasia artística',
+                        'en' => 'Artistic gymnastics'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Gimnasia rítmica',
+                        'en' => 'Rhytmic gymnastics'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Gimnasia de trampolín',
+                        'en' => 'Trampoline gymnastics'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Voleibol',
+                        'en' => 'Volleyball'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Equitación',
+                        'en' => 'Equestrian'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Lucha',
+                        'en' => 'Wrestling'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Arquería',
+                        'en' => 'Archery'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Atletismo',
+                        'en' => 'Athletics'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Badminton',
+                        'en' => 'Badminton'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Béisbol',
+                        'en' => 'Baseball'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Boxeo',
+                        'en' => 'Boxing'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Esgrima',
+                        'en' => 'Fencing'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Hockey',
+                        'en' => 'Hockey'
+                    ),
+                ),
                 array(
                     'locales' => array(
                         'es' => 'Fútbol',
@@ -55,19 +366,261 @@ class ProfileTags implements LoggerAwareInterface
                 ),
                 array(
                     'locales' => array(
-                        'es' => 'Basketball',
-                        'en' => 'Baloncesto'
+                        'es' => 'Golf',
+                        'en' => 'Golf'
                     ),
                 ),
-            ),
-            'Allergy' => array(
                 array(
                     'locales' => array(
-                        'es' => 'Polen',
-                        'en' => 'Pollen'
+                        'es' => 'Balonmano',
+                        'en' => 'Handball'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Judo',
+                        'en' => 'Judo'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Karate',
+                        'en' => 'Karate'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Remo',
+                        'en' => 'Rowing'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Rugby',
+                        'en' => 'Rubgy'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Navegación',
+                        'en' => 'Sailing'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Disparo',
+                        'en' => 'Shooting'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Monopatín',
+                        'en' => 'Skateboarding'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Softball',
+                        'en' => 'Softball'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Escalada',
+                        'en' => 'Climbing'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Surf',
+                        'en' => 'Surfing'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Ténis de mesa',
+                        'en' => 'Table tennis'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'taekwondo',
+                        'en' => 'Taekwondo'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Tennis',
+                        'en' => 'Tennis'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Levantamiento de pesas',
+                        'en' => 'Weightlifting'
                     ),
                 ),
             ),
+            'Creative' => array(
+                array(
+                    'locales' => array(
+                        'es' => 'Punto de cruz',
+                        'en' => 'Cross-stitch'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Bordado',
+                        'en' => 'Embroidery'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Tejido de punto',
+                        'en' => 'Knitting'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Patchwork',
+                        'en' => 'Patchwork'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Costura',
+                        'en' => 'Sewing'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Tapices',
+                        'en' => 'Tapestry'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Caligrafía',
+                        'en' => 'Calligraphy'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Collage',
+                        'en' => 'Collage'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Origami',
+                        'en' => 'Origami'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Scrapbooking',
+                        'en' => 'Scrapbooking'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Carpintería',
+                        'en' => 'Carpentry'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Talla de madera',
+                        'en' => 'Wood carving'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Cristalería',
+                        'en' => 'Glassware'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Cerámica',
+                        'en' => 'Pottery'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Hacer muñecas',
+                        'en' => 'Doll making'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Miniaturas',
+                        'en' => 'Miniatures'
+                    ),
+                ),
+            ),
+            'Ideology' => array(
+                array(
+                    'locales' => array(
+                        'es' => 'Anarquismo',
+                        'en' => 'Anarchism'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Centrismo',
+                        'en' => 'Centrism'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Conservadurismo',
+                        'en' => 'Conservatism'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Ecologismo',
+                        'en' => 'Environmentalism'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Feminismo',
+                        'en' => 'Feminism'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Liberalismo',
+                        'en' => 'Liberalism'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Nacionalismo',
+                        'en' => 'Nationalism'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Socialismo',
+                        'en' => 'Socialism'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Comunismo',
+                        'en' => 'Communism'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Progresismo',
+                        'en' => 'Progressism'
+                    ),
+                ),
+            )
         );
 
         foreach ($tags as $label => $values) {
