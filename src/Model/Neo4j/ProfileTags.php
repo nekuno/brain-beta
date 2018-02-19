@@ -620,6 +620,86 @@ class ProfileTags implements LoggerAwareInterface
                         'en' => 'Progressism'
                     ),
                 ),
+            ),
+            'Language' => array(
+                array(
+                    'locales' => array(
+                        'es' => 'Chino mandarín',
+                        'en' => 'Mandarin Chinese'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Español',
+                        'en' => 'Spanish'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Inglés',
+                        'en' => 'English'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Hindi',
+                        'en' => 'Hindi'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Árabe',
+                        'en' => 'Arabic'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Portugués',
+                        'en' => 'Portuguese'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Bengalí',
+                        'en' => 'Bengali'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Ruso',
+                        'en' => 'Russian'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Japonés',
+                        'en' => 'Japanese'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Panyabí',
+                        'en' => 'Punjabi'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Alemán',
+                        'en' => 'German'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Francés',
+                        'en' => 'French'
+                    ),
+                ),
+                array(
+                    'locales' => array(
+                        'es' => 'Italiano',
+                        'en' => 'Italian'
+                    ),
+                ),
             )
         );
 

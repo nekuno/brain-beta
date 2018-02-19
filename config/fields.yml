@@ -265,7 +265,6 @@ profile:
             en: 'Languages'
             es: 'Idiomas'
         labelEdit: *languageLabel
-        schema: Language
         choiceLabel: &languageChoiceLabel
             en: 'Level'
             es: 'Nivel'
