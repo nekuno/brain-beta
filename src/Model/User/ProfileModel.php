@@ -451,13 +451,15 @@ class ProfileModel
                             ->detachDelete('oldTravelling')
                             ->with('profile');
 
-                        foreach ($fieldValue as $index => $locationData) {
-                            $location = $this->locationManager->createLocation($locationData);
-                            $locationId = $location->getId();
-                            $qb->match('(location:Location)')
-                                ->where("id(location) = $locationId")
-                                ->createUnique('(profile)-[:TRAVELLING]->(location)')
-                                ->with('profile');
+                        if (is_array($fieldValue)) {
+                            foreach ($fieldValue as $index => $locationData) {
+                                $location = $this->locationManager->createLocation($locationData);
+                                $locationId = $location->getId();
+                                $qb->match('(location:Location)')
+                                    ->where("id(location) = $locationId")
+                                    ->createUnique('(profile)-[:TRAVELLING]->(location)')
+                                    ->with('profile');
+                            }
                         }
 
                         break;

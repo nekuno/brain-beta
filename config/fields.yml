@@ -523,6 +523,7 @@ profile:
         labelEdit: *activityLabel
     travelling:
         type: multiple_locations
+        max: 10
         label: &travellingLabel
             en: 'Travelling'
             es: 'Viajes'

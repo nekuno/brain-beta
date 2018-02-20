@@ -309,6 +309,11 @@ class Validator implements ValidatorInterface
                         break;
                     case 'multiple_locations':
                         $errors = array();
+                        if (!is_array($dataValue)) {
+                            $fieldErrors[] = 'Multiple locations value must be an array';
+                            continue;
+                        }
+                        $fieldErrors[] = $this->validateMax($dataValue, $fieldData);
                         foreach ($dataValue as $value) {
                             foreach ($this->validateLocation($value) as $error) {
                                 $fieldErrors[] = $error;
