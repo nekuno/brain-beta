@@ -143,7 +143,7 @@ class ProfileController
         /* @var $model ProfileTagModel */
         $model = $app['users.profile.tag.model'];
 
-        $result = $model->getProfileTags($type, $search, $limit);
+        $result = $model->getProfileTagsSuggestion($type, $search, $limit);
 
         return $app->json($result);
     }

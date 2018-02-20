@@ -8,6 +8,8 @@ class LanguageText
 
     protected $text;
 
+    protected $canonical;
+
     /**
      * @return mixed
      */
@@ -40,5 +42,20 @@ class LanguageText
         $this->text = $text;
     }
 
+    /**
+     * @return mixed
+     */
+    public function getCanonical()
+    {
+        return $this->canonical;
+    }
+
+    /**
+     * @param mixed $canonical
+     */
+    public function setCanonical($canonical)
+    {
+        $this->canonical = $canonical;
+    }
 
 }

@@ -4,6 +4,7 @@ namespace Model\LanguageText;
 
 use Everyman\Neo4j\Query\ResultSet;
 use Model\Neo4j\GraphManager;
+use Transliterator;
 
 class LanguageTextManager
 {
@@ -17,6 +18,7 @@ class LanguageTextManager
 
     public function merge($nodeId, $locale, $text)
     {
+        $canonicalText = $this->buildCanonical($text);
         $qb = $this->graphManager->createQueryBuilder();
 
         $qb->match('(node)')
@@ -25,11 +27,14 @@ class LanguageTextManager
             ->with('node')
             ->limit(1);
 
-        $qb->merge("(t: TextLanguage{text: {text}, locale: {locale}})-[:TEXT_OF]->(node)")
-            ->setParameter('text', $text)
+        $qb->merge("(t: TextLanguage{canonical: {canonical}, locale: {locale}})-[:TEXT_OF]->(node)")
+            ->setParameter('canonical', $canonicalText)
             ->setParameter('locale', $locale);
 
-        $qb->returns('t.text AS text, t.locale AS locale');
+        $qb->onCreate('SET t.text = {text}')
+            ->setParameter('text', $text);
+
+        $qb->returns('t.text AS text, t.locale AS locale, t.canonical AS canonical');
 
         $result = $qb->getQuery()->getResultSet();
 
@@ -38,10 +43,12 @@ class LanguageTextManager
 
     public function findNodeWithText($label, $locale, $text)
     {
+        $canonicalText = $this->buildCanonical($text);
+
         $qb = $this->graphManager->createQueryBuilder();
 
-        $qb->match("(node:$label)--(:TextLanguage{text:{text}, locale:{locale}})")
-            ->setParameter('text', $text)
+        $qb->match("(node:$label)<-[:TEXT_OF]-(:TextLanguage{canonical:{canonical}, locale:{locale}})")
+            ->setParameter('canonical', $canonicalText)
             ->setParameter('locale', $locale);
 
         $qb->returns("id(node) AS id");
@@ -62,11 +69,24 @@ class LanguageTextManager
 
         $locale = $row->offsetGet('locale');
         $text = $row->offsetGet('text');
+        $canonical = $row->offsetGet('canonical');
 
         $languageText = new LanguageText();
         $languageText->setText($text);
         $languageText->setLanguage($locale);
+        $languageText->setCanonical($canonical);
 
         return $languageText;
+    }
+
+    public function buildCanonical($text)
+    {
+        $text = strtolower($text);
+
+        //http://userguide.icu-project.org/transforms/general/rules
+        $transliterator = Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;', Transliterator::FORWARD);
+        $text = $transliterator->transliterate($text);
+
+        return $text;
     }
 }

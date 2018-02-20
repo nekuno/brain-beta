@@ -2,8 +2,6 @@
 
 namespace Model\User;
 
-use Everyman\Neo4j\Client;
-use Everyman\Neo4j\Cypher\Query;
 use Everyman\Neo4j\Label;
 use Everyman\Neo4j\Query\Row;
 use Model\LanguageText\LanguageTextManager;
@@ -12,10 +10,6 @@ use Model\Neo4j\GraphManager;
 
 class ProfileTagModel
 {
-    /**
-     * @var \Everyman\Neo4j\Client
-     */
-    protected $client;
 
     protected $graphManager;
 
@@ -24,13 +18,12 @@ class ProfileTagModel
     protected $metadataUtilities;
 
     /**
-     * @param \Everyman\Neo4j\Client $client
      * @param GraphManager $graphManager
      * @param LanguageTextManager $languageTextManager
+     * @param MetadataUtilities $metadataUtilities
      */
-    public function __construct(Client $client, GraphManager $graphManager, LanguageTextManager $languageTextManager, MetadataUtilities $metadataUtilities)
+    public function __construct(GraphManager $graphManager, LanguageTextManager $languageTextManager, MetadataUtilities $metadataUtilities)
     {
-        $this->client = $client;
         $this->graphManager = $graphManager;
         $this->languageTextManager = $languageTextManager;
         $this->metadataUtilities = $metadataUtilities;
@@ -91,54 +84,29 @@ class ProfileTagModel
      * @throws \Exception
      * @return array
      */
-    public function getProfileTags($type, $startingWith = '', $limit = 0)
+    public function getProfileTagsSuggestion($type, $startingWith = null, $limit = 3)
     {
+        $startingWith = $this->languageTextManager->buildCanonical($startingWith);
+        $label = $this->metadataUtilities->typeToLabel($type);
+
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match("(tag:ProfileTag:$label)<-[:TEXT_OF]-(text:TextLanguage)");
+        if ($startingWith !== null) {
+            $qb->where('text.canonical STARTS WITH {starts}')
+                ->setParameter('starts', $startingWith);
+        }
+
+        $qb->returns('distinct text.text AS text')
+            ->orderBy('text')
+            ->limit('{limit}')
+            ->setParameter('limit', (integer)$limit);
+
+        $result = $qb->getQuery()->getResultSet();
+
         $response = array();
-
-        $params = array();
-
-        $startingWithQuery = '';
-        if ($startingWith != '') {
-            $params['tag'] = '(?i)' . $startingWith . '.*';
-            $startingWithQuery = 'WHERE tag.name =~ {tag}';
-        }
-
-        $limitQuery = '';
-        if ($limit != 0) {
-            $params['limit'] = (integer)$limit;
-            $limitQuery = ' LIMIT {limit}';
-        }
-
-        $query = "
-            MATCH
-            (tag:ProfileTag:" . ucfirst($type) . ")
-        ";
-        $query .= $startingWithQuery;
-        $query .= "
-            RETURN
-            distinct tag.name as name
-            ORDER BY
-            tag.name
-        ";
-        $query .= $limitQuery;
-
-        //Create the Neo4j query object
-        $contentQuery = new Query(
-            $this->client,
-            $query,
-            $params
-        );
-
-        //Execute query
-        try {
-            $result = $contentQuery->getResultSet();
-
-            foreach ($result as $row) {
-                $response['items'][] = array('name' => $row['name']);
-            }
-
-        } catch (\Exception $e) {
-            throw $e;
+        foreach ($result as $row) {
+            $response['items'][] = array('name' => $row['text']);
         }
 
         return $response;
@@ -192,15 +160,26 @@ class ProfileTagModel
             ->setParameter('id', (int)$userId)
             ->with('profile');
 
-        foreach ($tags as $tag) {
+        foreach ($tags as $index => $tag) {
             $tagName = $tag['name'];
-            $tagId = isset($tag['googleGraphId']) ? $tag['googleGraphId'] : null;
+            $existentTagId = $this->languageTextManager->findNodeWithText($tagLabel, $locale, $tagName);
+            if (!$existentTagId){
+                $tagGoogleGraphId = isset($tag['googleGraphId']) ? $tag['googleGraphId'] : null;
 
-//            $qb->merge('(tag:ProfileTag:' . $tagLabel . ' {name: "' . $tagName . '" })')
-            $qb->merge("(tag:ProfileTag: $tagLabel )<-[:TEXT_OF]-(:TextLanguage {text: '$tagName', locale: '$locale'})");
-            if ($tagId) {
-                $qb->set("tag.googleGraphId = '$tagId'");
+                $newTag = $this->mergeTag($tagLabel, $tagGoogleGraphId);
+                $newTagId = $newTag['id'];
+                $this->languageTextManager->merge($newTagId, $locale, $tagName);
+
+                $qb->match("(tag:ProfileTag:$tagLabel)")
+                    ->where("id(tag) = {tagId$index}")
+                    ->setParameter("tagId$index", $newTagId);
+
+            } else {
+                $qb->match("(tag:ProfileTag:$tagLabel)")
+                    ->where("id(tag) = {tagId$index}")
+                    ->setParameter("tagId$index", $existentTagId);
             }
+
             $qb->merge('(profile)<-[:TAGGED]-(tag)')
                 ->with('profile');
         }
@@ -221,15 +200,26 @@ class ProfileTagModel
             ->setParameter('id', (int)$nodeId)
             ->with('profile');
 
-        foreach ($tags as $tag) {
+        foreach ($tags as $index => $tag) {
             $tagName = $tag['name'];
-            $tagId = isset($tag['googleGraphId']) ? $tag['googleGraphId'] : null;
+            $existentTagId = $this->languageTextManager->findNodeWithText($tagLabel, $locale, $tagName);
+            if (!$existentTagId){
+                $tagGoogleGraphId = isset($tag['googleGraphId']) ? $tag['googleGraphId'] : null;
 
-//            $qb->merge('(tag:ProfileTag:' . $tagLabel . ' {name: "' . $tagName . '" })')
-            $qb->merge("(tag:ProfileTag: $tagLabel )<-[:TEXT_OF]-(:TextLanguage {text: '$tagName', locale: '$locale'})");
-            if ($tagId) {
-                $qb->set("tag.googleGraphId = '$tagId'");
+                $newTag = $this->mergeTag($tagLabel, $tagGoogleGraphId);
+                $newTagId = $newTag['id'];
+                $this->languageTextManager->merge($newTagId, $locale, $tagName);
+
+                $qb->match("(tag:ProfileTag:$tagLabel)")
+                    ->where("id(tag) = {tagId$index}")
+                    ->setParameter("tagId$index", $newTagId);
+
+            } else {
+                $qb->match("(tag:ProfileTag:$tagLabel)")
+                    ->where("id(tag) = {tagId$index}")
+                    ->setParameter("tagId$index", $existentTagId);
             }
+
             $qb->merge('(profile)<-[:TAGGED]-(tag)')
                 ->with('profile');
         }
@@ -255,24 +245,37 @@ class ProfileTagModel
 
         $savedTags = array();
         foreach ($tags as $index => $value) {
-            //TODO: Check if index is unnecesary due to with('profile') erasing previous node names
             $tagValue = $value['tag'];
-            $tagName = $tagValue['name'];
-            $tagId = isset($tagValue['googleGraphId']) ? $tagValue['googleGraphId'] : null;
-            if ($tagId) {
-                $qb->set("tag.googleGraphId = '$tagId'");
-            }
             if (in_array($tagValue, $savedTags)) {
                 continue;
             }
-            $choice = !is_null($value['choice']) ? $value['choice'] : '';
+
+            $tagName = $tagValue['name'];
+            $existentTagId = $this->languageTextManager->findNodeWithText($tagLabel, $locale, $tagName);
             $tagIndex = 'tag_' . $index;
+
+            if (!$existentTagId){
+                $tagGoogleGraphId = isset($tagValue['googleGraphId']) ? $tagValue['googleGraphId'] : null;
+
+                $newTag = $this->mergeTag($tagLabel, $tagGoogleGraphId);
+                $newTagId = $newTag['id'];
+                $this->languageTextManager->merge($newTagId, $locale, $tagName);
+
+                $qb->match("($tagIndex:ProfileTag:$tagLabel)")
+                    ->where("id(tag) = {tagId$index}")
+                    ->setParameter("tagId$index", $newTagId);
+
+            } else {
+                $qb->match("($tagIndex:ProfileTag:$tagLabel)")
+                    ->where("id(tag) = {tagId$index}")
+                    ->setParameter("tagId$index", $existentTagId);
+            }
+
+            $choice = !is_null($value['choice']) ? $value['choice'] : '';
             $tagParameter = $fieldName . '_' . $index;
             $choiceParameter = $fieldName . '_choice_' . $index;
 
             $qb->with('profile')
-//                ->merge('(' . $tagLabel . ':ProfileTag:' . $tagLabel . ' {name: { ' . $tagParameter . ' }})')
-                ->merge("($tagIndex :ProfileTag: $tagLabel )<-[:TEXT_OF]-( :TextLanguage {text: { $tagParameter }, locale: {localeTag$index}})")
                 ->merge('(profile)<-[:TAGGED {detail: {' . $choiceParameter . '}}]-(' . $tagIndex . ')')
                 ->setParameter($tagParameter, $tagName)
                 ->setParameter('localeTag' . $index, $locale)
@@ -298,24 +301,37 @@ class ProfileTagModel
 
         $savedTags = array();
         foreach ($tags as $index => $value) {
-            //TODO: Check if index is unnecesary due to with('profile') erasing previous node names
             $tagValue = $value['tag'];
-            $tagName = $tagValue['name'];
-            $tagId = isset($tagValue['googleGraphId']) ? $tagValue['googleGraphId'] : null;
-            if ($tagId) {
-                $qb->set("tag.googleGraphId = '$tagId'");
-            }
             if (in_array($tagValue, $savedTags)) {
                 continue;
             }
-            $choice = !is_null($value['choice']) ? $value['choice'] : '';
+
+            $tagName = $tagValue['name'];
+            $existentTagId = $this->languageTextManager->findNodeWithText($tagLabel, $locale, $tagName);
             $tagIndex = 'tag_' . $index;
+
+            if (!$existentTagId){
+                $tagGoogleGraphId = isset($tagValue['googleGraphId']) ? $tagValue['googleGraphId'] : null;
+
+                $newTag = $this->mergeTag($tagLabel, $tagGoogleGraphId);
+                $newTagId = $newTag['id'];
+                $this->languageTextManager->merge($newTagId, $locale, $tagName);
+
+                $qb->match("($tagIndex:ProfileTag:$tagLabel)")
+                    ->where("id(tag) = {tagId$index}")
+                    ->setParameter("tagId$index", $newTagId);
+
+            } else {
+                $qb->match("($tagIndex:ProfileTag:$tagLabel)")
+                    ->where("id(tag) = {tagId$index}")
+                    ->setParameter("tagId$index", $existentTagId);
+            }
+
+            $choice = !is_null($value['choice']) ? $value['choice'] : '';
             $tagParameter = $fieldName . '_' . $index;
             $choiceParameter = $fieldName . '_choice_' . $index;
 
             $qb->with('profile')
-//                ->merge('(' . $tagLabel . ':ProfileTag:' . $tagLabel . ' {name: { ' . $tagParameter . ' }})')
-                ->merge("($tagIndex :ProfileTag: $tagLabel )<-[:TEXT_OF]-( :TextLanguage {text: { $tagParameter }, locale: {localeTag$index}})")
                 ->merge('(profile)<-[:TAGGED {detail: {' . $choiceParameter . '}}]-(' . $tagIndex . ')')
                 ->setParameter($tagParameter, $tagName)
                 ->setParameter('localeTag' . $index, $locale)
@@ -326,13 +342,16 @@ class ProfileTagModel
         $query->getResultSet();
     }
 
-    public function buildTags(Row $row)
+    public function buildTags(Row $row, $locale)
     {
         $tags = $row->offsetGet('tags');
         $tagsResult = array();
         /** @var Row $tagData */
         foreach ($tags as $tagData) {
             $text = $tagData->offsetGet('text');
+            if ($text === null || $text->getProperty('locale') !== $locale){
+                continue;
+            }
             $tag = $tagData->offsetGet('tag');
             $tagged = $tagData->offsetGet('tagged');
             $labels = $tag ? $tag->getLabels() : array();
@@ -362,8 +381,7 @@ class ProfileTagModel
     {
         $qb = $this->graphManager->createQueryBuilder();
 
-        if ($googleGraphId)
-        {
+        if ($googleGraphId) {
             $qb->merge("(tag:ProfileTag:$label{googleGraphId: {id}})")
                 ->setParameter('id', $googleGraphId);
         } else {

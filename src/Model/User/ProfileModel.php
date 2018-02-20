@@ -195,7 +195,9 @@ class ProfileModel
         $profile += $this->getMultipleFields($profileId);
 
         $profile += $this->profileOptionManager->buildOptions($row->offsetGet('options'));
-        $profile += $this->profileTagManager->buildTags($row);
+
+        $interfaceLocale = $this->getInterfaceLocaleByProfileId($profileId);
+        $profile += $this->profileTagManager->buildTags($row, $interfaceLocale);
 
         return $profile;
     }
@@ -277,8 +279,9 @@ class ProfileModel
             $multiple = $multipleNode->getProperties();
 
             $multiple += $this->profileOptionManager->buildOptions($row->offsetGet('options'));
-            $multiple += $this->profileTagManager->buildTags($row);
 
+            $interfaceLocale = $this->getInterfaceLocaleByProfileId($profileId);
+            $multiple += $this->profileTagManager->buildTags($row, $interfaceLocale);
             //if Location or Travelling is needed, remove :Profile requirement from methods or move this to own manager
             $label = $row->offsetGet('label');
             $field = $this->metadataUtilities->labelToType($label);
@@ -371,6 +374,27 @@ class ProfileModel
         $qb->match('(profile:Profile)-[:PROFILE_OF]->(u:User)')
             ->where('u.qnoow_id = { id }')
             ->setParameter('id', (int)$userId)
+            ->with('profile');
+
+        $qb->match('(profile)-[:OPTION_OF]-(i:InterfaceLanguage)')
+            ->returns('i.id AS locale');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() == 0) {
+            return 'en';
+        }
+
+        return $result->current()->offsetGet('locale');
+    }
+
+    public function getInterfaceLocaleByProfileId($profileId)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(profile)')
+            ->where('id(profile) = { id }')
+            ->setParameter('id', (int)$profileId)
             ->with('profile');
 
         $qb->match('(profile)-[:OPTION_OF]-(i:InterfaceLanguage)')
