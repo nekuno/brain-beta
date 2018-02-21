@@ -1260,7 +1260,7 @@ class ProfileOptions implements LoggerAwareInterface
                 ),
                 array(
                     'id' => 'homosexual',
-                    'name_en' => 'Gay',
+                    'name_en' => 'Gay/Lesbian',
                     'name_es' => 'Homo',
                 ),
                 array(
@@ -1287,11 +1287,6 @@ class ProfileOptions implements LoggerAwareInterface
                     'id' => 'homoflexible',
                     'name_en' => 'Homoflexible',
                     'name_es' => 'Homoflexible',
-                ),
-                array(
-                    'id' => 'lesbian',
-                    'name_en' => 'Lesbian',
-                    'name_es' => 'Lesbi',
                 ),
                 array(
                     'id' => 'pansexual',
