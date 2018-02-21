@@ -45,7 +45,7 @@ followers:
   invitation_slogan: '¡Descubre si eres %compatible_or_similar% con %username%!'
   group_name: 'Seguidores de %username%'
 messages:
-  register: 'Sólamente cuando eres más tú que nunca; todas las personas a las que les encanta como eres, pueden notar tu existencia. Por esa razón, disfruta de ser tu mismo en Nekuno, porque este es el lugar donde todas esas personas pueden encontrarte. Cuenta conmigo para lo que necesites. nemo ♥'
+  register: 'Sólamente cuando eres más tú que nunca; todas las personas a las que les encanta como eres, pueden notar tu existencia. Por esa razón, disfruta de ser tu mismo en Nekuno, porque este es el lugar donde todas esas personas pueden encontrarte. Cuenta conmigo para lo que necesites. Nyx ♥'
 types:
   audio: 'Música'
   video: 'Vídeos'
