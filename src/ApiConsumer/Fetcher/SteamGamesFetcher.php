@@ -71,7 +71,7 @@ class SteamGamesFetcher extends AbstractFetcher
     public function getThumbnail($item)
     {
         $gameId = $item['appid'];
-        if (isset($item['img_logo_url'])) {
+        if (isset($item['img_logo_url']) && $item['img_logo_url']) {
             $hash = $item['img_logo_url'];
             return "http://media.steampowered.com/steamcommunity/public/images/apps/$gameId/$hash.jpg";
         }
