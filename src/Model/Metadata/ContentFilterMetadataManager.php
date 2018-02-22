@@ -20,8 +20,8 @@ class ContentFilterMetadataManager extends MetadataManager
                 if (isset($choiceOptions[$name])) {
                     $publicField['choices'] = $choiceOptions[$name];
                 }
-                if (isset($values['max_choices'])) {
-                    $publicField['max_choices'] = $values['max_choices'];
+                if (isset($values['max'])) {
+                    $publicField['max'] = $values['max'];
                 };
                 break;
             case 'tags':

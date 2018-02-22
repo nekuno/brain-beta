@@ -275,9 +275,9 @@ class FilterUsersManager
                     $qb->optionalMatch("(filter)-[old_tag_rel:FILTERS_BY]->(:$tagLabelName)")
                         ->delete("old_tag_rel");
                     if ($value) {
-                        foreach ($value as $singleValue) {
-                            $qb->merge("(tag$fieldName$singleValue:$tagLabelName{name:'$singleValue'})");
-                            $qb->merge("(filter)-[:FILTERS_BY]->(tag$fieldName$singleValue)");
+                        foreach ($value as $tag) {
+                            $qb->merge("(tag$fieldName$tag:$tagLabelName:ProfileTag)<-[:TEXT_OF]-(:TextLanguage{text:'$tag'})");
+                            $qb->merge("(filter)-[:FILTERS_BY]->(tag$fieldName$tag)");
                         }
                     }
                     $qb->with('filter');
@@ -289,12 +289,10 @@ class FilterUsersManager
 
                     if ($value) {
                         foreach ($value as $singleValue) {
-                            $tag = $fieldName === 'language' ?
-                                $this->metadataUtilities->getLanguageFromTag($singleValue['tag']) :
-                                $singleValue['tag'];
+                            $tag = $singleValue['tag'];
                             $choice = isset($singleValue['choice']) ? $singleValue['choice'] : '';
 
-                            $qb->merge("(tag$fieldName$tag:$tagLabelName:ProfileTag{name:'$tag'})");
+                            $qb->merge("(tag$fieldName$tag:$tagLabelName:ProfileTag)<-[:TEXT_OF]-(:TextLanguage{text:'$tag'})");
                             $qb->merge("(filter)-[tag_rel$fieldName$tag:FILTERS_BY]->(tag$fieldName$tag)")
                                 ->set("tag_rel$fieldName$tag.detail = {detail$fieldName$tag}");
                             $qb->setParameter("detail$fieldName$tag", $choice);
@@ -309,11 +307,9 @@ class FilterUsersManager
 
                     if ($value) {
                         foreach ($value as $singleValue) {
-                            $tag = $fieldName === 'language' ?
-                                $this->metadataUtilities->getLanguageFromTag($singleValue['tag']) :
-                                $singleValue['tag'];
+                            $tag = $singleValue['tag'];
                             $choices = isset($singleValue['choices']) ? $singleValue['choices'] : '';
-                            $qb->merge("(tag$fieldName$tag:$tagLabelName:ProfileTag{name:'$tag'})");
+                            $qb->merge("(tag$fieldName$tag:$tagLabelName:ProfileTag)<-[:TEXT_OF]-(:TextLanguage{text:'$tag'})");
                             $qb->merge("(filter)-[tag_rel$fieldName$tag:FILTERS_BY]->(tag$fieldName$tag)")
                                 ->set("tag_rel$fieldName$tag.detail = {detail$fieldName$tag}");
                             $qb->setParameter("detail$fieldName$tag", $choices);
@@ -424,7 +420,6 @@ class FilterUsersManager
      * Creates array ready to use as profileFilter from neo4j
      * @param $filterId
      * @return array ready to use in recommendation
-     * @throws \Model\Neo4j\Neo4jException
      */
     private function getFilters($filterId)
     {

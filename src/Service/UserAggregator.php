@@ -80,22 +80,24 @@ class UserAggregator
 
         if (count($socialProfiles) == 0) {
 
+            $socialProfileArray = array($resource => $url);
             //$output->writeln('Creating new social profile with url '. $url);
 
-            if ($id) {
+            $isExistingUser = null !== $id;
+            if ($isExistingUser) {
                 $user = $this->userManager->getById((integer)$id, true);
                 $id = $user->getId();
+
+                $this->lookUpModel->setSocialProfiles($socialProfileArray, $id);
+                $this->socialNetworkService->setSocialNetworksInfo($id, $socialProfileArray);
                 //$output->writeln('SUCCESS: Found user with id '.$id);
             } else {
                 $user = $this->ghostUserManager->create();
                 $id = $user->getId();
+
+                $this->lookUpModel->setSocialProfiles($socialProfileArray, $id);
                 //$output->writeln('SUCCESS: Created ghost user with id:' . $id);
             }
-
-            $socialProfileArray = array($resource => $url);
-
-	        $this->lookUpModel->setSocialProfiles($socialProfileArray, $id);
-            $this->socialNetworkService->setSocialNetworksInfo($id, $socialProfileArray);
 
             $socialProfiles = $this->socialProfileManager->getByUrl($url);
 

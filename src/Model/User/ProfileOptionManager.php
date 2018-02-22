@@ -34,7 +34,7 @@ class ProfileOptionManager
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(option:ProfileOption)')
             ->returns("head(filter(x IN labels(option) WHERE x <> 'ProfileOption')) AS labelName, option.id AS id")
-            ->orderBy('labelName');
+            ->orderBy('option.order');
 
         $query = $qb->getQuery();
         $result = $query->getResultSet();
@@ -85,7 +85,7 @@ class ProfileOptionManager
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(option:ProfileOption)')
             ->returns("head(filter(x IN labels(option) WHERE x <> 'ProfileOption')) AS labelName, option.id AS id, option." . $translationField . " AS name")
-            ->orderBy('labelName');
+            ->orderBy('option.order');
 
         $query = $qb->getQuery();
         $result = $query->getResultSet();
@@ -97,7 +97,10 @@ class ProfileOptionManager
             $optionId = $row->offsetGet('id');
             $optionName = $row->offsetGet('name');
 
-            $choiceOptions[$typeName][$optionId] = $optionName;
+            $choiceOptions[$typeName][] = array(
+                'id' => $optionId,
+                'text' => $optionName
+            );
         }
 
         $this->options[$translationField] = $choiceOptions;
@@ -205,62 +208,6 @@ class ProfileOptionManager
         $this->tags[$tagLabelName] = $tags;
 
         return $tags;
-    }
-
-    public function getUserProfileTags($id)
-    {
-        $qb = $this->graphManager->createQueryBuilder();
-        $qb->match('(tag:ProfileTag)-[tagged:TAGGED]->(profile:Profile)-[:PROFILE_OF]->(user:User)')
-            ->where('user.qnoow_id = { id }')
-            ->setParameter('id', $id)
-            ->returns('profile', 'collect(distinct {tag: tag, tagged: tagged}) AS tags');
-
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
-
-        $tags = array();
-        foreach ($result as $row) {
-            $tags += $this->buildTags($row);
-        }
-
-        return $tags;
-    }
-
-    public function buildTags(Row $row, $locale = null)
-    {
-        $tags = $row->offsetGet('tags');
-        $tagsResult = array();
-        /** @var Row $tagData */
-        foreach ($tags as $tagData) {
-            $tag = $tagData->offsetGet('tag');
-            $tagged = $tagData->offsetGet('tagged');
-            $labels = $tag ? $tag->getLabels() : array();
-
-            /* @var Label $label */
-            foreach ($labels as $label) {
-                if ($label->getName() && $label->getName() != 'ProfileTag') {
-                    $typeName = $this->metadataUtilities->labelToType($label->getName());
-                    $tagResult = $tag->getProperty('name');
-                    $detail = $tagged->getProperty('detail');
-                    if (!is_null($detail)) {
-                        $tagResult = array();
-                        $tagResult['tag'] = $tag->getProperty('name');
-                        $tagResult['choice'] = $detail;
-                    }
-                    if ($typeName === 'language') {
-                        if (is_null($detail)) {
-                            $tagResult = array();
-                            $tagResult['tag'] = $tag->getProperty('name');
-                            $tagResult['choice'] = '';
-                        }
-                        $tagResult['tag'] = $this->metadataUtilities->translateLanguageToLocale($tagResult['tag'], $locale);
-                    }
-                    $tagsResult[$typeName][] = $tagResult;
-                }
-            }
-        }
-
-        return $tagsResult;
     }
 
 }

@@ -52,7 +52,6 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
     public function validateFilters(array $filters)
     {
         $hasId = isset($filters['id']);
-//        $hasProfileFilters = isset($filters['userFilters']);
 
         return $hasId;
     }
@@ -91,18 +90,18 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
 
         $qb->optionalMatch('(p)-[:LOCATION]->(l:Location)');
 
-        $qb->with('anyUser, p, l, matching_questions', 'similarity');
+        $qb->with('anyUser, p, matching_questions', 'similarity');
         $qb->where($filters['conditions'])
-            ->with('anyUser', 'p', 'l', 'matching_questions', 'similarity');
+            ->with('anyUser', 'p', 'matching_questions', 'similarity');
 
         foreach ($filters['matches'] as $match) {
             $qb->match($match);
         }
 
-        $qb->with('anyUser, p, l, matching_questions', 'similarity')
+        $qb->with('anyUser, p, matching_questions', 'similarity')
             ->optionalMatch('(p)<-[optionOf:OPTION_OF]-(option:ProfileOption)')
             ->with(
-                'anyUser, p, l, matching_questions, similarity',
+                'anyUser, p, matching_questions, similarity',
                 'collect(distinct {option: option, detail: (
                     CASE WHEN EXISTS(optionOf.detail) 
                         THEN optionOf.detail 
@@ -111,10 +110,10 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
                      AS options'
             )
             ->optionalMatch('(p)-[tagged:TAGGED]-(tag:ProfileTag)')
-            ->with('anyUser, p, l, matching_questions', 'similarity', 'options', 'collect(distinct {tag: tag, tagged: tagged}) AS tags')
+            ->with('anyUser, p, matching_questions', 'similarity', 'options', 'collect(distinct {tag: tag, tagged: tagged}) AS tags')
             ->optionalMatch('(anyUser)<-[likes:LIKES]-(:User)')
-            ->with('anyUser, p, l, matching_questions', 'similarity', 'options', 'tags', 'count(likes) as popularity')
-            ->with('anyUser', 'options', 'tags', 'popularity', 'p', 'l', 'matching_questions', 'similarity');
+            ->with('anyUser, p, matching_questions', 'similarity', 'options', 'tags', 'count(likes) as popularity')
+            ->with('anyUser', 'options', 'tags', 'popularity', 'p', 'matching_questions', 'similarity');
 
         $qb->returns(
             'anyUser.qnoow_id AS id',
@@ -123,7 +122,6 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
             'anyUser.photo AS photo',
             'p.birthday AS birthday',
             'p AS profile',
-            'l AS location',
             'options',
             'tags',
             'matching_questions',
@@ -245,18 +243,18 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
                         break;
                     case 'tags':
                         $tagLabelName = $this->metadataUtilities->typeToLabel($name);
-                        $matches[] = "(p)<-[:TAGGED]-(tag$name:$tagLabelName) WHERE tag$name.name = '$value'";
+                        $matchQuery = "(p)<-[:TAGGED]-(tag$name:$tagLabelName)";
+                        $whereQuery = " (tag$name)<-[:TEXT_OF]-(:TextLanguage{text: '$value'})";
+                        $matches[] = $matchQuery . ' WHERE (' . $whereQuery . ')';
                         break;
                     case 'tags_and_choice':
                         $tagLabelName = $this->metadataUtilities->typeToLabel($name);
                         $matchQuery = "(p)<-[rel$name:TAGGED]-(tag$name:ProfileTag:$tagLabelName)";
                         $whereQueries = array();
                         foreach ($value as $dataValue) {
-                            $tagValue = $name === 'language' ?
-                                $this->metadataUtilities->getLanguageFromTag($dataValue['tag']) :
-                                $dataValue['tag'];
+                            $tagValue = $dataValue['tag'];
                             $choice = isset($dataValue['choices']) ? $dataValue['choices'] : null;
-                            $whereQuery = " tag$name.name = '$tagValue'";
+                            $whereQuery = " (tag$name)<-[:TEXT_OF]-(:TextLanguage{text: '$tagValue'})";
                             if (!null == $choice) {
                                 $whereQuery .= " AND rel$name.detail = '$choice'";
                             }
@@ -270,12 +268,10 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
                         $matchQuery = "(p)<-[rel$name:TAGGED]-(tag$name:ProfileTag:$tagLabelName)";
                         $whereQueries = array();
                         foreach ($value as $dataValue) {
-                            $tagValue = $name === 'language' ?
-                                $this->metadataUtilities->getLanguageFromTag($dataValue['tag']) :
-                                $dataValue['tag'];
+                            $tagValue = $dataValue['tag'];
                             $choices = isset($dataValue['choices']) ? $dataValue['choices'] : array();
 
-                            $whereQuery = " tag$name.name = '$tagValue'";
+                            $whereQuery = " (tag$name)<-[:TEXT_OF]-(:TextLanguage{text: '$tagValue'})";
                             if (!empty($choices)) {
                                 $choices = json_encode($choices);
                                 $whereQuery .= " AND rel$name.detail IN $choices ";
@@ -384,9 +380,13 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
             $user->setMatching($row->offsetGet('matching_questions'));
             $user->setSimilarity($row->offsetGet('similarity'));
             $user->setAge($age);
-            $user->setLocation($row->offsetGet('location'));
             $user->setLike($row->offsetGet('like'));
-            $user->setProfile($this->profileModel->build($row));
+
+            $profile = $this->profileModel->build($row);
+            $user->setProfile($profile);
+            if (isset($profile['location'])) {
+                $user->setLocation($profile['location']);
+            }
 
             $response[] = $user;
         }

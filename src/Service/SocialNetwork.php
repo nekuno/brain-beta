@@ -6,6 +6,8 @@ use ApiConsumer\Factory\FetcherFactory;
 use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
 use Model\User\LookUpModel;
+use Model\User\ProfileModel;
+use Model\User\ProfileTagModel;
 use Model\User\SocialNetwork\LinkedinSocialNetworkModel;
 use Psr\Log\LoggerInterface;
 
@@ -24,6 +26,10 @@ class SocialNetwork
      */
     protected $lookupModel;
 
+    protected $profileTagModel;
+
+    protected $profileModel;
+
     /**
      * @var FetcherFactory
      */
@@ -32,10 +38,14 @@ class SocialNetwork
     function __construct(
         LinkedinSocialNetworkModel $linkedinSocialNetworkModel,
         LookUpModel $lookupModel,
+        ProfileTagModel $profileTagModel,
+        ProfileModel $profileModel,
         FetcherFactory $fetcherFactory
     ) {
         $this->linkedinSocialNetworkModel = $linkedinSocialNetworkModel;
         $this->lookupModel = $lookupModel;
+        $this->profileTagModel = $profileTagModel;
+        $this->profileModel = $profileModel;
         $this->fetcherFactory = $fetcherFactory;
     }
 
@@ -51,6 +61,15 @@ class SocialNetwork
         switch ($resource) {
             case 'linkedin':
                 $this->linkedinSocialNetworkModel->set($userId, $profileUrl, $logger);
+                $data = $this->linkedinSocialNetworkModel->getData($profileUrl, $logger);
+                $locale = $this->profileModel->getInterfaceLocale($userId);
+
+                $skills = array_filter($data['tags']);
+                $this->profileTagModel->addTags($userId, $locale, 'Profession', $skills);
+
+                $languages = array_filter($data['languages']);
+                $this->profileTagModel->addTags($userId, $locale, 'Language', $languages);
+
                 if ($logger) {
                     $logger->info('linkedin social network info added for user ' . $userId . ' (' . $profileUrl . ')');
                 }

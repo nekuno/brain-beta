@@ -3,13 +3,14 @@
 namespace Model\User;
 
 use Event\ProfileEvent;
+use Model\Location\LocationManager;
 use Model\Metadata\MetadataUtilities;
 use Model\Metadata\ProfileMetadataManager;
 use Model\Neo4j\GraphManager;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
-use Everyman\Neo4j\Label;
 use Model\Exception\ValidationException;
+use Model\Neo4j\QueryBuilder;
 use Service\Validator\ProfileValidator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
@@ -20,16 +21,28 @@ class ProfileModel
     const MAX_TAGS_AND_CHOICE_LENGTH = 15;
     protected $gm;
     protected $profileOptionManager;
+    protected $profileTagManager;
     protected $profileMetadataManager;
+    protected $locationManager;
     protected $metadataUtilities;
     protected $dispatcher;
     protected $validator;
 
-    public function __construct(GraphManager $gm, ProfileMetadataManager $profileMetadataManager, ProfileOptionManager $profileOptionManager, MetadataUtilities $metadataUtilities, EventDispatcher $dispatcher, ProfileValidator $validator)
-    {
+    public function __construct(
+        GraphManager $gm,
+        ProfileMetadataManager $profileMetadataManager,
+        ProfileOptionManager $profileOptionManager,
+        ProfileTagModel $profileTagModel,
+        LocationManager $locationManager,
+        MetadataUtilities $metadataUtilities,
+        EventDispatcher $dispatcher,
+        ProfileValidator $validator
+    ) {
         $this->gm = $gm;
         $this->profileMetadataManager = $profileMetadataManager;
         $this->profileOptionManager = $profileOptionManager;
+        $this->profileTagManager = $profileTagModel;
+        $this->locationManager = $locationManager;
         $this->metadataUtilities = $metadataUtilities;
         $this->dispatcher = $dispatcher;
         $this->validator = $validator;
@@ -37,11 +50,10 @@ class ProfileModel
 
     /**
      * @param int $id
-     * @param mixed $locale
      * @return array
      * @throws NotFoundHttpException
      */
-    public function getById($id, $locale = null)
+    public function getById($id)
     {
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(user:User)<-[:PROFILE_OF]-(profile:Profile)')
@@ -49,10 +61,8 @@ class ProfileModel
             ->setParameter('id', (integer)$id)
             ->optionalMatch('(profile)<-[optionOf:OPTION_OF]-(option:ProfileOption)')
             ->with('profile', 'collect(distinct {option: option, detail: (CASE WHEN EXISTS(optionOf.detail) THEN optionOf.detail ELSE null END)}) AS options')
-            ->optionalMatch('(profile)<-[tagged:TAGGED]-(tag:ProfileTag)')
-            ->with('profile', 'options', 'collect(distinct {tag: tag, tagged: tagged}) AS tags')
-            ->optionalMatch('(profile)-[:LOCATION]->(location:Location)')
-            ->returns('profile', 'options', 'tags', 'location')
+            ->optionalMatch('(profile)<-[tagged:TAGGED]-(tag:ProfileTag)-[:TEXT_OF]-(text:TextLanguage)')
+            ->returns('profile', 'options', 'collect(distinct {tag: tag, tagged: tagged, text: text}) AS tags')
             ->limit(1);
 
         $query = $qb->getQuery();
@@ -65,7 +75,7 @@ class ProfileModel
         /* @var $row Row */
         $row = $result->current();
 
-        return $this->build($row, $locale);
+        return $this->build($row);
     }
 
     /**
@@ -173,26 +183,112 @@ class ProfileModel
         $this->validator->validateOnDelete($data);
     }
 
-    public function build(Row $row, $locale = null)
+    public function build(Row $row)
     {
         /* @var $node Node */
         $node = $row->offsetGet('profile');
         $profile = $node->getProperties();
-        /* @var $location Node */
-        $location = $row->offsetGet('location');
-        if ($location && count($location->getProperties()) > 0) {
-            $profile['location'] = $location->getProperties();
-            if (isset($profile['location']['locality']) && $profile['location']['locality'] === 'N/A') {
-                $profile['location']['locality'] = $profile['location']['address'];
-            }
-        } else {
-            $location = null;
-        }
+
+        $profileId = $node->getId();
+        $profile += $this->getLocation($profileId);
+        $profile += $this->getTravelling($profileId);
+        $profile += $this->getMultipleFields($profileId);
 
         $profile += $this->profileOptionManager->buildOptions($row->offsetGet('options'));
-        $profile += $this->profileOptionManager->buildTags($row, $locale);
+
+        $interfaceLocale = $this->getInterfaceLocaleByProfileId($profileId);
+        $profile += $this->profileTagManager->buildTags($row, $interfaceLocale);
 
         return $profile;
+    }
+
+    protected function getLocation($profileId)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(profile:Profile)')
+            ->where("id(profile) = $profileId")
+            ->with('profile')
+            ->limit(1);
+
+        $qb->match('(profile)-[:LOCATION]-(location:Location)')
+            ->returns('location');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() == 0) {
+            return array();
+        }
+
+        $location = $this->locationManager->buildLocation($result->current());
+
+        //TODO: Check if can return object
+        return array('location' => $location->jsonSerialize());
+    }
+
+    protected function getTravelling($profileId)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(profile:Profile)')
+            ->where("id(profile) = $profileId")
+            ->with('profile')
+            ->limit(1);
+
+        $qb->match('(profile)-[:TRAVELLING]-(location:Location)')
+            ->returns('location');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() == 0) {
+            return array();
+        }
+
+        $locations = array();
+        foreach ($result as $row) {
+            $location = $this->locationManager->buildLocation($row);
+            $locations[] = $location->jsonSerialize();
+        }
+
+        //TODO: Check if can return object
+        return array('travelling' => $locations);
+    }
+
+    protected function getMultipleFields($profileId)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(profile:Profile)')
+            ->where('id(profile) = { profileId }')
+            ->setParameter('profileId', (int)$profileId)
+            ->with('profile');
+
+        $qb->match('(profile)<-[:MULTIPLE_FIELDS_OF]-(multiple)')
+            ->optionalMatch('(multiple)<-[optionOf:OPTION_OF]-(option:ProfileOption)')
+            ->with('multiple', 'collect(distinct {option: option, detail: (CASE WHEN EXISTS(optionOf.detail) THEN optionOf.detail ELSE null END)}) AS options')
+            ->optionalMatch('(multiple)<-[tagged:TAGGED]-(tag:ProfileTag)-[:TEXT_OF]-(text:TextLanguage)')
+            ->returns('multiple', 'options', 'collect(distinct {tag: tag, tagged: tagged, text: text}) AS tags', 'head(labels(multiple)) AS label');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        $multiples = array();
+        foreach ($result as $row)
+        {
+            /** @var Node $multipleNode */
+            $multipleNode = $row->offsetGet('multiple');
+            $multiple = $multipleNode->getProperties();
+
+            $multiple += $this->profileOptionManager->buildOptions($row->offsetGet('options'));
+
+            $interfaceLocale = $this->getInterfaceLocaleByProfileId($profileId);
+            $multiple += $this->profileTagManager->buildTags($row, $interfaceLocale);
+            //if Location or Travelling is needed, remove :Profile requirement from methods or move this to own manager
+            $label = $row->offsetGet('label');
+            $field = $this->metadataUtilities->labelToType($label);
+            $multiples[$field][] = $multiple;
+        }
+
+        return $multiples;
     }
 
     protected function getUserAndProfileNodesById($id)
@@ -220,12 +316,12 @@ class ProfileModel
         return array($userNode, $profileNode);
     }
 
-    //TODO: Divide in saveProfileData and saveProfileOptionsData
-    protected function saveProfileData($id, array $data)
+    protected function saveProfileData($userId, array $data)
     {
         $metadata = $this->profileMetadataManager->getMetadata();
-        $currentOptions = $this->profileOptionManager->getUserProfileOptions($id);
-        $tags = $this->profileOptionManager->getUserProfileTags($id);
+        $currentOptions = $this->profileOptionManager->getUserProfileOptions($userId);
+        $this->profileTagManager->deleteAllTagRelationships($userId);
+        $this->deleteAllMultipleFields($userId);
 
         if (isset($data['objective']) && in_array('human-contact', $data['objective'])) {
             $data['orientationRequired'] = true;
@@ -234,8 +330,96 @@ class ProfileModel
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(profile:Profile)-[:PROFILE_OF]->(u:User)')
             ->where('u.qnoow_id = { id }')
-            ->setParameter('id', (int)$id)
+            ->setParameter('id', (int)$userId)
             ->with('profile');
+        $this->saveDataByType($userId, $data, $metadata, $qb, $currentOptions);
+
+        $qb->optionalMatch('(profile)<-[optionOf:OPTION_OF]-(option:ProfileOption)')
+            ->optionalMatch('(profile)<-[tagged:TAGGED]-(tag:ProfileTag)')
+            ->returns('profile', 'collect(distinct {option: option, detail: (CASE WHEN EXISTS(optionOf.detail) THEN optionOf.detail ELSE null END)}) AS options', 'collect(distinct {tag: tag, tagged: tagged}) AS tags')
+            ->limit(1);
+
+        $query = $qb->getQuery();
+
+        $result = $query->getResultSet();
+
+        return $this->build($result->current());
+    }
+
+    public function getIndustryIdFromDescription($description)
+    {
+        $qb = $this->gm->createQueryBuilder();
+        $qb->match('(industry:ProfileOption:Industry)')
+            ->where('industry.name_en = {description}')
+            ->setParameter('description', $description)
+            ->returns('industry.id as id')
+            ->limit(1);
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        /** @var Row $row */
+        $row = $result->current();
+        if ($row->offsetExists('id')) {
+            return $row->offsetGet('id');
+        }
+
+        throw new NotFoundHttpException(sprintf("Description %s not found", $description));
+    }
+
+    public function getInterfaceLocale($userId)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(profile:Profile)-[:PROFILE_OF]->(u:User)')
+            ->where('u.qnoow_id = { id }')
+            ->setParameter('id', (int)$userId)
+            ->with('profile');
+
+        $qb->match('(profile)-[:OPTION_OF]-(i:InterfaceLanguage)')
+            ->returns('i.id AS locale');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() == 0) {
+            return 'en';
+        }
+
+        return $result->current()->offsetGet('locale');
+    }
+
+    public function getInterfaceLocaleByProfileId($profileId)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(profile)')
+            ->where('id(profile) = { id }')
+            ->setParameter('id', (int)$profileId)
+            ->with('profile');
+
+        $qb->match('(profile)-[:OPTION_OF]-(i:InterfaceLanguage)')
+            ->returns('i.id AS locale');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        if ($result->count() == 0) {
+            return 'en';
+        }
+
+        return $result->current()->offsetGet('locale');
+    }
+
+    /**
+     * @param $userId
+     * @param array $data
+     * @param array $metadata
+     * @param QueryBuilder $qb
+     * @param array $currentOptions
+     * @param null $forceProfileId
+     * @throws \Exception
+     */
+    protected function saveDataByType($userId, array $data, array $metadata, QueryBuilder $qb, array $currentOptions, $forceProfileId = null)
+    {
         foreach ($data as $fieldName => $fieldValue) {
             if (isset($metadata[$fieldName])) {
 
@@ -275,19 +459,35 @@ class ProfileModel
                             ->with('profile');
                         break;
                     case 'location':
-                        $qb->optionalMatch('(profile)-[rLocation:LOCATION]->(oldLocation:Location)')
-                            ->delete('rLocation', 'oldLocation')
+                        $qb->optionalMatch('(profile)-[:LOCATION]->(oldLocation:Location)')
+                            ->detachDelete('oldLocation')
                             ->with('profile');
 
-                        $qb->create('(location:Location {latitude: { latitude }, longitude: { longitude }, address: { address }, locality: { locality }, country: { country }})')
+                        $location = $this->locationManager->createLocation($fieldValue);
+                        $locationId = $location->getId();
+                        $qb->match('(location:Location)')
+                            ->where("id(location) = $locationId")
                             ->createUnique('(profile)-[:LOCATION]->(location)')
-                            ->setParameter('latitude', $fieldValue['latitude'])
-                            ->setParameter('longitude', $fieldValue['longitude'])
-                            ->setParameter('address', $fieldValue['address'])
-                            ->setParameter('locality', $fieldValue['locality'])
-                            ->setParameter('country', $fieldValue['country'])
                             ->with('profile');
                         break;
+                    case 'multiple_locations':
+                        $qb->optionalMatch('(profile)-[:TRAVELLING]->(oldTravelling:Location)')
+                            ->detachDelete('oldTravelling')
+                            ->with('profile');
+
+                        if (is_array($fieldValue)) {
+                            foreach ($fieldValue as $index => $locationData) {
+                                $location = $this->locationManager->createLocation($locationData);
+                                $locationId = $location->getId();
+                                $qb->match('(location:Location)')
+                                    ->where("id(location) = $locationId")
+                                    ->createUnique('(profile)-[:TRAVELLING]->(location)')
+                                    ->with('profile');
+                            }
+                        }
+
+                        break;
+
                     case 'choice':
                         if (isset($currentOptions[$fieldName])) {
                             $qb->optionalMatch('(profile)<-[optionRel:OPTION_OF]-(:' . $this->metadataUtilities->typeToLabel($fieldName) . ')')
@@ -302,11 +502,7 @@ class ProfileModel
                         }
                         break;
                     case 'double_choice':
-                        $qbDoubleChoice = $this->gm->createQueryBuilder();
-                        $qbDoubleChoice->match('(profile:Profile)-[:PROFILE_OF]->(u:User)')
-                            ->where('u.qnoow_id = { id }')
-                            ->setParameter('id', (int)$id)
-                            ->with('profile');
+                        $qbDoubleChoice = $this->getQbWithProfile($userId, $forceProfileId);
 
                         if (isset($currentOptions[$fieldName])) {
                             $qbDoubleChoice->optionalMatch('(profile)<-[doubleChoiceOptionRel:OPTION_OF]-(:' . $this->metadataUtilities->typeToLabel($fieldName) . ')')
@@ -328,46 +524,19 @@ class ProfileModel
                         break;
                     case 'tags_and_choice':
                         if (is_array($fieldValue)) {
-                            $qbTagsAndChoice = $this->gm->createQueryBuilder();
-                            $qbTagsAndChoice->match('(profile:Profile)-[:PROFILE_OF]->(u:User)')
-                                ->where('u.qnoow_id = { id }')
-                                ->setParameter('id', (int)$id)
-                                ->with('profile');
-
-                            $qbTagsAndChoice->optionalMatch('(profile)<-[tagsAndChoiceOptionRel:TAGGED]-(:' . $this->metadataUtilities->typeToLabel($fieldName) . ')')
-                                ->delete('tagsAndChoiceOptionRel');
-
-                            $savedTags = array();
-                            foreach ($fieldValue as $index => $value) {
-                                $tagValue = $fieldName === 'language' ?
-                                    $this->metadataUtilities->getLanguageFromTag($value['tag']) :
-                                    $value['tag'];
-                                if (in_array($tagValue, $savedTags)) {
-                                    continue;
-                                }
-                                $choice = !is_null($value['choice']) ? $value['choice'] : '';
-                                $tagLabel = 'tag_' . $index;
-                                $tagParameter = $fieldName . '_' . $index;
-                                $choiceParameter = $fieldName . '_choice_' . $index;
-
-                                $qbTagsAndChoice->with('profile')
-                                    ->merge('(' . $tagLabel . ':ProfileTag:' . $this->metadataUtilities->typeToLabel($fieldName) . ' {name: { ' . $tagParameter . ' }})')
-                                    ->merge('(profile)<-[:TAGGED {detail: {' . $choiceParameter . '}}]-(' . $tagLabel . ')')
-                                    ->setParameter($tagParameter, $tagValue)
-                                    ->setParameter($choiceParameter, $choice);
-                                $savedTags[] = $tagValue;
+                            $tagLabel = $this->metadataUtilities->typeToLabel($fieldName);
+                            $interfaceLanguage = $this->getInterfaceLocale($userId);
+                            if ($forceProfileId)
+                            {
+                                $this->profileTagManager->setTagsAndChoiceToNode($forceProfileId, $interfaceLanguage, $fieldName, $tagLabel, $fieldValue);
+                            } else {
+                                $this->profileTagManager->setTagsAndChoice($userId, $interfaceLanguage, $fieldName, $tagLabel, $fieldValue);
                             }
-                            $query = $qbTagsAndChoice->getQuery();
-                            $query->getResultSet();
                         }
 
                         break;
                     case 'multiple_choices':
-                        $qbMultipleChoices = $this->gm->createQueryBuilder();
-                        $qbMultipleChoices->match('(profile:Profile)-[:PROFILE_OF]->(u:User)')
-                            ->where('u.qnoow_id = { id }')
-                            ->setParameter('id', (int)$id)
-                            ->with('profile');
+                        $qbMultipleChoices = $this->getQbWithProfile($userId, $forceProfileId);
 
                         if (isset($currentOptions[$fieldName])) {
                             $qbMultipleChoices->optionalMatch('(profile)<-[optionRel:OPTION_OF]-(:' . $this->metadataUtilities->typeToLabel($fieldName) . ')')
@@ -388,56 +557,77 @@ class ProfileModel
                         $query->getResultSet();
                         break;
                     case 'tags':
-                        if (isset($tags[$fieldName])) {
-                            foreach ($tags[$fieldName] as $tag) {
-                                $qb->optionalMatch('(profile)<-[tagRel:TAGGED]-(tag:' . $this->metadataUtilities->typeToLabel($fieldName) . ' {name: "' . $tag . '" })')
-                                    ->delete('tagRel')
-                                    ->with('profile');
-                            }
-                        }
+                        $tagLabel = $this->metadataUtilities->typeToLabel($fieldName);
+
                         if (is_array($fieldValue) && !empty($fieldValue)) {
-                            foreach ($fieldValue as $tag) {
-                                $qb->merge('(tag:ProfileTag:' . $this->metadataUtilities->typeToLabel($fieldName) . ' {name: "' . $tag . '" })')
-                                    ->merge('(profile)<-[:TAGGED]-(tag)')
-                                    ->with('profile');
+                            $interfaceLanguage = $this->getInterfaceLocale($userId);
+                            if ($forceProfileId)
+                            {
+                                $this->profileTagManager->addTagsToNode($forceProfileId, $interfaceLanguage, $tagLabel, $fieldValue);
+                            } else {
+                                $this->profileTagManager->addTags($userId, $interfaceLanguage, $tagLabel, $fieldValue);
                             }
                         }
 
                         break;
+                    case 'multiple_fields':
+                        $fieldLabel = $this->metadataUtilities->typeToLabel($fieldName);
+                        $fieldValue = $fieldValue ?: array();
+                        foreach ($fieldValue as $index => $multiValue){
+                            $multiQb = $this->getQbWithProfile($userId, $forceProfileId);
+                            $multiQb->create("(profile)<-[:MULTIPLE_FIELDS_OF]-(profileMulti:$fieldLabel)")
+                                ->returns('id(profileMulti) AS id');
+                            $result = $multiQb->getQuery()->getResultSet();
+                            $profileMultiId = $result->current()->offsetGet('id');
+
+                            $multiQb = $this->getQbWithProfile($userId, $profileMultiId);
+                            $internalMetadata = $metadata[$fieldName]['metadata'];
+                            $this->saveDataByType($userId, $multiValue, $internalMetadata, $multiQb, $currentOptions, $profileMultiId);
+
+                            $multiQb->returns('profile');
+                            $multiQb->getQuery()->getResultSet();
+                        }
+
+                        break;
+                    default:
+                        break;
                 }
             }
         }
-
-        $qb->optionalMatch('(profile)<-[optionOf:OPTION_OF]-(option:ProfileOption)')
-            ->optionalMatch('(profile)<-[tagged:TAGGED]-(tag:ProfileTag)')
-            ->returns('profile', 'collect(distinct {option: option, detail: (CASE WHEN EXISTS(optionOf.detail) THEN optionOf.detail ELSE null END)}) AS options', 'collect(distinct {tag: tag, tagged: tagged}) AS tags')
-            ->limit(1);
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        return $this->build($result->current());
     }
 
-    public function getIndustryIdFromDescription($description)
+    protected function getQbWithProfile($userId, $forceProfileId)
     {
         $qb = $this->gm->createQueryBuilder();
-        $qb->match('(industry:ProfileOption:Industry)')
-            ->where('industry.name_en = {description}')
-            ->setParameter('description', $description)
-            ->returns('industry.id as id')
-            ->limit(1);
 
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
-
-        /** @var Row $row */
-        $row = $result->current();
-        if ($row->offsetExists('id')) {
-            return $row->offsetGet('id');
+        if ($forceProfileId)
+        {
+            $qb->match('(profile)')
+                ->where('id(profile) = { id }')
+                ->setParameter('id', (int)$forceProfileId)
+                ->with('profile');
+        } else {
+            $qb->match('(profile:Profile)-[:PROFILE_OF]->(u:User)')
+                ->where('u.qnoow_id = { id }')
+                ->setParameter('id', (int)$userId)
+                ->with('profile');
         }
 
-        throw new NotFoundHttpException(sprintf("Description %s not found", $description));
+        return $qb;
+    }
+
+    protected function deleteAllMultipleFields($userId)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(profile:Profile)-[:PROFILE_OF]->(u:User)')
+            ->where('u.qnoow_id = { id }')
+            ->setParameter('id', (int)$userId)
+            ->with('profile');
+
+        $qb->match('(profile)<-[rel:MULTIPLE_FIELDS_OF]-()')
+            ->delete('rel');
+
+        $qb->getQuery()->getResultSet();
     }
 }

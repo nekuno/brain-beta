@@ -99,7 +99,7 @@ multiple_choices:
 
 Comprueba tipo (array)
 
-    max_choices: Máxima cantidad de choices
+    max: Máxima cantidad de choices
     
 Comprueba que el valor no esté en las opciones habilitadas
 //TODO: Comprobar origen de las choices
