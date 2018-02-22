@@ -31,10 +31,7 @@ class LanguageTextManager
             ->setParameter('canonical', $canonicalText)
             ->setParameter('locale', $locale);
 
-        $qb->onCreate('SET t.text = {text}')
-            ->setParameter('text', $text);
-
-        $qb->returns('t.text AS text, t.locale AS locale, t.canonical AS canonical');
+        $qb->returns('t.locale AS locale, t.canonical AS canonical');
 
         $result = $qb->getQuery()->getResultSet();
 
@@ -68,11 +65,9 @@ class LanguageTextManager
         $row = $resultSet->current();
 
         $locale = $row->offsetGet('locale');
-        $text = $row->offsetGet('text');
         $canonical = $row->offsetGet('canonical');
 
         $languageText = new LanguageText();
-        $languageText->setText($text);
         $languageText->setLanguage($locale);
         $languageText->setCanonical($canonical);
 

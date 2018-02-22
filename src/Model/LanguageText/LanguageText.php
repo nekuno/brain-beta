@@ -6,8 +6,6 @@ class LanguageText
 {
     protected $language;
 
-    protected $text;
-
     protected $canonical;
 
     /**
@@ -24,22 +22,6 @@ class LanguageText
     public function setLanguage($language)
     {
         $this->language = $language;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getText()
-    {
-        return $this->text;
-    }
-
-    /**
-     * @param mixed $text
-     */
-    public function setText($text)
-    {
-        $this->text = $text;
     }
 
     /**

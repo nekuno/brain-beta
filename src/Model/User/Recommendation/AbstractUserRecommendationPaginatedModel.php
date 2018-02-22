@@ -4,6 +4,7 @@ namespace Model\User\Recommendation;
 
 use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
+use Model\LanguageText\LanguageTextManager;
 use Model\User\Photo\PhotoManager;
 use Model\Metadata\MetadataUtilities;
 use Model\Neo4j\GraphManager;
@@ -35,13 +36,16 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
      */
     protected $profileModel;
 
-    public function __construct(GraphManager $gm, MetadataUtilities $metadataUtilities, UserFilterMetadataManager $userFilterMetadataManager, PhotoManager $pm, ProfileModel $profileModel)
+    protected $languageTextManager;
+
+    public function __construct(GraphManager $gm, MetadataUtilities $metadataUtilities, UserFilterMetadataManager $userFilterMetadataManager, PhotoManager $pm, ProfileModel $profileModel, LanguageTextManager $languageTextManager)
     {
         $this->gm = $gm;
         $this->metadataUtilities = $metadataUtilities;
         $this->userFilterMetadataManager = $userFilterMetadataManager;
         $this->pm = $pm;
         $this->profileModel = $profileModel;
+        $this->languageTextManager = $languageTextManager;
     }
 
     /**
@@ -242,9 +246,10 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
                         $matches[] = $matchQuery . ' WHERE (' . implode(' OR ', $whereQueries) . ')';
                         break;
                     case 'tags':
+                        $canonicalText = $this->languageTextManager->buildCanonical($value);
                         $tagLabelName = $this->metadataUtilities->typeToLabel($name);
                         $matchQuery = "(p)<-[:TAGGED]-(tag$name:$tagLabelName)";
-                        $whereQuery = " (tag$name)<-[:TEXT_OF]-(:TextLanguage{text: '$value'})";
+                        $whereQuery = " (tag$name)<-[:TEXT_OF]-(:TextLanguage{canonical: '$canonicalText'})";
                         $matches[] = $matchQuery . ' WHERE (' . $whereQuery . ')';
                         break;
                     case 'tags_and_choice':
@@ -253,8 +258,9 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
                         $whereQueries = array();
                         foreach ($value as $dataValue) {
                             $tagValue = $dataValue['tag'];
+                            $canonicalText = $this->languageTextManager->buildCanonical($tagValue);
                             $choice = isset($dataValue['choices']) ? $dataValue['choices'] : null;
-                            $whereQuery = " (tag$name)<-[:TEXT_OF]-(:TextLanguage{text: '$tagValue'})";
+                            $whereQuery = " (tag$name)<-[:TEXT_OF]-(:TextLanguage{canonical: '$canonicalText'})";
                             if (!null == $choice) {
                                 $whereQuery .= " AND rel$name.detail = '$choice'";
                             }
@@ -269,9 +275,10 @@ abstract class AbstractUserRecommendationPaginatedModel implements PaginatedInte
                         $whereQueries = array();
                         foreach ($value as $dataValue) {
                             $tagValue = $dataValue['tag'];
+                            $canonicalText = $this->languageTextManager->buildCanonical($tagValue);
                             $choices = isset($dataValue['choices']) ? $dataValue['choices'] : array();
 
-                            $whereQuery = " (tag$name)<-[:TEXT_OF]-(:TextLanguage{text: '$tagValue'})";
+                            $whereQuery = " (tag$name)<-[:TEXT_OF]-(:TextLanguage{canonical: '$canonicalText'})";
                             if (!empty($choices)) {
                                 $choices = json_encode($choices);
                                 $whereQuery .= " AND rel$name.detail IN $choices ";

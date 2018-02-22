@@ -97,7 +97,7 @@ class ProfileTagModel
                 ->setParameter('starts', $startingWith);
         }
 
-        $qb->returns('distinct text.text AS text')
+        $qb->returns('distinct text.canonical AS text')
             ->orderBy('text')
             ->limit('{limit}')
             ->setParameter('limit', (integer)$limit);
@@ -138,7 +138,7 @@ class ProfileTagModel
 //TODO: After this is called, delete text nodes
         foreach ($tags as $index => $tag) {
             $tagName = $tag['name'];
-            $qb->optionalMatch("(profile)<-[tagRel:TAGGED]-(tag:ProfileTag: $tagLabel )<-[:TEXT_OF]-(:TextLanguage {text:{tag$index}})")
+            $qb->optionalMatch("(profile)<-[tagRel:TAGGED]-(tag:ProfileTag: $tagLabel )<-[:TEXT_OF]-(:TextLanguage {canonical:{tag$index}})")
                 ->setParameter("tag$index", $tagName)
                 ->delete('tagRel')
                 ->with('profile');
@@ -363,10 +363,10 @@ class ProfileTagModel
                     $detail = $tagged->getProperty('detail');
                     if (!is_null($detail)) {
                         $tagResult = array();
-                        $tagResult['tag'] = array('name' => $text->getProperty('text'));
+                        $tagResult['tag'] = array('name' => $text->getProperty('canonical'));
                         $tagResult['choice'] = $detail;
                     } else {
-                        $tagResult = array('name' => $text->getProperty('text'));
+                        $tagResult = array('name' => $text->getProperty('canonical'));
                     }
 
                     $tagsResult[$typeName][] = $tagResult;
