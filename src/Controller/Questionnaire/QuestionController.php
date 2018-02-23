@@ -39,10 +39,9 @@ class QuestionController
     public function getNextQuestionAction(Request $request, Application $app, User $user)
     {
         $locale = $this->getLocale($request, $app['locale.options']['default']);
-        /* @var QuestionModel $model */
-        $model = $app['questionnaire.questions.model'];
 
-        $question = $model->getNextByUser($user->getId(), $locale);
+        $service = $app['question.service'];
+        $question = $service->getNextByUser($user->getId(), $locale);
 
         return $app->json($question);
     }
@@ -58,10 +57,9 @@ class QuestionController
     {
         $otherUserId = $request->get('userId');
         $locale = $this->getLocale($request, $app['locale.options']['default']);
-        /* @var QuestionModel $model */
-        $model = $app['questionnaire.questions.model'];
 
-        $question = $model->getNextByOtherUser($user->getId(), $otherUserId, $locale);
+        $service = $app['question.service'];
+        $question = $service->getNextByOtherUser($user->getId(), $otherUserId, $locale);
 
         return $app->json($question);
     }

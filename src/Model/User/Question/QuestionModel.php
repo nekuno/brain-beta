@@ -136,20 +136,6 @@ class QuestionModel
         return false;
     }
 
-    /**
-     * @return bool
-     */
-    public function sortByRanking()
-    {
-
-        $rand = rand(1, 10);
-        if ($rand !== 10) {
-            return true;
-        }
-
-        return false;
-    }
-
     //TODO: Make answer existence optionalMatch
     public function getById($id, $locale)
     {
@@ -342,9 +328,8 @@ class QuestionModel
      * @param $id
      * @return array
      */
-    public function getQuestionStats($id)
+    protected function getQuestionStats($id)
     {
-
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(a:Answer)-[:IS_ANSWER_OF]->(q:Question)')
             ->where('id(q) = { id }')
@@ -418,42 +403,6 @@ class QuestionModel
         $row = $result->current();
 
         return $row['questionRanking'];
-
-    }
-
-    public function getRankingForQuestion($id)
-    {
-
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(q:Question)')
-            ->where('id(q) = { id }')
-            ->setParameter('id', (integer)$id)
-            ->returns('q.ranking AS questionRanking');
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        $row = $result->current();
-
-        return $row['questionRanking'];
-
-    }
-
-    public function existsQuestion($id)
-    {
-
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(q:Question)')
-            ->where('id(q) = { id }')
-            ->setParameter('id', (integer)$id)
-            ->returns('q');
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        return count($result) === 1;
     }
 
     /**
@@ -568,35 +517,6 @@ class QuestionModel
         }
 
         return $return;
-    }
-
-    protected function getNextDivisiveQuestionByUserId($id, $locale)
-    {
-        $qb = $this->gm->createQueryBuilder();
-
-        $qb->match('(user:User {qnoow_id: { userId }})')
-            ->setParameter('userId', (int)$id)
-            ->optionalMatch('(user)-[:ANSWERS]->(a:Answer)-[:IS_ANSWER_OF]->(answered:RegisterQuestion)')
-            ->with('user', 'collect(answered) AS excluded')
-            ->match('(q3:RegisterQuestion)<-[:IS_ANSWER_OF]-(a2:Answer)')
-            ->where('NOT q3 IN excluded', "EXISTS(q3.text_$locale)")
-            ->with('q3 AS question', 'a2')
-            ->orderBy('id(a2)')
-            ->with('question', 'collect(DISTINCT a2) AS answers')
-            ->returns('question', 'answers')
-            ->limit(1);
-
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
-
-        if (count($result) === 1) {
-            /* @var $divisiveQuestions Row */
-            $row = $result->current();
-
-            return $this->build($row, $locale);
-        }
-
-        return false;
     }
 
     private function isOlderThanThirty($birthday)

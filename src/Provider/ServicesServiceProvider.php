@@ -199,7 +199,7 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['question.service'] = $app->share(
             function (Application $app) {
-                return new QuestionService($app['questionnaire.questions.model'], $app['questionnaire.admin.questions.model']);
+                return new QuestionService($app['questionnaire.questions.model'], $app['questionnaire.admin.questions.model'], $app['questionnaire.questions.category.manager'], $app['questionnaire.questions.next.selector']);
             }
         );
 
