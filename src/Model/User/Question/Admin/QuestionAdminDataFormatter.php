@@ -9,6 +9,7 @@ class QuestionAdminDataFormatter
         return array(
             'answerTexts' => $this->getAnswersTexts($data),
             'questionTexts' => $this->getQuestionTexts($data),
+            'paths' => isset($data['paths']) ? $data['paths'] : [],
         );
     }
 
@@ -17,6 +18,7 @@ class QuestionAdminDataFormatter
         $data = array(
             'answerTexts' => $this->getAnswersTexts($rawData),
             'questionTexts' => $this->getQuestionTexts($rawData),
+            'paths' => isset($rawData['paths']) ? $rawData['paths'] : [],
         );
 
         if (isset($rawData['questionId'])){

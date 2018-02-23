@@ -2,9 +2,9 @@
 
 namespace Service;
 
-use Model\Metadata\MetadataManager;
 use Model\User\Question\Admin\QuestionAdminDataFormatter;
 use Model\User\Question\Admin\QuestionAdminManager;
+use Model\User\Question\QuestionCategory\QuestionCategoryManager;
 use Model\User\Question\QuestionModel;
 
 class QuestionService
@@ -19,16 +19,20 @@ class QuestionService
      */
     protected $questionAdminManager;
 
+    protected $questionCategoryManager;
+
     protected $questionAdminDataFormatter;
 
     /**
      * @param QuestionModel $questionModel
      * @param QuestionAdminManager $questionAdminManager
+     * @param QuestionCategoryManager $questionCategoryManager
      */
-    public function __construct(QuestionModel $questionModel, QuestionAdminManager $questionAdminManager)
+    public function __construct(QuestionModel $questionModel, QuestionAdminManager $questionAdminManager, QuestionCategoryManager $questionCategoryManager)
     {
         $this->questionModel = $questionModel;
         $this->questionAdminManager = $questionAdminManager;
+        $this->questionCategoryManager = $questionCategoryManager;
         $this->questionAdminDataFormatter = new QuestionAdminDataFormatter();
     }
 
@@ -37,6 +41,7 @@ class QuestionService
         $data = $this->questionAdminDataFormatter->getCreateData($data);
         $created = $this->questionAdminManager->create($data);
         $questionId = $created->getQuestionId();
+        $this->questionCategoryManager->setQuestionCategories($questionId, $data);
 
         return $this->getOneMultilanguage($questionId);
     }
