@@ -169,7 +169,10 @@ class ProcessorService implements LoggerAwareInterface
         } catch (UrlChangedException $e) {
         }
 
-        $this->cleanUrl($preprocessedLink);
+        try {
+            $this->cleanUrl($preprocessedLink);
+        } catch (UrlNotValidException $e) {
+        }
 
         if ($this->isLinkSavedAndProcessed($preprocessedLink)) {
             $link = $this->linkModel->findLinkByUrl($preprocessedLink->getUrl());
