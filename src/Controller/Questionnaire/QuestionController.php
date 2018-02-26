@@ -155,10 +155,9 @@ class QuestionController
     public function getDivisiveQuestionsAction(Request $request, Application $app)
     {
         $locale = $request->get('locale', $app['locale.options']['default']);
-        /* @var QuestionModel $model */
-        $model = $app['questionnaire.questions.model'];
 
-        $questions = $model->getDivisiveQuestions($locale);
+        $service = $app['question.service'];
+        $questions = $service->getDivisiveQuestions($locale);
 
         return $app->json($questions);
     }

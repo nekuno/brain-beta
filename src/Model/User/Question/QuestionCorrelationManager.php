@@ -37,9 +37,7 @@ class QuestionCorrelationManager
     public function getCorrelatedQuestions($preselected = 50, $minimumCountPerAnswer = 20)
     {
         $correlations = $this->getAllCorrelations($preselected);
-        var_dump($this->countCorrelations($correlations));
         $correlations = $this->filterCorrelationsByMinimumAnswers($correlations, $minimumCountPerAnswer);
-        var_dump($this->countCorrelations($correlations));
         //Size fixed at 2 for list
 //        list ($questions, $maximum) = $this->findCorrelatedTwoGroup($correlations);
 
@@ -147,6 +145,24 @@ class QuestionCorrelationManager
         $result = $query->getResultSet();
 
         return $result->current()->offsetGet('areAllValid');
+    }
+
+    public function getDivisiveQuestions($locale)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+        $qb->match('(q:RegisterQuestion)')
+            ->where("EXISTS(q.text_$locale)")
+            ->match('(q)<-[:IS_ANSWER_OF]-(a:Answer)')
+            ->with('q', 'a')
+            ->orderBy('id(a)')
+            ->with('q, collect(a) AS answers')
+            ->returns('q AS question', 'answers')
+            ->orderBy('q.ranking DESC');
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        return $result;
     }
 
     public function setDivisiveQuestions(array $ids)

@@ -494,31 +494,6 @@ class QuestionModel
         return $return;
     }
 
-    //TODO: Fix this->build dependency and move to QuestionCorrelationManager
-    public function getDivisiveQuestions($locale)
-    {
-
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(q:RegisterQuestion)')
-            ->where("EXISTS(q.text_$locale)")
-            ->match('(q)<-[:IS_ANSWER_OF]-(a:Answer)')
-            ->with('q', 'a')
-            ->orderBy('id(a)')
-            ->with('q, collect(a) AS answers')
-            ->returns('q AS question', 'answers')
-            ->orderBy('q.ranking DESC');
-
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
-        $return = array();
-
-        foreach ($result as $row) {
-            $return[] = $this->build($row, $locale);
-        }
-
-        return $return;
-    }
-
     private function isOlderThanThirty($birthday)
     {
         if ($birthday) {

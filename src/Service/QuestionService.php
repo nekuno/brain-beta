@@ -5,6 +5,7 @@ namespace Service;
 use Model\User\Question\Admin\QuestionAdminDataFormatter;
 use Model\User\Question\Admin\QuestionAdminManager;
 use Model\User\Question\QuestionCategory\QuestionCategoryManager;
+use Model\User\Question\QuestionCorrelationManager;
 use Model\User\Question\QuestionModel;
 use Model\User\Question\QuestionNextSelector;
 
@@ -26,18 +27,21 @@ class QuestionService
     
     protected $questionNextSelector;
 
+    protected $questionCorrelationManager;
+
     /**
      * @param QuestionModel $questionModel
      * @param QuestionAdminManager $questionAdminManager
      * @param QuestionCategoryManager $questionCategoryManager
      * @param QuestionNextSelector $questionNextSelector
      */
-    public function __construct(QuestionModel $questionModel, QuestionAdminManager $questionAdminManager, QuestionCategoryManager $questionCategoryManager, QuestionNextSelector $questionNextSelector)
+    public function __construct(QuestionModel $questionModel, QuestionAdminManager $questionAdminManager, QuestionCategoryManager $questionCategoryManager, QuestionNextSelector $questionNextSelector, QuestionCorrelationManager $questionCorrelationManager)
     {
         $this->questionModel = $questionModel;
         $this->questionAdminManager = $questionAdminManager;
         $this->questionCategoryManager = $questionCategoryManager;
         $this->questionNextSelector = $questionNextSelector;
+        $this->questionCorrelationManager = $questionCorrelationManager;
         $this->questionAdminDataFormatter = new QuestionAdminDataFormatter();
     }
 
@@ -92,5 +96,18 @@ class QuestionService
     {
         $row = $this->questionNextSelector->getNextByOtherUser($userId, $locale, $sortByRanking);
         return $this->questionModel->build($row, $locale);
+    }
+
+    public function getDivisiveQuestions($locale)
+    {
+        $result = $this->questionCorrelationManager->getDivisiveQuestions($locale);
+
+        $questions = array();
+        foreach ($result as $row)
+        {
+            $questions[] = $this->questionModel->build($row, $locale);
+        }
+
+        return $questions;
     }
 }
