@@ -168,7 +168,7 @@ class PopularityManager
         $qb->getQuery()->getResultSet();
     }
 
-    public function deleteOneByLink($linkId)
+    public function deleteOneByLinkId($linkId)
     {
         $qb = $this->gm->createQueryBuilder();
 
