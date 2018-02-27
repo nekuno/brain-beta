@@ -37,7 +37,8 @@ class QuestionModel
     {
         $qb = $this->gm->createQueryBuilder();
 
-        $qb->match('(user:User {qnoow_id: { userId }})', '(a:Answer)-[:IS_ANSWER_OF]->(:RegisterQuestion)')
+        $qb->match('(user:User {qnoow_id: { userId }})-[:HAS_PROFILE]->(:Profile)<-[:OPTION_OF]-(mode:Mode)')
+            ->match('(a:Answer)-[:IS_ANSWER_OF]->(:Question)-[:REGISTERS]-(mode)')
             ->setParameter('userId', (int)$userId)
             ->where('NOT (user)-[:ANSWERS]->(a)')
             ->returns('COUNT(a)');
@@ -45,11 +46,9 @@ class QuestionModel
         $query = $qb->getQuery();
         $result = $query->getResultSet();
 
-        if ($result->count() > 0) {
-            return true;
-        }
+        $thereAreNoRegisterQuestionsLeft = $result->count() == 0;
 
-        return false;
+        return $thereAreNoRegisterQuestionsLeft;
     }
 
     //TODO: Make answer existence optionalMatch
@@ -191,7 +190,7 @@ class QuestionModel
         $qb = $this->gm->createQueryBuilder();
         $qb
             ->match('(q:Question)', '(u:User)')
-            ->where('NOT q:RegisterQuestion', 'u.qnoow_id = { userId } AND id(q) = { id }')
+            ->where('NOT (q)-[:REGISTERS]-(:Mode)-[:OPTION_OF]-(:Profile)-[:PROFILE_OF]-(u)', 'u.qnoow_id = { userId } AND id(q) = { id }')
             ->setParameter('userId', $userId)
             ->setParameter('id', (integer)$id)
             ->createUnique('(u)-[r:SKIPS]->(q)')
@@ -295,6 +294,11 @@ class QuestionModel
         return $stats;
     }
 
+    protected function isRegisterQuestion($questionId)
+    {
+
+    }
+
     public function setOrUpdateRankingForQuestion($id)
     {
 
@@ -346,7 +350,9 @@ class QuestionModel
 
         /* @var $question Node */
         $question = $row->offsetGet('question');
+        $questionId = $question->getId();
 
+        $isRegisterQuestion = $this->isRegisterQuestion($questionId);
         $isRegisterQuestion = false;
         /** @var Label $label */
         foreach ($question->getLabels() as $label) {
@@ -368,7 +374,7 @@ class QuestionModel
         }
 
         $return = array(
-            'questionId' => $question->getId(),
+            'questionId' => $questionId,
             'maleAnswersCount' => $stats['maleAnswersCount'],
             'femaleAnswersCount' => $stats['femaleAnswersCount'],
             'youngAnswersCount' => $stats['youngAnswersCount'],

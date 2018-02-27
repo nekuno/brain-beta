@@ -140,14 +140,14 @@ class QuestionNextSelector
 
         $qb->match('(user:User {qnoow_id: { userId }})')
             ->setParameter('userId', (int)$id)
-            ->optionalMatch('(user)-[:ANSWERS]->(a:Answer)-[:IS_ANSWER_OF]->(answered:RegisterQuestion)')
+            ->optionalMatch('(user)-[:ANSWERS]->(a:Answer)-[:IS_ANSWER_OF]->(answered:Question)')
             ->with('user', 'collect(answered) AS excluded');
 
         $qb->optionalMatch('(user)<-[:PROFILE_OF]-(:Profile)<-[:OPTION_OF]-(mode:Mode)')
             ->with('user', 'excluded', 'collect(mode) AS userModes', 'count(mode) AS userModeAmount')
             ->match('(mode:Mode)')
             ->with('user', 'excluded', 'CASE WHEN userModeAmount > 0 THEN userModes ELSE collect(mode) END AS modes')
-            ->match('(mode)<-[:INCLUDED_IN]-(:QuestionCategory)-[:CATEGORY_OF]->(candidateQuestion:RegisterQuestion)')
+            ->match('(mode)<-[:REGISTERS]-(candidateQuestion:Question)')
             ->where('mode IN modes');
 
         $qb->match('(candidateQuestion)<-[:IS_ANSWER_OF]-(a2:Answer)')
