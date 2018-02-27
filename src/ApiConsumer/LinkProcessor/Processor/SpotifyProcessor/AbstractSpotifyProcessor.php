@@ -87,7 +87,7 @@ abstract class AbstractSpotifyProcessor extends AbstractAPIProcessor
     public function getImages(PreprocessedLink $preprocessedLink, array $data)
     {
         if (!isset($data['images'])) {
-            return array($this->brainBaseUrl . SpotifyUrlParser::DEFAULT_IMAGE_PATH);
+            return array(new ProcessingImage($this->brainBaseUrl . SpotifyUrlParser::DEFAULT_IMAGE_PATH));
         }
 
         $images = array();
