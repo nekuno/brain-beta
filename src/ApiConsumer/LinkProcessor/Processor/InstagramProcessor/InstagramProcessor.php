@@ -28,7 +28,7 @@ class InstagramProcessor extends ScraperProcessor
     {
         $images = parent::getImages($preprocessedLink, $data);
         if (empty($images)) {
-            return array($this->brainBaseUrl . InstagramUrlParser::DEFAULT_IMAGE_PATH);
+            return array(new ProcessingImage($this->brainBaseUrl . InstagramUrlParser::DEFAULT_IMAGE_PATH));
         }
 
         return $images;
