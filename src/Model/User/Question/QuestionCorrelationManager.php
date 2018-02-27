@@ -24,22 +24,31 @@ class QuestionCorrelationManager
      */
     public function getUncorrelatedQuestions($preselected = 50)
     {
-        $correlations = $this->getAllCorrelations($preselected);
-        //Size fixed at 4 questions / set
-        list ($questions, $minimum) = $this->findUncorrelatedFourGroup($correlations);
+        $modes = $this->getModes();
 
-        return array(
-            'totalCorrelation' => $minimum,
-            'questions' => $questions
-        );
+        $uncorrelatedQuestions = array();
+        foreach ($modes as $mode)
+        {
+            $correlations = $this->getCorrelations($preselected, $mode);
+            list ($questions, $minimum) = $this->findUncorrelatedFourGroup($correlations);
+
+            $uncorrelatedQuestions[$mode] = array(
+                'totalCorrelation' => $minimum,
+                'questions' => $questions
+            );
+        }
+
+        return $uncorrelatedQuestions;
     }
 
     public function getCorrelatedQuestions($preselected = 50, $minimumCountPerAnswer = 20)
     {
-        $correlations = $this->getAllCorrelations($preselected);
+        $correlations = $this->getCorrelations($preselected);
         $correlations = $this->filterCorrelationsByMinimumAnswers($correlations, $minimumCountPerAnswer);
         //Size fixed at 2 for list
 //        list ($questions, $maximum) = $this->findCorrelatedTwoGroup($correlations);
+
+        $correlations = $this->sortCorrelations($correlations);
 
         return $correlations;
     }
@@ -55,23 +64,42 @@ class QuestionCorrelationManager
         return $count;
     }
 
-    /**
-     * @param $preselected
-     * @return array
-     */
-    public function getAllCorrelations($preselected)
+    protected function getModes()
     {
         $qb = $this->graphManager->createQueryBuilder();
 
-        $n = (integer)$preselected;
-        $parameters = array('preselected' => $n);
-        $qb->setParameters($parameters);
+        $qb->match('(mode:Mode)')
+            ->returns('collect(mode.id) AS modeIds');
 
+        $result = $qb->getQuery()->getResultSet();
+        $modeIdsRow = $result->current()->offsetGet('modeIds');
+
+        $modeIds = array();
+        foreach ($modeIdsRow as $modeId)
+        {
+            $modeIds[] = $modeId;
+        }
+
+        return $modeIds;
+    }
+
+    protected function getCorrelations($preselected, $mode = null)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(mode:Mode)');
+        if ($mode)
+        {
+            $qb->where('(mode.id = {modeId}')
+                ->setParameter('modeId', $mode);
+        }
+        $qb->with('mode');
         //Choose questions pairs with no repetition
-        $qb->match('(q:Question)')
+        $qb->match('(mode)<-[:INCLUDED_IN]-(:QuestionCategory)-[:CATEGORY_OF]->(q:Question)')
             ->with('q')
             ->orderBy('q.ranking DESC')
             ->limit('{preselected}')
+            ->setParameter('preselected', (integer)$preselected)
             ->with('collect(q) AS questions')
             ->match('(q1:Question),(q2:Question)')
             ->where(
@@ -147,6 +175,7 @@ class QuestionCorrelationManager
         return $result->current()->offsetGet('areAllValid');
     }
 
+    //TODO: Change query to include modes
     public function getDivisiveQuestions($locale)
     {
         $qb = $this->graphManager->createQueryBuilder();
@@ -165,25 +194,26 @@ class QuestionCorrelationManager
         return $result;
     }
 
-    public function setDivisiveQuestions(array $ids)
+    public function setDivisiveQuestions(array $ids, $mode)
     {
         $questions = array();
         foreach ($ids as $id) {
-            $questions[] = $this->setDivisiveQuestion($id);
+            $questions[$mode] = $this->setDivisiveQuestion($id, $mode);
         }
 
         return $questions;
     }
 
-    public function setDivisiveQuestion($id)
+    protected function setDivisiveQuestion($id, $mode)
     {
         $qb = $this->graphManager->createQueryBuilder();
-        $parameters = array('questionId' => (integer)$id);
-        $qb->setParameters($parameters);
 
         $qb->match('(q:Question)')
             ->where('id(q)={questionId}')
-            ->set('q :RegisterQuestion')
+            ->setParameter('questionId', (integer)$id)
+            ->match('(mode:Mode{id: {modeId}})')
+            ->setParameter('modeId', $mode)
+            ->merge('(q)-[:REGISTERS]->(mode)')
             ->returns('q');
 
         $query = $qb->getQuery();
@@ -199,12 +229,12 @@ class QuestionCorrelationManager
      * @return integer
      * @throws \Exception
      */
-    public function unsetDivisiveQuestions()
+    public function unsetAllDivisiveQuestions()
     {
         $qb = $this->graphManager->createQueryBuilder();
 
-        $qb->match('(q:RegisterQuestion)')
-            ->remove('q :RegisterQuestion')
+        $qb->match('(q:Question)-[r:REGISTERS]-(:Mode)')
+            ->delete('r')
             ->returns('count(q) AS c');
 
         $query = $qb->getQuery();
@@ -293,7 +323,7 @@ class QuestionCorrelationManager
         return array($questions, $maximum);
     }
 
-    public function sortCorrelations($unsortedCorrelations)
+    protected function sortCorrelations($unsortedCorrelations)
     {
         $correlations = array();
         foreach ($unsortedCorrelations as $q1 => $c1) {
