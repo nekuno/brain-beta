@@ -353,8 +353,12 @@ class ProcessorService implements LoggerAwareInterface
 
     private function hasUrlChangedOnResolve(Resolution $resolution)
     {
-        $startingUrl = LinkAnalyzer::cleanUrl($resolution->getStartingUrl());
-        $finalUrl = LinkAnalyzer::cleanUrl($resolution->getFinalUrl());
+        try {
+            $startingUrl = LinkAnalyzer::cleanUrl($resolution->getStartingUrl());
+            $finalUrl = LinkAnalyzer::cleanUrl($resolution->getFinalUrl());
+        } catch (\Exception $e) {
+            return false;
+        }
 
         return $startingUrl !== $finalUrl;
     }
