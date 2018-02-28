@@ -20,9 +20,11 @@ class TwitterTweetProcessor extends AbstractTwitterProcessor
         $link = $this->extractLinkFromResponse($apiResponse);
 
         if (isset($link['url'])){
-            $url = LinkAnalyzer::cleanUrl($link['url']);
+            try {
+                $url = LinkAnalyzer::cleanUrl($link['url']);
+            } catch (\Exception $e) {}
 
-            if ($url != $preprocessedLink->getUrl()){
+            if (isset($url) && $url != $preprocessedLink->getUrl()){
                 throw new UrlChangedException($preprocessedLink->getUrl(), $link['url']);
             } else {
                 return array();
