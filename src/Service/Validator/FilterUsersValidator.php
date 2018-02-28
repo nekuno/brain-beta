@@ -31,8 +31,8 @@ class FilterUsersValidator extends Validator
         $choices = array();
         if (!empty($data) && $userId) {
             $groupChoices = $this->metadataService->getGroupChoices($userId);
-            foreach ($groupChoices as $key => $value) {
-                $groupChoices[$key] = $key;
+            foreach ($groupChoices as $value) {
+                $groupChoices[$value['id']] = $value['id'];
             }
             $choices = array('groups' => $groupChoices);
         }

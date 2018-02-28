@@ -635,7 +635,10 @@ class GroupModel
     {
         $choices = array();
         foreach ($groups as $group){
-            $choices[$group->getId()] = $group->getName();
+            $choices[] = array(
+                'id' => $group->getId(),
+                'text' => $group->getName()
+            );
         }
 
         return $choices;
