@@ -257,8 +257,11 @@ class AnswerController
         try {
             $result = $paginator->paginate($filters, $model, $request);
 
-            foreach ($result['questions'] as $questionId => $questionData)
+            foreach ($result['items'] as &$questionData)
             {
+                if (empty($question)){
+                    continue;
+                }
                 $question = $questionData['question'];
                 $questionData['question'] = $this->setIsRegisterQuestion($question, $user, $app);
             }
@@ -300,7 +303,7 @@ class AnswerController
         $mode = $questionCorrelationManager->getMode($userId);
 
         unset($question['registerModes']);
-        $question['isRegisterQuestion'] = in_array($mode, $question['registerModes']);
+        $question['isRegisterQuestion'] = in_array($mode, $registerModes);
 
         return $question;
     }
