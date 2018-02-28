@@ -11,8 +11,6 @@ use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 
 class TwitterTweetProcessor extends AbstractTwitterProcessor
 {
-    protected $prevLink = null;
-
     public function requestItem(PreprocessedLink $preprocessedLink)
     {
         $statusId = $this->getItemId($preprocessedLink->getUrl());
@@ -26,8 +24,7 @@ class TwitterTweetProcessor extends AbstractTwitterProcessor
                 $url = LinkAnalyzer::cleanUrl($link['url']);
             } catch (\Exception $e) {}
 
-            if (isset($url) && $url != $preprocessedLink->getUrl() && $this->prevLink !== $url) {
-                $this->prevLink = $url;
+            if (isset($url) && $url != $preprocessedLink->getUrl()) {
                 throw new UrlChangedException($preprocessedLink->getUrl(), $url);
             } else {
                 return array();
