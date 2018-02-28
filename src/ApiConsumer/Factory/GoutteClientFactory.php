@@ -31,7 +31,10 @@ class GoutteClientFactory
      */
     protected function buildGuzzleConfig()
     {
-        $defaultOptions = array('timeout' => 10);
+        $defaultOptions = array(
+            'timeout' => 10,
+            'connect_timeout' => 10
+        );
         $config = array('defaults' => $defaultOptions);
 
         return $config;
