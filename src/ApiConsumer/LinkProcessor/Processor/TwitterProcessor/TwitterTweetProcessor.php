@@ -80,10 +80,11 @@ class TwitterTweetProcessor extends AbstractTwitterProcessor
 
     public function getImages(PreprocessedLink $preprocessedLink, array $data)
     {
-        $profileAvatar = null;
+        $default = $this->brainBaseUrl . TwitterUrlParser::DEFAULT_IMAGE_PATH;
         if (isset($data['user'])){
-            $default = $this->brainBaseUrl . TwitterUrlParser::DEFAULT_IMAGE_PATH;
             $profileAvatar = isset($data['user']['profile_image_url_https']) ? $data['user']['profile_image_url_https'] : $this->parser->getOriginalProfileUrl($data['user'], $default);
+        } else {
+            $profileAvatar = $default;
         }
 
         return array(new ProcessingImage($profileAvatar));
