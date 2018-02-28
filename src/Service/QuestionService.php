@@ -34,6 +34,7 @@ class QuestionService
      * @param QuestionAdminManager $questionAdminManager
      * @param QuestionCategoryManager $questionCategoryManager
      * @param QuestionNextSelector $questionNextSelector
+     * @param QuestionCorrelationManager $questionCorrelationManager
      */
     public function __construct(QuestionModel $questionModel, QuestionAdminManager $questionAdminManager, QuestionCategoryManager $questionCategoryManager, QuestionNextSelector $questionNextSelector, QuestionCorrelationManager $questionCorrelationManager)
     {

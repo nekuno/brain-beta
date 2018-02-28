@@ -400,11 +400,13 @@ class TestingFixtures
     {
         $this->logger->notice('Calculating uncorrelated questions');
         $result = $this->correlationManager->getUncorrelatedQuestions();
+        $count = 0;
         foreach ($result as $mode => $questionsByMode)
         {
             $this->correlationManager->setDivisiveQuestions($questionsByMode['questions'], $mode);
+            $count += count($questionsByMode['questions']);
         }
-        $this->logger->notice(sprintf('Obtained and saved %d questions', count($result['questions'])));
+        $this->logger->notice(sprintf('Obtained and saved %d questions', $count));
 
     }
 

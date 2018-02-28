@@ -19,14 +19,18 @@ class UserAnswerPaginatedModel implements PaginatedInterface
      */
     protected $am;
 
+    protected $questionModel;
+
     /**
      * @param GraphManager $gm
      * @param \Model\User\Question\AnswerManager $am
+     * @param QuestionModel $questionModel
      */
-    public function __construct(GraphManager $gm, AnswerManager $am)
+    public function __construct(GraphManager $gm, AnswerManager $am, QuestionModel $questionModel)
     {
         $this->gm = $gm;
         $this->am = $am;
+        $this->questionModel = $questionModel;
     }
 
     /**
@@ -53,7 +57,6 @@ class UserAnswerPaginatedModel implements PaginatedInterface
     {
         $userId = (integer)$filters['id'];
         $locale = $filters['locale'];
-        $response = array();
 
         $qb = $this->gm->createQueryBuilder();
         $qb
@@ -78,10 +81,20 @@ class UserAnswerPaginatedModel implements PaginatedInterface
 
         $result = $query->getResultSet();
 
+        $response = array();
         /* @var $row Row */
         foreach ($result as $row) {
 
-            $response[] = $this->am->build($row, $locale);
+            $answerData = $this->am->build($row, $locale);
+
+            $questionData = $answerData['question'];
+            $questionId = $questionData['id'];
+            $registerModes = $this->questionModel->getRegisterModes($questionId);
+            $questionData['question']['registerModes'] = $registerModes;
+
+            $answerData['question'] = $questionData;
+
+            $response[] = $answerData;
         }
 
         return $response;

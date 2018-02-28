@@ -2,7 +2,6 @@
 
 namespace Model\User\Question;
 
-use Everyman\Neo4j\Label;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Model\Exception\ValidationException;
@@ -294,11 +293,6 @@ class QuestionModel
         return $stats;
     }
 
-    protected function isRegisterQuestion($questionId)
-    {
-
-    }
-
     public function setOrUpdateRankingForQuestion($id)
     {
 
@@ -352,14 +346,7 @@ class QuestionModel
         $question = $row->offsetGet('question');
         $questionId = $question->getId();
 
-        $isRegisterQuestion = $this->isRegisterQuestion($questionId);
-        $isRegisterQuestion = false;
-        /** @var Label $label */
-        foreach ($question->getLabels() as $label) {
-            if ($label->getName() == 'RegisterQuestion') {
-                $isRegisterQuestion = true;
-            }
-        }
+        $registerModes = $this->getRegisterModes($questionId);
 
         $stats = $this->getQuestionStats($question->getId());
         $maleAnswersStats = array();
@@ -380,7 +367,7 @@ class QuestionModel
             'youngAnswersCount' => $stats['youngAnswersCount'],
             'oldAnswersCount' => $stats['oldAnswersCount'],
             'answers' => array(),
-            'isRegisterQuestion' => $isRegisterQuestion,
+            'registerModes' => $registerModes,
         );
 
         if (null !== $locale) {
@@ -414,6 +401,28 @@ class QuestionModel
         $return['locale'] = $locale;
 
         return $return;
+    }
+
+    public function getRegisterModes($questionId)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(q:Question)')
+            ->where('id(q) = {questionId}')
+            ->setParameter('questionId', (integer)$questionId);
+
+        $qb->match('(q)-[:REGISTERS]-(m:Mode)')
+            ->returns('m.id AS modeId');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        $modes = array();
+        foreach ($result as $row)
+        {
+            $modes[] = $row->offsetGet('modeId');
+        }
+
+        return $modes;
     }
 
     private function isOlderThanThirty($birthday)

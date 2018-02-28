@@ -43,6 +43,8 @@ class QuestionController
         $service = $app['question.service'];
         $question = $service->getNextByUser($user->getId(), $locale);
 
+        $question = $this->setIsRegisterQuestion($question, $user, $app);
+
         return $app->json($question);
     }
 
@@ -61,7 +63,30 @@ class QuestionController
         $service = $app['question.service'];
         $question = $service->getNextByOtherUser($user->getId(), $otherUserId, $locale);
 
+        $question = $this->setIsRegisterQuestion($question, $user, $app);
+
         return $app->json($question);
+    }
+
+    protected function setIsRegisterQuestion($question, User $user, Application $app)
+    {
+        $registerModes = isset($question['registerModes']) ? $question['registerModes'] : array();
+
+        if (empty($registerModes)) {
+            $question['isRegisterQuestion'] = false;
+            unset($question['registerModes']);
+            return $question;
+        }
+
+        $userId = $user->getId();
+
+        $questionCorrelationManager = $app['users.questionCorrelation.manager'];
+        $mode = $questionCorrelationManager->getMode($userId);
+
+        unset($question['registerModes']);
+        $question['isRegisterQuestion'] = in_array($mode, $registerModes);
+
+        return $question;
     }
 
     /**

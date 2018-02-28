@@ -214,7 +214,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.questions.model'] = $app->share(
             function ($app) {
 
-                return new UserAnswerPaginatedModel($app['neo4j.graph_manager'], $app['users.answers.model']);
+                return new UserAnswerPaginatedModel($app['neo4j.graph_manager'], $app['users.answers.model'], $app['questionnaire.questions.model']);
             }
         );
 
@@ -234,7 +234,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.questions.compare.model'] = $app->share(
             function ($app) {
 
-                return new QuestionComparePaginatedModel($app['neo4j.graph_manager'], $app['users.answers.model']);
+                return new QuestionComparePaginatedModel($app['neo4j.graph_manager'], $app['users.answers.model'], $app['questionnaire.questions.model']);
             }
         );
 

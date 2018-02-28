@@ -25,7 +25,7 @@ class QuestionCategoryManager
             ->where('id(q) = {questionId}')
             ->setParameter('questionId', (integer)$questionId);
 
-        $qb->optionalMatch('(q)<-[:CATEGORY_OF]-(category:Category)');
+        $qb->optionalMatch('(q)<-[:CATEGORY_OF]-(category:QuestionCategory)');
 
         $qb->returns('{id: id(category), name: category.name} AS category');
 
@@ -44,10 +44,11 @@ class QuestionCategoryManager
             ->where('id(q) = {questionId}')
             ->setParameter('questionId', (integer)$questionId);
 
-        $qb->optionalMatch('(q)<-[r:CATEGORY_OF]-(:Category)')
-            ->delete('r');
+        $qb->optionalMatch('(q)<-[r:CATEGORY_OF]-(:QuestionCategory)')
+            ->delete('r')
+            ->with('q');
 
-        $qb->match('(category:Category)')
+        $qb->match('(category:QuestionCategory)')
             ->where('category.name IN {categories}')
             ->setParameter('categories', $categories);
         $qb->merge('(category)-[r:CATEGORY_OF]->(q)');

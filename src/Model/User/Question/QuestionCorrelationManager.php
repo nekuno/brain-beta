@@ -24,7 +24,7 @@ class QuestionCorrelationManager
      */
     public function getUncorrelatedQuestions($preselected = 50)
     {
-        $modes = $this->getModes();
+        $modes = $this->getAllModes();
 
         $uncorrelatedQuestions = array();
         foreach ($modes as $mode)
@@ -64,7 +64,7 @@ class QuestionCorrelationManager
         return $count;
     }
 
-    protected function getModes()
+    protected function getAllModes()
     {
         $qb = $this->graphManager->createQueryBuilder();
 
@@ -83,6 +83,22 @@ class QuestionCorrelationManager
         return $modeIds;
     }
 
+    public function getMode($userId)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(u:User{qnoow_id:{userId}})--(:Profile)--(mode:Mode)')
+            ->setParameter('userId', (integer)$userId);
+
+        $qb->returns('mode.id AS modeId');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        $mode = $result->current()->offsetGet('modeId');
+
+        return $mode;
+    }
+
     protected function getCorrelations($preselected, $mode = null)
     {
         $qb = $this->graphManager->createQueryBuilder();
@@ -90,7 +106,7 @@ class QuestionCorrelationManager
         $qb->match('(mode:Mode)');
         if ($mode)
         {
-            $qb->where('(mode.id = {modeId}')
+            $qb->where('mode.id = {modeId}')
                 ->setParameter('modeId', $mode);
         }
         $qb->with('mode');
