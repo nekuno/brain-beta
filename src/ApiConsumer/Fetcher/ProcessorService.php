@@ -273,7 +273,7 @@ class ProcessorService implements LoggerAwareInterface
         }
     }
 
-    private function fullReprocessSingle(PreprocessedLink $preprocessedLink)
+    private function fullReprocessSingle(PreprocessedLink $preprocessedLink, $processedTimes = 0)
     {
         try {
             $this->resolve($preprocessedLink);
@@ -292,15 +292,14 @@ class ProcessorService implements LoggerAwareInterface
 
             return $links;
         } catch (UrlChangedException $e) {
-
             $oldUrl = $e->getOldUrl();
             $newUrl = $e->getNewUrl();
-            $this->replaceUrlInDatabase($oldUrl, $newUrl);
+            if ($processedTimes <= 10) {
+                $preprocessedLink->setUrl($newUrl);
+                $this->replaceUrlInDatabase($oldUrl, $newUrl);
 
-            $preprocessedLink->setUrl($newUrl);
-
-            return $this->fullReprocessSingle($preprocessedLink);
-
+                return $this->fullReprocessSingle($preprocessedLink, ++$processedTimes);
+            }
         } catch (TokenException $e) {
             throw $e;
         } catch (\Exception $e) {
