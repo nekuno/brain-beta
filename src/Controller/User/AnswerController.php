@@ -35,7 +35,7 @@ class AnswerController
 
         $result = $paginator->paginate($filters, $model, $request);
 
-        foreach ($result['questions'] as $questionId => $questionData)
+        foreach ($result['items'] as &$questionData)
         {
             $question = $questionData['question'];
             $questionData['question'] = $this->setIsRegisterQuestion($question, $user, $app);

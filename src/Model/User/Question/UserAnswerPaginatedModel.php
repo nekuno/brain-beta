@@ -88,9 +88,9 @@ class UserAnswerPaginatedModel implements PaginatedInterface
             $answerData = $this->am->build($row, $locale);
 
             $questionData = $answerData['question'];
-            $questionId = $questionData['id'];
+            $questionId = $questionData['questionId'];
             $registerModes = $this->questionModel->getRegisterModes($questionId);
-            $questionData['question']['registerModes'] = $registerModes;
+            $questionData['registerModes'] = $registerModes;
 
             $answerData['question'] = $questionData;
 
