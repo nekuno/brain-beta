@@ -135,6 +135,9 @@ class FilterUsersManager
         $this->saveGroupFilter($qb, $filters);
 
         foreach ($metadata as $fieldName => $fieldData) {
+            if ($fieldName === 'groups') {
+                continue;
+            }
             $value = $filters->get($fieldName);
             switch ($fieldType = $metadata[$fieldName]['type']) {
                 case 'text':
@@ -412,7 +415,6 @@ class FilterUsersManager
                     ->merge("(filter)-[:FILTERS_BY]->(group$group)")
                     ->with('filter');
             }
-            $filters->set('groups', null);
         }
     }
 
