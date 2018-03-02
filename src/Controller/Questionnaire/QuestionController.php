@@ -39,10 +39,11 @@ class QuestionController
     public function getNextQuestionAction(Request $request, Application $app, User $user)
     {
         $locale = $this->getLocale($request, $app['locale.options']['default']);
-        /* @var QuestionModel $model */
-        $model = $app['questionnaire.questions.model'];
 
-        $question = $model->getNextByUser($user->getId(), $locale);
+        $service = $app['question.service'];
+        $question = $service->getNextByUser($user->getId(), $locale);
+
+        $question = $this->setIsRegisterQuestion($question, $user, $app);
 
         return $app->json($question);
     }
@@ -58,12 +59,34 @@ class QuestionController
     {
         $otherUserId = $request->get('userId');
         $locale = $this->getLocale($request, $app['locale.options']['default']);
-        /* @var QuestionModel $model */
-        $model = $app['questionnaire.questions.model'];
 
-        $question = $model->getNextByOtherUser($user->getId(), $otherUserId, $locale);
+        $service = $app['question.service'];
+        $question = $service->getNextByOtherUser($user->getId(), $otherUserId, $locale);
+
+        $question = $this->setIsRegisterQuestion($question, $user, $app);
 
         return $app->json($question);
+    }
+
+    protected function setIsRegisterQuestion($question, User $user, Application $app)
+    {
+        $registerModes = isset($question['registerModes']) ? $question['registerModes'] : array();
+
+        if (empty($registerModes)) {
+            $question['isRegisterQuestion'] = false;
+            unset($question['registerModes']);
+            return $question;
+        }
+
+        $userId = $user->getId();
+
+        $questionCorrelationManager = $app['users.questionCorrelation.manager'];
+        $mode = $questionCorrelationManager->getMode($userId);
+
+        unset($question['registerModes']);
+        $question['isRegisterQuestion'] = in_array($mode, $registerModes);
+
+        return $question;
     }
 
     /**
@@ -157,10 +180,9 @@ class QuestionController
     public function getDivisiveQuestionsAction(Request $request, Application $app)
     {
         $locale = $request->get('locale', $app['locale.options']['default']);
-        /* @var QuestionModel $model */
-        $model = $app['questionnaire.questions.model'];
 
-        $questions = $model->getDivisiveQuestions($locale);
+        $service = $app['question.service'];
+        $questions = $service->getDivisiveQuestions($locale);
 
         return $app->json($questions);
     }

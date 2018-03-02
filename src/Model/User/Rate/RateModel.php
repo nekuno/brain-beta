@@ -176,8 +176,11 @@ class RateModel
     {
         $rate = self::LIKE;
         $qb = $this->gm->createQueryBuilder();
-        $qb->match("(u:User)-[r:$rate]->(l:Link)<-[like:$rate]-(otherUser:User)")
-            ->where('u.qnoow_id = {userId}', 'id(otherUser) <> id(u)')
+        $qb->match("(u:User)-[r:$rate]->(l:Link)")
+            ->where('u.qnoow_id = {userId}')
+            ->with('u, r, l')
+            ->optionalMatch("(l)<-[like:$rate]-(otherUser:User)")
+            ->where('id(otherUser) <> id(u)')
             ->setParameter('userId', (integer)$userId)
             ->with('r, l.url AS url, count(like) AS remainingLikes');
 

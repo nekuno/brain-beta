@@ -19,6 +19,7 @@ use Model\User\Device\DeviceModel;
 use Model\User\ProfileOptionManager;
 use Model\User\Question\Admin\QuestionAdminBuilder;
 use Model\User\Question\Admin\QuestionAdminManager;
+use Model\User\Question\QuestionCategory\QuestionCategoryManager;
 use Model\User\Question\QuestionCorrelationManager;
 use Model\User\Question\QuestionModel;
 use Model\User\Affinity\AffinityModel;
@@ -41,6 +42,7 @@ use Model\User\ProfileModel;
 use Model\User\ProfileTagModel;
 use Model\User\Question\QuestionComparePaginatedModel;
 use Model\User\Question\Admin\QuestionsAdminPaginatedModel;
+use Model\User\Question\QuestionNextSelector;
 use Model\User\Question\UserAnswerPaginatedModel;
 use Model\User\Rate\RateModel;
 use Model\User\Recommendation\ContentPopularRecommendationPaginatedModel;
@@ -212,7 +214,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.questions.model'] = $app->share(
             function ($app) {
 
-                return new UserAnswerPaginatedModel($app['neo4j.graph_manager'], $app['users.answers.model']);
+                return new UserAnswerPaginatedModel($app['neo4j.graph_manager'], $app['users.answers.model'], $app['questionnaire.questions.model']);
             }
         );
 
@@ -232,7 +234,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.questions.compare.model'] = $app->share(
             function ($app) {
 
-                return new QuestionComparePaginatedModel($app['neo4j.graph_manager'], $app['users.answers.model']);
+                return new QuestionComparePaginatedModel($app['neo4j.graph_manager'], $app['users.answers.model'], $app['questionnaire.questions.model']);
             }
         );
 
@@ -420,6 +422,18 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
                 $validator = $app['validator.factory']->build('questions_admin');
                 return new QuestionsAdminPaginatedModel($app['neo4j.graph_manager'], $app['questionnaire.questions.admin.builder'], $validator);
+            }
+        );
+
+        $app['questionnaire.questions.next.selector'] = $app->share(
+            function ($app) {
+                return new QuestionNextSelector($app['neo4j.graph_manager']);
+            }
+        );
+
+        $app['questionnaire.questions.category.manager'] = $app->share(
+            function ($app) {
+                return new QuestionCategoryManager($app['neo4j.graph_manager']);
             }
         );
 

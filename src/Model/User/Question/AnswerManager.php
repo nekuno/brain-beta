@@ -346,26 +346,6 @@ class AnswerManager
         return $result->count() > 0;
     }
 
-    /**
-     * @param $questionId
-     * @return bool
-     * @throws \Exception
-     */
-    protected function existsQuestion($questionId)
-    {
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(q:Question)')
-            ->where('id(q) = { questionId }')
-            ->setParameter('questionId', (integer)$questionId)
-            ->returns('q AS question');
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        return $result->count() > 0;
-    }
-
     protected function handleAnswerAddedEvent(array $data)
     {
         $event = new AnswerEvent($data['userId'], $data['questionId']);
