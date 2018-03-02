@@ -300,6 +300,8 @@ class ProcessorService implements LoggerAwareInterface
 
                 return $this->fullReprocessSingle($preprocessedLink, ++$processedTimes);
             }
+
+            return array();
         } catch (TokenException $e) {
             throw $e;
         } catch (\Exception $e) {
