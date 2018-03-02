@@ -32,7 +32,7 @@ class RabbitMQEnqueueMatchingCommand extends ApplicationAwareCommand
 
         switch ($trigger) {
             case MatchingCalculatorWorker::TRIGGER_PERIODIC:
-                if ($userA == $userB) {
+                if ($userA && $userB && $userA === $userB) {
                     $output->writeln('The two users must be different.');
 
                     return;
