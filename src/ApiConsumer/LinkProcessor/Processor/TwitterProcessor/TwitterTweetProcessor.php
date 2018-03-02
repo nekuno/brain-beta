@@ -26,14 +26,17 @@ class TwitterTweetProcessor extends AbstractTwitterProcessor
             } catch (\Exception $e) {}
 
             if (isset($url) && $url != $preprocessedLink->getUrl()) {
-                $preprocessedLink->setType(UrlParser::SCRAPPER);
-                throw new UrlChangedException($preprocessedLink->getUrl(), $url);
-            } else {
-                return array();
+                $host = parse_url($url, PHP_URL_HOST);
+                if ($host && strpos($host, 'twitter') === false) {
+                    $preprocessedLink->setType(UrlParser::SCRAPPER);
+                    throw new UrlChangedException($preprocessedLink->getUrl(), $url);
+                }
             }
-        } else {
-            throw new CannotProcessException($preprocessedLink->getUrl(), 'We do not want tweets without url content');
         }
+
+        $exception = new CannotProcessException($preprocessedLink->getUrl(), 'We do not want tweets without url content');
+        $exception->setCanScrape(false);
+        throw $exception;
     }
 
     private function extractLinkFromResponse($apiResponse)
