@@ -74,7 +74,7 @@ class QuestionComparePaginatedModel implements PaginatedInterface
             ->where("EXISTS(answer.text_$locale)")
             ->with('u', 'u2', 'question', 'answer', 'ua');
 
-        $qb->match('(u)-[:HAS_PROFILE]->(:Profile)<-[:OPTION_OF]-(:Mode)<-[:INCLUDED_IN]-(:QuestionCategory)-[:CATEGORY_OF]->(question)');
+        $qb->match('(u2)<-[:PROFILE_OF]-(:Profile)<-[:OPTION_OF]-(:Mode)<-[:INCLUDED_IN]-(:QuestionCategory)-[:CATEGORY_OF]->(question)');
 
         if ($showOnlyCommon) {
             $qb->match('(u2)-[ua2:ANSWERS]-(answer2:Answer)-[:IS_ANSWER_OF]-(question)');
@@ -134,7 +134,11 @@ class QuestionComparePaginatedModel implements PaginatedInterface
             $other_questions_results['userId'] = $id;
         }
 
-        $resultArray = array($other_questions_results, $own_questions_results);
+        $resultArray = array();
+        if (!empty($other_questions_results) && !empty($own_questions_results))
+        {
+            $resultArray = array($other_questions_results, $own_questions_results);
+        }
 
         return $resultArray;
     }
@@ -198,7 +202,7 @@ class QuestionComparePaginatedModel implements PaginatedInterface
             ->where("EXISTS(answer.text_$locale)")
             ->with('u', 'u2', 'question', 'answer', 'ua');
 
-        $qb->match('(u)-[:HAS_PROFILE]->(:Profile)<-[:OPTION_OF]-(:Mode)<-[:INCLUDED_IN]-(:QuestionCategory)-[:CATEGORY_OF]->(question)');
+        $qb->match('(u2)<-[:PROFILE_OF]-(:Profile)<-[:OPTION_OF]-(:Mode)<-[:INCLUDED_IN]-(:QuestionCategory)-[:CATEGORY_OF]->(question)');
 
         if ($showOnlyCommon) {
             $qb->match('(u2)-[ua2:ANSWERS]-(answer2:Answer)-[:IS_ANSWER_OF]-(question)');

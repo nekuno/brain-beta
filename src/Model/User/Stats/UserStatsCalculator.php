@@ -84,7 +84,7 @@ class UserStatsCalculator
             ->where('(u2)-[:LIKES]->(link)', 'link.processed = 1', 'NOT link:LinkDisabled')
             ->with('u', 'u2', 'groupsBelonged', 'resourceOwners', 'resourceOwners2', 'count(distinct(link)) AS commonContent')
             ->optionalMatch('(u)-[:ANSWERS]->(answer:Answer)')
-            ->where('(u2)-[:ANSWERS]->(answer)')
+            ->where('(u2)-[:ANSWERS]->(answer)', '(u)<-[:PROFILE_OF]-(:Profile)<-[:OPTION_OF]-(:Mode)<-[:INCLUDED_IN]-(:QuestionCategory)-[:CATEGORY_OF]->(:Question)<-[:IS_ANSWER_OF]-(answer)')
             ->returns('groupsBelonged, resourceOwners, resourceOwners2, commonContent, count(distinct(answer)) as commonAnswers');
 
         $query = $qb->getQuery();

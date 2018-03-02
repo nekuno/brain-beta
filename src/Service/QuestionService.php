@@ -93,9 +93,9 @@ class QuestionService
         return $this->questionModel->build($row, $locale);
     }
 
-    public function getNextByOtherUser($userId, $locale, $sortByRanking = true)
+    public function getNextByOtherUser($userId, $otherUserId, $locale, $sortByRanking = true)
     {
-        $row = $this->questionNextSelector->getNextByOtherUser($userId, $locale, $sortByRanking);
+        $row = $this->questionNextSelector->getNextByOtherUser($userId, $otherUserId, $locale, $sortByRanking);
         return $this->questionModel->build($row, $locale);
     }
 
