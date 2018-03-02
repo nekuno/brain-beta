@@ -24,7 +24,7 @@ class LinkService
     public function deleteNotLiked(array $links)
     {
         $notLiked = array_filter($links, function($link){
-            return $link['likes'] > 0;
+            return $link['likes'] == 0;
         });
 
         foreach ($notLiked as $link)

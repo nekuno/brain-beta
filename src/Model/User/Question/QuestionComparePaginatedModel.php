@@ -6,7 +6,6 @@ use Everyman\Neo4j\Query\ResultSet;
 use Model\Neo4j\GraphManager;
 use Paginator\PaginatedInterface;
 
-use Everyman\Neo4j\Cypher\Query;
 use Everyman\Neo4j\Query\Row;
 
 class QuestionComparePaginatedModel implements PaginatedInterface
@@ -16,16 +15,20 @@ class QuestionComparePaginatedModel implements PaginatedInterface
      */
     protected $am;
 
+    protected $questionModel;
+
     protected $graphManager;
 
     /**
      * @param GraphManager $graphManager
      * @param AnswerManager $am
+     * @param QuestionModel $questionModel
      */
-    public function __construct(GraphManager $graphManager, AnswerManager $am)
+    public function __construct(GraphManager $graphManager, AnswerManager $am, QuestionModel $questionModel)
     {
         $this->graphManager = $graphManager;
         $this->am = $am;
+        $this->questionModel = $questionModel;
     }
 
     /**
@@ -70,6 +73,8 @@ class QuestionComparePaginatedModel implements PaginatedInterface
         $qb->match('(u)-[ua:ANSWERS]->(answer:Answer)-[:IS_ANSWER_OF]->(question:Question)')
             ->where("EXISTS(answer.text_$locale)")
             ->with('u', 'u2', 'question', 'answer', 'ua');
+
+        $qb->match('(u2)<-[:PROFILE_OF]-(:Profile)<-[:OPTION_OF]-(:Mode)<-[:INCLUDED_IN]-(:QuestionCategory)-[:CATEGORY_OF]->(question)');
 
         if ($showOnlyCommon) {
             $qb->match('(u2)-[ua2:ANSWERS]-(answer2:Answer)-[:IS_ANSWER_OF]-(question)');
@@ -120,12 +125,20 @@ class QuestionComparePaginatedModel implements PaginatedInterface
         $result = $qb->getQuery()->getResultSet();
 
         $own_questions_results = $this->buildQuestionResults($result, 'own_questions', $locale);
-        $own_questions_results['userId'] = $id2;
+        if (!empty($own_questions_results)) {
+            $own_questions_results['userId'] = $id2;
+        }
 
         $other_questions_results = $this->buildQuestionResults($result, 'other_questions', $locale);
-        $other_questions_results['userId'] = $id;
+        if (!empty($other_questions_results)) {
+            $other_questions_results['userId'] = $id;
+        }
 
-        $resultArray = array($other_questions_results, $own_questions_results);
+        $resultArray = array();
+        if (!empty($other_questions_results) && !empty($own_questions_results))
+        {
+            $resultArray = array($other_questions_results, $own_questions_results);
+        }
 
         return $resultArray;
     }
@@ -140,8 +153,13 @@ class QuestionComparePaginatedModel implements PaginatedInterface
                 $questionId = $questions->offsetGet('question')->getId();
                 $questions_results['questions'][$questionId] = $this->am->build($questions, $locale);
 
-                if ($questions->offsetExists('isCommon')){
+                if ($questions->offsetExists('isCommon')) {
                     $questions_results['questions'][$questionId]['question']['isCommon'] = $questions->offsetGet('isCommon');
+                }
+
+                foreach ($questions_results['questions'] as $questionId => &$questionData) {
+                    $registerModes = $this->questionModel->getRegisterModes($questionId);
+                    $questionData['question']['registerModes'] = $registerModes;
                 }
             }
         }
@@ -183,6 +201,8 @@ class QuestionComparePaginatedModel implements PaginatedInterface
         $qb->match('(u)-[ua:ANSWERS]->(answer:Answer)-[:IS_ANSWER_OF]->(question:Question)')
             ->where("EXISTS(answer.text_$locale)")
             ->with('u', 'u2', 'question', 'answer', 'ua');
+
+        $qb->match('(u2)<-[:PROFILE_OF]-(:Profile)<-[:OPTION_OF]-(:Mode)<-[:INCLUDED_IN]-(:QuestionCategory)-[:CATEGORY_OF]->(question)');
 
         if ($showOnlyCommon) {
             $qb->match('(u2)-[ua2:ANSWERS]-(answer2:Answer)-[:IS_ANSWER_OF]-(question)');

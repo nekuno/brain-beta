@@ -2,7 +2,6 @@
 
 namespace Model\User\Question;
 
-use Everyman\Neo4j\Label;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Model\Exception\ValidationException;
@@ -33,95 +32,12 @@ class QuestionModel
         $this->validator = $validator;
     }
 
-    public function getNextByUser($userId, $locale, $sortByRanking = true)
-    {
-        $divisiveQuestion = $this->getNextDivisiveQuestionByUserId($userId, $locale);
-
-        if ($divisiveQuestion) {
-            return $divisiveQuestion;
-        }
-
-        $qb = $this->gm->createQueryBuilder();
-
-        $qb->match('(user:User {qnoow_id: { userId }})')
-            ->setParameter('userId', (int)$userId)
-            ->optionalMatch('(user)-[:ANSWERS]->(a:Answer)-[:IS_ANSWER_OF]->(answered:Question)')
-            ->optionalMatch('(user)-[:SKIPS]->(skip:Question)')
-            ->optionalMatch('(user)-[:REPORTS]->(report:Question)')
-            ->with('user', 'collect(answered) + collect(skip) + collect(report) AS excluded')
-            ->match('(q3:Question)<-[:IS_ANSWER_OF]-(a2:Answer)')
-            ->where('NOT q3 IN excluded', "EXISTS(q3.text_$locale)")
-            ->with('q3 AS question', 'a2')
-            ->orderBy('id(a2)')
-            ->with('question', 'collect(DISTINCT a2) AS answers')
-            ->returns('question', 'answers')
-            ->orderBy($sortByRanking && $this->sortByRanking() ? 'question.ranking DESC' : 'question.timestamp ASC')
-            ->limit(1);
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        if (count($result) < 1) {
-            throw new NotFoundHttpException('Question not found');
-        }
-
-        /* @var $row Row */
-        $row = $result->current();
-
-        return $this->build($row, $locale);
-    }
-
-    public function getNextByOtherUser($userId, $otherUserId, $locale, $sortByRanking = true)
-    {
-        $divisiveQuestion = $this->getNextDivisiveQuestionByUserId($userId, $locale);
-
-        if ($divisiveQuestion) {
-            return $divisiveQuestion;
-        }
-
-        $qb = $this->gm->createQueryBuilder();
-
-        $qb->match('(user:User {qnoow_id: { userId }}), (otherUser:User {qnoow_id: { otherUserId }})')
-            ->match('(otherUser)-[:ANSWERS]->(a:Answer)-[:IS_ANSWER_OF]->(answeredOther:Question)')
-            ->setParameters(
-                array(
-                    'userId' => (int)$userId,
-                    'otherUserId' => (int)$otherUserId,
-                )
-            )
-            ->optionalMatch('(user)-[:ANSWERS]->(:Answer)-[:IS_ANSWER_OF]->(answered:Question)')
-            ->optionalMatch('(user)-[:REPORTS]->(report:Question)')
-            ->with('user', 'a', 'collect(answered) + collect(report) AS excluded')
-            ->match('(q:Question)<-[:IS_ANSWER_OF]-(a)')
-            ->match('(q)<-[:IS_ANSWER_OF]-(allAnswers:Answer)')
-            ->where("NOT q IN excluded", "EXISTS(q.text_$locale)")
-            ->with('q AS question', 'allAnswers')
-            ->orderBy('id(allAnswers)')
-            ->with('question', 'collect(DISTINCT allAnswers) AS answers')
-            ->returns('question', 'answers')
-            ->orderBy($sortByRanking && $this->sortByRanking() ? 'question.ranking DESC' : 'question.timestamp ASC')
-            ->limit(1);
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        if (count($result) < 1) {
-            throw new NotFoundHttpException('Question not found');
-        }
-
-        /* @var $row Row */
-        $row = $result->current();
-
-        return $this->build($row, $locale);
-    }
-
     public function userHasCompletedRegisterQuestions($userId)
     {
         $qb = $this->gm->createQueryBuilder();
 
-        $qb->match('(user:User {qnoow_id: { userId }})', '(a:Answer)-[:IS_ANSWER_OF]->(:RegisterQuestion)')
+        $qb->match('(user:User {qnoow_id: { userId }})-[:HAS_PROFILE]->(:Profile)<-[:OPTION_OF]-(mode:Mode)')
+            ->match('(a:Answer)-[:IS_ANSWER_OF]->(:Question)-[:REGISTERS]-(mode)')
             ->setParameter('userId', (int)$userId)
             ->where('NOT (user)-[:ANSWERS]->(a)')
             ->returns('COUNT(a)');
@@ -129,25 +45,9 @@ class QuestionModel
         $query = $qb->getQuery();
         $result = $query->getResultSet();
 
-        if ($result->count() > 0) {
-            return true;
-        }
+        $thereAreNoRegisterQuestionsLeft = $result->count() == 0;
 
-        return false;
-    }
-
-    /**
-     * @return bool
-     */
-    public function sortByRanking()
-    {
-
-        $rand = rand(1, 10);
-        if ($rand !== 10) {
-            return true;
-        }
-
-        return false;
+        return $thereAreNoRegisterQuestionsLeft;
     }
 
     //TODO: Make answer existence optionalMatch
@@ -289,7 +189,7 @@ class QuestionModel
         $qb = $this->gm->createQueryBuilder();
         $qb
             ->match('(q:Question)', '(u:User)')
-            ->where('NOT q:RegisterQuestion', 'u.qnoow_id = { userId } AND id(q) = { id }')
+            ->where('NOT (q)-[:REGISTERS]-(:Mode)-[:OPTION_OF]-(:Profile)-[:PROFILE_OF]-(u)', 'u.qnoow_id = { userId } AND id(q) = { id }')
             ->setParameter('userId', $userId)
             ->setParameter('id', (integer)$id)
             ->createUnique('(u)-[r:SKIPS]->(q)')
@@ -342,9 +242,8 @@ class QuestionModel
      * @param $id
      * @return array
      */
-    public function getQuestionStats($id)
+    protected function getQuestionStats($id)
     {
-
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(a:Answer)-[:IS_ANSWER_OF]->(q:Question)')
             ->where('id(q) = { id }')
@@ -418,42 +317,6 @@ class QuestionModel
         $row = $result->current();
 
         return $row['questionRanking'];
-
-    }
-
-    public function getRankingForQuestion($id)
-    {
-
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(q:Question)')
-            ->where('id(q) = { id }')
-            ->setParameter('id', (integer)$id)
-            ->returns('q.ranking AS questionRanking');
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        $row = $result->current();
-
-        return $row['questionRanking'];
-
-    }
-
-    public function existsQuestion($id)
-    {
-
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(q:Question)')
-            ->where('id(q) = { id }')
-            ->setParameter('id', (integer)$id)
-            ->returns('q');
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        return count($result) === 1;
     }
 
     /**
@@ -481,14 +344,9 @@ class QuestionModel
 
         /* @var $question Node */
         $question = $row->offsetGet('question');
+        $questionId = $question->getId();
 
-        $isRegisterQuestion = false;
-        /** @var Label $label */
-        foreach ($question->getLabels() as $label) {
-            if ($label->getName() == 'RegisterQuestion') {
-                $isRegisterQuestion = true;
-            }
-        }
+        $registerModes = $this->getRegisterModes($questionId);
 
         $stats = $this->getQuestionStats($question->getId());
         $maleAnswersStats = array();
@@ -503,13 +361,13 @@ class QuestionModel
         }
 
         $return = array(
-            'questionId' => $question->getId(),
+            'questionId' => $questionId,
             'maleAnswersCount' => $stats['maleAnswersCount'],
             'femaleAnswersCount' => $stats['femaleAnswersCount'],
             'youngAnswersCount' => $stats['youngAnswersCount'],
             'oldAnswersCount' => $stats['oldAnswersCount'],
             'answers' => array(),
-            'isRegisterQuestion' => $isRegisterQuestion,
+            'registerModes' => $registerModes,
         );
 
         if (null !== $locale) {
@@ -545,58 +403,26 @@ class QuestionModel
         return $return;
     }
 
-    //TODO: Fix this->build dependency and move to QuestionCorrelationManager
-    public function getDivisiveQuestions($locale)
-    {
-
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(q:RegisterQuestion)')
-            ->where("EXISTS(q.text_$locale)")
-            ->match('(q)<-[:IS_ANSWER_OF]-(a:Answer)')
-            ->with('q', 'a')
-            ->orderBy('id(a)')
-            ->with('q, collect(a) AS answers')
-            ->returns('q AS question', 'answers')
-            ->orderBy('q.ranking DESC');
-
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
-        $return = array();
-
-        foreach ($result as $row) {
-            $return[] = $this->build($row, $locale);
-        }
-
-        return $return;
-    }
-
-    protected function getNextDivisiveQuestionByUserId($id, $locale)
+    public function getRegisterModes($questionId)
     {
         $qb = $this->gm->createQueryBuilder();
 
-        $qb->match('(user:User {qnoow_id: { userId }})')
-            ->setParameter('userId', (int)$id)
-            ->optionalMatch('(user)-[:ANSWERS]->(a:Answer)-[:IS_ANSWER_OF]->(answered:RegisterQuestion)')
-            ->with('user', 'collect(answered) AS excluded')
-            ->match('(q3:RegisterQuestion)<-[:IS_ANSWER_OF]-(a2:Answer)')
-            ->where('NOT q3 IN excluded', "EXISTS(q3.text_$locale)")
-            ->with('q3 AS question', 'a2')
-            ->orderBy('id(a2)')
-            ->with('question', 'collect(DISTINCT a2) AS answers')
-            ->returns('question', 'answers')
-            ->limit(1);
+        $qb->match('(q:Question)')
+            ->where('id(q) = {questionId}')
+            ->setParameter('questionId', (integer)$questionId);
 
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
+        $qb->match('(q)-[:REGISTERS]-(m:Mode)')
+            ->returns('m.id AS modeId');
 
-        if (count($result) === 1) {
-            /* @var $divisiveQuestions Row */
-            $row = $result->current();
+        $result = $qb->getQuery()->getResultSet();
 
-            return $this->build($row, $locale);
+        $modes = array();
+        foreach ($result as $row)
+        {
+            $modes[] = $row->offsetGet('modeId');
         }
 
-        return false;
+        return $modes;
     }
 
     private function isOlderThanThirty($birthday)

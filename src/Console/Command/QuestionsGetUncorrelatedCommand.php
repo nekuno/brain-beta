@@ -32,8 +32,6 @@ class QuestionsGetUncorrelatedCommand extends ApplicationAwareCommand
         if ($input->getOption('correlated')) {
             $correlations = $model->getCorrelatedQuestions($preselected);
 
-            $correlations = $model->sortCorrelations($correlations);
-
             foreach ($correlations as $correlation => $ids) {
 
                 $output->writeln(sprintf('%d, %d, %s', $ids[0], $ids[1], $correlation));
@@ -42,15 +40,12 @@ class QuestionsGetUncorrelatedCommand extends ApplicationAwareCommand
         } else {
             $result = $model->getUncorrelatedQuestions($preselected);
 
-            if (array() === $result['questions']) {
-                $output->writeln('We couldn´t get the questions');
-
-                return;
-            }
-
             if ($input->getOption('save')) {
-                $previous = $model->unsetDivisiveQuestions();
-                $model->setDivisiveQuestions($result['questions']);
+                $previous = $model->unsetAllDivisiveQuestions();
+                foreach ($result as $mode=> $questionsByMode)
+                {
+                    $model->setDivisiveQuestions($questionsByMode['questions'], $mode);
+                }
                 if (OutputInterface::VERBOSITY_NORMAL < $output->getVerbosity()) {
                     $output->writeln(sprintf('There were %d questions set as divisive', $previous));
                 }

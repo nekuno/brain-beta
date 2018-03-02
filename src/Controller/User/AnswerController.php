@@ -35,6 +35,12 @@ class AnswerController
 
         $result = $paginator->paginate($filters, $model, $request);
 
+        foreach ($result['items'] as &$questionData)
+        {
+            $question = $questionData['question'];
+            $questionData['question'] = $this->setIsRegisterQuestion($question, $user, $app);
+        }
+
         return $app->json($result);
     }
 
@@ -250,6 +256,15 @@ class AnswerController
 
         try {
             $result = $paginator->paginate($filters, $model, $request);
+
+            foreach ($result['items'] as &$questionData)
+            {
+                if (empty($question)){
+                    continue;
+                }
+                $question = $questionData['question'];
+                $questionData['question'] = $this->setIsRegisterQuestion($question, $user, $app);
+            }
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
                 throw $e;
@@ -270,5 +285,26 @@ class AnswerController
         }
 
         return $locale;
+    }
+
+    protected function setIsRegisterQuestion($question, User $user, Application $app)
+    {
+        $registerModes = isset($question['registerModes']) ? $question['registerModes'] : array();
+
+        if (empty($registerModes)) {
+            $question['isRegisterQuestion'] = false;
+            unset($question['registerModes']);
+            return $question;
+        }
+
+        $userId = $user->getId();
+
+        $questionCorrelationManager = $app['users.questionCorrelation.manager'];
+        $mode = $questionCorrelationManager->getMode($userId);
+
+        unset($question['registerModes']);
+        $question['isRegisterQuestion'] = in_array($mode, $registerModes);
+
+        return $question;
     }
 }
