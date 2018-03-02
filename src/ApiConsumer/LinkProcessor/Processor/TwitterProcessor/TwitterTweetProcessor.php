@@ -8,6 +8,7 @@ use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
+use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
 
 class TwitterTweetProcessor extends AbstractTwitterProcessor
 {
@@ -25,6 +26,7 @@ class TwitterTweetProcessor extends AbstractTwitterProcessor
             } catch (\Exception $e) {}
 
             if (isset($url) && $url != $preprocessedLink->getUrl()) {
+                $preprocessedLink->setType(UrlParser::SCRAPPER);
                 throw new UrlChangedException($preprocessedLink->getUrl(), $url);
             } else {
                 return array();
