@@ -160,7 +160,11 @@ class ImageAnalyzer
         }
 
         try {
-            $head = $this->client->head($imageUrl);
+            $config = array(
+                'timeout' => 10,
+                'connect_timeout' => 10
+            );
+            $head = $this->client->head($imageUrl, $config);
         } catch (\Exception $e) {
             $head = new Response(404);
         }
