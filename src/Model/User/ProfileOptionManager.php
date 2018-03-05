@@ -27,7 +27,6 @@ class ProfileOptionManager
     /**
      * Output choice options independently of locale
      * @return array
-     * @throws \Model\Neo4j\Neo4jException
      */
     public function getOptions()
     {

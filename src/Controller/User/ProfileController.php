@@ -85,7 +85,7 @@ class ProfileController
         $locale = $request->query->get('locale', 'en');
 
         $metadataService = $app['metadata.service'];
-        $metadata = $metadataService->getProfileMetadata($locale);
+        $metadata = $metadataService->getProfileMetadataWithChoices($locale);
 
         return $app->json($metadata);
     }

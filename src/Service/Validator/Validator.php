@@ -180,21 +180,18 @@ class Validator implements ValidatorInterface
                         break;
 
                     case 'choice':
-                        if (!in_array($dataValue, $choices)) {
-                            $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $dataValue, implode("', '", $choices));
-                        }
+                        $fieldErrors[] = $this->validateChoice($dataValue, $choices);
                         break;
 
                     case 'double_choice':
                         $thisChoices = $choices + array('' => '');
-                        if (!in_array($dataValue['choice'], $thisChoices)) {
-                            $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $dataValue['choice'], implode("', '", $thisChoices));
-                        }
+                        $fieldErrors[] = $this->validateChoice($dataValue['choice'], $thisChoices);
+
                         $doubleChoices = $fieldData['doubleChoices'] + array('' => '');
                         if (!isset($doubleChoices[$dataValue['choice']]) || isset($dataValue['detail']) && $dataValue['detail'] && !isset($doubleChoices[$dataValue['choice']][$dataValue['detail']])) {
                             $fieldErrors[] = sprintf('Option choice and detail must be set in "%s"', $dataValue['choice']);
-                        } elseif ($dataValue['detail'] && !in_array($dataValue['detail'], array_keys($doubleChoices[$dataValue['choice']]))) {
-                            $fieldErrors[] = sprintf('Detail with value "%s" is not valid, possible values are "%s"', $dataValue['detail'], implode("', '", array_keys($doubleChoices)));
+                        } elseif ($dataValue['detail']) {
+                            $fieldErrors[] = $this->validateChoice($dataValue['detail'], array_keys($doubleChoices[$dataValue['choice']]));
                         }
                         break;
                     case 'double_multiple_choices':
@@ -213,9 +210,7 @@ class Validator implements ValidatorInterface
                         }
 
                         foreach ($dataValue['choices'] as $choice) {
-                            if (!in_array($choice, $thisChoices)) {
-                                $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $choice, implode("', '", $thisChoices));
-                            }
+                            $fieldErrors[] = $this->validateChoice($choice, $thisChoices);
                             $details = isset($dataValue['details']) ? $dataValue['details'] : array();
                             foreach ($details as $detail) {
                                 if (!isset($doubleChoices[$choice][$detail])) {
@@ -239,9 +234,7 @@ class Validator implements ValidatorInterface
                             $fieldErrors[] = sprintf('Details must be an array in "%s"', $fieldName);
                         }
                         $choice = $dataValue['choice'];
-                        if (!in_array($choice, $thisChoices)) {
-                            $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $choice, implode("', '", $thisChoices));
-                        }
+                        $this->validateChoice($choice, $thisChoices);
                         $details = isset($dataValue['details']) ? $dataValue['details'] : array();
                         foreach ($details as $detail) {
                             if (!isset($doubleChoices[$choice][$detail])) {
@@ -262,8 +255,8 @@ class Validator implements ValidatorInterface
                             if (!isset($tagAndChoice['tag']) || !array_key_exists('choice', $tagAndChoice)) {
                                 $fieldErrors[] = sprintf('Tag and choice must be defined for tags and choice type');
                             }
-                            if (isset($tagAndChoice['choice']) && $tagAndChoice['choice'] && isset($choices) && !in_array($tagAndChoice['choice'], array_keys($choices))) {
-                                $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $tagAndChoice['choice'], implode("', '", array_keys($choices)));
+                            if (isset($tagAndChoice['choice']) && $tagAndChoice['choice']) {
+                                $fieldErrors[] = $this->validateChoice($tagAndChoice['choice'], array_keys($choices));
                             }
                         }
                         break;
@@ -279,9 +272,7 @@ class Validator implements ValidatorInterface
                             }
                             if (isset($tagAndMultipleChoices['choices'])) {
                                 foreach ($tagAndMultipleChoices['choices'] as $singleChoice) {
-                                    if ($singleChoice && isset($choices) && !in_array($singleChoice, array_keys($choices))) {
-                                        $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $singleChoice, implode("', '", array_keys($choices)));
-                                    }
+                                    $fieldErrors[] = $this->validateChoice($singleChoice, array_keys($choices));
                                 }
                             }
                         }
@@ -297,9 +288,7 @@ class Validator implements ValidatorInterface
                         $fieldErrors[] = $this->validateMax($dataValue, $fieldData);
 
                         foreach ($dataValue as $singleValue) {
-                            if (!in_array($singleValue, $multipleChoices)) {
-                                $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $singleValue, implode("', '", $multipleChoices));
-                            }
+                            $fieldErrors[] = $this->validateChoice($singleValue, $multipleChoices);
                         }
                         break;
                     case 'location':
@@ -364,9 +353,8 @@ class Validator implements ValidatorInterface
                         }
                         break;
                     case 'order':
-                        if (!in_array($dataValue, array('similarity', 'matching'))) {
-                            $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $dataValue, implode("', '", array('similarity', 'matching')));
-                        }
+                        $orderChoices = array('similarity', 'matching');
+                        $fieldErrors[] = $this->validateChoice($dataValue, $orderChoices);
                         break;
                     case 'multiple_fields':
                         $internalMetadata = $fieldData['metadata'];
@@ -412,6 +400,10 @@ class Validator implements ValidatorInterface
         }
 
         if (count($errors) > 0) {
+            foreach ($errors as $field => $fieldErrors)
+            {
+                $errors[$field] = array_values($fieldErrors);
+            }
             throw new ValidationException($errors);
         }
     }
@@ -494,6 +486,15 @@ class Validator implements ValidatorInterface
         $min = $forceMin !== null ? $forceMin : $fieldData['min'];
         if (count($value) < $min) {
             return array(sprintf('Option length "%s" is too short. "%s" is the minimum', count($value), $min));
+        }
+
+        return array();
+    }
+
+    protected function validateChoice($choice, array $validChoices)
+    {
+        if (!in_array($choice, $validChoices)) {
+            return sprintf('Option with value "%s" is not valid, possible values are "%s"', $choice, implode("', '", $validChoices));
         }
 
         return array();

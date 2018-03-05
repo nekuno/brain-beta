@@ -86,13 +86,15 @@ class ProfileTagModel
      */
     public function getProfileTagsSuggestion($type, $startingWith = null, $limit = 3)
     {
+        var_dump('SUGGESTING');
+        var_dump($startingWith);
         $startingWith = $this->languageTextManager->buildCanonical($startingWith);
         $label = $this->metadataUtilities->typeToLabel($type);
 
         $qb = $this->graphManager->createQueryBuilder();
 
         $qb->match("(tag:ProfileTag:$label)<-[:TEXT_OF]-(text:TextLanguage)");
-        if ($startingWith !== null) {
+        if ($startingWith !== null && $startingWith !== '') {
             $qb->where('text.canonical STARTS WITH {starts}')
                 ->setParameter('starts', $startingWith);
         }
@@ -241,7 +243,8 @@ class ProfileTagModel
 
         //TODO: Call this->delete and then this method just create
         $qb->optionalMatch('(profile)<-[tagsAndChoiceOptionRel:TAGGED]-(:' . $tagLabel . ')')
-            ->delete('tagsAndChoiceOptionRel');
+            ->delete('tagsAndChoiceOptionRel')
+            ->with('profile');
 
         $savedTags = array();
         foreach ($tags as $index => $value) {
@@ -259,15 +262,19 @@ class ProfileTagModel
 
                 $newTag = $this->mergeTag($tagLabel, $tagGoogleGraphId);
                 $newTagId = $newTag['id'];
+                var_dump('WRIGINT');
+                var_dump($newTagId);
+                var_dump($locale);
+                var_dump($tagName);
                 $this->languageTextManager->merge($newTagId, $locale, $tagName);
 
                 $qb->match("($tagIndex:ProfileTag:$tagLabel)")
-                    ->where("id(tag) = {tagId$index}")
+                    ->where("id($tagIndex) = {tagId$index}")
                     ->setParameter("tagId$index", $newTagId);
 
             } else {
                 $qb->match("($tagIndex:ProfileTag:$tagLabel)")
-                    ->where("id(tag) = {tagId$index}")
+                    ->where("id($tagIndex) = {tagId$index}")
                     ->setParameter("tagId$index", $existentTagId);
             }
 
@@ -275,13 +282,14 @@ class ProfileTagModel
             $tagParameter = $fieldName . '_' . $index;
             $choiceParameter = $fieldName . '_choice_' . $index;
 
-            $qb->with('profile')
-                ->merge('(profile)<-[:TAGGED {detail: {' . $choiceParameter . '}}]-(' . $tagIndex . ')')
+            $qb ->merge('(profile)<-[:TAGGED {detail: {' . $choiceParameter . '}}]-(' . $tagIndex . ')')
                 ->setParameter($tagParameter, $tagName)
                 ->setParameter('localeTag' . $index, $locale)
-                ->setParameter($choiceParameter, $choice);
+                ->setParameter($choiceParameter, $choice)
+                ->with('profile');
             $savedTags[] = $tagValue;
         }
+        $qb->returns('profile');
         $query = $qb->getQuery();
         $query->getResultSet();
     }
@@ -297,7 +305,8 @@ class ProfileTagModel
 
         //TODO: Call this->delete and then this method just create
         $qb->optionalMatch('(profile)<-[tagsAndChoiceOptionRel:TAGGED]-(:' . $tagLabel . ')')
-            ->delete('tagsAndChoiceOptionRel');
+            ->delete('tagsAndChoiceOptionRel')
+            ->with('profile');
 
         $savedTags = array();
         foreach ($tags as $index => $value) {
@@ -318,12 +327,12 @@ class ProfileTagModel
                 $this->languageTextManager->merge($newTagId, $locale, $tagName);
 
                 $qb->match("($tagIndex:ProfileTag:$tagLabel)")
-                    ->where("id(tag) = {tagId$index}")
+                    ->where("id($tagIndex) = {tagId$index}")
                     ->setParameter("tagId$index", $newTagId);
 
             } else {
                 $qb->match("($tagIndex:ProfileTag:$tagLabel)")
-                    ->where("id(tag) = {tagId$index}")
+                    ->where("id($tagIndex) = {tagId$index}")
                     ->setParameter("tagId$index", $existentTagId);
             }
 
@@ -331,13 +340,14 @@ class ProfileTagModel
             $tagParameter = $fieldName . '_' . $index;
             $choiceParameter = $fieldName . '_choice_' . $index;
 
-            $qb->with('profile')
-                ->merge('(profile)<-[:TAGGED {detail: {' . $choiceParameter . '}}]-(' . $tagIndex . ')')
+            $qb ->merge('(profile)<-[:TAGGED {detail: {' . $choiceParameter . '}}]-(' . $tagIndex . ')')
                 ->setParameter($tagParameter, $tagName)
                 ->setParameter('localeTag' . $index, $locale)
-                ->setParameter($choiceParameter, $choice);
+                ->setParameter($choiceParameter, $choice)
+                ->with('profile');
             $savedTags[] = $tagValue;
         }
+        $qb->returns('profile');
         $query = $qb->getQuery();
         $query->getResultSet();
     }

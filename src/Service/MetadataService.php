@@ -53,6 +53,13 @@ class MetadataService
     {
         $metadata = $this->getBasicMetadata($locale, 'profile');
 
+        return $metadata;
+    }
+
+    public function getProfileMetadataWithChoices($locale = null)
+    {
+        $metadata = $this->getProfileMetadata($locale);
+
         $choices = $this->profileOptionManager->getLocaleOptions($locale);
         $metadata = $this->addChoices($metadata, $choices, $locale);
 
