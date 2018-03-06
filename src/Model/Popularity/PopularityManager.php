@@ -91,8 +91,7 @@ class PopularityManager
         $qb->match('(u)-[:LIKES]->(link:Link)')
             ->merge('(link)-[:HAS_POPULARITY]->(popularity:Popularity)');
         $qb->with('link', 'popularity')
-//            ->where('coalesce(popularity.timestamp, 0) < timestamp() - 1000*3600*24');
-            ->where('coalesce(popularity.timestamp, 0) < timestamp() - 0');
+            ->where('coalesce(popularity.timestamp, 0) < timestamp() - 1000*3600*24');
         $qb->optionalMatch('(link)-[r:LIKES]-(:User)')
             ->with('link', 'popularity', 'count(DISTINCT r) AS total')
             ->with('popularity', 'toFloat(total) AS total')
