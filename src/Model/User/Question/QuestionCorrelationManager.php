@@ -259,7 +259,23 @@ class QuestionCorrelationManager
         /* @var $row Row */
         $row = $result->current();
 
-        return $row->offsetGet('c');
+        $count = $row->offsetGet('c');
+
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(q:RegisterQuestion)')
+            ->remove('q:RegisterQuestion')
+            ->returns('count(q) AS c');
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        /* @var $row Row */
+        $row = $result->current();
+
+        $count += $row->offsetGet('c');
+
+        return $count;
     }
 
     /**

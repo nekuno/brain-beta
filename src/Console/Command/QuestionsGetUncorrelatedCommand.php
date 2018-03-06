@@ -17,7 +17,6 @@ class QuestionsGetUncorrelatedCommand extends ApplicationAwareCommand
         $this->setName('questions:get-uncorrelated')
             ->setDescription('Get a selection of uncorrelated questions groups.')
             ->addArgument('preselect', InputArgument::OPTIONAL, 'How many top ranking questions are analyzed', 500)
-            ->addOption('group', null, InputArgument::OPTIONAL, 'How many questions we want the selection to include')
             ->addOption('correlated', null, InputOption::VALUE_NONE, 'If we want the more correlated questions')
             ->addOption('save', null, InputOption::VALUE_NONE, 'Set output questions as divisive');
     }
@@ -38,12 +37,11 @@ class QuestionsGetUncorrelatedCommand extends ApplicationAwareCommand
             }
 
         } else {
-            $result = $model->getUncorrelatedQuestions($preselected);
+            $result = $model->getUncorrelatedQuestions(5);
 
             if ($input->getOption('save')) {
                 $previous = $model->unsetAllDivisiveQuestions();
-                foreach ($result as $mode=> $questionsByMode)
-                {
+                foreach ($result as $mode => $questionsByMode) {
                     $model->setDivisiveQuestions($questionsByMode['questions'], $mode);
                 }
                 if (OutputInterface::VERBOSITY_NORMAL < $output->getVerbosity()) {
@@ -58,45 +56,60 @@ class QuestionsGetUncorrelatedCommand extends ApplicationAwareCommand
     }
 
     /**
-     * @param $result array
+     * @param $resultRaw
      * @param $output OutputInterface
      */
-    protected function outputCorrelations($result, $output)
+    protected function outputCorrelations($resultRaw, $output)
     {
+        $output->writeln('----------------------------');
+
         $size = 0;
-        foreach ($result as $question1 => $questions2) {
-            foreach ($questions2 as $question2 => $correlation) {
-                $output->writeln(sprintf('Correlation %f between question %s and question %s ', $correlation, $question1, $question2));
-                $size++;
+        foreach ($resultRaw as $mode => $result) {
+            $output->writeln(sprintf('Results for mode %s', $mode));
+            foreach ($result as $question1 => $questions2) {
+                foreach ($questions2 as $question2 => $correlation) {
+                    $output->writeln(sprintf('Correlation %f between question %s and question %s ', $correlation, $question1, $question2));
+                    $size++;
+                }
             }
+            $output->writeln('----------------------------');
         }
 
         $output->writeln($size);
     }
 
     /**
-     * @param $result array
+     * @param $resultRaw
      * @param $output OutputInterface
      */
-    protected function outputResult($result, $output)
+    protected function outputResult($resultRaw, $output)
     {
-        try {
+        $output->writeln('----------------------------');
 
-            $output->writeln(
-                sprintf(
-                    'Total correlation %s with questions %s and %s',
-                    $result['totalCorrelation'],
-                    $result['questions']['q1'],
-                    $result['questions']['q2']
-                )
-            );
-            $output->writeln('Total correlation: ' . $result['totalCorrelation']);
+        foreach ($resultRaw as $mode => $result) {
+            try {
+                $output->writeln(sprintf('Results for mode %s', $mode));
 
-        } catch (\Exception $e) {
+                $output->writeln(
+                    sprintf(
+                        'Total correlation %s with questions %s, %s, %s and %s',
+                        $result['totalCorrelation'],
+                        $result['questions']['q1'],
+                        $result['questions']['q2'],
+                        $result['questions']['q3'],
+                        $result['questions']['q4']
+                    )
+                );
+                $output->writeln('Total correlation: ' . $result['totalCorrelation']);
 
-            $output->writeln(sprintf('Error trying to get the uncorrelated questions: %s', $e->getMessage()));
+            } catch (\Exception $e) {
 
-            return;
+                $output->writeln(sprintf('Error trying to get the uncorrelated questions: %s', $e->getMessage()));
+
+                return;
+            }
+
+            $output->writeln('----------------------------');
         }
     }
 
