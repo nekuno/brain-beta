@@ -10,7 +10,7 @@ use PhpAmqpLib\Message\AMQPMessage;
 class AMQPManager
 {
     const MATCHING = 'matching';
-    const MATCHING_PERIODIC = 'matching_periodic';
+    const MATCHING_PERIODIC = 'matchingPeriodic';
     const FETCHING = 'fetching';
     const PREDICTION = 'prediction';
     const SOCIAL_NETWORK = 'socialNetwork';
