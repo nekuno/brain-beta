@@ -86,8 +86,6 @@ class ProfileTagModel
      */
     public function getProfileTagsSuggestion($type, $startingWith = null, $limit = 3)
     {
-        var_dump('SUGGESTING');
-        var_dump($startingWith);
         $startingWith = $this->languageTextManager->buildCanonical($startingWith);
         $label = $this->metadataUtilities->typeToLabel($type);
 
@@ -262,10 +260,6 @@ class ProfileTagModel
 
                 $newTag = $this->mergeTag($tagLabel, $tagGoogleGraphId);
                 $newTagId = $newTag['id'];
-                var_dump('WRIGINT');
-                var_dump($newTagId);
-                var_dump($locale);
-                var_dump($tagName);
                 $this->languageTextManager->merge($newTagId, $locale, $tagName);
 
                 $qb->match("($tagIndex:ProfileTag:$tagLabel)")
