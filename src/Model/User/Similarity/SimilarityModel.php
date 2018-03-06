@@ -121,11 +121,15 @@ class SimilarityModel
     {
         switch ($category) {
             case static::ALL:
+                $this->popularityManager->updatePopularityByUser($idA);
+                $this->popularityManager->updatePopularityByUser($idB);
                 $this->calculateSimilarityByInterests($idA, $idB);
                 $this->calculateSimilarityByQuestions($idA, $idB);
                 $this->calculateSimilarityBySkills($idA, $idB);
                 break;
             case static::INTERESTS:
+                $this->popularityManager->updatePopularityByUser($idA);
+                $this->popularityManager->updatePopularityByUser($idB);
                 $this->calculateSimilarityByInterests($idA, $idB);
                 break;
             case static::QUESTIONS:
@@ -416,10 +420,6 @@ class SimilarityModel
 
     private function calculateSimilarityByInterests($idA, $idB)
     {
-        // TODO: Disabled because several workers try to update same Popularity node
-        //$this->popularityManager->updatePopularityByUser($idA);
-        //$this->popularityManager->updatePopularityByUser($idB);
-
         $qb = $this->gm->createQueryBuilder();
         $qb
             ->match('(userA:User {qnoow_id: { idA } }), (userB:User {qnoow_id: { idB } })')
