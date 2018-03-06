@@ -416,8 +416,9 @@ class SimilarityModel
 
     private function calculateSimilarityByInterests($idA, $idB)
     {
-        $this->popularityManager->updatePopularityByUser($idA);
-        $this->popularityManager->updatePopularityByUser($idB);
+        // TODO: Disabled because several workers try to update same Popularity node
+        //$this->popularityManager->updatePopularityByUser($idA);
+        //$this->popularityManager->updatePopularityByUser($idB);
 
         $qb = $this->gm->createQueryBuilder();
         $qb
