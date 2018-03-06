@@ -37,7 +37,7 @@ class QuestionsGetUncorrelatedCommand extends ApplicationAwareCommand
             }
 
         } else {
-            $result = $model->getUncorrelatedQuestions(5);
+            $result = $model->getUncorrelatedQuestions($preselected);
 
             if ($input->getOption('save')) {
                 $previous = $model->unsetAllDivisiveQuestions();
