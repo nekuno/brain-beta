@@ -60,7 +60,6 @@ class QuestionNextSelector
 
         $query = $qb->getQuery();
 
-//        var_dump($query->getExecutableQuery());
         $result = $query->getResultSet();
 
         if (count($result) < 1) {
