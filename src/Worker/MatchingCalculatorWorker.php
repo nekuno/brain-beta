@@ -9,6 +9,7 @@ use Event\SimilarityProcessEvent;
 use Event\SimilarityProcessStepEvent;
 use Event\UserStatusChangedEvent;
 use Model\Neo4j\Neo4jException;
+use Model\Popularity\PopularityManager;
 use Model\User\Question\QuestionModel;
 use Model\User;
 use Model\User\Matching\MatchingModel;
@@ -55,6 +56,10 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
      */
     protected $affinityRecalculations;
     /**
+     * @var PopularityManager
+     */
+    protected $popularityManager;
+    /**
      * @var Connection
      */
     protected $connectionBrain;
@@ -67,6 +72,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
         UserStatsService $userStatsService,
         QuestionModel $questionModel,
         AffinityRecalculations $affinityRecalculations,
+        PopularityManager $popularityManager,
         Connection $connectionBrain,
         EventDispatcher $dispatcher
     ) {
@@ -77,6 +83,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
         $this->userStatsService = $userStatsService;
         $this->questionModel = $questionModel;
         $this->affinityRecalculations = $affinityRecalculations;
+        $this->popularityManager = $popularityManager;
         $this->connectionBrain = $connectionBrain;
     }
 
@@ -112,9 +119,11 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                     $this->dispatcher->dispatch(\AppEvents::SIMILARITY_PROCESS_START, $similarityProcessEvent);
                     $usersCount = count($usersWithSameContent);
                     $prevPercentage = 0;
+                    $this->popularityManager->updatePopularityByUser($userA);
                     foreach ($usersWithSameContent as $userIndex => $currentUser) {
                         /* @var $currentUser User */
                         $userB = $currentUser->getId();
+                        $this->popularityManager->updatePopularityByUser($userB);
                         $similarity = $this->similarityModel->getSimilarityBy(SimilarityModel::INTERESTS, $userA, $userB);
                         $percentage = round(($userIndex + 1) / $usersCount * 100);
                         $this->logger->info(sprintf('   Similarity by interests between users %d - %d: %s', $userA, $userB, $similarity['interests']));

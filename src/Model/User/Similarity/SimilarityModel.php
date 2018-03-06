@@ -5,7 +5,6 @@ namespace Model\User\Similarity;
 use Event\SimilarityEvent;
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
-use Model\Popularity\PopularityManager;
 use Model\User\Content\ContentPaginatedModel;
 use Model\User\Group\GroupModel;
 use Model\User\ProfileModel;
@@ -34,11 +33,6 @@ class SimilarityModel
     protected $gm;
 
     /**
-     * @var PopularityManager
-     */
-    protected $popularityManager;
-
-    /**
      * @var UserAnswerPaginatedModel
      */
     protected $questionPaginatedModel;
@@ -58,7 +52,6 @@ class SimilarityModel
     public function __construct(
         EventDispatcher $dispatcher,
         GraphManager $gm,
-        PopularityManager $popularityManager,
         UserAnswerPaginatedModel $questionPaginatedModel,
         ContentPaginatedModel $contentPaginatedModel,
         ProfileModel $profileModel,
@@ -67,7 +60,6 @@ class SimilarityModel
     {
         $this->dispatcher = $dispatcher;
         $this->gm = $gm;
-        $this->popularityManager = $popularityManager;
         $this->questionPaginatedModel = $questionPaginatedModel;
         $this->contentPaginatedModel = $contentPaginatedModel;
         $this->profileModel = $profileModel;
@@ -121,15 +113,11 @@ class SimilarityModel
     {
         switch ($category) {
             case static::ALL:
-                $this->popularityManager->updatePopularityByUser($idA);
-                $this->popularityManager->updatePopularityByUser($idB);
                 $this->calculateSimilarityByInterests($idA, $idB);
                 $this->calculateSimilarityByQuestions($idA, $idB);
                 $this->calculateSimilarityBySkills($idA, $idB);
                 break;
             case static::INTERESTS:
-                $this->popularityManager->updatePopularityByUser($idA);
-                $this->popularityManager->updatePopularityByUser($idB);
                 $this->calculateSimilarityByInterests($idA, $idB);
                 break;
             case static::QUESTIONS:

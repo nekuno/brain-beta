@@ -29,6 +29,7 @@ class MatchingCalculatorPeriodicWorker extends MatchingCalculatorWorker
                 $this->logger->notice(sprintf('[%s] Calculating matching by trigger "%s" for users %d - %d', date('Y-m-d H:i:s'), $trigger, $user1, $user2));
 
                 try {
+                    $this->popularityManager->updatePopularityByUser($user2);
                     $similarity = $this->similarityModel->getSimilarity($user1, $user2);
                     $matching = $this->matchingModel->calculateMatchingBetweenTwoUsersBasedOnAnswers($user1, $user2);
                     $this->logger->info(sprintf('   Similarity between users %d - %d: %s', $user1, $user2, $similarity['similarity']));
