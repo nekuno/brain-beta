@@ -10,6 +10,7 @@ use PhpAmqpLib\Message\AMQPMessage;
 class AMQPManager
 {
     const MATCHING = 'matching';
+    const MATCHING_PERIODIC = 'matching_periodic';
     const FETCHING = 'fetching';
     const PREDICTION = 'prediction';
     const SOCIAL_NETWORK = 'socialNetwork';
@@ -54,6 +55,11 @@ class AMQPManager
     public function enqueueMatching($messageData, $trigger)
     {
         $this->enqueueMessage($messageData, self::MATCHING, $trigger);
+    }
+
+    public function enqueueMatchingPeriodic($messageData, $trigger)
+    {
+        $this->enqueueMessage($messageData, self::MATCHING_PERIODIC, $trigger);
     }
 
     public function enqueueChannel($messageData)
@@ -113,6 +119,7 @@ class AMQPManager
     {
         return array(
             self::MATCHING,
+            self::MATCHING_PERIODIC,
             self::FETCHING,
             self::PREDICTION,
             self::SOCIAL_NETWORK,
