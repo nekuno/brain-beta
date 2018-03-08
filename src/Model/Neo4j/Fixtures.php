@@ -203,7 +203,9 @@ class Fixtures
                     'address' => 'Madrid',
                     'locality' => 'Madrid',
                     'country' => 'Spain'
-                )
+                ),
+                'mode' => 'contact',
+                'objective' => array('contact')
             );
             $this->pm->create($i, $profileData);
         }
