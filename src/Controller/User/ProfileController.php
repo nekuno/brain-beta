@@ -2,6 +2,7 @@
 
 namespace Controller\User;
 
+use Manager\UserManager;
 use Model\User\ProfileModel;
 use Model\User\ProfileTagModel;
 use Model\User;
@@ -34,11 +35,14 @@ class ProfileController
      */
     public function getOtherAction(Request $request, Application $app)
     {
-        $id = $request->get('userId');
+        /* @var $model UserManager */
+        $userManager = $app['users.manager'];
+        $slug = $request->get('slug');
+        $userId = $userManager->getBySlug($slug)->getId();
         /* @var $model ProfileModel */
         $model = $app['users.profile.model'];
 
-        $profile = $model->getById($id);
+        $profile = $model->getById($userId);
 
         return $app->json($profile);
     }

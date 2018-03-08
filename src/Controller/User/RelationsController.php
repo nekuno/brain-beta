@@ -2,6 +2,7 @@
 
 namespace Controller\User;
 
+use Manager\UserManager;
 use Model\User\RelationsModel;
 use Model\User;
 use Silex\Application;
@@ -30,12 +31,15 @@ class RelationsController
     /**
      * @param Application $app
      * @param User $user
-     * @param integer $to
+     * @param string $slugTo
      * @param string $relation
      * @return JsonResponse
      */
-    public function getAction(Application $app, User $user, $to, $relation = null)
+    public function getAction(Application $app, User $user, $slugTo, $relation = null)
     {
+        /* @var $model UserManager */
+        $userManager = $app['users.manager'];
+        $to = $userManager->getBySlug($slugTo)->getId();
         /* @var $model RelationsModel */
         $model = $app['users.relations.model'];
 
@@ -59,12 +63,15 @@ class RelationsController
     /**
      * @param Application $app
      * @param User $user
-     * @param integer $from
+     * @param string $slugFrom
      * @param string $relation
      * @return JsonResponse
      */
-    public function getOtherAction(Application $app, User $user, $from, $relation = null)
+    public function getOtherAction(Application $app, User $user, $slugFrom, $relation = null)
     {
+        /* @var $model UserManager */
+        $userManager = $app['users.manager'];
+        $from = $userManager->getBySlug($slugFrom)->getId();
         /* @var $model RelationsModel */
         $model = $app['users.relations.model'];
 
@@ -89,12 +96,16 @@ class RelationsController
      * @param Request $request
      * @param Application $app
      * @param User $user
-     * @param integer $to
+     * @param string $slugTo
      * @param string $relation
      * @return JsonResponse
      */
-    public function postAction(Request $request, Application $app, User $user, $to, $relation)
+    public function postAction(Request $request, Application $app, User $user, $slugTo, $relation)
     {
+        /* @var $model UserManager */
+        $userManager = $app['users.manager'];
+        $to = $userManager->getBySlug($slugTo)->getId();
+
         $data = $request->request->all();
 
         /* @var $model RelationsModel */
@@ -108,12 +119,16 @@ class RelationsController
     /**
      * @param Application $app
      * @param User $user
-     * @param integer $to
+     * @param string $slugTo
      * @param string $relation
      * @return JsonResponse
      */
-    public function deleteAction(Application $app, User $user, $to, $relation)
+    public function deleteAction(Application $app, User $user, $slugTo, $relation)
     {
+        /* @var $model UserManager */
+        $userManager = $app['users.manager'];
+        $to = $userManager->getBySlug($slugTo)->getId();
+
         /* @var $model RelationsModel */
         $model = $app['users.relations.model'];
 
