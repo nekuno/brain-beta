@@ -25,9 +25,9 @@ class QuestionCategoryManager
             ->where('id(q) = {questionId}')
             ->setParameter('questionId', (integer)$questionId);
 
-        $qb->optionalMatch('(q)<-[:CATEGORY_OF]-(category:QuestionCategory)');
+        $qb->optionalMatch('(q)<-[:CATEGORY_OF]-(category:QuestionCategory)-[:INCLUDED_IN]-(mode:Mode)');
 
-        $qb->returns('{id: id(category), name: category.name} AS category');
+        $qb->returns('{id: id(category), name: mode.id} AS category');
 
         $result = $qb->getQuery()->getResultSet();
 
@@ -48,12 +48,12 @@ class QuestionCategoryManager
             ->delete('r')
             ->with('q');
 
-        $qb->match('(category:QuestionCategory)')
-            ->where('category.name IN {categories}')
+        $qb->match('(category:QuestionCategory)--(mode:Mode)')
+            ->where('mode.id IN {categories}')
             ->setParameter('categories', $categories);
         $qb->merge('(category)-[r:CATEGORY_OF]->(q)');
 
-        $qb->returns('{id: id(category), name: category.name} AS category');
+        $qb->returns('{id: id(category), name: mode.id} AS category');
 
         $result = $qb->getQuery()->getResultSet();
 

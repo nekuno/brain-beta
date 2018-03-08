@@ -53,7 +53,7 @@ class QuestionService
         $questionId = $created->getQuestionId();
         $this->questionCategoryManager->setQuestionCategories($questionId, $data);
 
-        return $this->getOneMultilanguage($questionId);
+        return $this->getOneAdmin($questionId);
     }
 
     public function updateQuestion(array $data)
@@ -61,8 +61,9 @@ class QuestionService
         $data = $this->questionAdminDataFormatter->getUpdateData($data);
         $created = $this->questionAdminManager->update($data);
         $questionId = $created->getQuestionId();
+        $this->questionCategoryManager->setQuestionCategories($questionId, $data);
 
-        return $this->getOneMultilanguage($questionId);
+        return $this->getOneAdmin($questionId);
     }
 
     public function getById($questionId, $locale)
@@ -71,7 +72,7 @@ class QuestionService
 
     }
 
-    public function getOneMultilanguage($questionId)
+    public function getOneAdmin($questionId)
     {
         return $this->questionAdminManager->getById($questionId);
     }
