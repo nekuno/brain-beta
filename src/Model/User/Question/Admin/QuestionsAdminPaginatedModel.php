@@ -35,7 +35,10 @@ class QuestionsAdminPaginatedModel extends QuestionAdminManager implements Pagin
         $qb->optionalMatch('(q)<-[:IS_ANSWER_OF]-(a:Answer)')
             ->with('q', 'skipped', 'answered', 'a', "CASE WHEN EXISTS(a.$textAttribute) THEN 0 ELSE 1 END AS lacksLocale")
             ->with('q', 'skipped', 'answered', 'collect(a) AS answers', 'sum(lacksLocale) AS localeMissing')
-            ->returns('q', 'skipped', 'answered', 'answers', "localeMissing + CASE WHEN EXISTS(q.$textAttribute) THEN 0 ELSE 1 END AS localeMissing")
+            ->with('q', 'skipped', 'answered', 'answers', "localeMissing + CASE WHEN EXISTS(q.$textAttribute) THEN 0 ELSE 1 END AS localeMissing");
+
+        $qb->optionalMatch('(q)-[:CATEGORY_OF]-(qc:QuestionCategory)-[:INCLUDED_IN]-(m:Mode)')
+            ->returns('q', 'skipped', 'answered', 'answers', 'localeMissing', 'collect(m.id) AS categories')
             ->orderBy($order);
 
         $query = $qb->getQuery();
