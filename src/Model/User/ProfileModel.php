@@ -625,8 +625,8 @@ class ProfileModel
             ->setParameter('id', (int)$userId)
             ->with('profile');
 
-        $qb->match('(profile)<-[rel:MULTIPLE_FIELDS_OF]-()')
-            ->delete('rel');
+        $qb->match('(profile)<-[:MULTIPLE_FIELDS_OF]-(multi)')
+            ->detachDelete('multi');
 
         $qb->getQuery()->getResultSet();
     }
