@@ -29,6 +29,7 @@ class FilterUsersValidator extends Validator
     protected function validate($data, $userId = null)
     {
         $choices = array();
+        //TODO: Check if necessary, already in getUserFilterMetadata
         if (!empty($data) && $userId) {
             $groupChoices = $this->metadataService->getGroupChoices($userId);
             foreach ($groupChoices as $value) {

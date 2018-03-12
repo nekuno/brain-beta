@@ -278,7 +278,6 @@ class Validator implements ValidatorInterface
                         }
                         break;
                     case 'multiple_choices':
-                        $multipleChoices = $choices;
                         if (!is_array($dataValue)) {
                             $fieldErrors[] = 'Multiple choices value must be an array';
                             continue;
@@ -288,7 +287,7 @@ class Validator implements ValidatorInterface
                         $fieldErrors[] = $this->validateMax($dataValue, $fieldData);
 
                         foreach ($dataValue as $singleValue) {
-                            $fieldErrors[] = $this->validateChoice($singleValue, $multipleChoices);
+                            $fieldErrors[] = $this->validateChoice($singleValue, $choices);
                         }
                         break;
                     case 'location':
@@ -389,7 +388,7 @@ class Validator implements ValidatorInterface
     {
         foreach ($errors as $field => &$fieldErrors) {
             foreach ($fieldErrors as $index => $fieldError) {
-                if (is_array($fieldError) && empty($fieldError)) {
+                if (empty($fieldError)) {
                     unset($fieldErrors[$index]);
                 }
             }
@@ -497,7 +496,7 @@ class Validator implements ValidatorInterface
             return sprintf('Option with value "%s" is not valid, possible values are "%s"', $choice, implode("', '", $validChoices));
         }
 
-        return array();
+        return null;
     }
 
 }

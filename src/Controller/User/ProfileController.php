@@ -130,7 +130,7 @@ class ProfileController
     {
         $type = $request->get('type');
         $search = $request->get('search', '');
-        $limit = $request->get('limit', 0);
+        $limit = $request->get('limit', 3);
 
         if (null === $type) {
             throw new NotFoundHttpException('type needed');
