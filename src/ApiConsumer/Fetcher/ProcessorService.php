@@ -283,6 +283,9 @@ class ProcessorService implements LoggerAwareInterface
 
             return $links;
         } catch (UrlChangedException $e) {
+            if (!$this->linkModel->findLinkByUrl($e->getOldUrl())) {
+                throw new \Exception(sprintf('Url %s not found in database', $e->getOldUrl()));
+            }
             $this->replaceUrlInDatabase($e->getOldUrl(), $e->getNewUrl());
         }
 
