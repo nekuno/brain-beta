@@ -40,7 +40,9 @@ class QuestionAdminManager
             ->optionalMatch('(question)-[r:RATES]-(:User)')
             ->with('question', 'answers', 'count(r) AS answered')
             ->optionalMatch('(question)-[s:SKIPS]-(:User)')
-            ->returns('question', 'answers', 'answered', 'count(s) AS skipped')
+            ->with('question', 'answers', 'answered', 'count(s) AS skipped')
+            ->optionalMatch('(question)-[:CATEGORY_OF]-(qc:QuestionCategory)--(mode:Mode)')
+            ->returns('question', 'answers', 'answered', 'skipped', 'collect(mode.id) AS categories')
             ->limit(1);
 
         $query = $qb->getQuery();

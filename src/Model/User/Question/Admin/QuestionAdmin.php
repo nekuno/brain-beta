@@ -14,6 +14,8 @@ class QuestionAdmin implements \JsonSerializable
 
     protected $skipped = 0;
 
+    protected $categories = array();
+
     /**
      * @return mixed
      */
@@ -95,6 +97,22 @@ class QuestionAdmin implements \JsonSerializable
         $this->skipped = $skipped;
     }
 
+    /**
+     * @return array
+     */
+    public function getCategories()
+    {
+        return $this->categories;
+    }
+
+    /**
+     * @param array $categories
+     */
+    public function setCategories($categories)
+    {
+        $this->categories = $categories;
+    }
+
     public function jsonSerialize()
     {
         return $this->toArray();
@@ -109,6 +127,7 @@ class QuestionAdmin implements \JsonSerializable
             'answers' => $this->answers,
             'answered' => $this->answered,
             'skipped' => $this->skipped,
+            'categories' => $this->categories,
         );
     }
 }

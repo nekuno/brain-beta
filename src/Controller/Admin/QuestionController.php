@@ -31,7 +31,7 @@ class QuestionController
     {
         /** @var QuestionService $questionService */
         $questionService = $app['question.service'];
-        $question = $questionService->getOneMultilanguage($questionId);
+        $question = $questionService->getOneAdmin($questionId);
 
         return $app->json($question);
     }

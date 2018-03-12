@@ -64,7 +64,7 @@ class QuestionCorrelationManager
         return $count;
     }
 
-    protected function getAllModes()
+    public function getAllModes()
     {
         $qb = $this->graphManager->createQueryBuilder();
 
