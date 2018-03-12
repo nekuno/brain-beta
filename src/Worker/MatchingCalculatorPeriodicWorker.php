@@ -29,6 +29,15 @@ class MatchingCalculatorPeriodicWorker extends MatchingCalculatorWorker
                 $this->logger->notice(sprintf('[%s] Calculating matching by trigger "%s" for users %d - %d', date('Y-m-d H:i:s'), $trigger, $user1, $user2));
 
                 try {
+                    $this->userManager->getById($user1);
+                    $this->userManager->getById($user2);
+                } catch (\Exception $e) {
+                    $this->logger->error(sprintf('Worker: Error calculating similarity and matching between user %d and user %d with message "one of the users does not exist"', $user1, $user2));
+                    $this->dispatchError($e, 'Matching with periodic trigger');
+                    break;
+                }
+
+                try {
                     $this->popularityManager->updatePopularityByUser($user2);
                     $similarity = $this->similarityModel->getSimilarity($user1, $user2);
                     $matching = $this->matchingModel->calculateMatchingBetweenTwoUsersBasedOnAnswers($user1, $user2);
