@@ -77,4 +77,14 @@ class QuestionCategoryManager
 
         return $categories;
     }
+
+    public function createQuestionCategoriesFromModes()
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(mode:Mode)')
+            ->merge('(mode)<-[:INCLUDED_IN]-(:QuestionCategory)');
+
+        $qb->getQuery()->getResultSet();
+    }
 }

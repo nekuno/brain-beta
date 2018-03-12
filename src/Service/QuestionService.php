@@ -112,4 +112,9 @@ class QuestionService
 
         return $questions;
     }
+
+    public function createQuestionCategories()
+    {
+        $this->questionCategoryManager->createQuestionCategoriesFromModes();
+    }
 }
