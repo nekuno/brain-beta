@@ -12,8 +12,8 @@ use Tests\API\MockUp\TokensModelMockUp;
 abstract class APITest extends WebTestCase
 {
     const OWN_USER_ID = 1;
-    const OTHER_USER_ID = 2;
-    const UNDEFINED_USER_ID = 3;
+    const OTHER_USER_SLUG = 'janedoe';
+    const UNDEFINED_USER_SLUG = 'undefined';
 
     protected $app;
 
