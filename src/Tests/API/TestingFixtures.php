@@ -7,14 +7,14 @@ use Model\Neo4j\Constraints;
 use Model\Neo4j\GraphManager;
 use Model\Neo4j\PrivacyOptions;
 use Model\Neo4j\ProfileOptions;
-use Model\User\Question\QuestionModel;
+use Model\User\Question\QuestionCorrelationManager;
 use Model\User\Question\AnswerManager;
 use Model\User\ProfileModel;
 use Model\User\Rate\RateModel;
-use Model\User\Group\GroupModel;
 use Model\User\InvitationModel;
 use Psr\Log\LoggerInterface;
 use Service\GroupService;
+use Service\QuestionService;
 use Service\RegisterService;
 use Silex\Application;
 
@@ -55,10 +55,13 @@ class TestingFixtures
     protected $lm;
 
     /**
-     * @var QuestionModel
+     * @var QuestionService
      */
-    protected $qm;
+    protected $questionService;
 
+    /**
+     * @var QuestionCorrelationManager
+     */
     protected $correlationManager;
 
     /**
@@ -94,7 +97,7 @@ class TestingFixtures
         $this->groupService = $app['group.service'];
         $this->im = $app['users.invitations.model'];
         $this->lm = $app['links.model'];
-        $this->qm = $app['questionnaire.questions.model'];
+        $this->questionService = $app['question.service'];
         $this->correlationManager = $app['users.questionCorrelation.manager'];
         $this->rm = $app['users.rate.model'];
         $this->logger = $app['logger'];
@@ -283,47 +286,37 @@ class TestingFixtures
 
     protected function loadQuestions()
     {
+        $this->logger->notice('Creating question categories');
+
+        $this->questionService->createQuestionCategories();
+
         $this->logger->notice(sprintf('Loading %d questions', self::NUM_OF_QUESTIONS));
 
         $halfQuestions = (int)round(self::NUM_OF_QUESTIONS / 2);
         for ($i = 1; $i <= self::NUM_OF_QUESTIONS; $i++) {
 
-            $answers = array();
-
-            for ($j = 1; $j <= 3; $j++) {
-                $answers[] = $i < $halfQuestions ?
-                    array('text' => 'Answer ' . $j . ' to Question ' . $i) :
-                    array('text' => 'Answer ' . $j . ' to Question ' . $i . '. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vestibulum augue dolor, non malesuada tellus suscipit quis.');
-            }
-
             $questionText = $i < $halfQuestions ? 'Question ' . $i : 'Question ' . $i . '. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vestibulum augue dolor, non malesuada tellus suscipit quis.';
-            $question = $this->qm->create(
-                array(
-                    'locale' => 'en',
-                    'text' => $questionText,
-                    'userId' => 1,
-                    'answers' => $answers,
-                )
+            $data = array(
+                'textEs' => $questionText,
+                'textEn' => $questionText
             );
 
-            $answers = $question['answers'];
-            $j = 1;
-            foreach ($answers as $answer) {
-                $answers[] = $i < $halfQuestions ?
-                    array('answerId' => $answer['answerId'], 'text' => 'Respuesta ' . $j . ' a la pregunta ' . $i) :
-                    array('answerId' => $answer['answerId'], 'text' => 'Respuesta ' . $j . ' a la pregunta ' . $i . '. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vestibulum augue dolor, non malesuada tellus suscipit quis.');
-                $j++;
+            $answers = array();
+            for ($j = 1; $j <= 3; $j++) {
+                $answers [] = 'Answer ' . $j . ' to ' . $questionText;
+            }
+            foreach ($answers as $index => $answer) {
+                foreach (array('En', 'Es') as $locale) {
+                    $key = 'answer' . ($index + 1) . $locale;
+                    $data[$key] = $answer;
+                }
             }
 
-            $questionText = $i < $halfQuestions ? 'Pregunta ' . $i : 'Pregunta ' . $i . '. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vestibulum augue dolor, non malesuada tellus suscipit quis.';
-            $this->qm->update(
-                array(
-                    'questionId' => $question['questionId'],
-                    'locale' => 'es',
-                    'text' => $questionText,
-                    'answers' => $answers,
-                )
-            );
+            $categories = $this->correlationManager->getAllModes();
+
+            $data['categories'] = $categories;
+
+            $this->questionService->createQuestion($data);
         }
     }
 
@@ -436,7 +429,8 @@ class TestingFixtures
             ),
             "gender" => "male",
             "orientation" => array("heterosexual"),
-            "interfaceLanguage" => "es"
+            "interfaceLanguage" => "es",
+            "mode" => "explore"
         );
     }
 
@@ -477,7 +471,8 @@ class TestingFixtures
             ),
             "gender" => "male",
             "orientation" => array("heterosexual"),
-            "interfaceLanguage" => "es"
+            "interfaceLanguage" => "es",
+            "mode" => "explore"
         );
     }
 

@@ -6,16 +6,16 @@ class ProfileTest extends ProfileAPITest
 {
     public function testProfile()
     {
-//        $this->assertGetProfileWithoutCredentialsResponse();
-//        $this->assertGetCategories();
-//        $this->assertGetNoneExistentProfileResponse();
-//        $this->assertGetExistentProfileResponse();
-//        $this->assertGetOwnProfileResponse();
-//        $this->assertEditOwnProfileResponse();
-//        $this->assertValidationErrorsResponse();
+        $this->assertGetProfileWithoutCredentialsResponse();
+        $this->assertGetCategories();
+        $this->assertGetNoneExistentProfileResponse();
+        $this->assertGetExistentProfileResponse();
+        $this->assertGetOwnProfileResponse();
+        $this->assertEditOwnProfileResponse();
+        $this->assertValidationErrorsResponse();
         $this->assertEditComplexProfileResponse();
-//        $this->assetsGetProfileMetadataResponse();
-//        $this->assetsGetProfileFiltersResponse();
+        $this->assetsGetProfileMetadataResponse();
+        $this->assetsGetProfileFiltersResponse();
         $this->assetsGetProfileTagsResponse();
     }
 

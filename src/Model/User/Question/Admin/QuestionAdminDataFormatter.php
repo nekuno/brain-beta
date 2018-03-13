@@ -18,7 +18,7 @@ class QuestionAdminDataFormatter
         $data = array(
             'answerTexts' => $this->getAnswersTexts($rawData),
             'questionTexts' => $this->getQuestionTexts($rawData),
-            'categories' => isset($data['categories']) ? $data['categories'] : []
+            'categories' => isset($rawData['categories']) ? $rawData['categories'] : []
         );
 
         if (isset($rawData['questionId'])){

@@ -200,7 +200,9 @@ class MetadataService
         foreach ($metadata as &$field) {
             if (isset($field['choices']) && is_array($field['choices'])) {
                 foreach ($field['choices'] as $id => $choice) {
-                    $field['choices'][$id] = $id;
+                    if(isset($choice['id'])){
+                        $field['choices'][$id] = $choice['id'];
+                    }
                 }
             }
         }

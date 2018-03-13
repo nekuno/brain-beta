@@ -84,7 +84,14 @@ class QuestionController
         $mode = $questionCorrelationManager->getMode($userId);
 
         unset($question['registerModes']);
-        $question['isRegisterQuestion'] = in_array($mode, $registerModes);
+
+        if ($mode)
+        {
+            $question['isRegisterQuestion'] = in_array($mode, $registerModes);
+        } else {
+            $question['isRegisterQuestion'] = $questionCorrelationManager->isDivisiveForAny($question['questionId']);
+        }
+
 
         return $question;
     }

@@ -64,7 +64,7 @@ class QuestionCorrelationManager
         return $count;
     }
 
-    protected function getAllModes()
+    public function getAllModes()
     {
         $qb = $this->graphManager->createQueryBuilder();
 
@@ -94,9 +94,32 @@ class QuestionCorrelationManager
 
         $result = $qb->getQuery()->getResultSet();
 
+        if ($result->count() === 0)
+        {
+            return null;
+        }
+
         $mode = $result->current()->offsetGet('modeId');
 
         return $mode;
+    }
+
+    public function isDivisiveForAny($questionId)
+    {
+        $qb = $this->graphManager->createQueryBuilder();
+
+        $qb->match('(q:Question)')
+            ->where('id(q) = {questionId}')
+            ->setParameter('questionId', (integer)$questionId);
+
+        $qb->optionalMatch('(q)-[r:REGISTERS]-(:Mode)')
+            ->returns('count(r) AS amount');
+
+        $result = $qb->getQuery()->getResultSet();
+
+        $amount = $result->current()->offsetGet('amount');
+
+        return $amount > 0;
     }
 
     protected function getCorrelations($preselected, $mode = null)

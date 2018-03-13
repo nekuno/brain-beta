@@ -12,6 +12,7 @@ class QuestionAdminBuilder
         $questionNode = $row->offsetGet('question');
         $question = $this->buildQuestion($questionNode);
 
+        $this->addCategories($row, $question);
         $this->addAnswers($row, $question);
         $this->addStats($row, $question);
 
@@ -28,6 +29,20 @@ class QuestionAdminBuilder
         $question->setQuestionText('en', $questionNode->getProperty($englishText));
 
         return $question;
+    }
+
+    protected function addCategories(Row $row, QuestionAdmin $question)
+    {
+        if (!$row->offsetExists('categories')) {
+            return;
+        }
+
+        $categories = array();
+        foreach ($row->offsetGet('categories') as $category){
+            $categories[] = $category;
+        }
+
+        $question->setCategories($categories);
     }
 
     /**

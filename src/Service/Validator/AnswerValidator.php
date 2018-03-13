@@ -37,7 +37,7 @@ class AnswerValidator extends Validator
         /** @var Answer $answer */
         $answer = $data['userAnswer'];
         if (!$answer->isEditable()) {
-            $this->throwException(array('answer' => sprintf('This answer cannot be edited now. Please wait %s seconds', $answer->getEditableIn())));
+            $this->throwException(array('answer' => array(sprintf('This answer cannot be edited now. Please wait %s seconds', $answer->getEditableIn()))));
         }
     }
 
