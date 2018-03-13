@@ -11,9 +11,9 @@ abstract class ProfileAPITest extends APITest
         return $this->getResponseByRouteWithCredentials('/profile', 'GET', array(), $loggedInUserId);
     }
 
-    protected function getOtherProfile($userId = self::OTHER_USER_ID, $loggedInUserId = self::OWN_USER_ID)
+    protected function getOtherProfile($userSlug = self::OTHER_USER_SLUG, $loggedInUserId = self::OWN_USER_ID)
     {
-        return $this->getResponseByRouteWithCredentials('/profile/' . $userId, 'GET', array(), $loggedInUserId);
+        return $this->getResponseByRouteWithCredentials('/profile/' . $userSlug, 'GET', array(), $loggedInUserId);
     }
 
     protected function validateProfile($userData, $loggedInUserId = self::OWN_USER_ID)

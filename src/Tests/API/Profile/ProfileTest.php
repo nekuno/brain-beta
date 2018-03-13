@@ -21,7 +21,7 @@ class ProfileTest extends ProfileAPITest
 
     protected function assertGetProfileWithoutCredentialsResponse()
     {
-        $response = $this->getOtherProfile(self::OTHER_USER_ID, null);
+        $response = $this->getOtherProfile(self::OTHER_USER_SLUG, null);
         $this->assertStatusCode($response, 401, "Get Profile without credentials");
     }
 
@@ -46,13 +46,13 @@ class ProfileTest extends ProfileAPITest
 
     protected function assertGetNoneExistentProfileResponse()
     {
-        $response = $this->getOtherProfile(self::UNDEFINED_USER_ID);
+        $response = $this->getOtherProfile(self::UNDEFINED_USER_SLUG);
         $this->assertStatusCode($response, 404, "Get non-existent profile");
     }
 
     protected function assertGetExistentProfileResponse()
     {
-        $response = $this->getOtherProfile(self::OTHER_USER_ID);
+        $response = $this->getOtherProfile(self::OTHER_USER_SLUG);
         $formattedResponse = $this->assertJsonResponse($response, 200, "Get existent profile");
         $this->assertProfileFormat($formattedResponse);
     }
