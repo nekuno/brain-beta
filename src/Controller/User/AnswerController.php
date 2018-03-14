@@ -4,9 +4,9 @@ namespace Controller\User;
 
 use Event\AnswerEvent;
 use Model\Metadata\MetadataManager;
-use Model\User\Question\QuestionModel;
-use Model\User\Question\UserAnswerPaginatedModel;
-use Model\User;
+use Model\Question\QuestionManager;
+use Model\Question\UserAnswerPaginatedManager;
+use Model\User\User;
 use Silex\Application;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
@@ -30,7 +30,7 @@ class AnswerController
         $paginator = $app['paginator'];
 
         $filters = array('id' => $user->getId(), 'locale' => $locale);
-        /* @var $model UserAnswerPaginatedModel */
+        /* @var $model UserAnswerPaginatedManager */
         $model = $app['users.questions.model'];
 
         $result = $paginator->paginate($filters, $model, $request);
@@ -77,7 +77,7 @@ class AnswerController
         $userAnswer = $app['users.answers.model']->answer($data);
 
         // TODO: Refactor this to listener
-        /* @var $questionModel QuestionModel */
+        /* @var $questionModel QuestionManager */
         $questionModel = $app['questionnaire.questions.model'];
         $questionModel->setOrUpdateRankingForQuestion($data['questionId']);
 
@@ -100,7 +100,7 @@ class AnswerController
         $userAnswer = $app['users.answers.model']->update($data);
 
         // TODO: Refactor this to listener
-        /* @var $questionModel QuestionModel */
+        /* @var $questionModel QuestionManager */
         $questionModel = $app['questionnaire.questions.model'];
         $questionModel->setOrUpdateRankingForQuestion($data['questionId']);
 
@@ -179,7 +179,7 @@ class AnswerController
         $dispatcher = $app['dispatcher'];
         $dispatcher->dispatch(\AppEvents::ANSWER_ADDED, new AnswerEvent($user->getId(),$questionId));
 
-        /* @var $questionModel QuestionModel */
+        /* @var $questionModel QuestionManager */
         $questionModel = $app['questionnaire.questions.model'];
 
         try {
@@ -213,7 +213,7 @@ class AnswerController
 
         $filters = array('id' => $otherUserId, 'id2' => $user->getId(), 'locale' => $locale, 'showOnlyCommon' => $showOnlyCommon);
 
-        /* @var $model \Model\User\Question\OldQuestionComparePaginatedModel */
+        /* @var $model \Model\Question\OldQuestionComparePaginatedManager */
         $model = $app['old.users.questions.compare.model'];
 
         try {
@@ -251,7 +251,7 @@ class AnswerController
 
         $filters = array('id' => $otherUserId, 'id2' => $user->getId(), 'locale' => $locale, 'showOnlyCommon' => $showOnlyCommon);
 
-        /* @var $model \Model\User\Question\QuestionComparePaginatedModel */
+        /* @var $model \Model\Question\QuestionComparePaginatedManager */
         $model = $app['users.questions.compare.model'];
 
         try {

@@ -2,16 +2,16 @@
 
 namespace Model\Neo4j;
 
-use Model\Link\LinkModel;
-use Model\User;
-use Model\User\Question\AnswerManager;
-use Model\User\ProfileModel;
-use Model\User\Rate\RateModel;
-use Manager\UserManager;
-use Model\EnterpriseUser\EnterpriseUserModel;
-use Model\User\Group\GroupModel;
-use Model\User\InvitationModel;
-use Model\User\PrivacyModel;
+use Model\Link\LinkManager;
+use Model\User\User;
+use Model\Question\AnswerManager;
+use Model\Profile\ProfileManager;
+use Model\Rate\RateManager;
+use Model\User\UserManager;
+use Model\EnterpriseUser\EnterpriseUserManager;
+use Model\Group\GroupManager;
+use Model\Invitation\InvitationManager;
+use Model\Privacy\PrivacyManager;
 use Psr\Log\LoggerInterface;
 use Service\GroupService;
 use Service\QuestionService;
@@ -48,7 +48,7 @@ class Fixtures
     protected $um;
 
     /**
-     * @var LinkModel
+     * @var LinkManager
      */
     protected $lm;
 
@@ -68,22 +68,22 @@ class Fixtures
     protected $am;
 
     /**
-     * @var ProfileModel
+     * @var ProfileManager
      */
     protected $pm;
 
     /**
-     * @var  PrivacyModel
+     * @var  PrivacyManager
      * */
     protected $prim;
 
     /**
-     * @var EnterpriseUserModel
+     * @var EnterpriseUserManager
      */
     protected $eu;
 
     /**
-     * @var GroupModel
+     * @var GroupManager
      */
     protected $gpm;
 
@@ -93,7 +93,7 @@ class Fixtures
     protected $groupService;
 
     /**
-     * @var InvitationModel
+     * @var InvitationManager
      */
     protected $im;
 
@@ -108,7 +108,7 @@ class Fixtures
     protected $questions = array();
 
     /**
-     * @var RateModel
+     * @var RateManager
      */
     protected $rm;
 

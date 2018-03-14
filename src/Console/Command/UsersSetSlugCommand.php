@@ -3,7 +3,7 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
-use Manager\UserManager;
+use Model\User\UserManager;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 

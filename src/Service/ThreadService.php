@@ -4,15 +4,15 @@ namespace Service;
 
 use Everyman\Neo4j\Node;
 use Model\Exception\ValidationException;
-use Model\User\Filters\FilterContentManager;
-use Model\User\Filters\FilterUsersManager;
-use Model\User\Group\Group;
-use Model\User\Thread\ContentThread;
-use Model\User\Thread\Thread;
-use Model\User\Thread\ThreadCachedManager;
-use Model\User\Thread\ThreadDataManager;
-use Model\User\Thread\ThreadManager;
-use Model\User\Thread\UsersThread;
+use Model\Filters\FilterContentManager;
+use Model\Filters\FilterUsersManager;
+use Model\Group\Group;
+use Model\Thread\ContentThread;
+use Model\Thread\Thread;
+use Model\Thread\ThreadCachedManager;
+use Model\Thread\ThreadDataManager;
+use Model\Thread\ThreadManager;
+use Model\Thread\UsersThread;
 
 class ThreadService
 {

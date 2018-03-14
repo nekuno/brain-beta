@@ -3,7 +3,7 @@
 namespace ApiConsumer\ResourceOwner;
 
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
-use Model\User\Token\Token;
+use Model\Token\Token;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\GoogleResourceOwner as GoogleResourceOwnerBase;
 

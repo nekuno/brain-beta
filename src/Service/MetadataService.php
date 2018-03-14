@@ -5,8 +5,8 @@ namespace Service;
 use Model\Metadata\MetadataManagerFactory;
 use Model\Metadata\MetadataManagerInterface;
 use Model\Metadata\MetadataUtilities;
-use Model\User\Group\GroupModel;
-use Model\User\ProfileOptionManager;
+use Model\Group\GroupManager;
+use Model\Profile\ProfileOptionManager;
 
 class MetadataService
 {
@@ -20,11 +20,11 @@ class MetadataService
     /**
      * MetadataService constructor.
      * @param MetadataManagerFactory $metadataManagerFactory
-     * @param GroupModel $groupModel
+     * @param GroupManager $groupModel
      * @param ProfileOptionManager $profileOptionManager
      * @param MetadataUtilities $metadataUtilities
      */
-    public function __construct(MetadataManagerFactory $metadataManagerFactory, GroupModel $groupModel, ProfileOptionManager $profileOptionManager, MetadataUtilities $metadataUtilities)
+    public function __construct(MetadataManagerFactory $metadataManagerFactory, GroupManager $groupModel, ProfileOptionManager $profileOptionManager, MetadataUtilities $metadataUtilities)
     {
         $this->metadataManagerFactory = $metadataManagerFactory;
         $this->groupModel = $groupModel;

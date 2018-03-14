@@ -5,7 +5,7 @@ namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
 use Everyman\Neo4j\Relationship;
-use Model\Link\LinkModel;
+use Model\Link\LinkManager;
 use Model\Neo4j\GraphManager;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -81,7 +81,7 @@ class LinksFuseCommand extends ApplicationAwareCommand
 
                 $output->writeln('Cleaning inconsistencies');
 
-                /* @var $lm LinkModel */
+                /* @var $lm LinkManager */
                 $lm = $this->app['links.model'];
                 $cleaned = $lm->cleanInconsistencies($id2);
                 if (OutputInterface::VERBOSITY_NORMAL < $output->getVerbosity()) {

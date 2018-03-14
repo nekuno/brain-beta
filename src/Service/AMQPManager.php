@@ -29,7 +29,7 @@ class AMQPManager
     function __construct(AMQPStreamConnection $AMQPStreamConnection)
     {
         $this->connection = $AMQPStreamConnection;
-        $this->queueManager = new AMQPQueueManager();
+        $this->queueManager = new AMQPQueueService();
     }
 
     public function enqueueFetching($messageData)

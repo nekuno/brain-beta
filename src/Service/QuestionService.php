@@ -2,17 +2,17 @@
 
 namespace Service;
 
-use Model\User\Question\Admin\QuestionAdminDataFormatter;
-use Model\User\Question\Admin\QuestionAdminManager;
-use Model\User\Question\QuestionCategory\QuestionCategoryManager;
-use Model\User\Question\QuestionCorrelationManager;
-use Model\User\Question\QuestionModel;
-use Model\User\Question\QuestionNextSelector;
+use Model\Question\Admin\QuestionAdminDataFormatter;
+use Model\Question\Admin\QuestionAdminManager;
+use Model\Question\QuestionCategory\QuestionCategoryManager;
+use Model\Question\QuestionCorrelationManager;
+use Model\Question\QuestionManager;
+use Model\Question\QuestionNextSelector;
 
 class QuestionService
 {
     /**
-     * @var QuestionModel
+     * @var QuestionManager
      */
     protected $questionModel;
 
@@ -30,13 +30,13 @@ class QuestionService
     protected $questionCorrelationManager;
 
     /**
-     * @param QuestionModel $questionModel
+     * @param QuestionManager $questionModel
      * @param QuestionAdminManager $questionAdminManager
      * @param QuestionCategoryManager $questionCategoryManager
      * @param QuestionNextSelector $questionNextSelector
      * @param QuestionCorrelationManager $questionCorrelationManager
      */
-    public function __construct(QuestionModel $questionModel, QuestionAdminManager $questionAdminManager, QuestionCategoryManager $questionCategoryManager, QuestionNextSelector $questionNextSelector, QuestionCorrelationManager $questionCorrelationManager)
+    public function __construct(QuestionManager $questionModel, QuestionAdminManager $questionAdminManager, QuestionCategoryManager $questionCategoryManager, QuestionNextSelector $questionNextSelector, QuestionCorrelationManager $questionCorrelationManager)
     {
         $this->questionModel = $questionModel;
         $this->questionAdminManager = $questionAdminManager;

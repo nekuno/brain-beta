@@ -6,8 +6,8 @@ use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\AbstractTwitterProcesso
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use Buzz\Exception\RequestException;
 use Buzz\Message\Response;
-use Model\User\Token\Token;
-use Model\User\Token\TokensModel;
+use Model\Token\Token;
+use Model\Token\TokensManager;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\TwitterResourceOwner as TwitterResourceOwnerBase;
 
@@ -148,7 +148,7 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
             'thumbnail' => $this->urlParser->getOriginalProfileUrl($user, null),
             'thumbnailSmall' => $this->urlParser->getSmallProfileUrl($user, null),
             'thumbnailMedium' => $this->urlParser->getMediumProfileUrl($user, null),
-            'resource' => TokensModel::TWITTER,
+            'resource' => TokensManager::TWITTER,
             'timestamp' => 1000 * time(),
             'processed' => 1,
             'additionalLabels' => array(AbstractTwitterProcessor::TWITTER_LABEL),

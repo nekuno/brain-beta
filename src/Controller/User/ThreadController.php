@@ -2,9 +2,9 @@
 
 namespace Controller\User;
 
-use Model\User\Thread\Thread;
-use Model\User\Thread\ThreadPaginatedModel;
-use Model\User;
+use Model\Thread\Thread;
+use Model\Thread\ThreadPaginatedManager;
+use Model\User\User;
 use Paginator\Paginator;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
@@ -51,7 +51,7 @@ class ThreadController
         /** @var Paginator $paginator */
         $paginator = $app['paginator'];
 
-        /** @var ThreadPaginatedModel $model */
+        /** @var ThreadPaginatedManager $model */
         $model = $app['users.threads.paginated.model'];
 
         $result = $paginator->paginate($filters, $model, $request);

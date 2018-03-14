@@ -2,12 +2,12 @@
 namespace Console\Command;
 
 use Console\BaseCommand;
-use Manager\UserManager;
+use Model\User\UserManager;
 use Silex\Application;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Model\User\LookUpModel;
+use Model\LookUp\LookUpManager;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use EventListener\LookUpSocialNetworkSubscriber;
 
@@ -28,7 +28,7 @@ class LookUpByEmailCommand extends BaseCommand
         $id = $input->getOption('id');
         $email = $input->getOption('email');
 
-        /* @var $lookUpModel LookUpModel */
+        /* @var $lookUpModel LookUpManager */
         $lookUpModel = $this->app['users.lookup.model'];
 
         if ($id) {

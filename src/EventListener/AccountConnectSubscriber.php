@@ -7,16 +7,16 @@ use ApiConsumer\Factory\ResourceOwnerFactory;
 use ApiConsumer\ResourceOwner\LinkedinResourceOwner;
 use Event\AccountConnectEvent;
 use Event\ProcessLinksEvent;
-use Manager\UserManager;
-use Model\User\GhostUser\GhostUserManager;
-use Model\User\ProfileModel;
-use Model\User\SocialNetwork\SocialProfileManager;
-use Model\User\Token\Token;
-use Model\User\Token\TokensModel;
+use Model\User\UserManager;
+use Model\GhostUser\GhostUserManager;
+use Model\Profile\ProfileManager;
+use Model\SocialNetwork\SocialProfileManager;
+use Model\Token\Token;
+use Model\Token\TokensManager;
 use Service\AMQPManager;
 use Service\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Model\User\SocialNetwork\SocialProfile;
+use Model\SocialNetwork\SocialProfile;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 
@@ -48,12 +48,12 @@ class AccountConnectSubscriber implements EventSubscriberInterface
     protected $resourceOwnerFactory;
 
     /**
-     * @var TokensModel
+     * @var TokensManager
      */
     protected $tokensModel;
 
     /**
-     * @var ProfileModel
+     * @var ProfileManager
      */
     protected $profileModel;
 
@@ -62,7 +62,7 @@ class AccountConnectSubscriber implements EventSubscriberInterface
      */
     protected $dispatcher;
 
-    public function __construct(AMQPManager $amqpManager, UserManager $um, GhostUserManager $gum, SocialProfileManager $spm, ResourceOwnerFactory $resourceOwnerFactory, TokensModel $tokensModel, ProfileModel $pm, EventDispatcher $dispatcher)
+    public function __construct(AMQPManager $amqpManager, UserManager $um, GhostUserManager $gum, SocialProfileManager $spm, ResourceOwnerFactory $resourceOwnerFactory, TokensManager $tokensModel, ProfileManager $pm, EventDispatcher $dispatcher)
     {
         $this->amqpManager = $amqpManager;
         $this->um = $um;
@@ -89,10 +89,10 @@ class AccountConnectSubscriber implements EventSubscriberInterface
         $resourceOwner = $token->getResourceOwner();
 
         switch ($resourceOwner) {
-            case TokensModel::TWITTER:
+            case TokensManager::TWITTER:
                 $this->createTwitterSocialProfile($token, $userId);
                 break;
-            case TokensModel::LINKEDIN:
+            case TokensManager::LINKEDIN:
                 $this->completeProfileWithLinkedin($token, $userId);
                 $this->dispatcher->dispatch(\AppEvents::PROCESS_FINISH, new ProcessLinksEvent($userId, $resourceOwner, array()));
                 break;
@@ -114,10 +114,10 @@ class AccountConnectSubscriber implements EventSubscriberInterface
         $resourceOwner = $token->getResourceOwner();
 
         switch ($resourceOwner) {
-            case TokensModel::FACEBOOK:
+            case TokensManager::FACEBOOK:
                 $this->extendFacebook($token);
                 break;
-            case TokensModel::LINKEDIN:
+            case TokensManager::LINKEDIN:
                 $this->extendLinkedin($token);
                 break;
             default:
@@ -128,7 +128,7 @@ class AccountConnectSubscriber implements EventSubscriberInterface
     private function extendFacebook(Token $token, $attempts = 0)
     {
         /* @var $facebookResourceOwner FacebookResourceOwner */
-        $facebookResourceOwner = $this->resourceOwnerFactory->build(TokensModel::FACEBOOK);
+        $facebookResourceOwner = $this->resourceOwnerFactory->build(TokensManager::FACEBOOK);
 
         try {
             $facebookResourceOwner->extend($token);
@@ -145,7 +145,7 @@ class AccountConnectSubscriber implements EventSubscriberInterface
     private function extendLinkedin(Token $token, $attempts = 0)
     {
         /* @var $linkedinResourceOwner LinkedinResourceOwner */
-        $linkedinResourceOwner = $this->resourceOwnerFactory->build(TokensModel::LINKEDIN);
+        $linkedinResourceOwner = $this->resourceOwnerFactory->build(TokensManager::LINKEDIN);
 
         try {
             $linkedinResourceOwner->forceRefreshAccessToken($token);
@@ -158,7 +158,7 @@ class AccountConnectSubscriber implements EventSubscriberInterface
 
     private function createTwitterSocialProfile(Token $token, $userId)
     {
-        $resourceOwner = TokensModel::TWITTER;
+        $resourceOwner = TokensManager::TWITTER;
         /** @var TwitterResourceOwner $resourceOwnerObject */
         $resourceOwnerObject = $this->resourceOwnerFactory->build($resourceOwner);
         $profileUrl = $resourceOwnerObject->requestProfileUrl($token);
@@ -176,7 +176,7 @@ class AccountConnectSubscriber implements EventSubscriberInterface
 
     private function completeProfileWithLinkedin(Token $token, $userId)
     {
-        $resourceOwner = TokensModel::LINKEDIN;
+        $resourceOwner = TokensManager::LINKEDIN;
         /** @var LinkedinResourceOwner $resourceOwnerObject */
         $resourceOwnerObject = $this->resourceOwnerFactory->build($resourceOwner);
         $accessToken = array(

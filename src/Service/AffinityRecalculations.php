@@ -5,11 +5,11 @@ namespace Service;
 use Event\AffinityProcessEvent;
 use Event\AffinityProcessStepEvent;
 use Model\Entity\EmailNotification;
-use Model\Link\LinkModel;
+use Model\Link\LinkManager;
 use Model\Neo4j\GraphManager;
-use Model\User;
-use Model\User\Affinity\AffinityModel;
-use Manager\UserManager;
+use Model\User\User;
+use Model\Affinity\AffinityManager;
+use Model\User\UserManager;
 use Silex\Translator;
 
 class AffinityRecalculations
@@ -27,20 +27,20 @@ class AffinityRecalculations
     /* @var $graphManager GraphManager */
     protected $graphManager;
 
-    /* @var $linkModel LinkModel */
+    /* @var $linkModel LinkManager */
     protected $linkModel;
 
     /* @var $userManager UserManager */
     protected $userManager;
 
-    /* @var $affinityModel AffinityModel */
+    /* @var $affinityModel AffinityManager */
     protected $affinityModel;
 
     protected $linksToEmail = 3;
 
     const MIN_AFFINITY = 0.7;
 
-    public function __construct(EventDispatcher $dispatcher, EmailNotifications $emailNotifications, Translator $translator, GraphManager $graphManager, LinkModel $linkModel, UserManager $userManager, AffinityModel $affinityModel)
+    public function __construct(EventDispatcher $dispatcher, EmailNotifications $emailNotifications, Translator $translator, GraphManager $graphManager, LinkManager $linkModel, UserManager $userManager, AffinityManager $affinityModel)
     {
         $this->dispatcher = $dispatcher;
         $this->emailNotifications = $emailNotifications;

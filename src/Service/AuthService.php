@@ -5,9 +5,9 @@ namespace Service;
 use HWI\Bundle\OAuthBundle\OAuth\Exception\HttpTransportException;
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Provider\OAuthProvider;
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
-use Manager\UserManager;
-use Model\User;
-use Model\User\Token\TokensModel;
+use Model\User\UserManager;
+use Model\User\User;
+use Model\Token\TokensManager;
 use ReflectionObject;
 use Silex\Component\Security\Core\Encoder\JWTEncoder;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
@@ -42,11 +42,11 @@ class AuthService
     protected $dispatcher;
 
     /**
-     * @var TokensModel
+     * @var TokensManager
      */
     protected $tokensModel;
 
-    public function __construct(UserManager $um, PasswordEncoderInterface $encoder, JWTEncoder $jwtEncoder, OAuthProvider $oAuthProvider, EventDispatcher $dispatcher, TokensModel $tokensModel)
+    public function __construct(UserManager $um, PasswordEncoderInterface $encoder, JWTEncoder $jwtEncoder, OAuthProvider $oAuthProvider, EventDispatcher $dispatcher, TokensManager $tokensModel)
     {
         $this->um = $um;
         $this->encoder = $encoder;

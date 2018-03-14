@@ -4,8 +4,8 @@ namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
 use Model\Popularity\PopularityManager;
-use Model\User;
-use Manager\UserManager;
+use Model\User\User;
+use Model\User\UserManager;
 use Silex\Application;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;

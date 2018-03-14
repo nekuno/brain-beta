@@ -6,7 +6,7 @@ use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\Processor\AbstractAPIProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
 use ApiConsumer\ResourceOwner\GoogleResourceOwner;
-use Model\User\Token\Token;
+use Model\Token\Token;
 
 abstract class AbstractYoutubeProcessor extends AbstractAPIProcessor
 {

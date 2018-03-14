@@ -5,7 +5,7 @@ namespace ApiConsumer\ResourceOwner;
 use ApiConsumer\Exception\TokenException;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\SpotifyResourceOwner as SpotifyResourceOwnerBase;
-use Model\User\Token\Token;
+use Model\Token\Token;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use Buzz\Message\RequestInterface as HttpRequestInterface;
 

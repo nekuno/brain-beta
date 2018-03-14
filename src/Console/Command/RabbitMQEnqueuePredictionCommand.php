@@ -3,8 +3,8 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
-use Manager\UserManager;
-use Model\User;
+use Model\User\UserManager;
+use Model\User\User;
 use Service\AMQPManager;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;

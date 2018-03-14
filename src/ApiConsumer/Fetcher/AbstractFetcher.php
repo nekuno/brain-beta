@@ -4,7 +4,7 @@ namespace ApiConsumer\Fetcher;
 
 use ApiConsumer\ResourceOwner\AbstractResourceOwnerTrait;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwnerInterface;
-use Model\User\Token\Token;
+use Model\Token\Token;
 
 abstract class AbstractFetcher implements FetcherInterface
 {

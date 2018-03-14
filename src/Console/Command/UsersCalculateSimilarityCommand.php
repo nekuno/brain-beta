@@ -4,7 +4,7 @@ namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
 use Model\Neo4j\Neo4jException;
-use Model\User\Similarity\SimilarityModel;
+use Model\Similarity\SimilarityModel;
 use Symfony\Component\Console\Helper\TableHelper;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;

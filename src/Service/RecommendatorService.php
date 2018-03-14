@@ -3,17 +3,17 @@
 namespace Service;
 
 
-use Model\User\Group\GroupModel;
-use Model\User\Recommendation\ContentPopularRecommendationPaginatedModel;
-use Model\User\Recommendation\ContentRecommendationPaginatedModel;
-use Model\User\Recommendation\UserPopularRecommendationPaginatedModel;
-use Model\User\Recommendation\UserRecommendation;
-use Model\User\Recommendation\UserRecommendationPaginatedModel;
-use Model\User\Shares\SharesManager;
-use Model\User\Thread\ContentThread;
-use Model\User\Thread\Thread;
-use Model\User\Thread\UsersThread;
-use Manager\UserManager;
+use Model\Group\GroupManager;
+use Model\Recommendation\ContentPopularRecommendationPaginatedManager;
+use Model\Recommendation\ContentRecommendationPaginatedManager;
+use Model\Recommendation\UserPopularRecommendationPaginatedManager;
+use Model\Recommendation\UserRecommendation;
+use Model\Recommendation\UserRecommendationPaginatedManager;
+use Model\Shares\SharesManager;
+use Model\Thread\ContentThread;
+use Model\Thread\Thread;
+use Model\Thread\UsersThread;
+use Model\User\UserManager;
 use Paginator\ContentPaginator;
 use Paginator\Paginator;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,13 +25,13 @@ class RecommendatorService
     protected $paginator;
     /** @var  $contentPaginator ContentPaginator */
     protected $contentPaginator;
-    /** @var  $groupModel GroupModel */
+    /** @var  $groupModel GroupManager */
     protected $groupModel;
-    /** @var  $userRecommendationPaginatedModel UserRecommendationPaginatedModel */
+    /** @var  $userRecommendationPaginatedModel UserRecommendationPaginatedManager */
     protected $userRecommendationPaginatedModel;
-    /** @var  $contentRecommendationPaginatedModel ContentRecommendationPaginatedModel */
+    /** @var  $contentRecommendationPaginatedModel ContentRecommendationPaginatedManager */
     protected $contentRecommendationPaginatedModel;
-    /** @var $contentPopularRecommendationPaginatedModel ContentPopularRecommendationPaginatedModel */
+    /** @var $contentPopularRecommendationPaginatedModel ContentPopularRecommendationPaginatedManager */
     protected $contentPopularRecommendationPaginatedModel;
     /** @var $sharesManager SharesManager */
     protected $sharesManager;
@@ -43,12 +43,12 @@ class RecommendatorService
 
     public function __construct(Paginator $paginator,
                                 ContentPaginator $contentPaginator,
-                                GroupModel $groupModel,
+                                GroupManager $groupModel,
                                 UserManager $userManager,
-                                UserRecommendationPaginatedModel $userRecommendationPaginatedModel,
-                                ContentRecommendationPaginatedModel $contentRecommendationPaginatedModel,
-                                UserPopularRecommendationPaginatedModel $userPopularRecommendationPaginatedModel,
-                                ContentPopularRecommendationPaginatedModel $contentPopularRecommendationPaginatedModel,
+                                UserRecommendationPaginatedManager $userRecommendationPaginatedModel,
+                                ContentRecommendationPaginatedManager $contentRecommendationPaginatedModel,
+                                UserPopularRecommendationPaginatedManager $userPopularRecommendationPaginatedModel,
+                                ContentPopularRecommendationPaginatedManager $contentPopularRecommendationPaginatedModel,
                                 SharesManager $sharesManager)
     {
         $this->paginator = $paginator;
@@ -67,7 +67,7 @@ class RecommendatorService
         $user = $this->userManager->getOneByThread($thread->getId());
         //Todo: Change to Class::class if PHP >= 5.5
         switch (get_class($thread)) {
-            case 'Model\User\Thread\ContentThread':
+            case 'Model\Thread\ContentThread':
 
                 /* @var $thread ContentThread */
                 $threadFilters = $thread->getFilterContent();
@@ -91,7 +91,7 @@ class RecommendatorService
                 return $this->getContentRecommendation($filters);
 
                 break;
-            case 'Model\User\Thread\UsersThread':
+            case 'Model\Thread\UsersThread':
                 /* @var $thread UsersThread */
                 $threadFilters = $thread->getFilterUsers();
                 $filters = array(
@@ -122,7 +122,7 @@ class RecommendatorService
         $user = $this->userManager->getOneByThread($thread->getId());
         //Todo: Change to Class::class if PHP >= 5.5
         switch (get_class($thread)) {
-            case 'Model\User\Thread\ContentThread':
+            case 'Model\Thread\ContentThread':
 
                 /* @var $thread ContentThread */
 
@@ -155,7 +155,7 @@ class RecommendatorService
                 return $this->getContentRecommendation($filters, $request);
 
                 break;
-            case 'Model\User\Thread\UsersThread':
+            case 'Model\Thread\UsersThread':
                 /* @var $thread UsersThread */
                 $order = $request->get('order', false);
 

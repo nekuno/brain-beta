@@ -5,12 +5,12 @@ namespace Service;
 
 use ApiConsumer\Factory\ResourceOwnerFactory;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
-use Model\User\GhostUser\GhostUserManager;
-use Model\User\LookUpModel;
-use Model\User\SocialNetwork\SocialProfile;
-use Model\User\SocialNetwork\SocialProfileManager;
-use Model\User\Token\TokensModel;
-use Manager\UserManager;
+use Model\GhostUser\GhostUserManager;
+use Model\LookUp\LookUpManager;
+use Model\SocialNetwork\SocialProfile;
+use Model\SocialNetwork\SocialProfileManager;
+use Model\Token\TokensManager;
+use Model\User\UserManager;
 
 class UserAggregator
 {
@@ -27,7 +27,7 @@ class UserAggregator
                                 SocialProfileManager $socialProfileManager,
                                 ResourceOwnerFactory $resourceOwnerFactory,
                                 SocialNetwork $socialNetworkService,
-	                            LookUpModel $lookUpModel,
+	                            LookUpManager $lookUpModel,
                                 AMQPManager $AMQPManager)
 
     {
@@ -53,11 +53,11 @@ class UserAggregator
             return null;
         }
 
-        if (!in_array($resource, TokensModel::getResourceOwners()) && !$url){
+        if (!in_array($resource, TokensManager::getResourceOwners()) && !$url){
             //$output->writeln('Resource '.$resource.' not supported.');
             return null;
         }
-	    if (in_array($resource, TokensModel::getResourceOwners())) {
+	    if (in_array($resource, TokensManager::getResourceOwners())) {
             /** @var TwitterResourceOwner $resourceOwner */
             $resourceOwner = $this->resourceOwnerFactory->build($resource);
 
@@ -116,7 +116,7 @@ class UserAggregator
     public function enqueueChannel(array $socialProfiles, $username, $force = false)
     {
         foreach ($socialProfiles as $socialProfile) {
-	        if ($socialProfile->getResource() == TokensModel::TWITTER || $socialProfile->getResource() == TokensModel::GOOGLE) {
+	        if ($socialProfile->getResource() == TokensManager::TWITTER || $socialProfile->getResource() == TokensManager::GOOGLE) {
 	            $userId = $socialProfile->getUserId();
 	            $resource = $socialProfile->getResource();
 

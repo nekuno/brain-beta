@@ -7,7 +7,7 @@ use Silex\Application;
 use Silex\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
 use Tests\API\MockUp\AuthServiceMockUp;
-use Tests\API\MockUp\TokensModelMockUp;
+use Tests\API\MockUp\TokensManagerMockUp;
 
 abstract class APITest extends WebTestCase
 {
@@ -62,7 +62,7 @@ abstract class APITest extends WebTestCase
         $app['users.tokens.model'] = $app->share(
             function ($app) {
                 $validator = $app['validator.factory']->build('tokens');
-                return new TokensModelMockUp($app['dispatcher'], $app['neo4j.graph_manager'], $validator);
+                return new TokensManagerMockUp($app['dispatcher'], $app['neo4j.graph_manager'], $validator);
             }
         );
 

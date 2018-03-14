@@ -5,7 +5,7 @@ namespace ApiConsumer\Fetcher;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser;
 use Model\Link\Creator;
-use Model\User\Token\Token;
+use Model\Token\Token;
 
 class TumblrBlogsFetcher extends AbstractFetcher
 {

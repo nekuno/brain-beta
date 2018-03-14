@@ -2,10 +2,10 @@
 
 namespace Controller\User;
 
-use Manager\UserManager;
-use Model\User\ProfileModel;
-use Model\User\ProfileTagModel;
-use Model\User;
+use Model\User\UserManager;
+use Model\Profile\ProfileManager;
+use Model\Profile\ProfileTagManager;
+use Model\User\User;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -20,7 +20,7 @@ class ProfileController
      */
     public function getAction(Application $app, User $user)
     {
-        /* @var $model ProfileModel */
+        /* @var $model ProfileManager */
         $model = $app['users.profile.model'];
 
         $profile = $model->getById($user->getId());
@@ -39,7 +39,7 @@ class ProfileController
         $userManager = $app['users.manager'];
         $slug = $request->get('slug');
         $userId = $userManager->getBySlug($slug)->getId();
-        /* @var $model ProfileModel */
+        /* @var $model ProfileManager */
         $model = $app['users.profile.model'];
 
         $profile = $model->getById($userId);
@@ -55,7 +55,7 @@ class ProfileController
      */
     public function putAction(Request $request, Application $app, User $user)
     {
-        /* @var $model ProfileModel */
+        /* @var $model ProfileManager */
         $model = $app['users.profile.model'];
 
         $profile = $model->update($user->getId(), $request->request->all());
@@ -70,7 +70,7 @@ class ProfileController
      */
     public function deleteAction(Application $app, User $user)
     {
-        /* @var $model ProfileModel */
+        /* @var $model ProfileManager */
         $model = $app['users.profile.model'];
 
         $profile = $model->getById($user->getId());
@@ -144,7 +144,7 @@ class ProfileController
             $search = urldecode($search);
         }
 
-        /* @var $model ProfileTagModel */
+        /* @var $model ProfileTagManager */
         $model = $app['users.profile.tag.model'];
 
         $result = $model->getProfileTagsSuggestion($type, $search, $limit);

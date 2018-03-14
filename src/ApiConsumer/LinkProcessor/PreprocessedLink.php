@@ -4,7 +4,7 @@ namespace ApiConsumer\LinkProcessor;
 
 
 use Model\Link\Link;
-use Model\User\Token\Token;
+use Model\Token\Token;
 
 class PreprocessedLink
 {

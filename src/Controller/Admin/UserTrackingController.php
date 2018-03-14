@@ -2,14 +2,14 @@
 
 namespace Controller\Admin;
 
-use Model\User\UserTrackingModel;
+use Model\User\UserTrackingManager;
 use Silex\Application;
 
 class UserTrackingController
 {
     public function getAllAction(Application $app)
     {
-        /* @var $model UserTrackingModel */
+        /* @var $model UserTrackingManager */
         $model = $app['users.tracking.model'];
         $result = $model->getAll();
 
@@ -18,7 +18,7 @@ class UserTrackingController
 
     public function getAction(Application $app, $id)
     {
-        /* @var $model UserTrackingModel */
+        /* @var $model UserTrackingManager */
         $model = $app['users.tracking.model'];
 
         $result = $model->get($id);

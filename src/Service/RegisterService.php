@@ -3,13 +3,13 @@
 namespace Service;
 
 use Event\UserRegisteredEvent;
-use Manager\UserManager;
-use Model\User\ProfileModel;
-use Model\User\InvitationModel;
-use Model\User\Group\GroupModel;
-use Model\User\GhostUser\GhostUserManager;
+use Model\User\UserManager;
+use Model\Profile\ProfileManager;
+use Model\Invitation\InvitationManager;
+use Model\Group\GroupManager;
+use Model\GhostUser\GhostUserManager;
 use Symfony\Component\EventDispatcher\EventDispatcher as Dispatcher;
-use Model\User\Token\TokensModel;
+use Model\Token\TokensManager;
 
 class RegisterService
 {
@@ -25,17 +25,17 @@ class RegisterService
     protected $gum;
 
     /**
-     * @var TokensModel
+     * @var TokensManager
      */
     protected $tm;
 
     /**
-     * @var ProfileModel
+     * @var ProfileManager
      */
     protected $pm;
 
     /**
-     * @var InvitationModel
+     * @var InvitationManager
      */
     protected $im;
 
@@ -49,7 +49,7 @@ class RegisterService
      */
     protected $dispatcher;
 
-    public function __construct(UserManager $um, GhostUserManager $gum, TokensModel $tm, ProfileModel $pm, InvitationModel $im, GroupService $groupService, Dispatcher $dispatcher)
+    public function __construct(UserManager $um, GhostUserManager $gum, TokensManager $tm, ProfileManager $pm, InvitationManager $im, GroupService $groupService, Dispatcher $dispatcher)
     {
         $this->um = $um;
         $this->gum = $gum;

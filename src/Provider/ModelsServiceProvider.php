@@ -4,69 +4,69 @@ namespace Provider;
 
 use Model\LanguageText\LanguageTextManager;
 use Model\Location\LocationManager;
-use Model\User\Photo\GalleryManager;
-use Model\User\Photo\PhotoManager;
-use Model\EnterpriseUser\EnterpriseUserModel;
-use Model\Link\LinkModel;
+use Model\Photo\GalleryManager;
+use Model\Photo\PhotoManager;
+use Model\EnterpriseUser\EnterpriseUserManager;
+use Model\Link\LinkManager;
 use Model\Metadata\CategoryMetadataManager;
 use Model\Metadata\MetadataManagerFactory;
 use Model\Metadata\MetadataUtilities;
 use Model\Popularity\PopularityManager;
-use Model\Popularity\PopularityPaginatedModel;
-use Model\User\ContactModel;
-use Model\User\Content\ContentReportModel;
-use Model\User\Device\DeviceModel;
-use Model\User\ProfileOptionManager;
-use Model\User\Question\Admin\QuestionAdminBuilder;
-use Model\User\Question\Admin\QuestionAdminManager;
-use Model\User\Question\QuestionCategory\QuestionCategoryManager;
-use Model\User\Question\QuestionCorrelationManager;
-use Model\User\Question\QuestionModel;
-use Model\User\Affinity\AffinityModel;
-use Model\User\Question\AnswerManager;
-use Model\EnterpriseUser\CommunityModel;
-use Model\User\Content\ContentComparePaginatedModel;
-use Model\User\Content\ContentPaginatedModel;
-use Model\User\Content\ContentTagModel;
-use Model\User\Filters\FilterContentManager;
-use Model\User\Filters\FilterUsersManager;
-use Model\User\GhostUser\GhostUserManager;
-use Model\User\Group\GroupContentPaginatedModel;
-use Model\User\Group\GroupModel;
-use Model\User\InvitationModel;
-use Model\User\LookUpModel;
-use Model\User\Matching\MatchingModel;
-use Model\User\Question\OldQuestionComparePaginatedModel;
-use Model\User\PrivacyModel;
-use Model\User\ProfileModel;
-use Model\User\ProfileTagModel;
-use Model\User\Question\QuestionComparePaginatedModel;
-use Model\User\Question\Admin\QuestionsAdminPaginatedModel;
-use Model\User\Question\QuestionNextSelector;
-use Model\User\Question\UserAnswerPaginatedModel;
-use Model\User\Rate\RateModel;
-use Model\User\Recommendation\ContentPopularRecommendationPaginatedModel;
-use Model\User\Recommendation\ContentRecommendationPaginatedModel;
-use Model\User\Recommendation\ContentRecommendationTagModel;
-use Model\User\Recommendation\UserPopularRecommendationPaginatedModel;
-use Model\User\Recommendation\UserRecommendationPaginatedModel;
-use Model\User\RelationsModel;
-use Model\User\RelationsPaginatedModel;
-use Model\User\Shares\SharesManager;
-use Model\User\Similarity\SimilarityModel;
-use Model\User\SocialNetwork\LinkedinSocialNetworkModel;
-use Model\User\SocialNetwork\SocialProfileManager;
-use Model\User\Thread\ThreadCachedManager;
-use Model\User\Thread\ThreadDataManager;
-use Model\User\Thread\ThreadManager;
-use Model\User\Thread\ThreadPaginatedModel;
-use Model\User\Token\TokensModel;
-use Model\User\Token\TokenStatus\TokenStatusManager;
-use Model\User\UserDisabledPaginatedModel;
-use Model\User\Stats\UserStatsCalculator;
-use Manager\UserManager;
-use Model\User\UserPaginatedModel;
-use Model\User\UserTrackingModel;
+use Model\Popularity\PopularityPaginatedManager;
+use Model\Contact\ContactManager;
+use Model\Content\ContentReportManager;
+use Model\Device\DeviceManager;
+use Model\Profile\ProfileOptionManager;
+use Model\Question\Admin\QuestionAdminBuilder;
+use Model\Question\Admin\QuestionAdminManager;
+use Model\Question\QuestionCategory\QuestionCategoryManager;
+use Model\Question\QuestionCorrelationManager;
+use Model\Question\QuestionManager;
+use Model\Affinity\AffinityManager;
+use Model\Question\AnswerManager;
+use Model\EnterpriseUser\CommunityManager;
+use Model\Content\ContentComparePaginatedManager;
+use Model\Content\ContentPaginatedManager;
+use Model\Content\ContentTagManager;
+use Model\Filters\FilterContentManager;
+use Model\Filters\FilterUsersManager;
+use Model\GhostUser\GhostUserManager;
+use Model\Group\GroupContentPaginatedManager;
+use Model\Group\GroupManager;
+use Model\Invitation\InvitationManager;
+use Model\LookUp\LookUpManager;
+use Model\Matching\MatchingManager;
+use Model\Question\OldQuestionComparePaginatedManager;
+use Model\Privacy\PrivacyManager;
+use Model\Profile\ProfileManager;
+use Model\Profile\ProfileTagManager;
+use Model\Question\QuestionComparePaginatedManager;
+use Model\Question\Admin\QuestionsAdminPaginatedManager;
+use Model\Question\QuestionNextSelector;
+use Model\Question\UserAnswerPaginatedManager;
+use Model\Rate\RateManager;
+use Model\Recommendation\ContentPopularRecommendationPaginatedManager;
+use Model\Recommendation\ContentRecommendationPaginatedManager;
+use Model\Recommendation\ContentRecommendationTagModel;
+use Model\Recommendation\UserPopularRecommendationPaginatedManager;
+use Model\Recommendation\UserRecommendationPaginatedManager;
+use Model\Relations\RelationsManager;
+use Model\Relations\RelationsPaginatedManager;
+use Model\Shares\SharesManager;
+use Model\Similarity\SimilarityModel;
+use Model\SocialNetwork\LinkedinSocialNetworkManager;
+use Model\SocialNetwork\SocialProfileManager;
+use Model\Thread\ThreadCachedManager;
+use Model\Thread\ThreadDataManager;
+use Model\Thread\ThreadManager;
+use Model\Thread\ThreadPaginatedManager;
+use Model\Token\TokensManager;
+use Model\Token\TokenStatus\TokenStatusManager;
+use Model\User\UserDisabledPaginatedManager;
+use Model\Stats\UserStatsCalculator;
+use Model\User\UserManager;
+use Model\User\UserPaginatedManager;
+use Model\User\UserTrackingManager;
 use Security\UserProvider;
 use Service\Validator\FilterUsersValidator;
 use Silex\Application;
@@ -107,7 +107,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
 
                 $validator = $app['validator.factory']->build('tokens');
-                return new TokensModel($app['dispatcher'], $app['neo4j.graph_manager'], $validator);
+                return new TokensManager($app['dispatcher'], $app['neo4j.graph_manager'], $validator);
             }
         );
 
@@ -128,7 +128,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
                 $profileValidator = $app['validator.factory']->build('profile');
 
-                return new ProfileModel($app['neo4j.graph_manager'], $app['users.profileMetadata.manager'], $app['users.profileOption.manager'], $app['users.profile.tag.model'], $app['users.location.manager'], $app['metadata.utilities'],  $app['dispatcher'], $profileValidator);
+                return new ProfileManager($app['neo4j.graph_manager'], $app['users.profileMetadata.manager'], $app['users.profileOption.manager'], $app['users.profile.tag.model'], $app['users.location.manager'], $app['metadata.utilities'],  $app['dispatcher'], $profileValidator);
             }
         );
 
@@ -185,14 +185,14 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.privacy.model'] = $app->share(
             function ($app) {
 
-                return new PrivacyModel($app['neo4j.graph_manager'], $app['dispatcher'], $app['fields']['privacy'], $app['locale.options']['default']);
+                return new PrivacyManager($app['neo4j.graph_manager'], $app['dispatcher'], $app['fields']['privacy'], $app['locale.options']['default']);
             }
         );
 
         $app['users.profile.tag.model'] = $app->share(
             function ($app) {
 
-                return new ProfileTagModel($app['neo4j.graph_manager'], $app['users.languageText.manager'], $app['metadata.utilities']);
+                return new ProfileTagManager($app['neo4j.graph_manager'], $app['users.languageText.manager'], $app['metadata.utilities']);
             }
         );
 
@@ -214,7 +214,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.questions.model'] = $app->share(
             function ($app) {
 
-                return new UserAnswerPaginatedModel($app['neo4j.graph_manager'], $app['users.answers.model'], $app['questionnaire.questions.model']);
+                return new UserAnswerPaginatedManager($app['neo4j.graph_manager'], $app['users.answers.model'], $app['questionnaire.questions.model']);
             }
         );
 
@@ -227,56 +227,56 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['old.users.questions.compare.model'] = $app->share(
             function ($app) {
 
-                return new OldQuestionComparePaginatedModel($app['neo4j.client']);
+                return new OldQuestionComparePaginatedManager($app['neo4j.client']);
             }
         );
 
         $app['users.questions.compare.model'] = $app->share(
             function ($app) {
 
-                return new QuestionComparePaginatedModel($app['neo4j.graph_manager'], $app['users.answers.model'], $app['questionnaire.questions.model']);
+                return new QuestionComparePaginatedManager($app['neo4j.graph_manager'], $app['users.answers.model'], $app['questionnaire.questions.model']);
             }
         );
 
         $app['users.content.model'] = $app->share(
             function ($app) {
                 $validator = $app['validator.factory']->build('content_filter');
-                return new ContentPaginatedModel($app['neo4j.graph_manager'], $app['links.model'], $validator);
+                return new ContentPaginatedManager($app['neo4j.graph_manager'], $app['links.model'], $validator);
             }
         );
 
         $app['users.content.compare.model'] = $app->share(
             function ($app) {
                 $validator = $app['validator.factory']->build('content_filter');
-                return new ContentComparePaginatedModel($app['neo4j.graph_manager'], $app['links.model'], $validator);
+                return new ContentComparePaginatedManager($app['neo4j.graph_manager'], $app['links.model'], $validator);
             }
         );
 
         $app['users.content.tag.model'] = $app->share(
             function ($app) {
 
-                return new ContentTagModel($app['neo4j.graph_manager']);
+                return new ContentTagManager($app['neo4j.graph_manager']);
             }
         );
 
         $app['users.rate.model'] = $app->share(
             function ($app) {
 
-                return new RateModel($app['dispatcher'], $app['neo4j.graph_manager']);
+                return new RateManager($app['dispatcher'], $app['neo4j.graph_manager']);
             }
         );
 
         $app['users.content.report.model'] = $app->share(
             function ($app) {
                 $validator = $app['validator.factory']->build('content_filter');
-                return new ContentReportModel($app['neo4j.graph_manager'], $app['links.model'], $validator);
+                return new ContentReportManager($app['neo4j.graph_manager'], $app['links.model'], $validator);
             }
         );
 
         $app['users.matching.model'] = $app->share(
             function ($app) {
 
-                return new MatchingModel($app['dispatcher'], $app['neo4j.graph_manager']);
+                return new MatchingManager($app['dispatcher'], $app['neo4j.graph_manager']);
 
             }
         );
@@ -290,41 +290,41 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['links.popularity.paginated.model'] = $app->share(
             function ($app) {
 
-                return new PopularityPaginatedModel($app['neo4j.graph_manager'], $app['popularity.manager']);
+                return new PopularityPaginatedManager($app['neo4j.graph_manager'], $app['popularity.manager']);
             }
         );
 
         $app['users.paginated.model'] = $app->share(
             function($app) {
-                return new UserPaginatedModel($app['neo4j.graph_manager'], $app['users.manager']);
+                return new UserPaginatedManager($app['neo4j.graph_manager'], $app['users.manager']);
             }
         );
 
         $app['users.recommendation.users.model'] = $app->share(
             function ($app) {
 
-                return new UserRecommendationPaginatedModel($app['neo4j.graph_manager'], $app['metadata.utilities'], $app['users.userFilterMetadata.manager'], $app['users.photo.manager'], $app['users.profile.model'], $app['users.languageText.manager']);
+                return new UserRecommendationPaginatedManager($app['neo4j.graph_manager'], $app['metadata.utilities'], $app['users.userFilterMetadata.manager'], $app['users.photo.manager'], $app['users.profile.model'], $app['users.languageText.manager']);
             }
         );
 
         $app['users.recommendation.popularusers.model'] = $app->share(
             function ($app) {
 
-                return new UserPopularRecommendationPaginatedModel($app['neo4j.graph_manager'], $app['metadata.utilities'], $app['users.userFilterMetadata.manager'], $app['users.photo.manager'], $app['users.profile.model'], $app['users.languageText.manager']);
+                return new UserPopularRecommendationPaginatedManager($app['neo4j.graph_manager'], $app['metadata.utilities'], $app['users.userFilterMetadata.manager'], $app['users.photo.manager'], $app['users.profile.model'], $app['users.languageText.manager']);
             }
         );
 
         $app['users.affinity.model'] = $app->share(
             function ($app) {
 
-                return new AffinityModel($app['neo4j.graph_manager']);
+                return new AffinityManager($app['neo4j.graph_manager']);
             }
         );
 
         $app['users.recommendation.content.model'] = $app->share(
             function ($app) {
                 $validator = $app['validator.factory']->build('content_filter');
-                return new ContentRecommendationPaginatedModel($app['neo4j.graph_manager'], $app['users.affinity.model'], $app['links.model'], $validator, $app['imageTransformations.service']);
+                return new ContentRecommendationPaginatedManager($app['neo4j.graph_manager'], $app['users.affinity.model'], $app['links.model'], $validator, $app['imageTransformations.service']);
             }
         );
 
@@ -332,14 +332,14 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
                 $validator = $app['validator.factory']->build('content_filter');
 
-                return new ContentPopularRecommendationPaginatedModel($app['neo4j.graph_manager'], $app['links.model'], $validator, $app['imageTransformations.service']);
+                return new ContentPopularRecommendationPaginatedManager($app['neo4j.graph_manager'], $app['links.model'], $validator, $app['imageTransformations.service']);
             }
         );
 
         $app['users.group.content.model'] = $app->share(
             function ($app) {
 
-                return new GroupContentPaginatedModel($app['neo4j.graph_manager'], $app['links.model'], $app['validator.service'], $app['imageTransformations.service']);
+                return new GroupContentPaginatedManager($app['neo4j.graph_manager'], $app['links.model'], $app['validator.service'], $app['imageTransformations.service']);
             }
         );
 
@@ -380,28 +380,28 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.device.model'] = $app->share(
             function ($app) {
                 $validator = $app['validator.factory']->build('device');
-                return new DeviceModel($app['neo4j.graph_manager'], $app['push_private_key'], $validator);
+                return new DeviceManager($app['neo4j.graph_manager'], $app['push_private_key'], $validator);
             }
         );
 
         $app['users.lookup.model'] = $app->share(
             function ($app) {
 
-                return new LookUpModel($app['neo4j.graph_manager'], $app['orm.ems']['mysql_brain'], $app['users.tokens.model'], $app['lookUp.fullContact.service'], $app['lookUp.peopleGraph.service'], $app['dispatcher']);
+                return new LookUpManager($app['neo4j.graph_manager'], $app['orm.ems']['mysql_brain'], $app['users.tokens.model'], $app['lookUp.fullContact.service'], $app['lookUp.peopleGraph.service'], $app['dispatcher']);
             }
         );
 
         $app['users.socialNetwork.linkedin.model'] = $app->share(
             function ($app) {
 
-                return new LinkedinSocialNetworkModel($app['neo4j.graph_manager'], $app['parser.linkedin']);
+                return new LinkedinSocialNetworkManager($app['neo4j.graph_manager'], $app['parser.linkedin']);
             }
         );
 
         $app['questionnaire.questions.model'] = $app->share(
             function ($app) {
                 $validator = $app['validator.factory']->build('questions');
-                return new QuestionModel($app['neo4j.graph_manager'], $validator);
+                return new QuestionManager($app['neo4j.graph_manager'], $validator);
             }
         );
 
@@ -421,7 +421,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['admin.questions.paginated.model'] = $app->share(
             function ($app) {
                 $validator = $app['validator.factory']->build('questions_admin');
-                return new QuestionsAdminPaginatedModel($app['neo4j.graph_manager'], $app['questionnaire.questions.admin.builder'], $validator);
+                return new QuestionsAdminPaginatedManager($app['neo4j.graph_manager'], $app['questionnaire.questions.admin.builder'], $validator);
             }
         );
 
@@ -440,7 +440,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['links.model'] = $app->share(
             function ($app) {
 
-                return new LinkModel($app['neo4j.graph_manager']);
+                return new LinkManager($app['neo4j.graph_manager']);
             }
         );
 
@@ -468,7 +468,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
 
         $app['users.groups.model'] = $app->share(
             function ($app) {
-                return new GroupModel($app['neo4j.graph_manager'], $app['dispatcher'], $app['users.photo.manager'],$app['admin_domain_plus_post']);
+                return new GroupManager($app['neo4j.graph_manager'], $app['dispatcher'], $app['users.photo.manager'],$app['admin_domain_plus_post']);
             }
         );
 
@@ -497,7 +497,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.threads.paginated.model'] = $app->share(
             function ($app) {
 
-                return new ThreadPaginatedModel($app['neo4j.graph_manager']);
+                return new ThreadPaginatedManager($app['neo4j.graph_manager']);
             }
         );
 
@@ -505,49 +505,49 @@ class ModelsServiceProvider implements ServiceProviderInterface
             function ($app) {
                 $invitationValidator = $app['validator.factory']->build('invitations');
 
-                return new InvitationModel($app['tokenGenerator.service'], $app['neo4j.graph_manager'], $invitationValidator, $app['admin_domain_plus_post']);
+                return new InvitationManager($app['tokenGenerator.service'], $app['neo4j.graph_manager'], $invitationValidator, $app['admin_domain_plus_post']);
             }
         );
 
         $app['users.relations.model'] = $app->share(
             function ($app) {
 
-                return new RelationsModel($app['neo4j.graph_manager'], $app['dispatcher']);
+                return new RelationsManager($app['neo4j.graph_manager'], $app['dispatcher']);
             }
         );
 
         $app['users.relations.paginated.model'] = $app->share(
             function ($app) {
 
-                return new RelationsPaginatedModel($app['neo4j.graph_manager'], $app['dispatcher']);
+                return new RelationsPaginatedManager($app['neo4j.graph_manager'], $app['dispatcher']);
             }
         );
 
         $app['users.disabled.paginated.model'] = $app->share(
             function ($app) {
 
-                return new UserDisabledPaginatedModel($app['neo4j.graph_manager'], $app['users.manager']);
+                return new UserDisabledPaginatedManager($app['neo4j.graph_manager'], $app['users.manager']);
             }
         );
 
         $app['users.contact.model'] = $app->share(
             function ($app) {
 
-                return new ContactModel($app['neo4j.graph_manager'], $app['dbs']['mysql_brain'], $app['users.manager'], $app['users.relations.model']);
+                return new ContactManager($app['neo4j.graph_manager'], $app['dbs']['mysql_brain'], $app['users.manager'], $app['users.relations.model']);
             }
         );
 
         $app['enterpriseUsers.model'] = $app->share(
             function ($app) {
 
-                return new EnterpriseUserModel($app['neo4j.graph_manager']);
+                return new EnterpriseUserManager($app['neo4j.graph_manager']);
             }
         );
 
         $app['enterpriseUsers.communities.model'] = $app->share(
             function ($app) {
 
-                return new CommunityModel($app['neo4j.graph_manager'], $app['users.manager'], $app['users.photo.manager']);
+                return new CommunityManager($app['neo4j.graph_manager'], $app['users.manager'], $app['users.photo.manager']);
             }
         );
 
@@ -567,7 +567,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.tracking.model'] = $app->share(
             function ($app) {
 
-                return new UserTrackingModel($app['neo4j.graph_manager'], $app['orm.ems']['mysql_brain'], $app['dispatcher']);
+                return new UserTrackingManager($app['neo4j.graph_manager'], $app['orm.ems']['mysql_brain'], $app['dispatcher']);
             }
         );
     }

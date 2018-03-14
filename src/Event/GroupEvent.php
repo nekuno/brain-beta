@@ -2,7 +2,7 @@
 
 namespace Event;
 
-use Model\User\Group\Group;
+use Model\Group\Group;
 use Symfony\Component\EventDispatcher\Event;
 
 class GroupEvent extends Event

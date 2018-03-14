@@ -2,7 +2,7 @@
 
 namespace Service\Links;
 
-use Model\Link\LinkModel;
+use Model\Link\LinkManager;
 use Service\AMQPManager;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -10,7 +10,7 @@ class EnqueueLinksService
 {
     const LINKS_LIMIT = 1000;
     /**
-     * @var LinkModel
+     * @var LinkManager
      */
     protected $linkModel;
 
@@ -19,7 +19,7 @@ class EnqueueLinksService
      */
     protected $amqpManager;
 
-    public function __construct(LinkModel $linkModel, AMQPManager $amqpManager)
+    public function __construct(LinkManager $linkModel, AMQPManager $amqpManager)
     {
         $this->linkModel = $linkModel;
         $this->amqpManager = $amqpManager;

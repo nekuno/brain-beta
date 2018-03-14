@@ -3,10 +3,10 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
-use Model\Link\LinkModel;
-use Model\User;
-use Model\User\Affinity\AffinityModel;
-use Manager\UserManager;
+use Model\Link\LinkManager;
+use Model\User\User;
+use Model\Affinity\AffinityManager;
+use Model\User\UserManager;
 use Service\AffinityRecalculations;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -30,9 +30,9 @@ class LinksCalculatePredictionCommand extends ApplicationAwareCommand
     {
         /* @var $userManager UserManager */
         $userManager = $this->app['users.manager'];
-        /* @var $linkModel LinkModel */
+        /* @var $linkModel LinkManager */
         $linkModel = $this->app['links.model'];
-        /* @var $affinityModel AffinityModel */
+        /* @var $affinityModel AffinityManager */
         $affinityModel = $this->app['users.affinity.model'];
 
         $user = $input->getOption('user');
@@ -70,10 +70,10 @@ class LinksCalculatePredictionCommand extends ApplicationAwareCommand
                     /* @var $user User */
                     $count = $affinityModel->countPotentialAffinities($user->getId(), $limitUsers);
                     $estimatedTime = $affinityRecalculations->estimateTime($count);
-                    $targetTime = AffinityModel::numberOfSecondsToCalculateAffinity;
+                    $targetTime = AffinityManager::numberOfSecondsToCalculateAffinity;
                     if ($estimatedTime > $targetTime) {
                         $usedLimitUsers = max(
-                            AffinityModel::minimumUsersToPredict,
+                            AffinityManager::minimumUsersToPredict,
                             intval($limitUsers * sqrt($targetTime / $estimatedTime))
                         );
                     } else {

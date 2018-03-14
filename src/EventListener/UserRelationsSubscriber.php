@@ -4,7 +4,7 @@ namespace EventListener;
 
 use Event\UserBothLikedEvent;
 use GuzzleHttp\Exception\RequestException;
-use Manager\UserManager;
+use Model\User\UserManager;
 use Service\DeviceService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 

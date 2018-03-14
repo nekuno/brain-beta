@@ -6,7 +6,7 @@ use Event\FetchEvent;
 use Event\MatchingExpiredEvent;
 use Event\ProcessLinksEvent;
 use Event\ContentRatedEvent;
-use Model\User\Token\TokenStatus\TokenStatusManager;
+use Model\Token\TokenStatus\TokenStatusManager;
 use Service\AMQPManager;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Worker\MatchingCalculatorWorker;

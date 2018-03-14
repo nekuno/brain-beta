@@ -3,10 +3,10 @@
 
 namespace Worker;
 
-use Model\Link\LinkModel;
+use Model\Link\LinkManager;
 use Model\Neo4j\Neo4jException;
-use Model\User\Affinity\AffinityModel;
-use Model\User\Similarity\SimilarityModel;
+use Model\Affinity\AffinityManager;
+use Model\Similarity\SimilarityModel;
 use PhpAmqpLib\Channel\AMQPChannel;
 use Service\AffinityRecalculations;
 use Service\AMQPManager;
@@ -25,12 +25,12 @@ class PredictionWorker extends LoggerAwareWorker implements RabbitMQConsumerInte
     protected $affinityRecalculations;
 
     /**
-     * @var AffinityModel
+     * @var AffinityManager
      */
     protected $affinityModel;
 
     /**
-     * @var LinkModel
+     * @var LinkManager
      */
     protected $linkModel;
 
@@ -42,8 +42,8 @@ class PredictionWorker extends LoggerAwareWorker implements RabbitMQConsumerInte
     public function __construct(AMQPChannel $channel,
                                 EventDispatcher $dispatcher,
                                 AffinityRecalculations $affinityRecalculations,
-                                AffinityModel $affinityModel,
-                                LinkModel $linkModel)
+                                AffinityManager $affinityModel,
+                                LinkManager $linkModel)
     {
         parent::__construct($dispatcher, $channel);
         $this->linkModel = $linkModel;

@@ -6,7 +6,7 @@ use ApiConsumer\Exception\CannotProcessException;
 use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
-use Model\User\Token\Token;
+use Model\Token\Token;
 use Model\Link\Video;
 
 class YoutubeVideoProcessor extends AbstractYoutubeProcessor

@@ -5,7 +5,7 @@ namespace ApiConsumer\Fetcher;
 use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use Model\Link\Link;
-use Model\User\Token\Token;
+use Model\Token\Token;
 
 class GoogleFetcher extends BasicPaginationFetcher
 {

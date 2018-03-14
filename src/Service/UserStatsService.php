@@ -2,14 +2,14 @@
 
 namespace Service;
 
-use Model\User\Content\ContentComparePaginatedModel;
-use Model\User\Content\ContentPaginatedModel;
-use Model\User\Group\GroupModel;
-use Model\User\RelationsModel;
-use Model\User\Shares\Shares;
-use Model\User\Shares\SharesManager;
-use Model\User\Stats\UserStats;
-use Model\User\Stats\UserStatsCalculator;
+use Model\Content\ContentComparePaginatedManager;
+use Model\Content\ContentPaginatedManager;
+use Model\Group\GroupManager;
+use Model\Relations\RelationsManager;
+use Model\Shares\Shares;
+use Model\Shares\SharesManager;
+use Model\Stats\UserStats;
+use Model\Stats\UserStatsCalculator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class UserStatsService
@@ -20,22 +20,22 @@ class UserStatsService
     protected $userStatsCalculator;
 
     /**
-     * @var RelationsModel
+     * @var RelationsManager
      */
     protected $relationsModel;
 
     /**
-     * @var GroupModel
+     * @var GroupManager
      */
     protected $groupModel;
 
     /**
-     * @var ContentPaginatedModel
+     * @var ContentPaginatedManager
      */
     protected $contentPaginatedModel;
 
     /**
-     * @var ContentComparePaginatedModel
+     * @var ContentComparePaginatedManager
      */
     protected $contentComparePaginatedModel;
 
@@ -46,10 +46,10 @@ class UserStatsService
 
     function __construct(
         UserStatsCalculator $userStatsManager,
-        GroupModel $groupModel,
-        RelationsModel $relationsModel,
-        ContentPaginatedModel $contentPaginatedModel,
-        ContentComparePaginatedModel $contentComparePaginatedModel,
+        GroupManager $groupModel,
+        RelationsManager $relationsModel,
+        ContentPaginatedManager $contentPaginatedModel,
+        ContentComparePaginatedManager $contentComparePaginatedModel,
         SharesManager $sharesManager
     ) {
         $this->userStatsCalculator = $userStatsManager;
@@ -78,13 +78,13 @@ class UserStatsService
 
     protected function completeReceivedLikes(UserStats $userStats, $userId)
     {
-        $numberOfReceivedLikes = $this->relationsModel->countTo($userId, RelationsModel::LIKES);
+        $numberOfReceivedLikes = $this->relationsModel->countTo($userId, RelationsManager::LIKES);
         $userStats->setNumberOfReceivedLikes((integer)$numberOfReceivedLikes);
     }
 
     protected function completeUserLikes(UserStats $userStats, $userId)
     {
-        $numberOfUserLikes = $this->relationsModel->countFrom($userId, RelationsModel::LIKES);
+        $numberOfUserLikes = $this->relationsModel->countFrom($userId, RelationsManager::LIKES);
         $userStats->setNumberOfUserLikes((integer)$numberOfUserLikes);
     }
 

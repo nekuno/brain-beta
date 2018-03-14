@@ -3,7 +3,7 @@
 namespace ApiConsumer\Exception;
 
 
-use Model\User\Token\Token;
+use Model\Token\Token;
 
 class TokenException extends \RuntimeException
 {

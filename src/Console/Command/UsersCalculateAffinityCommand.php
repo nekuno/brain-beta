@@ -3,10 +3,10 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
-use Model\User;
-use Model\User\Affinity\AffinityModel;
-use Model\Link\LinkModel;
-use Manager\UserManager;
+use Model\User\User;
+use Model\Affinity\AffinityManager;
+use Model\Link\LinkManager;
+use Model\User\UserManager;
 use Silex\Application;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -28,7 +28,7 @@ class UsersCalculateAffinityCommand extends ApplicationAwareCommand
 
         /* @var $userManager UserManager */
         $userManager = $this->app['users.manager'];
-        /* @var $linkModel LinkModel */
+        /* @var $linkModel LinkManager */
         $linkModel = $this->app['links.model'];
 
         $user = $input->getOption('user');
@@ -74,7 +74,7 @@ class UsersCalculateAffinityCommand extends ApplicationAwareCommand
 
     private function calculateAffinity($userId, $linkId, OutputInterface $output)
     {
-        /* @var $affinityModel AffinityModel */
+        /* @var $affinityModel AffinityManager */
         $affinityModel = $this->app['users.affinity.model'];
 
         $affinity = $affinityModel->getAffinity($userId, $linkId);

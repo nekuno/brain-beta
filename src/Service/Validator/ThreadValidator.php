@@ -3,7 +3,7 @@
 namespace Service\Validator;
 
 
-use Model\User\Thread\ThreadManager;
+use Model\Thread\ThreadManager;
 
 class ThreadValidator extends Validator
 {

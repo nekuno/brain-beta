@@ -3,8 +3,8 @@
 namespace Controller\User;
 
 use Model\Entity\EmailNotification;
-use Model\User\InvitationModel;
-use Model\User;
+use Model\Invitation\InvitationManager;
+use Model\User\User;
 use Service\EmailNotifications;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,7 +20,7 @@ class InvitationController
      */
     public function indexByUserAction(Request $request, Application $app, User $user)
     {
-        /* @var $model InvitationModel */
+        /* @var $model InvitationManager */
         $model = $app['users.invitations.model'];
 
         $result = $model->getPaginatedInvitationsByUser($request->get('offset') ?: 0, $request->get('limit') ?: 20, $user->getId());
@@ -36,7 +36,7 @@ class InvitationController
      */
     public function getAction(Application $app, $invitationId)
     {
-        /* @var $model InvitationModel */
+        /* @var $model InvitationManager */
         $model = $app['users.invitations.model'];
 
         $result = $model->getById($invitationId);
@@ -52,7 +52,7 @@ class InvitationController
      */
     public function getAvailableByUserAction(Application $app, User $user)
     {
-        /* @var $model InvitationModel */
+        /* @var $model InvitationManager */
         $model = $app['users.invitations.model'];
 
         $result = $model->getUserAvailable($user->getId());
@@ -69,7 +69,7 @@ class InvitationController
      */
     public function setUserAvailableAction(Application $app, User $user, $nOfAvailable)
     {
-        /* @var $model InvitationModel */
+        /* @var $model InvitationManager */
         $model = $app['users.invitations.model'];
 
         $model->setUserAvailable($user->getId(), $nOfAvailable);
@@ -90,7 +90,7 @@ class InvitationController
     {
         $data = $request->request->all();
         $data['userId'] = $user->getId();
-        /* @var $model InvitationModel */
+        /* @var $model InvitationManager */
         $model = $app['users.invitations.model'];
         $invitation = $model->create($data);
 
@@ -109,7 +109,7 @@ class InvitationController
     {
         $data = $request->request->all();
         $data['userId'] = $user->getId();
-        /* @var $model InvitationModel */
+        /* @var $model InvitationManager */
         $model = $app['users.invitations.model'];
 
         $invitation = $model->update($data + array('invitationId' => $invitationId));
@@ -125,7 +125,7 @@ class InvitationController
      */
     public function deleteAction(Application $app, $invitationId)
     {
-        /* @var $model InvitationModel */
+        /* @var $model InvitationManager */
         $model = $app['users.invitations.model'];
 
         $invitation = $model->getById($invitationId);
@@ -143,7 +143,7 @@ class InvitationController
      */
     public function validateTokenAction(Application $app, $token)
     {
-        /* @var $model InvitationModel */
+        /* @var $model InvitationManager */
         $model = $app['users.invitations.model'];
         $invitation = $model->validateTokenAvailable($token);
 
@@ -159,7 +159,7 @@ class InvitationController
      */
     public function consumeAction(Application $app, User $user, $token)
     {
-        /* @var $model InvitationModel */
+        /* @var $model InvitationManager */
         $model = $app['users.invitations.model'];
 
         $invitation = $model->consume($token, $user->getId());
@@ -175,7 +175,7 @@ class InvitationController
      */
     public function countByUserAction(Application $app, User $user)
     {
-        /* @var $model InvitationModel */
+        /* @var $model InvitationManager */
         $model = $app['users.invitations.model'];
         $invitation = $model->getCountByUserId($user->getId());
 
@@ -194,7 +194,7 @@ class InvitationController
     {
         $data = $request->request->all();
         $recipients = 0;
-        /* @var $model InvitationModel */
+        /* @var $model InvitationManager */
         $model = $app['users.invitations.model'];
 
         if (isset($data['locale'])) {

@@ -5,7 +5,7 @@ namespace Worker;
 use ApiConsumer\LinkProcessor\LinkProcessor;
 use Event\CheckEvent;
 use Model\Link\Link;
-use Model\Link\LinkModel;
+use Model\Link\LinkManager;
 use PhpAmqpLib\Channel\AMQPChannel;
 use Service\AMQPManager;
 use Service\EventDispatcher;
@@ -17,11 +17,11 @@ class LinksCheckWorker extends LoggerAwareWorker implements RabbitMQConsumerInte
     protected $linkProcessor;
 
     /**
-     * @var LinkModel
+     * @var LinkManager
      */
     protected $linkModel;
 
-    public function __construct(AMQPChannel $channel, EventDispatcher $dispatcher, LinkModel $linkModel, LinkProcessor $linkProcessor)
+    public function __construct(AMQPChannel $channel, EventDispatcher $dispatcher, LinkManager $linkModel, LinkProcessor $linkProcessor)
     {
         parent::__construct($dispatcher, $channel);
         $this->linkProcessor = $linkProcessor;

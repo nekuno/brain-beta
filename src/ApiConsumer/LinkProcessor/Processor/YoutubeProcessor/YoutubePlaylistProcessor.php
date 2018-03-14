@@ -3,7 +3,7 @@
 namespace ApiConsumer\LinkProcessor\Processor\YoutubeProcessor;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use Model\User\Token\Token;
+use Model\Token\Token;
 use Model\Link\Video;
 
 class YoutubePlaylistProcessor extends AbstractYoutubeProcessor

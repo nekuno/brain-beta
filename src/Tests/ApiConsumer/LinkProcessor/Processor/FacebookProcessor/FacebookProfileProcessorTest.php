@@ -9,7 +9,7 @@ use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookProfileProcess
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;
 use Model\Link\Link;
-use Model\User\Token\TokensModel;
+use Model\Token\TokensManager;
 use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
 class FacebookProfileProcessorTest extends AbstractProcessorTest
@@ -57,7 +57,7 @@ class FacebookProfileProcessorTest extends AbstractProcessorTest
         $link = new PreprocessedLink($url);
         $link->setResourceItemId($id);
         $link->setType(FacebookUrlParser::FACEBOOK_PAGE);
-        $link->setSource(TokensModel::FACEBOOK);
+        $link->setSource(TokensManager::FACEBOOK);
         $response = $this->processor->getResponse($link);
 
         $this->assertEquals($response, $profile, 'Asserting correct response for ' . $url);

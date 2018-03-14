@@ -5,9 +5,9 @@ namespace Console\Command;
 use Console\ApplicationAwareCommand;
 use Model\Exception\ValidationException;
 use Model\Neo4j\Neo4jException;
-use Model\User\Group\GroupModel;
-use Model\User\Thread\ThreadManager;
-use Manager\UserManager;
+use Model\Group\GroupManager;
+use Model\Thread\ThreadManager;
+use Model\User\UserManager;
 use Service\RecommendatorService;
 use Service\ThreadService;
 use Symfony\Component\Console\Input\InputArgument;
@@ -68,7 +68,7 @@ class UsersThreadsCreateCommand extends ApplicationAwareCommand
         $threadService = $this->app['threads.service'];
         /* @var $recommendator RecommendatorService */
         $recommendator = $this->app['recommendator.service'];
-        /* @var $groupModel GroupModel */
+        /* @var $groupModel GroupManager */
         $groupModel = $this->app['users.groups.model'];
 
         foreach ($users as $user) {
