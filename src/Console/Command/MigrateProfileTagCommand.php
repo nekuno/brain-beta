@@ -6,7 +6,7 @@ use Console\ApplicationAwareCommand;
 use Model\Entity\DataStatus;
 use Model\LanguageText\LanguageTextManager;
 use Model\Neo4j\Neo4jException;
-use Model\User\ProfileTagModel;
+use Model\User\ProfileTagManager;
 use Model\User\Token\TokenStatus\TokenStatusManager;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -22,7 +22,7 @@ class MigrateProfileTagCommand extends ApplicationAwareCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        /** @var ProfileTagModel $profileTagManager */
+        /** @var ProfileTagManager $profileTagManager */
         $profileTagManager = $this->app['users.profile.tag.model'];
         /** @var LanguageTextManager $languageTextManager */
         $languageTextManager = $this->app['users.languageText.manager'];

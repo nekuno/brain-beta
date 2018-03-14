@@ -2,14 +2,14 @@
 
 namespace Controller\Instant;
 
-use Model\User;
+use Model\User\User;
 use Silex\Application;
 
 class RelationsController
 {
     public function contactFromAction(Application $app, $id)
     {
-        /* @var $model User\ContactModel */
+        /* @var $model User\ContactManager */
         $model = $app['users.contact.model'];
 
         $users = $model->contactFrom($id);
@@ -19,7 +19,7 @@ class RelationsController
 
     public function contactToAction(Application $app, $id)
     {
-        /* @var $model User\ContactModel */
+        /* @var $model User\ContactManager */
         $model = $app['users.contact.model'];
 
         $users = $model->contactTo($id);
@@ -29,7 +29,7 @@ class RelationsController
 
     public function contactAction(Application $app, $from, $to)
     {
-        /* @var $model User\ContactModel */
+        /* @var $model User\ContactManager */
         $model = $app['users.contact.model'];
 
         $contact = $model->canContact($from, $to);

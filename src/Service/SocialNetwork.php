@@ -5,10 +5,10 @@ namespace Service;
 use ApiConsumer\Factory\FetcherFactory;
 use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
-use Model\User\LookUpModel;
-use Model\User\ProfileModel;
-use Model\User\ProfileTagModel;
-use Model\User\SocialNetwork\LinkedinSocialNetworkModel;
+use Model\User\LookUpManager;
+use Model\User\ProfileManager;
+use Model\User\ProfileTagManager;
+use Model\User\SocialNetwork\LinkedinSocialNetworkManager;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -17,12 +17,12 @@ use Psr\Log\LoggerInterface;
 class SocialNetwork
 {
     /**
-     * @var LinkedinSocialNetworkModel
+     * @var LinkedinSocialNetworkManager
      */
     protected $linkedinSocialNetworkModel;
 
     /**
-     * @var LookupModel
+     * @var LookUpManager
      */
     protected $lookupModel;
 
@@ -36,10 +36,10 @@ class SocialNetwork
     protected $fetcherFactory;
 
     function __construct(
-        LinkedinSocialNetworkModel $linkedinSocialNetworkModel,
-        LookUpModel $lookupModel,
-        ProfileTagModel $profileTagModel,
-        ProfileModel $profileModel,
+        LinkedinSocialNetworkManager $linkedinSocialNetworkModel,
+        LookUpManager $lookupModel,
+        ProfileTagManager $profileTagModel,
+        ProfileManager $profileModel,
         FetcherFactory $fetcherFactory
     ) {
         $this->linkedinSocialNetworkModel = $linkedinSocialNetworkModel;

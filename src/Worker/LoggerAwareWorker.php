@@ -8,7 +8,7 @@ use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Message\AMQPMessage;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
-use Service\AMQPQueueManager;
+use Service\AMQPQueueService;
 use Service\EventDispatcher;
 
 abstract class LoggerAwareWorker implements LoggerAwareInterface, RabbitMQConsumerInterface
@@ -36,7 +36,7 @@ abstract class LoggerAwareWorker implements LoggerAwareInterface, RabbitMQConsum
     {
         $this->dispatcher = $dispatcher;
         $this->channel = $channel;
-        $this->queueManager = new AMQPQueueManager();
+        $this->queueManager = new AMQPQueueService();
     }
 
     /**

@@ -4,8 +4,8 @@ namespace Service;
 
 use GuzzleHttp\Client;
 use Model\User\Device\Device;
-use Model\User\Device\DeviceModel;
-use Model\User\ProfileModel;
+use Model\User\Device\DeviceManager;
+use Model\User\ProfileManager;
 use Silex\Translator;
 
 class DeviceService
@@ -21,12 +21,12 @@ class DeviceService
     protected $client;
 
     /**
-     * @var DeviceModel
+     * @var DeviceManager
      */
     protected $dm;
 
     /**
-     * @var ProfileModel
+     * @var ProfileManager
      */
     protected $pm;
 
@@ -40,7 +40,7 @@ class DeviceService
     protected $serverPublicKey;
     protected $serverPrivateKey;
 
-    public function __construct(Client $client, DeviceModel $dm, ProfileModel $pm, Translator $translator, $fireBaseUrl, $fireBaseApiKey, $serverPublicKey, $serverPrivateKey)
+    public function __construct(Client $client, DeviceManager $dm, ProfileManager $pm, Translator $translator, $fireBaseUrl, $fireBaseApiKey, $serverPublicKey, $serverPrivateKey)
     {
         $this->client = $client;
         $this->dm = $dm;

@@ -10,11 +10,11 @@ use Event\SimilarityProcessStepEvent;
 use Event\UserStatusChangedEvent;
 use Model\Neo4j\Neo4jException;
 use Model\Popularity\PopularityManager;
-use Model\User\Question\QuestionModel;
-use Model\User;
-use Model\User\Matching\MatchingModel;
+use Model\User\Question\QuestionManager;
+use Model\User\User;
+use Model\User\Matching\MatchingManager;
 use Model\User\Similarity\SimilarityModel;
-use Manager\UserManager;
+use Model\User\UserManager;
 use PhpAmqpLib\Channel\AMQPChannel;
 use Service\AffinityRecalculations;
 use Service\AMQPManager;
@@ -36,7 +36,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
      */
     protected $userManager;
     /**
-     * @var MatchingModel
+     * @var MatchingManager
      */
     protected $matchingModel;
     /**
@@ -48,7 +48,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
      */
     protected $userStatsService;
     /**
-     * @var QuestionModel
+     * @var QuestionManager
      */
     protected $questionModel;
     /**
@@ -67,10 +67,10 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
     public function __construct(
         AMQPChannel $channel,
         UserManager $userManager,
-        MatchingModel $matchingModel,
+        MatchingManager $matchingModel,
         SimilarityModel $similarityModel,
         UserStatsService $userStatsService,
-        QuestionModel $questionModel,
+        QuestionManager $questionModel,
         AffinityRecalculations $affinityRecalculations,
         PopularityManager $popularityManager,
         Connection $connectionBrain,

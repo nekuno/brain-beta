@@ -3,8 +3,8 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
-use Model\User;
-use Model\User\Token\TokensModel;
+use Model\User\User;
+use Model\User\Token\TokensManager;
 use Service\AMQPManager;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -58,7 +58,7 @@ class RabbitMQEnqueueFetchingCommand extends ApplicationAwareCommand
 
     private function isValidResourceOwner($resourceOwnerOption)
     {
-        $availableResourceOwners = TokensModel::getResourceOwners();
+        $availableResourceOwners = TokensManager::getResourceOwners();
 
         return $resourceOwnerOption == null || in_array($resourceOwnerOption, $availableResourceOwners);
     }
@@ -89,7 +89,7 @@ class RabbitMQEnqueueFetchingCommand extends ApplicationAwareCommand
 
     private function getResourceOwners($resourceOwnerOption, $userId)
     {
-        /** @var TokensModel $tokensModel */
+        /** @var TokensManager $tokensModel */
         $tokensModel = $this->app['users.tokens.model'];
         $connectedNetworks = $tokensModel->getConnectedNetworks($userId);
 

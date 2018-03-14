@@ -2,9 +2,9 @@
 
 namespace Controller\User;
 
-use Manager\UserManager;
-use Model\User\RelationsModel;
-use Model\User;
+use Model\User\UserManager;
+use Model\User\RelationsManager;
+use Model\User\User;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -20,7 +20,7 @@ class RelationsController
      */
     public function indexAction(Application $app, User $user, $relation)
     {
-        /* @var $model RelationsModel */
+        /* @var $model RelationsManager */
         $model = $app['users.relations.model'];
 
         $result = $model->getAll($relation, $user->getId());
@@ -40,14 +40,14 @@ class RelationsController
         /* @var $model UserManager */
         $userManager = $app['users.manager'];
         $to = $userManager->getBySlug($slugTo)->getId();
-        /* @var $model RelationsModel */
+        /* @var $model RelationsManager */
         $model = $app['users.relations.model'];
 
         if (!is_null($relation)) {
             $result = $model->get($user->getId(), $to, $relation);
         } else {
             $result = array();
-            foreach (RelationsModel::getRelations() as $relation) {
+            foreach (RelationsManager::getRelations() as $relation) {
                 try {
                     $model->get($user->getId(), $to, $relation);
                     $result[$relation] = true;
@@ -72,14 +72,14 @@ class RelationsController
         /* @var $model UserManager */
         $userManager = $app['users.manager'];
         $from = $userManager->getBySlug($slugFrom)->getId();
-        /* @var $model RelationsModel */
+        /* @var $model RelationsManager */
         $model = $app['users.relations.model'];
 
         if (!is_null($relation)) {
             $result = $model->get($from, $user->getId(), $relation);
         } else {
             $result = array();
-            foreach (RelationsModel::getRelations() as $relation) {
+            foreach (RelationsManager::getRelations() as $relation) {
                 try {
                     $model->get($from, $user->getId(), $relation);
                     $result[$relation] = true;
@@ -108,7 +108,7 @@ class RelationsController
 
         $data = $request->request->all();
 
-        /* @var $model RelationsModel */
+        /* @var $model RelationsManager */
         $model = $app['users.relations.model'];
 
         $result = $model->create($user->getId(), $to, $relation, $data);
@@ -129,7 +129,7 @@ class RelationsController
         $userManager = $app['users.manager'];
         $to = $userManager->getBySlug($slugTo)->getId();
 
-        /* @var $model RelationsModel */
+        /* @var $model RelationsManager */
         $model = $app['users.relations.model'];
 
         $result = $model->remove($user->getId(), $to, $relation);

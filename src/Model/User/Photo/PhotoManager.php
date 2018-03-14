@@ -6,7 +6,7 @@ use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
-use Model\User;
+use Model\User\User;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class PhotoManager

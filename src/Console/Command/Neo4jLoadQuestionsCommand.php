@@ -7,9 +7,9 @@ use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
-use Model\User\Question\QuestionModel;
-use Manager\UserManager;
-use Model\User;
+use Model\User\Question\QuestionManager;
+use Model\User\UserManager;
+use Model\User\User;
 use Silex\Application;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -183,7 +183,7 @@ class Neo4jLoadQuestionsCommand extends ApplicationAwareCommand
     protected function process($csv, $all, User $user)
     {
 
-        /* @var $questionModel QuestionModel */
+        /* @var $questionModel QuestionManager */
         $questionModel = $this->app['questionnaire.questions.model'];
 
         $updated = $created = 0;

@@ -3,7 +3,7 @@
 namespace Event;
 
 
-use Model\User;
+use Model\User\User;
 use Symfony\Component\EventDispatcher\Event;
 
 class ProfileEvent extends Event

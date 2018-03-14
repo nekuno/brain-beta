@@ -18,10 +18,10 @@ use Event\ConsistencyEvent;
 use Event\ProcessLinkEvent;
 use GuzzleHttp\Exception\RequestException;
 use Model\Link\Creator;
-use Model\Link\LinkModel;
+use Model\Link\LinkManager;
 use Model\Neo4j\Neo4jException;
-use Model\User\Rate\RateModel;
-use Model\User\Token\TokensModel;
+use Model\User\Rate\RateManager;
+use Model\User\Token\TokensManager;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Service\EventDispatcher;
@@ -45,7 +45,7 @@ class ProcessorService implements LoggerAwareInterface
 
     protected $linkProcessor;
 
-    public function __construct(FetcherService $fetcherService, LinkProcessor $linkProcessor, LinkModel $linkModel, EventDispatcher $dispatcher, RateModel $rateModel, LinkResolver $resolver)
+    public function __construct(FetcherService $fetcherService, LinkProcessor $linkProcessor, LinkManager $linkModel, EventDispatcher $dispatcher, RateManager $rateModel, LinkResolver $resolver)
     {
         $this->fetcherService = $fetcherService;
         $this->linkProcessor = $linkProcessor;
@@ -443,10 +443,10 @@ class ProcessorService implements LoggerAwareInterface
     private function checkCreator(PreprocessedLink $preprocessedLink)
     {
         foreach ($preprocessedLink->getLinks() as $link) {
-            if ($link instanceof Creator && $preprocessedLink->getSource() == TokensModel::TWITTER) {
+            if ($link instanceof Creator && $preprocessedLink->getSource() == TokensManager::TWITTER) {
                 try {
                     $username = (new TwitterUrlParser())->getProfileId($link->getUrl());
-                    $this->dispatcher->dispatch(\AppEvents::CHANNEL_ADDED, new ChannelEvent(TokensModel::TWITTER, $link->getUrl(), $username));
+                    $this->dispatcher->dispatch(\AppEvents::CHANNEL_ADDED, new ChannelEvent(TokensManager::TWITTER, $link->getUrl(), $username));
                 } catch (\Exception $e) {
                     $this->logError($e, sprintf('checking creator for url %s', $link->getUrl()));
                 }
@@ -535,7 +535,7 @@ class ProcessorService implements LoggerAwareInterface
         foreach ($links as $link) {
             $linkId = $link['id'];
             try {
-                $like = $this->rateModel->userRateLink($userId, $linkId, $source, null, RateModel::LIKE, false);
+                $like = $this->rateModel->userRateLink($userId, $linkId, $source, null, RateManager::LIKE, false);
                 $likes[] = $like;
             } catch (\Exception $e) {
                 $this->logError($e, sprintf('liking while processing link with id %d for user $d', $linkId, $userId));

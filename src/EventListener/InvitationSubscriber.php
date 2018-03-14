@@ -5,7 +5,7 @@ namespace EventListener;
 use Model\Neo4j\GraphManager;
 use Everyman\Neo4j\Query\Row;
 use Event\AnswerEvent;
-use Model\User\InvitationModel;
+use Model\User\InvitationManager;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -19,7 +19,7 @@ class InvitationSubscriber implements EventSubscriberInterface
     protected $gm;
     protected $im;
 
-    public function __construct(GraphManager $gm, InvitationModel $im)
+    public function __construct(GraphManager $gm, InvitationManager $im)
     {
         $this->gm = $gm;
         $this->im = $im;

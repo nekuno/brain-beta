@@ -2,16 +2,16 @@
 
 namespace Tests\API;
 
-use Model\Link\LinkModel;
+use Model\Link\LinkManager;
 use Model\Neo4j\Constraints;
 use Model\Neo4j\GraphManager;
 use Model\Neo4j\PrivacyOptions;
 use Model\Neo4j\ProfileOptions;
 use Model\User\Question\QuestionCorrelationManager;
 use Model\User\Question\AnswerManager;
-use Model\User\ProfileModel;
-use Model\User\Rate\RateModel;
-use Model\User\InvitationModel;
+use Model\User\ProfileManager;
+use Model\User\Rate\RateManager;
+use Model\User\InvitationManager;
 use Psr\Log\LoggerInterface;
 use Service\GroupService;
 use Service\QuestionService;
@@ -50,7 +50,7 @@ class TestingFixtures
     protected $registerService;
 
     /**
-     * @var LinkModel
+     * @var LinkManager
      */
     protected $lm;
 
@@ -70,7 +70,7 @@ class TestingFixtures
     protected $am;
 
     /**
-     * @var ProfileModel
+     * @var ProfileManager
      */
     protected $pm;
 
@@ -80,12 +80,12 @@ class TestingFixtures
     protected $groupService;
 
     /**
-     * @var InvitationModel
+     * @var InvitationManager
      */
     protected $im;
 
     /**
-     * @var RateModel
+     * @var RateManager
      */
     protected $rm;
 

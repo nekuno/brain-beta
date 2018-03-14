@@ -4,8 +4,8 @@ namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
 use Model\Neo4j\Neo4jException;
-use Model\User\Matching\MatchingModel;
-use Manager\UserManager;
+use Model\User\Matching\MatchingManager;
+use Model\User\UserManager;
 use Silex\Application;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -24,7 +24,7 @@ class UsersCalculateMatchingCommand extends ApplicationAwareCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        /* @var $modelObject MatchingModel */
+        /* @var $modelObject MatchingManager */
         $modelObject = $this->app['users.matching.model'];
 
         $userA = $input->getArgument('userA');

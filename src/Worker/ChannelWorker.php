@@ -7,7 +7,7 @@ use ApiConsumer\Fetcher\ProcessorService;
 use Doctrine\DBAL\Connection;
 use Event\ProcessLinksEvent;
 use Model\Neo4j\Neo4jException;
-use Model\User\Token\TokensModel;
+use Model\User\Token\TokensManager;
 use PhpAmqpLib\Channel\AMQPChannel;
 use Psr\Log\LoggerInterface;
 use Service\AMQPManager;
@@ -69,7 +69,7 @@ class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterfa
             $resourceOwner = $data['resourceOwner'];
 
             switch ($resourceOwner) {
-                case TokensModel::TWITTER:
+                case TokensManager::TWITTER:
 
                     $userId = $this->getUserId($data);
                     $links = $this->fetchChannelTwitter($data);
@@ -112,7 +112,7 @@ class ChannelWorker extends LoggerAwareWorker implements RabbitMQConsumerInterfa
 
     private function fetchTwitterAPI($userId)
     {
-        $resourceOwner = TokensModel::TWITTER;
+        $resourceOwner = TokensManager::TWITTER;
 
         $exclude = array('twitter_following', 'twitter_favorites');
 

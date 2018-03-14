@@ -2,7 +2,7 @@
 
 namespace Model\Metadata;
 
-use Model\Link\LinkModel;
+use Model\Link\LinkManager;
 use Model\Neo4j\GraphManager;
 use Symfony\Component\Translation\Translator;
 
@@ -42,7 +42,7 @@ class ContentFilterMetadataManager extends MetadataManager
     protected function getValidTypesLabels()
     {
         $types = array();
-        $keyTypes = LinkModel::getValidTypes();
+        $keyTypes = LinkManager::getValidTypes();
 
         foreach ($keyTypes as $type) {
             $types[$type] = $this->translator->trans('types.' . lcfirst($type));

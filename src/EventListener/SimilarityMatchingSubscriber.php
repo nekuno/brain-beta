@@ -6,9 +6,9 @@ use Event\MatchingEvent;
 use Event\SimilarityEvent;
 use Model\Entity\EmailNotification;
 use Model\User\Filters\FilterUsers;
-use Model\User\Group\GroupModel;
-use Model\User\ProfileModel;
-use Manager\UserManager;
+use Model\User\Group\GroupManager;
+use Model\User\ProfileManager;
+use Model\User\UserManager;
 use Service\EmailNotifications;
 use Service\NotificationManager;
 use Silex\Translator;
@@ -27,12 +27,12 @@ class SimilarityMatchingSubscriber implements EventSubscriberInterface
     protected $userManager;
 
     /**
-     * @var ProfileModel
+     * @var ProfileManager
      */
     protected $profileModel;
 
     /**
-     * @var GroupModel
+     * @var GroupManager
      */
     protected $groupModel;
 
@@ -51,7 +51,7 @@ class SimilarityMatchingSubscriber implements EventSubscriberInterface
      */
     protected $socialHost;
 
-    public function __construct(EmailNotifications $emailNotifications, UserManager $userManager, ProfileModel $profileModel, GroupModel $groupModel, Translator $translator, NotificationManager $notificationManager, $socialHost)
+    public function __construct(EmailNotifications $emailNotifications, UserManager $userManager, ProfileManager $profileModel, GroupManager $groupModel, Translator $translator, NotificationManager $notificationManager, $socialHost)
     {
         $this->emailNotifications = $emailNotifications;
         $this->userManager = $userManager;

@@ -2,7 +2,7 @@
 
 namespace Service;
 
-use Model\Link\LinkModel;
+use Model\Link\LinkManager;
 use Model\Popularity\PopularityManager;
 
 class LinkService
@@ -15,7 +15,7 @@ class LinkService
      * @param $linkModel
      * @param $popularityManager
      */
-    public function __construct(LinkModel $linkModel, PopularityManager $popularityManager)
+    public function __construct(LinkManager $linkModel, PopularityManager $popularityManager)
     {
         $this->linkModel = $linkModel;
         $this->popularityManager = $popularityManager;

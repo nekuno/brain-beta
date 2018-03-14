@@ -6,7 +6,7 @@ use ApiConsumer\Images\ImageAnalyzer;
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
 use Model\User\Group\Group;
-use Model\User\UserComparedStats;
+use Model\User\Stats\UserComparedStats;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class UserStatsCalculator

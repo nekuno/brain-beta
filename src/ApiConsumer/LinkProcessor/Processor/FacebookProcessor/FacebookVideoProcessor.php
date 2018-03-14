@@ -6,7 +6,7 @@ use ApiConsumer\Exception\UrlNotValidException;
 use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
-use Model\User\Token\TokensModel;
+use Model\User\Token\TokensManager;
 use Model\Link\Video;
 
 class FacebookVideoProcessor extends AbstractFacebookProcessor
@@ -16,7 +16,7 @@ class FacebookVideoProcessor extends AbstractFacebookProcessor
         $id = $this->getItemId($preprocessedLink->getUrl());
         $preprocessedLink->setResourceItemId($id);
 
-        if ($preprocessedLink->getSource() == TokensModel::FACEBOOK) {
+        if ($preprocessedLink->getSource() == TokensManager::FACEBOOK) {
             $response = $this->resourceOwner->requestVideo($id, $preprocessedLink->getToken());
         } else {
             $response = array();
@@ -32,7 +32,7 @@ class FacebookVideoProcessor extends AbstractFacebookProcessor
         $video = Video::buildFromArray($link->toArray());
         $video->setDescription(isset($data['description']) ? $data['description'] : null);
         $video->setTitle($this->buildTitleFromDescription($data));
-        $video->setEmbedType(TokensModel::FACEBOOK);
+        $video->setEmbedType(TokensManager::FACEBOOK);
         $video->setEmbedId($preprocessedLink->getResourceItemId());
 
         $preprocessedLink->setFirstLink($video);

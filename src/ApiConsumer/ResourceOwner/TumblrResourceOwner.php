@@ -10,7 +10,7 @@ use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\GenericOAuth1ResourceOwner;
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
 use HWI\Bundle\OAuthBundle\Security\OAuthUtils;
 use Model\User\Token\Token;
-use Model\User\Token\TokensModel;
+use Model\User\Token\TokensManager;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use Buzz\Message\RequestInterface as HttpRequestInterface;
 

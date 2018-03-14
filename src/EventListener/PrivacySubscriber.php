@@ -3,10 +3,10 @@
 namespace EventListener;
 
 use Event\PrivacyEvent;
-use Model\User\Group\GroupModel;
-use Model\User\InvitationModel;
-use Model\User\ProfileModel;
-use Manager\UserManager;
+use Model\User\Group\GroupManager;
+use Model\User\InvitationManager;
+use Model\User\ProfileManager;
+use Model\User\UserManager;
 use Service\GroupService;
 use Silex\Translator;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -19,7 +19,7 @@ class PrivacySubscriber implements EventSubscriberInterface
     protected $translator;
 
     /**
-     * @var GroupModel
+     * @var GroupManager
      */
     protected $groupModel;
 
@@ -29,7 +29,7 @@ class PrivacySubscriber implements EventSubscriberInterface
     protected $groupService;
 
     /**
-     * @var InvitationModel
+     * @var InvitationManager
      */
     protected $invitationModel;
 
@@ -44,21 +44,21 @@ class PrivacySubscriber implements EventSubscriberInterface
     protected $socialhost;
 
     /**
-     * @var ProfileModel
+     * @var ProfileManager
      */
     protected $profileModel;
 
     /**
      * PrivacySubscriber constructor.
      * @param Translator $translator
-     * @param GroupModel $groupModel
+     * @param GroupManager $groupModel
      * @param GroupService $groupService
      * @param UserManager $userManager
-     * @param ProfileModel $profileModel
-     * @param InvitationModel $invitationModel
+     * @param ProfileManager $profileModel
+     * @param InvitationManager $invitationModel
      * @param $socialhost
      */
-    public function __construct(Translator $translator, GroupModel $groupModel, GroupService $groupService, UserManager $userManager, ProfileModel $profileModel, InvitationModel $invitationModel, $socialhost)
+    public function __construct(Translator $translator, GroupManager $groupModel, GroupService $groupService, UserManager $userManager, ProfileManager $profileModel, InvitationManager $invitationModel, $socialhost)
     {
         $this->translator = $translator;
         $this->groupModel = $groupModel;
@@ -111,7 +111,7 @@ class PrivacySubscriber implements EventSubscriberInterface
             if (isset($groupsFollowers[0])) {
                 $groupId = $groupsFollowers[0];
                 $group = $this->groupService->updateGroup($groupId, $groupData);
-                $this->invitationModel->setAvailableInvitations($group->getInvitation()['invitation_token'], InvitationModel::MAX_AVAILABLE);
+                $this->invitationModel->setAvailableInvitations($group->getInvitation()['invitation_token'], InvitationManager::MAX_AVAILABLE);
             } else {
                 $group = $this->groupService->createGroup($groupData);
                 $url = $influencer->getPhoto()->getUrl();
@@ -120,7 +120,7 @@ class PrivacySubscriber implements EventSubscriberInterface
                 $invitationData = array(
                     'userId' => $event->getUserId(),
                     'groupId' => $group->getId(),
-                    'available' => InvitationModel::MAX_AVAILABLE,
+                    'available' => InvitationManager::MAX_AVAILABLE,
                     'slogan' => $slogan,
                     'image_url' => $url,
                 );

@@ -7,8 +7,8 @@ use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
 use Model\User\SocialNetwork\SocialProfile;
-use Manager\UserManager;
-use Model\User;
+use Model\User\UserManager;
+use Model\User\User;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class GhostUserManager

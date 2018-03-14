@@ -2,9 +2,9 @@
 
 namespace Model\User\Thread;
 
-use Model\User;
+use Model\User\User;
 use Model\User\Group\Group;
-use Model\User\ProfileModel;
+use Model\User\ProfileManager;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Translation\Translator;
 
@@ -18,7 +18,7 @@ class ThreadDataManager
      * @param $profileModel
      * @param $translator
      */
-    public function __construct(ProfileModel $profileModel, Translator $translator)
+    public function __construct(ProfileManager $profileModel, Translator $translator)
     {
         $this->profileModel = $profileModel;
         $this->translator = $translator;

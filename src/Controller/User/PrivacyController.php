@@ -2,8 +2,8 @@
 
 namespace Controller\User;
 
-use Model\User\PrivacyModel;
-use Model\User;
+use Model\User\PrivacyManager;
+use Model\User\User;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -21,7 +21,7 @@ class PrivacyController
      */
     public function getAction(Application $app, User $user)
     {
-        /* @var $model PrivacyModel */
+        /* @var $model PrivacyManager */
         $model = $app['users.privacy.model'];
 
         $privacy = $model->getById($user->getId());
@@ -37,7 +37,7 @@ class PrivacyController
      */
     public function postAction(Request $request, Application $app, User $user)
     {
-        /* @var $model PrivacyModel */
+        /* @var $model PrivacyManager */
         $model = $app['users.privacy.model'];
 
         $privacy = $model->create($user->getId(), $request->request->all());
@@ -53,7 +53,7 @@ class PrivacyController
      */
     public function putAction(Request $request, Application $app, User $user)
     {
-        /* @var $model PrivacyModel */
+        /* @var $model PrivacyManager */
         $model = $app['users.privacy.model'];
 
         $privacy = $model->update($user->getId(), $request->request->all());
@@ -68,7 +68,7 @@ class PrivacyController
      */
     public function deleteAction(Application $app, User $user)
     {
-        /* @var $model PrivacyModel */
+        /* @var $model PrivacyManager */
         $model = $app['users.privacy.model'];
 
         $privacy = $model->getById($user->getId());
@@ -86,7 +86,7 @@ class PrivacyController
     {
         $locale = $request->query->get('locale');
 
-        /* @var $model PrivacyModel */
+        /* @var $model PrivacyManager */
         $model = $app['users.privacy.model'];
         $metadata = $model->getMetadata($locale);
 

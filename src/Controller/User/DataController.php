@@ -4,8 +4,8 @@ namespace Controller\User;
 
 use Doctrine\ORM\EntityManager;
 use Model\Entity\DataStatus;
-use Model\User\Token\TokensModel;
-use Model\User;
+use Model\User\Token\TokensManager;
+use Model\User\User;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 

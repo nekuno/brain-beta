@@ -2,7 +2,7 @@
 namespace ApiConsumer\EventListener;
 
 use ApiConsumer\Event\OAuthTokenEvent;
-use Model\User\Token\TokensModel;
+use Model\User\Token\TokensManager;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use Psr\Log\LoggerInterface;
 use Swift_Mailer;
@@ -28,17 +28,17 @@ class OAuthTokenSubscriber implements EventSubscriberInterface
     protected $mailer;
 
     /**
-     * @var TokensModel
+     * @var TokensManager
      */
     protected $tm;
 
     /**
-     * @param TokensModel $tm
+     * @param TokensManager $tm
      * @param Swift_Mailer $mailer
      * @param LoggerInterface $logger
      * @param AMQPStreamConnection $amqp
      */
-    public function __construct(TokensModel $tm, Swift_Mailer $mailer, LoggerInterface $logger, AMQPStreamConnection $amqp)
+    public function __construct(TokensManager $tm, Swift_Mailer $mailer, LoggerInterface $logger, AMQPStreamConnection $amqp)
     {
         $this->tm = $tm;
         $this->mailer = $mailer;

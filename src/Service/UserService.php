@@ -4,10 +4,10 @@ namespace Service;
 
 use Model\User\Photo\GalleryManager;
 use Model\User\Photo\PhotoManager;
-use Manager\UserManager;
-use Model\User\ProfileModel;
-use Model\User\Rate\RateModel;
-use Model\User\Token\TokensModel;
+use Model\User\UserManager;
+use Model\User\ProfileManager;
+use Model\User\Rate\RateManager;
+use Model\User\Token\TokensManager;
 use Model\User\Token\TokenStatus\TokenStatusManager;
 
 class UserService
@@ -25,16 +25,16 @@ class UserService
     /**
      * UserService constructor.
      * @param UserManager $userManager
-     * @param ProfileModel $profileManager
-     * @param TokensModel $tokensModel
+     * @param ProfileManager $profileManager
+     * @param TokensManager $tokensModel
      * @param TokenStatusManager $tokenStatusManager
-     * @param RateModel $rateModel
+     * @param RateManager $rateModel
      * @param LinkService $linkService
      * @param InstantConnection $instantConnection
      * @param PhotoManager $photoManager
      * @param GalleryManager $galleryManager
      */
-    public function __construct(UserManager $userManager, ProfileModel $profileManager, TokensModel $tokensModel, TokenStatusManager $tokenStatusManager, RateModel $rateModel, LinkService $linkService, InstantConnection $instantConnection, PhotoManager $photoManager, GalleryManager $galleryManager)
+    public function __construct(UserManager $userManager, ProfileManager $profileManager, TokensManager $tokensModel, TokenStatusManager $tokenStatusManager, RateManager $rateModel, LinkService $linkService, InstantConnection $instantConnection, PhotoManager $photoManager, GalleryManager $galleryManager)
     {
         $this->userManager = $userManager;
         $this->profileManager = $profileManager;

@@ -6,13 +6,13 @@ namespace Model\User\SocialNetwork;
 use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
-use Model\User\LookUpModel;
-use Model\User\Token\TokensModel;
+use Model\User\LookUpManager;
+use Model\User\Token\TokensManager;
 
 class SocialProfileManager
 {
     /**
-     * @var TokensModel
+     * @var TokensManager
      */
     protected $tokensModel;
 
@@ -22,11 +22,11 @@ class SocialProfileManager
     protected $graphManager;
 
     /**
-     * @var LookUpModel
+     * @var LookUpManager
      */
     protected $lookupModel;
 
-    function __construct(GraphManager $graphManager, TokensModel $tokensModel, LookUpModel $lookupModel)
+    function __construct(GraphManager $graphManager, TokensManager $tokensModel, LookUpManager $lookupModel)
     {
         $this->tokensModel = $tokensModel;
         $this->graphManager = $graphManager;
@@ -42,7 +42,7 @@ class SocialProfileManager
     {
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(u:User)')
-            ->match('(u)-[hsn:HAS_SOCIAL_NETWORK]->(sn:' . LookUpModel::LABEL_SOCIAL_NETWORK . ')')
+            ->match('(u)-[hsn:HAS_SOCIAL_NETWORK]->(sn:' . LookUpManager::LABEL_SOCIAL_NETWORK . ')')
             ->returns('hsn.url as url, labels(sn) as network, u.qnoow_id as id');
         $query = $qb->getQuery();
         $result = $query->getResultSet();
@@ -63,14 +63,14 @@ class SocialProfileManager
         if (!$userId) return array();
 
         if ($resource) {
-            $networkLabels = array_keys(LookUpModel::$resourceOwners, $resource);
+            $networkLabels = array_keys(LookUpManager::$resourceOwners, $resource);
         } else {
-            $networkLabels = array(LookUpModel::LABEL_SOCIAL_NETWORK);
+            $networkLabels = array(LookUpManager::LABEL_SOCIAL_NETWORK);
             if (!$all) {
                 $networkLabels = array();
                 $unconnected = $this->tokensModel->getUnconnectedNetworks($userId);
                 foreach ($unconnected as $network) {
-                    $networkLabels = array_merge($networkLabels, array_keys(LookUpModel::$resourceOwners, $network));
+                    $networkLabels = array_merge($networkLabels, array_keys(LookUpManager::$resourceOwners, $network));
                 }
             }
 
@@ -109,7 +109,7 @@ class SocialProfileManager
         if (!$url) return array();
         $qb = $this->graphManager->createQueryBuilder();
         $qb->match('(u)')
-            ->match('(u)-[hsn:HAS_SOCIAL_NETWORK]->(sn:' . LookUpModel::LABEL_SOCIAL_NETWORK . ')')
+            ->match('(u)-[hsn:HAS_SOCIAL_NETWORK]->(sn:' . LookUpManager::LABEL_SOCIAL_NETWORK . ')')
             ->where('hsn.url = {url}')
             ->returns('hsn.url as url, labels(sn) as network, u.qnoow_id as id');
         $qb->setParameters(array(
@@ -134,13 +134,13 @@ class SocialProfileManager
         foreach ($result as $row) {
             $labels = $row->offsetGet('network');
             foreach ($labels as $network) {
-                if ($network !== LookUpModel::LABEL_SOCIAL_NETWORK
+                if ($network !== LookUpManager::LABEL_SOCIAL_NETWORK
                     && $row->offsetGet('id')
                     && $row->offsetGet('url')
                 )
                 {
-                    $resourceOwner = array_key_exists($network, LookUpModel::$resourceOwners) ?
-                        LookUpModel::$resourceOwners[$network] : null;
+                    $resourceOwner = array_key_exists($network, LookUpManager::$resourceOwners) ?
+                        LookUpManager::$resourceOwners[$network] : null;
 
                     $socialProfiles[] = new SocialProfile(
                         $row->offsetGet('id'),

@@ -2,10 +2,10 @@
 
 namespace Service;
 
-use Model\User\Content\ContentComparePaginatedModel;
-use Model\User\Content\ContentPaginatedModel;
-use Model\User\Group\GroupModel;
-use Model\User\RelationsModel;
+use Model\User\Content\ContentComparePaginatedManager;
+use Model\User\Content\ContentPaginatedManager;
+use Model\User\Group\GroupManager;
+use Model\User\RelationsManager;
 use Model\User\Shares\Shares;
 use Model\User\Shares\SharesManager;
 use Model\User\Stats\UserStats;
@@ -20,22 +20,22 @@ class UserStatsService
     protected $userStatsCalculator;
 
     /**
-     * @var RelationsModel
+     * @var RelationsManager
      */
     protected $relationsModel;
 
     /**
-     * @var GroupModel
+     * @var GroupManager
      */
     protected $groupModel;
 
     /**
-     * @var ContentPaginatedModel
+     * @var ContentPaginatedManager
      */
     protected $contentPaginatedModel;
 
     /**
-     * @var ContentComparePaginatedModel
+     * @var ContentComparePaginatedManager
      */
     protected $contentComparePaginatedModel;
 
@@ -46,10 +46,10 @@ class UserStatsService
 
     function __construct(
         UserStatsCalculator $userStatsManager,
-        GroupModel $groupModel,
-        RelationsModel $relationsModel,
-        ContentPaginatedModel $contentPaginatedModel,
-        ContentComparePaginatedModel $contentComparePaginatedModel,
+        GroupManager $groupModel,
+        RelationsManager $relationsModel,
+        ContentPaginatedManager $contentPaginatedModel,
+        ContentComparePaginatedManager $contentComparePaginatedModel,
         SharesManager $sharesManager
     ) {
         $this->userStatsCalculator = $userStatsManager;
@@ -78,13 +78,13 @@ class UserStatsService
 
     protected function completeReceivedLikes(UserStats $userStats, $userId)
     {
-        $numberOfReceivedLikes = $this->relationsModel->countTo($userId, RelationsModel::LIKES);
+        $numberOfReceivedLikes = $this->relationsModel->countTo($userId, RelationsManager::LIKES);
         $userStats->setNumberOfReceivedLikes((integer)$numberOfReceivedLikes);
     }
 
     protected function completeUserLikes(UserStats $userStats, $userId)
     {
-        $numberOfUserLikes = $this->relationsModel->countFrom($userId, RelationsModel::LIKES);
+        $numberOfUserLikes = $this->relationsModel->countFrom($userId, RelationsManager::LIKES);
         $userStats->setNumberOfUserLikes((integer)$numberOfUserLikes);
     }
 

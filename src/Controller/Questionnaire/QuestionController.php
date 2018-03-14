@@ -3,8 +3,8 @@
 namespace Controller\Questionnaire;
 
 use Model\Metadata\MetadataManager;
-use Model\User\Question\QuestionModel;
-use Model\User;
+use Model\User\Question\QuestionManager;
+use Model\User\User;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -105,7 +105,7 @@ class QuestionController
     {
         $id = $request->get('questionId');
         $locale = $this->getLocale($request, $app['locale.options']['default']);
-        /* @var $model QuestionModel */
+        /* @var $model QuestionManager */
         $model = $app['questionnaire.questions.model'];
 
         $question = $model->getById($id, $locale);
@@ -126,7 +126,7 @@ class QuestionController
         $data['userId'] = $user->getId();
         $data['locale'] = $this->getLocale($request, $app['locale.options']['default']);
 
-        /* @var $model QuestionModel */
+        /* @var $model QuestionManager */
         $model = $app['questionnaire.questions.model'];
 
         $question = $model->create($data);
@@ -145,7 +145,7 @@ class QuestionController
     {
         $id = $request->attributes->get('questionId');
         $locale = $this->getLocale($request, $app['locale.options']['default']);
-        /* @var QuestionModel $model */
+        /* @var QuestionManager $model */
         $model = $app['questionnaire.questions.model'];
 
         $question = $model->getById($id, $locale);
@@ -168,7 +168,7 @@ class QuestionController
         $reason = $request->request->get('reason');
 
         $locale = $this->getLocale($request, $app['locale.options']['default']);
-        /* @var QuestionModel $model */
+        /* @var QuestionManager $model */
         $model = $app['questionnaire.questions.model'];
 
         $question = $model->getById($id, $locale);

@@ -5,7 +5,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Model\Exception\ValidationException;
 use Model\Neo4j\Neo4jException;
-use Model\User;
+use Model\User\User;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 
 //Request::setTrustedProxies(array('127.0.0.1'));

@@ -3,17 +3,17 @@
 namespace Service;
 
 
-use Model\User\Group\GroupModel;
-use Model\User\Recommendation\ContentPopularRecommendationPaginatedModel;
-use Model\User\Recommendation\ContentRecommendationPaginatedModel;
-use Model\User\Recommendation\UserPopularRecommendationPaginatedModel;
+use Model\User\Group\GroupManager;
+use Model\User\Recommendation\ContentPopularRecommendationPaginatedManager;
+use Model\User\Recommendation\ContentRecommendationPaginatedManager;
+use Model\User\Recommendation\UserPopularRecommendationPaginatedManager;
 use Model\User\Recommendation\UserRecommendation;
-use Model\User\Recommendation\UserRecommendationPaginatedModel;
+use Model\User\Recommendation\UserRecommendationPaginatedManager;
 use Model\User\Shares\SharesManager;
 use Model\User\Thread\ContentThread;
 use Model\User\Thread\Thread;
 use Model\User\Thread\UsersThread;
-use Manager\UserManager;
+use Model\User\UserManager;
 use Paginator\ContentPaginator;
 use Paginator\Paginator;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,13 +25,13 @@ class RecommendatorService
     protected $paginator;
     /** @var  $contentPaginator ContentPaginator */
     protected $contentPaginator;
-    /** @var  $groupModel GroupModel */
+    /** @var  $groupModel GroupManager */
     protected $groupModel;
-    /** @var  $userRecommendationPaginatedModel UserRecommendationPaginatedModel */
+    /** @var  $userRecommendationPaginatedModel UserRecommendationPaginatedManager */
     protected $userRecommendationPaginatedModel;
-    /** @var  $contentRecommendationPaginatedModel ContentRecommendationPaginatedModel */
+    /** @var  $contentRecommendationPaginatedModel ContentRecommendationPaginatedManager */
     protected $contentRecommendationPaginatedModel;
-    /** @var $contentPopularRecommendationPaginatedModel ContentPopularRecommendationPaginatedModel */
+    /** @var $contentPopularRecommendationPaginatedModel ContentPopularRecommendationPaginatedManager */
     protected $contentPopularRecommendationPaginatedModel;
     /** @var $sharesManager SharesManager */
     protected $sharesManager;
@@ -43,12 +43,12 @@ class RecommendatorService
 
     public function __construct(Paginator $paginator,
                                 ContentPaginator $contentPaginator,
-                                GroupModel $groupModel,
+                                GroupManager $groupModel,
                                 UserManager $userManager,
-                                UserRecommendationPaginatedModel $userRecommendationPaginatedModel,
-                                ContentRecommendationPaginatedModel $contentRecommendationPaginatedModel,
-                                UserPopularRecommendationPaginatedModel $userPopularRecommendationPaginatedModel,
-                                ContentPopularRecommendationPaginatedModel $contentPopularRecommendationPaginatedModel,
+                                UserRecommendationPaginatedManager $userRecommendationPaginatedModel,
+                                ContentRecommendationPaginatedManager $contentRecommendationPaginatedModel,
+                                UserPopularRecommendationPaginatedManager $userPopularRecommendationPaginatedModel,
+                                ContentPopularRecommendationPaginatedManager $contentPopularRecommendationPaginatedModel,
                                 SharesManager $sharesManager)
     {
         $this->paginator = $paginator;

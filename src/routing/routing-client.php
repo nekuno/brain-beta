@@ -1,6 +1,6 @@
 <?php
 
-use Model\User\RelationsModel;
+use Model\User\RelationsManager;
 
 /**
  * Client and social routes
@@ -34,35 +34,35 @@ $app->delete('/privacy', 'users.privacy.controller:deleteAction');
 $app->get('/privacy/metadata', 'users.privacy.controller:getMetadataAction');
 
 /** Relations routes */
-$app->get('/blocks', 'users.relations.controller:indexAction')->value('relation', RelationsModel::BLOCKS);
-$app->get('/blocks/{slugTo}', 'users.relations.controller:getAction')->value('relation', RelationsModel::BLOCKS);
-$app->post('/blocks/{slugTo}', 'users.relations.controller:postAction')->value('relation', RelationsModel::BLOCKS);
-$app->delete('/blocks/{slugTo}', 'users.relations.controller:deleteAction')->value('relation', RelationsModel::BLOCKS);
+$app->get('/blocks', 'users.relations.controller:indexAction')->value('relation', RelationsManager::BLOCKS);
+$app->get('/blocks/{slugTo}', 'users.relations.controller:getAction')->value('relation', RelationsManager::BLOCKS);
+$app->post('/blocks/{slugTo}', 'users.relations.controller:postAction')->value('relation', RelationsManager::BLOCKS);
+$app->delete('/blocks/{slugTo}', 'users.relations.controller:deleteAction')->value('relation', RelationsManager::BLOCKS);
 
-$app->get('/favorites', 'users.relations.controller:indexAction')->value('relation', RelationsModel::FAVORITES);
-$app->get('/favorites/{slugTo}', 'users.relations.controller:getAction')->value('relation', RelationsModel::FAVORITES);
-$app->post('/favorites/{slugTo}', 'users.relations.controller:postAction')->value('relation', RelationsModel::FAVORITES);
-$app->delete('/favorites/{slugTo}', 'users.relations.controller:deleteAction')->value('relation', RelationsModel::FAVORITES);
+$app->get('/favorites', 'users.relations.controller:indexAction')->value('relation', RelationsManager::FAVORITES);
+$app->get('/favorites/{slugTo}', 'users.relations.controller:getAction')->value('relation', RelationsManager::FAVORITES);
+$app->post('/favorites/{slugTo}', 'users.relations.controller:postAction')->value('relation', RelationsManager::FAVORITES);
+$app->delete('/favorites/{slugTo}', 'users.relations.controller:deleteAction')->value('relation', RelationsManager::FAVORITES);
 
-$app->get('/likes', 'users.relations.controller:indexAction')->value('relation', RelationsModel::LIKES);
-$app->get('/likes/{slugTo}', 'users.relations.controller:getAction')->value('relation', RelationsModel::LIKES);
-$app->post('/likes/{slugTo}', 'users.relations.controller:postAction')->value('relation', RelationsModel::LIKES);
-$app->delete('/likes/{slugTo}', 'users.relations.controller:deleteAction')->value('relation', RelationsModel::LIKES);
+$app->get('/likes', 'users.relations.controller:indexAction')->value('relation', RelationsManager::LIKES);
+$app->get('/likes/{slugTo}', 'users.relations.controller:getAction')->value('relation', RelationsManager::LIKES);
+$app->post('/likes/{slugTo}', 'users.relations.controller:postAction')->value('relation', RelationsManager::LIKES);
+$app->delete('/likes/{slugTo}', 'users.relations.controller:deleteAction')->value('relation', RelationsManager::LIKES);
 
-$app->get('/dislikes', 'users.relations.controller:indexAction')->value('relation', RelationsModel::DISLIKES);
-$app->get('/dislikes/{slugTo}', 'users.relations.controller:getAction')->value('relation', RelationsModel::DISLIKES);
-$app->post('/dislikes/{slugTo}', 'users.relations.controller:postAction')->value('relation', RelationsModel::DISLIKES);
-$app->delete('/dislikes/{slugTo}', 'users.relations.controller:deleteAction')->value('relation', RelationsModel::DISLIKES);
+$app->get('/dislikes', 'users.relations.controller:indexAction')->value('relation', RelationsManager::DISLIKES);
+$app->get('/dislikes/{slugTo}', 'users.relations.controller:getAction')->value('relation', RelationsManager::DISLIKES);
+$app->post('/dislikes/{slugTo}', 'users.relations.controller:postAction')->value('relation', RelationsManager::DISLIKES);
+$app->delete('/dislikes/{slugTo}', 'users.relations.controller:deleteAction')->value('relation', RelationsManager::DISLIKES);
 
-$app->get('/ignores', 'users.relations.controller:indexAction')->value('relation', RelationsModel::IGNORES);
-$app->get('/ignores/{slugTo}', 'users.relations.controller:getAction')->value('relation', RelationsModel::IGNORES);
-$app->post('/ignores/{slugTo}', 'users.relations.controller:postAction')->value('relation', RelationsModel::IGNORES);
-$app->delete('/ignores/{slugTo}', 'users.relations.controller:deleteAction')->value('relation', RelationsModel::IGNORES);
+$app->get('/ignores', 'users.relations.controller:indexAction')->value('relation', RelationsManager::IGNORES);
+$app->get('/ignores/{slugTo}', 'users.relations.controller:getAction')->value('relation', RelationsManager::IGNORES);
+$app->post('/ignores/{slugTo}', 'users.relations.controller:postAction')->value('relation', RelationsManager::IGNORES);
+$app->delete('/ignores/{slugTo}', 'users.relations.controller:deleteAction')->value('relation', RelationsManager::IGNORES);
 
-$app->get('/reports', 'users.relations.controller:indexAction')->value('relation', RelationsModel::REPORTS);
-$app->get('/reports/{slugTo}', 'users.relations.controller:getAction')->value('relation', RelationsModel::REPORTS);
-$app->post('/reports/{slugTo}', 'users.relations.controller:postAction')->value('relation', RelationsModel::REPORTS);
-$app->delete('/reports/{slugTo}', 'users.relations.controller:deleteAction')->value('relation', RelationsModel::REPORTS);
+$app->get('/reports', 'users.relations.controller:indexAction')->value('relation', RelationsManager::REPORTS);
+$app->get('/reports/{slugTo}', 'users.relations.controller:getAction')->value('relation', RelationsManager::REPORTS);
+$app->post('/reports/{slugTo}', 'users.relations.controller:postAction')->value('relation', RelationsManager::REPORTS);
+$app->delete('/reports/{slugTo}', 'users.relations.controller:deleteAction')->value('relation', RelationsManager::REPORTS);
 
 $app->get('/relations/{slugTo}', 'users.relations.controller:getAction');
 $app->get('/other-relations/{slugFrom}', 'users.relations.controller:getOtherAction');

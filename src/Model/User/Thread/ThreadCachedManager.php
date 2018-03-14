@@ -3,12 +3,12 @@
 namespace Model\User\Thread;
 
 use Everyman\Neo4j\Query\Row;
-use Model\Link\LinkModel;
+use Model\Link\LinkManager;
 use Model\Neo4j\GraphManager;
 use Model\User\Recommendation\ContentRecommendation;
-use Model\User\Recommendation\ContentRecommendationPaginatedModel;
+use Model\User\Recommendation\ContentRecommendationPaginatedManager;
 use Model\User\Recommendation\UserRecommendation;
-use Model\User\Recommendation\UserRecommendationPaginatedModel;
+use Model\User\Recommendation\UserRecommendationPaginatedManager;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ThreadCachedManager
@@ -21,12 +21,12 @@ class ThreadCachedManager
     /**
      * ThreadCachedManager constructor.
      * @param GraphManager $graphManager
-     * @param UserRecommendationPaginatedModel $userRecommendationPaginatedModel
-     * @param ContentRecommendationPaginatedModel $contentRecommendationPaginatedModel
-     * @param LinkModel $linkModel
+     * @param UserRecommendationPaginatedManager $userRecommendationPaginatedModel
+     * @param ContentRecommendationPaginatedManager $contentRecommendationPaginatedModel
+     * @param LinkManager $linkModel
      */
-    public function __construct(GraphManager $graphManager, UserRecommendationPaginatedModel $userRecommendationPaginatedModel,
-    ContentRecommendationPaginatedModel $contentRecommendationPaginatedModel, LinkModel $linkModel)
+    public function __construct(GraphManager $graphManager, UserRecommendationPaginatedManager $userRecommendationPaginatedModel,
+    ContentRecommendationPaginatedManager $contentRecommendationPaginatedModel, LinkManager $linkModel)
     {
         $this->graphManager = $graphManager;
         $this->userRecommendationPaginatedModel = $userRecommendationPaginatedModel;

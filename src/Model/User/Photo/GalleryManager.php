@@ -3,7 +3,7 @@
 namespace Model\User\Photo;
 
 use Model\Exception\ValidationException;
-use Model\User;
+use Model\User\User;
 
 class GalleryManager
 {

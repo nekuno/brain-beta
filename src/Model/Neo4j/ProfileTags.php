@@ -3,7 +3,7 @@
 namespace Model\Neo4j;
 
 use Model\LanguageText\LanguageTextManager;
-use Model\User\ProfileTagModel;
+use Model\User\ProfileTagManager;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 
@@ -22,7 +22,7 @@ class ProfileTags implements LoggerAwareInterface
      */
     protected $result;
 
-    public function __construct(ProfileTagModel $profileTagModel, LanguageTextManager $languageTextManager)
+    public function __construct(ProfileTagManager $profileTagModel, LanguageTextManager $languageTextManager)
     {
 
         $this->profileTagModel = $profileTagModel;

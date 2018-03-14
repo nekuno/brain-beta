@@ -5,10 +5,10 @@ namespace Model\User\Similarity;
 use Event\SimilarityEvent;
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
-use Model\User\Content\ContentPaginatedModel;
-use Model\User\Group\GroupModel;
-use Model\User\ProfileModel;
-use Model\User\Question\UserAnswerPaginatedModel;
+use Model\User\Content\ContentPaginatedManager;
+use Model\User\Group\GroupManager;
+use Model\User\ProfileManager;
+use Model\User\Question\UserAnswerPaginatedManager;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
@@ -33,17 +33,17 @@ class SimilarityModel
     protected $gm;
 
     /**
-     * @var UserAnswerPaginatedModel
+     * @var UserAnswerPaginatedManager
      */
     protected $questionPaginatedModel;
 
     /**
-     * @var ContentPaginatedModel
+     * @var ContentPaginatedManager
      */
     protected $contentPaginatedModel;
 
     /**
-     * @var ProfileModel
+     * @var ProfileManager
      */
     protected $profileModel;
 
@@ -52,10 +52,10 @@ class SimilarityModel
     public function __construct(
         EventDispatcher $dispatcher,
         GraphManager $gm,
-        UserAnswerPaginatedModel $questionPaginatedModel,
-        ContentPaginatedModel $contentPaginatedModel,
-        ProfileModel $profileModel,
-        GroupModel $groupModel
+        UserAnswerPaginatedManager $questionPaginatedModel,
+        ContentPaginatedManager $contentPaginatedModel,
+        ProfileManager $profileModel,
+        GroupManager $groupModel
     )
     {
         $this->dispatcher = $dispatcher;

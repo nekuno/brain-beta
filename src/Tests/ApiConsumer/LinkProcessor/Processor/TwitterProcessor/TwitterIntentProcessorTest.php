@@ -10,7 +10,7 @@ use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterIntentProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 use Model\Link\Link;
-use Model\User\Token\TokensModel;
+use Model\User\Token\TokensManager;
 use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
 class TwitterIntentProcessorTest extends AbstractProcessorTest
@@ -265,7 +265,7 @@ class TwitterIntentProcessorTest extends AbstractProcessorTest
             'url' => 'https://twitter.com/yawmoght',
             'thumbnail' => "http://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png",
             'additionalLabels' => array('Creator', 'LinkTwitter'),
-            'resource' => TokensModel::TWITTER,
+            'resource' => TokensManager::TWITTER,
             'timestamp' => 1000 * time(),
             'processed' => 1,
             'title' => 'yawmoght',

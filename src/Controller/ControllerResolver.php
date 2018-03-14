@@ -2,7 +2,7 @@
 
 namespace Controller;
 
-use Model\User;
+use Model\User\User;
 use Silex\ControllerResolver as BaseControllerResolver;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;

@@ -2,7 +2,7 @@
 
 namespace Controller\Admin;
 
-use Model\User\Content\ContentReportModel;
+use Model\User\Content\ContentReportManager;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -28,7 +28,7 @@ class ContentController
         }
         /* @var $paginator \Paginator\Paginator */
         $paginator = $app['paginator'];
-        /* @var $model ContentReportModel */
+        /* @var $model ContentReportManager */
         $model = $app['users.content.report.model'];
         try {
             $result = $paginator->paginate($filters, $model, $request);
@@ -46,7 +46,7 @@ class ContentController
 
     public function getReportedByIdAction(Application $app, $id)
     {
-        /* @var $model ContentReportModel */
+        /* @var $model ContentReportManager */
         $model = $app['users.content.report.model'];
 
         $result = $model->getById($id);
@@ -56,7 +56,7 @@ class ContentController
 
     public function disableAction(Application $app, $id)
     {
-        /* @var $model ContentReportModel */
+        /* @var $model ContentReportManager */
         $model = $app['users.content.report.model'];
 
         $result = $model->disable($id);
@@ -66,7 +66,7 @@ class ContentController
 
     public function enableAction(Application $app, $id)
     {
-        /* @var $model ContentReportModel */
+        /* @var $model ContentReportManager */
         $model = $app['users.content.report.model'];
 
         $result = $model->enable($id);

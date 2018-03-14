@@ -4,9 +4,9 @@ namespace Service;
 
 use Model\Entity\EmailNotification;
 use Doctrine\ORM\EntityManager;
-use Model\User;
-use Model\User\ProfileModel;
-use Manager\UserManager;
+use Model\User\User;
+use Model\User\ProfileManager;
+use Model\User\UserManager;
 use Doctrine\DBAL\Connection;
 use Silex\Translator;
 use Silex\Application;
@@ -51,11 +51,11 @@ class ChatMessageNotifications
     protected $userManager;
 
     /**
-     * @var ProfileModel
+     * @var ProfileManager
      */
     protected $profileModel;
 
-    function __construct(Client $client, EmailNotifications $emailNotifications, EntityManager $entityManagerBrain, Connection $connectionBrain, Translator $translator, UserManager $userManager, ProfileModel $profileModel)
+    function __construct(Client $client, EmailNotifications $emailNotifications, EntityManager $entityManagerBrain, Connection $connectionBrain, Translator $translator, UserManager $userManager, ProfileManager $profileModel)
     {
         $this->client = $client;
         $this->emailNotifications = $emailNotifications;

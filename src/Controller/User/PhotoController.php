@@ -4,7 +4,7 @@ namespace Controller\User;
 
 use Event\UserEvent;
 use Model\Exception\ValidationException;
-use Model\User;
+use Model\User\User;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
