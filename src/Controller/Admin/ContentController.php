@@ -2,7 +2,7 @@
 
 namespace Controller\Admin;
 
-use Model\User\Content\ContentReportManager;
+use Model\Content\ContentReportManager;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 

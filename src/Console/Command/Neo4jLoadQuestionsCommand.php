@@ -7,7 +7,7 @@ use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
-use Model\User\Question\QuestionManager;
+use Model\Question\QuestionManager;
 use Model\User\UserManager;
 use Model\User\User;
 use Silex\Application;

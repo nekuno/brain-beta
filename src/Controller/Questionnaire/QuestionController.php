@@ -3,7 +3,7 @@
 namespace Controller\Questionnaire;
 
 use Model\Metadata\MetadataManager;
-use Model\User\Question\QuestionManager;
+use Model\Question\QuestionManager;
 use Model\User\User;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;

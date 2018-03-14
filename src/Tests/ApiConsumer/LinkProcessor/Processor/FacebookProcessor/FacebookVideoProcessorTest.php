@@ -9,7 +9,7 @@ use ApiConsumer\LinkProcessor\Processor\FacebookProcessor\FacebookVideoProcessor
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;
 use Model\Link\Video;
-use Model\User\Token\TokensManager;
+use Model\Token\TokensManager;
 use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
 class FacebookVideoProcessorTest extends AbstractProcessorTest

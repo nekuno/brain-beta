@@ -2,14 +2,14 @@
 
 namespace Service;
 
-use Model\User\Content\ContentComparePaginatedManager;
-use Model\User\Content\ContentPaginatedManager;
-use Model\User\Group\GroupManager;
-use Model\User\RelationsManager;
-use Model\User\Shares\Shares;
-use Model\User\Shares\SharesManager;
-use Model\User\Stats\UserStats;
-use Model\User\Stats\UserStatsCalculator;
+use Model\Content\ContentComparePaginatedManager;
+use Model\Content\ContentPaginatedManager;
+use Model\Group\GroupManager;
+use Model\Relations\RelationsManager;
+use Model\Shares\Shares;
+use Model\Shares\SharesManager;
+use Model\Stats\UserStats;
+use Model\Stats\UserStatsCalculator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class UserStatsService

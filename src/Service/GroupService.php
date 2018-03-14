@@ -2,9 +2,9 @@
 
 namespace Service;
 
-use Model\User\Filters\FilterUsersManager;
-use Model\User\Group\Group;
-use Model\User\Group\GroupManager;
+use Model\Filters\FilterUsersManager;
+use Model\Group\Group;
+use Model\Group\GroupManager;
 use Service\Validator\ValidatorFactory;
 
 class GroupService

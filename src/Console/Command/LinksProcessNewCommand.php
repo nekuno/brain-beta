@@ -5,7 +5,7 @@ namespace Console\Command;
 use ApiConsumer\Fetcher\ProcessorService;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use Console\ApplicationAwareCommand;
-use Model\User\Token\TokensManager;
+use Model\Token\TokensManager;
 use Psr\Log\LogLevel;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;

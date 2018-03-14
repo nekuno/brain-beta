@@ -3,8 +3,8 @@
 namespace Paginator;
 
 use Model\Exception\ValidationException;
-use Model\User\Recommendation\ContentRecommendation;
-use Model\User\Recommendation\UserRecommendation;
+use Model\Recommendation\ContentRecommendation;
+use Model\Recommendation\UserRecommendation;
 use Symfony\Component\HttpFoundation\Request;
 
 class ContentPaginator extends Paginator

@@ -5,8 +5,8 @@ namespace Worker;
 
 use Model\Link\LinkManager;
 use Model\Neo4j\Neo4jException;
-use Model\User\Affinity\AffinityManager;
-use Model\User\Similarity\SimilarityModel;
+use Model\Affinity\AffinityManager;
+use Model\Similarity\SimilarityModel;
 use PhpAmqpLib\Channel\AMQPChannel;
 use Service\AffinityRecalculations;
 use Service\AMQPManager;

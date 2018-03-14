@@ -1,6 +1,6 @@
 <?php
 
-use Model\User\RelationsManager;
+use Model\Relations\RelationsManager;
 
 /**
  * Client and social routes

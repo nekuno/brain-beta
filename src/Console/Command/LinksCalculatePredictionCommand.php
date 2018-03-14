@@ -5,7 +5,7 @@ namespace Console\Command;
 use Console\ApplicationAwareCommand;
 use Model\Link\LinkManager;
 use Model\User\User;
-use Model\User\Affinity\AffinityManager;
+use Model\Affinity\AffinityManager;
 use Model\User\UserManager;
 use Service\AffinityRecalculations;
 use Symfony\Component\Console\Input\InputInterface;

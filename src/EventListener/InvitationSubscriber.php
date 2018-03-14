@@ -5,7 +5,7 @@ namespace EventListener;
 use Model\Neo4j\GraphManager;
 use Everyman\Neo4j\Query\Row;
 use Event\AnswerEvent;
-use Model\User\InvitationManager;
+use Model\Invitation\InvitationManager;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**

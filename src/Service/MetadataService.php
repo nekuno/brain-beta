@@ -5,8 +5,8 @@ namespace Service;
 use Model\Metadata\MetadataManagerFactory;
 use Model\Metadata\MetadataManagerInterface;
 use Model\Metadata\MetadataUtilities;
-use Model\User\Group\GroupManager;
-use Model\User\ProfileOptionManager;
+use Model\Group\GroupManager;
+use Model\Profile\ProfileOptionManager;
 
 class MetadataService
 {

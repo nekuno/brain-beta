@@ -2,7 +2,7 @@
 
 namespace Service\Validator;
 
-use Model\User\Question\Answer;
+use Model\Question\Answer;
 
 class AnswerValidator extends Validator
 {

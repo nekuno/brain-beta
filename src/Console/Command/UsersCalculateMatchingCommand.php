@@ -4,7 +4,7 @@ namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
 use Model\Neo4j\Neo4jException;
-use Model\User\Matching\MatchingManager;
+use Model\Matching\MatchingManager;
 use Model\User\UserManager;
 use Silex\Application;
 use Symfony\Component\Console\Input\InputInterface;

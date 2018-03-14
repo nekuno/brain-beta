@@ -2,7 +2,7 @@
 
 namespace Controller\User;
 
-use Model\User\PrivacyManager;
+use Model\Privacy\PrivacyManager;
 use Model\User\User;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;

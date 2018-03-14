@@ -6,7 +6,7 @@ use ApiConsumer\Exception\UrlNotValidException;
 use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
-use Model\User\Token\TokensManager;
+use Model\Token\TokensManager;
 use Model\Link\Video;
 
 class FacebookVideoProcessor extends AbstractFacebookProcessor

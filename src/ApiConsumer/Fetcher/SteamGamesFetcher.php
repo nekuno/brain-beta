@@ -6,7 +6,7 @@ use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\SteamUrlParser;
 use ApiConsumer\ResourceOwner\SteamResourceOwner;
 use Model\Link\Link;
-use Model\User\Token\Token;
+use Model\Token\Token;
 
 class SteamGamesFetcher extends AbstractFetcher
 {

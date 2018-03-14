@@ -4,8 +4,8 @@ namespace Tests\API\MockUp;
 
 use Everyman\Neo4j\Query\Row;
 use Model\Exception\ValidationException;
-use Model\User\Token\Token;
-use Model\User\Token\TokensManager;
+use Model\Token\Token;
+use Model\Token\TokensManager;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 

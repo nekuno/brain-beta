@@ -3,7 +3,7 @@
 namespace Model\Neo4j;
 
 use Model\LanguageText\LanguageTextManager;
-use Model\User\ProfileTagManager;
+use Model\Profile\ProfileTagManager;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 

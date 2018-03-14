@@ -3,9 +3,9 @@
 namespace Service;
 
 use GuzzleHttp\Client;
-use Model\User\Device\Device;
-use Model\User\Device\DeviceManager;
-use Model\User\ProfileManager;
+use Model\Device\Device;
+use Model\Device\DeviceManager;
+use Model\Profile\ProfileManager;
 use Silex\Translator;
 
 class DeviceService

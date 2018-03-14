@@ -4,8 +4,8 @@ namespace Controller\User;
 
 use Event\AnswerEvent;
 use Model\Metadata\MetadataManager;
-use Model\User\Question\QuestionManager;
-use Model\User\Question\UserAnswerPaginatedManager;
+use Model\Question\QuestionManager;
+use Model\Question\UserAnswerPaginatedManager;
 use Model\User\User;
 use Silex\Application;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -213,7 +213,7 @@ class AnswerController
 
         $filters = array('id' => $otherUserId, 'id2' => $user->getId(), 'locale' => $locale, 'showOnlyCommon' => $showOnlyCommon);
 
-        /* @var $model \Model\User\Question\OldQuestionComparePaginatedManager */
+        /* @var $model \Model\Question\OldQuestionComparePaginatedManager */
         $model = $app['old.users.questions.compare.model'];
 
         try {
@@ -251,7 +251,7 @@ class AnswerController
 
         $filters = array('id' => $otherUserId, 'id2' => $user->getId(), 'locale' => $locale, 'showOnlyCommon' => $showOnlyCommon);
 
-        /* @var $model \Model\User\Question\QuestionComparePaginatedManager */
+        /* @var $model \Model\Question\QuestionComparePaginatedManager */
         $model = $app['users.questions.compare.model'];
 
         try {

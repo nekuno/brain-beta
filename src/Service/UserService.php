@@ -2,13 +2,13 @@
 
 namespace Service;
 
-use Model\User\Photo\GalleryManager;
-use Model\User\Photo\PhotoManager;
+use Model\Photo\GalleryManager;
+use Model\Photo\PhotoManager;
 use Model\User\UserManager;
-use Model\User\ProfileManager;
-use Model\User\Rate\RateManager;
-use Model\User\Token\TokensManager;
-use Model\User\Token\TokenStatus\TokenStatusManager;
+use Model\Profile\ProfileManager;
+use Model\Rate\RateManager;
+use Model\Token\TokensManager;
+use Model\Token\TokenStatus\TokenStatusManager;
 
 class UserService
 {

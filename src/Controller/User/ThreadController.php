@@ -2,8 +2,8 @@
 
 namespace Controller\User;
 
-use Model\User\Thread\Thread;
-use Model\User\Thread\ThreadPaginatedManager;
+use Model\Thread\Thread;
+use Model\Thread\ThreadPaginatedManager;
 use Model\User\User;
 use Paginator\Paginator;
 use Silex\Application;

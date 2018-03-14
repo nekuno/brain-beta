@@ -3,16 +3,16 @@
 namespace Service;
 
 
-use Model\User\Group\GroupManager;
-use Model\User\Recommendation\ContentPopularRecommendationPaginatedManager;
-use Model\User\Recommendation\ContentRecommendationPaginatedManager;
-use Model\User\Recommendation\UserPopularRecommendationPaginatedManager;
-use Model\User\Recommendation\UserRecommendation;
-use Model\User\Recommendation\UserRecommendationPaginatedManager;
-use Model\User\Shares\SharesManager;
-use Model\User\Thread\ContentThread;
-use Model\User\Thread\Thread;
-use Model\User\Thread\UsersThread;
+use Model\Group\GroupManager;
+use Model\Recommendation\ContentPopularRecommendationPaginatedManager;
+use Model\Recommendation\ContentRecommendationPaginatedManager;
+use Model\Recommendation\UserPopularRecommendationPaginatedManager;
+use Model\Recommendation\UserRecommendation;
+use Model\Recommendation\UserRecommendationPaginatedManager;
+use Model\Shares\SharesManager;
+use Model\Thread\ContentThread;
+use Model\Thread\Thread;
+use Model\Thread\UsersThread;
 use Model\User\UserManager;
 use Paginator\ContentPaginator;
 use Paginator\Paginator;
@@ -67,7 +67,7 @@ class RecommendatorService
         $user = $this->userManager->getOneByThread($thread->getId());
         //Todo: Change to Class::class if PHP >= 5.5
         switch (get_class($thread)) {
-            case 'Model\User\Thread\ContentThread':
+            case 'Model\Thread\ContentThread':
 
                 /* @var $thread ContentThread */
                 $threadFilters = $thread->getFilterContent();
@@ -91,7 +91,7 @@ class RecommendatorService
                 return $this->getContentRecommendation($filters);
 
                 break;
-            case 'Model\User\Thread\UsersThread':
+            case 'Model\Thread\UsersThread':
                 /* @var $thread UsersThread */
                 $threadFilters = $thread->getFilterUsers();
                 $filters = array(
@@ -122,7 +122,7 @@ class RecommendatorService
         $user = $this->userManager->getOneByThread($thread->getId());
         //Todo: Change to Class::class if PHP >= 5.5
         switch (get_class($thread)) {
-            case 'Model\User\Thread\ContentThread':
+            case 'Model\Thread\ContentThread':
 
                 /* @var $thread ContentThread */
 
@@ -155,7 +155,7 @@ class RecommendatorService
                 return $this->getContentRecommendation($filters, $request);
 
                 break;
-            case 'Model\User\Thread\UsersThread':
+            case 'Model\Thread\UsersThread':
                 /* @var $thread UsersThread */
                 $order = $request->get('order', false);
 

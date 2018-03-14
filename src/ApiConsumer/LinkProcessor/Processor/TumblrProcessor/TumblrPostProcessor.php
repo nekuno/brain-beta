@@ -11,7 +11,7 @@ use Model\Link\Audio;
 use Model\Link\Image;
 use Model\Link\Link;
 use Model\Link\Video;
-use Model\User\Token\TokensManager;
+use Model\Token\TokensManager;
 
 class TumblrPostProcessor extends AbstractTumblrProcessor
 {

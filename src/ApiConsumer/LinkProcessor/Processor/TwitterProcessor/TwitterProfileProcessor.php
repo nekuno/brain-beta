@@ -9,8 +9,8 @@ use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 use Model\Link\Creator;
 use Model\Link\Link;
-use Model\User\Token\Token;
-use Model\User\Token\TokensManager;
+use Model\Token\Token;
+use Model\Token\TokensManager;
 
 class TwitterProfileProcessor extends AbstractTwitterProcessor implements BatchProcessorInterface
 {

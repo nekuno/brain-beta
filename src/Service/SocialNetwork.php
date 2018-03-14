@@ -5,10 +5,10 @@ namespace Service;
 use ApiConsumer\Factory\FetcherFactory;
 use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
-use Model\User\LookUpManager;
-use Model\User\ProfileManager;
-use Model\User\ProfileTagManager;
-use Model\User\SocialNetwork\LinkedinSocialNetworkManager;
+use Model\LookUp\LookUpManager;
+use Model\Profile\ProfileManager;
+use Model\Profile\ProfileTagManager;
+use Model\SocialNetwork\LinkedinSocialNetworkManager;
 use Psr\Log\LoggerInterface;
 
 /**

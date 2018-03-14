@@ -3,7 +3,7 @@
 namespace Controller\User;
 
 use Model\User\UserManager;
-use Model\User\RelationsManager;
+use Model\Relations\RelationsManager;
 use Model\User\User;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;

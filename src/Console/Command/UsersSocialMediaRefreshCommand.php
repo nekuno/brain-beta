@@ -7,7 +7,7 @@ use Console\BaseCommand;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\AbstractResourceOwner;
 use Model\Exception\ValidationException;
 use Model\User\User;
-use Model\User\Token\TokensManager;
+use Model\Token\TokensManager;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;

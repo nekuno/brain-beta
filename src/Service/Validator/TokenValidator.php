@@ -2,7 +2,7 @@
 
 namespace Service\Validator;
 
-use Model\User\Token\TokensManager;
+use Model\Token\TokensManager;
 
 class TokenValidator extends Validator
 {

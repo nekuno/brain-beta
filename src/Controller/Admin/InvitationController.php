@@ -2,7 +2,7 @@
 
 namespace Controller\Admin;
 
-use Model\User\InvitationManager;
+use Model\Invitation\InvitationManager;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 

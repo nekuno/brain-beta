@@ -3,7 +3,7 @@
 namespace Controller\User;
 
 use Model\Entity\EmailNotification;
-use Model\User\InvitationManager;
+use Model\Invitation\InvitationManager;
 use Model\User\User;
 use Service\EmailNotifications;
 use Silex\Application;

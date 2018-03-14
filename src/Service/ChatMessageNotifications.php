@@ -5,7 +5,7 @@ namespace Service;
 use Model\Entity\EmailNotification;
 use Doctrine\ORM\EntityManager;
 use Model\User\User;
-use Model\User\ProfileManager;
+use Model\Profile\ProfileManager;
 use Model\User\UserManager;
 use Doctrine\DBAL\Connection;
 use Silex\Translator;

@@ -3,7 +3,7 @@
 
 namespace ApiConsumer\Event;
 
-use Model\User\Token\Token;
+use Model\Token\Token;
 use Symfony\Component\EventDispatcher\Event;
 
 class OAuthTokenEvent extends Event

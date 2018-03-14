@@ -7,7 +7,7 @@ use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Provider\OAuthProvider;
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
 use Model\User\UserManager;
 use Model\User\User;
-use Model\User\Token\TokensManager;
+use Model\Token\TokensManager;
 use ReflectionObject;
 use Silex\Component\Security\Core\Encoder\JWTEncoder;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;

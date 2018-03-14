@@ -3,8 +3,8 @@
 namespace Controller\User;
 
 use Model\User\UserManager;
-use Model\User\ProfileManager;
-use Model\User\ProfileTagManager;
+use Model\Profile\ProfileManager;
+use Model\Profile\ProfileTagManager;
 use Model\User\User;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;

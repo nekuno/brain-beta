@@ -5,7 +5,7 @@ namespace ApiConsumer\ResourceOwner;
 use ApiConsumer\Event\OAuthTokenEvent;
 use ApiConsumer\Exception\TokenException;
 use GuzzleHttp\Exception\RequestException;
-use Model\User\Token\Token;
+use Model\Token\Token;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\LinkedinResourceOwner as LinkedinResourceOwnerBase;
 

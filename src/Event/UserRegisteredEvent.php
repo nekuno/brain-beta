@@ -2,7 +2,7 @@
 
 namespace Event;
 
-use Model\User\Token\Token;
+use Model\Token\Token;
 use Model\User\User;
 
 class UserRegisteredEvent extends UserEvent

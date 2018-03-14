@@ -7,7 +7,7 @@ use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use Event\ExceptionEvent;
 use GuzzleHttp\Exception\RequestException;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\FacebookResourceOwner as FacebookResourceOwnerBase;
-use Model\User\Token\Token;
+use Model\Token\Token;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 
 class FacebookResourceOwner extends FacebookResourceOwnerBase

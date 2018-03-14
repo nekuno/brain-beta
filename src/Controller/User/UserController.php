@@ -3,10 +3,10 @@
 namespace Controller\User;
 
 use Model\Exception\ValidationException;
-use Model\User\Content\ContentPaginatedManager;
+use Model\Content\ContentPaginatedManager;
 use Model\Metadata\UserFilterMetadataManager;
-use Model\User\Rate\RateManager;
-use Model\User\Content\ContentReportManager;
+use Model\Rate\RateManager;
+use Model\Content\ContentReportManager;
 use Model\User\UserManager;
 use Model\User\User;
 use Service\AuthService;
@@ -211,7 +211,7 @@ class UserController
         }
 
         try {
-            /* @var $model \Model\User\Matching\MatchingManager */
+            /* @var $model \Model\Matching\MatchingManager */
             $model = $app['users.matching.model'];
             $result = $model->getMatchingBetweenTwoUsersBasedOnAnswers($user->getId(), $otherUserId);
         } catch (\Exception $e) {
@@ -241,7 +241,7 @@ class UserController
         }
 
         try {
-            /* @var $model \Model\User\Similarity\SimilarityModel */
+            /* @var $model \Model\Similarity\SimilarityModel */
             $model = $app['users.similarity.model'];
             $similarity = $model->getCurrentSimilarity($user->getId(), $otherUserId);
             $result = array('similarity' => $similarity['similarity']);
@@ -343,7 +343,7 @@ class UserController
             }
         }
 
-        /* @var $model \Model\User\Content\ContentComparePaginatedManager */
+        /* @var $model \Model\Content\ContentComparePaginatedManager */
         $model = $app['users.content.compare.model'];
 
         try {
@@ -376,7 +376,7 @@ class UserController
             $search = urldecode($search);
         }
 
-        /* @var $model \Model\User\Content\ContentTagManager */
+        /* @var $model \Model\Content\ContentTagManager */
         $model = $app['users.content.tag.model'];
 
         try {
@@ -490,7 +490,7 @@ class UserController
         }
 
         try {
-            /* @var $model \Model\User\Affinity\AffinityManager */
+            /* @var $model \Model\Affinity\AffinityManager */
             $model = $app['users.affinity.model'];
             $affinity = $model->getAffinity($user->getId(), $linkId);
             $result = array('affinity' => $affinity['affinity']);
@@ -547,7 +547,7 @@ class UserController
             $search = urldecode($search);
         }
 
-        /* @var $model \Model\User\Recommendation\ContentRecommendationTagModel */
+        /* @var $model \Model\Recommendation\ContentRecommendationTagModel */
         $model = $app['users.recommendation.content.tag.model'];
 
         try {
@@ -578,7 +578,7 @@ class UserController
             $search = urldecode($search);
         }
 
-        /* @var $model \Model\User\Recommendation\ContentRecommendationTagModel */
+        /* @var $model \Model\Recommendation\ContentRecommendationTagModel */
         $model = $app['users.recommendation.content.tag.model'];
 
         try {

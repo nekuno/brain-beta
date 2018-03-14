@@ -3,7 +3,7 @@
 namespace Controller;
 
 use Model\Link\LinkManager;
-use Model\User\Rate\RateManager;
+use Model\Rate\RateManager;
 use Model\User\UserManager;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;

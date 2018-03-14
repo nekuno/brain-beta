@@ -2,7 +2,7 @@
 namespace ApiConsumer\EventListener;
 
 use ApiConsumer\Event\OAuthTokenEvent;
-use Model\User\Token\TokensManager;
+use Model\Token\TokensManager;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use Psr\Log\LoggerInterface;
 use Swift_Mailer;

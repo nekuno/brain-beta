@@ -2,12 +2,12 @@
 
 namespace Service;
 
-use Model\User\Question\Admin\QuestionAdminDataFormatter;
-use Model\User\Question\Admin\QuestionAdminManager;
-use Model\User\Question\QuestionCategory\QuestionCategoryManager;
-use Model\User\Question\QuestionCorrelationManager;
-use Model\User\Question\QuestionManager;
-use Model\User\Question\QuestionNextSelector;
+use Model\Question\Admin\QuestionAdminDataFormatter;
+use Model\Question\Admin\QuestionAdminManager;
+use Model\Question\QuestionCategory\QuestionCategoryManager;
+use Model\Question\QuestionCorrelationManager;
+use Model\Question\QuestionManager;
+use Model\Question\QuestionNextSelector;
 
 class QuestionService
 {

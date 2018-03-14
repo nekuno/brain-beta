@@ -2,7 +2,7 @@
 
 namespace Model\Metadata;
 
-use Model\User\ProfileOptionManager;
+use Model\Profile\ProfileOptionManager;
 use Silex\Translator;
 
 class MetadataManagerFactory

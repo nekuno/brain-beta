@@ -4,7 +4,7 @@ namespace ApiConsumer\Fetcher;
 
 use ApiConsumer\Exception\PaginatedFetchingException;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use Model\User\Token\Token;
+use Model\Token\Token;
 
 abstract class BasicPaginationFetcher extends AbstractFetcher
 {

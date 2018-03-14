@@ -5,11 +5,11 @@ namespace Service;
 
 use ApiConsumer\Factory\ResourceOwnerFactory;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
-use Model\User\GhostUser\GhostUserManager;
-use Model\User\LookUpManager;
-use Model\User\SocialNetwork\SocialProfile;
-use Model\User\SocialNetwork\SocialProfileManager;
-use Model\User\Token\TokensManager;
+use Model\GhostUser\GhostUserManager;
+use Model\LookUp\LookUpManager;
+use Model\SocialNetwork\SocialProfile;
+use Model\SocialNetwork\SocialProfileManager;
+use Model\Token\TokensManager;
 use Model\User\UserManager;
 
 class UserAggregator

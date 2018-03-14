@@ -2,8 +2,8 @@
 
 namespace Controller\Admin;
 
-use Model\User\RelationsManager;
-use Model\User\RelationsPaginatedManager;
+use Model\Relations\RelationsManager;
+use Model\Relations\RelationsPaginatedManager;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 

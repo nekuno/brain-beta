@@ -3,7 +3,7 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
-use Model\User\Token\TokensManager;
+use Model\Token\TokensManager;
 use Service\UserAggregator;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -80,7 +80,7 @@ class UsersSocialMediaAddCommand extends ApplicationAwareCommand
 
             $amqpManager = $this->app['amqpManager.service'];
 
-            /* @var $socialProfile \Model\User\SocialNetwork\SocialProfile */
+            /* @var $socialProfile \Model\SocialNetwork\SocialProfile */
             foreach ($socialProfiles as $socialProfile) {
                 if ($socialProfile->getResource() == TokensManager::TWITTER) {
                     $output->writeln('Enqueuing fetching followers from that twitter account');

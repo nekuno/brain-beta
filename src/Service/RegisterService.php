@@ -4,12 +4,12 @@ namespace Service;
 
 use Event\UserRegisteredEvent;
 use Model\User\UserManager;
-use Model\User\ProfileManager;
-use Model\User\InvitationManager;
-use Model\User\Group\GroupManager;
-use Model\User\GhostUser\GhostUserManager;
+use Model\Profile\ProfileManager;
+use Model\Invitation\InvitationManager;
+use Model\Group\GroupManager;
+use Model\GhostUser\GhostUserManager;
 use Symfony\Component\EventDispatcher\EventDispatcher as Dispatcher;
-use Model\User\Token\TokensManager;
+use Model\Token\TokensManager;
 
 class RegisterService
 {

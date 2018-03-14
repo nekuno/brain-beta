@@ -7,7 +7,7 @@ use ApiConsumer\Fetcher\ProcessorService;
 use Doctrine\DBAL\Connection;
 use Event\ProcessLinksEvent;
 use Model\Neo4j\Neo4jException;
-use Model\User\Token\TokensManager;
+use Model\Token\TokensManager;
 use PhpAmqpLib\Channel\AMQPChannel;
 use Psr\Log\LoggerInterface;
 use Service\AMQPManager;

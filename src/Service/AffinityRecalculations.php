@@ -8,7 +8,7 @@ use Model\Entity\EmailNotification;
 use Model\Link\LinkManager;
 use Model\Neo4j\GraphManager;
 use Model\User\User;
-use Model\User\Affinity\AffinityManager;
+use Model\Affinity\AffinityManager;
 use Model\User\UserManager;
 use Silex\Translator;
 

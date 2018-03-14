@@ -9,8 +9,8 @@ use ApiConsumer\LinkProcessor\Processor\ProcessorInterface;
 use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\YoutubeVideoProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use Model\Link\Link;
-use Model\User\Token\Token;
-use Model\User\Token\TokensManager;
+use Model\Token\Token;
+use Model\Token\TokensManager;
 
 class LinkProcessor
 {

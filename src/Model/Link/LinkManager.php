@@ -6,7 +6,7 @@ use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j;
 use Model\Neo4j\GraphManager;
-use Model\User\Recommendation\ContentRecommendation;
+use Model\Recommendation\ContentRecommendation;
 use Symfony\Component\Translation\Translator;
 
 class LinkManager

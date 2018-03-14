@@ -3,9 +3,9 @@
 namespace EventListener;
 
 use Event\PrivacyEvent;
-use Model\User\Group\GroupManager;
-use Model\User\InvitationManager;
-use Model\User\ProfileManager;
+use Model\Group\GroupManager;
+use Model\Invitation\InvitationManager;
+use Model\Profile\ProfileManager;
 use Model\User\UserManager;
 use Service\GroupService;
 use Silex\Translator;
