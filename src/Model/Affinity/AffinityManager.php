@@ -2,6 +2,7 @@
 
 namespace Model\Affinity;
 
+use Everyman\Neo4j\Node;
 use Model\Neo4j\GraphManager;
 use Everyman\Neo4j\Query\Row;
 
@@ -165,6 +166,35 @@ class AffinityManager
         }
 
         return (integer)$count;
+    }
+
+    public function getAffineLinks($userId)
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(u:User)-[:AFFINITY]-(l:Link)')
+            ->where('u.qnoow_id = { userId }')
+            ->returns('l AS link');
+
+        $qb->setParameter('userId', (integer)$userId);
+
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        $links = array();
+        //TODO: Change to LinkModel->build
+        foreach ($result as $row) {
+            /* @var $row Row */
+            /* @var $node Node */
+            $node = $row->offsetGet('link');
+
+            $link = $node->getProperties();
+            $link['id'] = $node->getId();
+
+            $links[] = $link;
+        }
+
+        return $links;
     }
 
 }

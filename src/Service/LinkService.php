@@ -2,6 +2,7 @@
 
 namespace Service;
 
+use Model\Affinity\AffinityManager;
 use Model\Link\LinkManager;
 use Model\Popularity\PopularityManager;
 
@@ -9,16 +10,19 @@ class LinkService
 {
     protected $linkModel;
     protected $popularityManager;
+    protected $affinityManager;
 
     /**
      * LinkService constructor.
-     * @param $linkModel
-     * @param $popularityManager
+     * @param LinkManager $linkModel
+     * @param PopularityManager $popularityManager
+     * @param AffinityManager $affinityManager
      */
-    public function __construct(LinkManager $linkModel, PopularityManager $popularityManager)
+    public function __construct(LinkManager $linkModel, PopularityManager $popularityManager, AffinityManager $affinityManager)
     {
         $this->linkModel = $linkModel;
         $this->popularityManager = $popularityManager;
+        $this->affinityManager = $affinityManager;
     }
 
     public function deleteNotLiked(array $links)
@@ -33,6 +37,16 @@ class LinkService
             $this->popularityManager->deleteOneByUrl($url);
             $this->linkModel->removeLink($url);
         }
+    }
+
+    /**
+     * @param string $userId
+     * @return array of links
+     * @throws \Exception on failure
+     */
+    public function findAffineLinks($userId)
+    {
+        return $this->affinityManager->getAffineLinks($userId);
     }
 
 }

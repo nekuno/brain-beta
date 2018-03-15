@@ -78,45 +78,6 @@ class LinkManager
     }
 
     /**
-     * @param string $userId
-     * @param string $type The type of relationship between the user and the links
-     * @return array of links
-     * @throws \Exception on failure
-     */
-    public function findLinksByUser($userId, $type = null)
-    {
-        $qb = $this->gm->createQueryBuilder();
-
-        $type = (null !== $type) ? $type : '';
-        if ($type != '') {
-            $type = ':' . $type;
-        }
-
-        $qb->match('(u:User)-[' . $type . ']-(l:Link)')
-            ->where('u.qnoow_id = { userId }')
-            ->returns('l AS link');
-
-        $qb->setParameter('userId', (integer)$userId);
-
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
-
-        $links = array();
-        foreach ($result as $row) {
-            /* @var $row Row */
-            /* @var $node Node */
-            $node = $row->offsetGet('link');
-
-            $link = $node->getProperties();
-            $link['id'] = $node->getId();
-
-            $links[] = $link;
-        }
-
-        return $links;
-    }
-
-    /**
      * @param array $conditions
      * @param int $offset
      * @param int $limit
@@ -148,44 +109,6 @@ class LinkManager
         }
 
         return $unprocessedLinks;
-    }
-
-    /**
-     * @param array $filters
-     * @return int
-     * @throws Neo4j\Neo4jException
-     */
-    public function countAllLinks($filters = array())
-    {
-        $types = isset($filters['type']) ? $filters['type'] : array();
-        $qb = $this->gm->createQueryBuilder();
-
-        $qb->match('(user:User {qnoow_id: { userId }})');
-        $qb->setParameter('userId', (integer)$filters['id']);
-        if (isset($filters['tag'])) {
-            $qb->match('(l:Link{processed: 1})-[:TAGGED]->(filterTag:Tag)')
-                ->where('filterTag.name IN { filterTags } ');
-            $qb->setParameter('filterTags', $filters['tag']);
-        } else {
-            $qb->match('(content:Link{processed: 1})');
-        }
-
-        $qb->filterContentByType($types, 'l');
-
-        //TODO: Cache this at periodic calculations
-//        $qb->with('user', 'l')
-//            ->optionalMatch('(user)-[ua:AFFINITY]-(l)')
-//            ->optionalMatch('(user)-[ul:LIKES]-(l)')
-//            ->optionalMatch('(user)-[ud:DISLIKES]-(l)');
-        $qb->returns('count(l) AS c');
-        $query = $qb->getQuery();
-        $result = $query->getResultSet();
-
-        /* @var $row Row */
-        $row = $result->current();
-
-        return $row->offsetGet('c');
-
     }
 
     /**
@@ -518,30 +441,6 @@ class LinkManager
     public function changeUrl($oldUrl, $newUrl)
     {
         return $this->setLinkProperty($oldUrl, 'url', $newUrl);
-    }
-
-    public function getTypes($url)
-    {
-        $qb = $this->gm->createQueryBuilder();
-
-        $qb->match('(l:Link {url: { url }})')
-            ->with('l')
-            ->limit(1)
-            ->setParameter('url', $url);
-
-        $qb->returns('labels(l) as types');
-
-        $result = $qb->getQuery()->getResultSet();
-        $row = $result->current();
-
-        $types = array();
-        if (isset($row['types'])) {
-            foreach ($row['types'] as $type) {
-                $types[] = $type;
-            }
-        }
-
-        return $types;
     }
 
     public function removeLink($linkUrl)
@@ -998,16 +897,6 @@ class LinkManager
     public static function getValidTypes()
     {
         return array('Audio', 'Video', 'Image', 'Link', 'Creator', 'Game', 'Web', 'LinkFacebook', 'LinkTwitter', 'LinkYoutube', 'LinkSpotify', 'LinkInstagram', 'LinkTumblr', 'LinkSteam');
-    }
-
-    public function buildOptionalTypesLabel($filters)
-    {
-        $linkTypes = array('Link');
-        if (isset($filters['type'])) {
-            $linkTypes = $filters['type'];
-        }
-
-        return implode('|:', $linkTypes);
     }
 
     private function addSynonymousLink($id, $synonymousLinks)
