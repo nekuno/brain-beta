@@ -481,7 +481,7 @@ class ProcessorService implements LoggerAwareInterface
             }
 
             try {
-                $linkCreated = $this->linkModel->addOrUpdateLink($link->toArray());
+                $linkCreated = $this->linkModel->mergeLink($link);
                 $links[] = $linkCreated;
             } catch (\Exception $e) {
                 $this->logError($e, sprintf('saving link %s from resource %s', $preprocessedLink->getUrl(), $preprocessedLink->getSource()));

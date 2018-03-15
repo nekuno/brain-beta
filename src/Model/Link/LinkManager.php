@@ -111,31 +111,29 @@ class LinkManager
     }
 
     /**
-     * @param array $link
+     * @param Link $link
      * @return array
      * @throws \Exception
      */
-    public function addOrUpdateLink(array $link)
+    public function mergeLink(Link $link)
     {
-        $this->validateLinkData($link);
+        $this->limitTextLengths($link);
 
-        $link = $this->limitTextLengths($link);
-
-        $savedLink = $this->findLinkByUrl($link['url']);
+        $savedLink = $this->findLinkByUrl($link->getUrl());
         if (!$savedLink) {
-            return $this->addLink($link);
+            return $this->addLink($link->toArray());
         }
 
         if ($this->canOverwrite($savedLink, $link)) {
-            return $this->updateLink($link);
+            return $this->updateLink($link->toArray());
         }
 
         return $savedLink;
     }
 
-    public function canOverwrite($oldLink, $newLink)
+    public function canOverwrite($oldLink, Link $newLink)
     {
-        return $oldLink['processed'] == 0 || $newLink['processed'] == 1;
+        return $oldLink['processed'] == 0 || $newLink->getProcessed() == 1;
     }
 
     /**
@@ -886,14 +884,15 @@ class LinkManager
         return $link;
     }
 
-    private function limitTextLengths(array $data)
+    private function limitTextLengths(Link $link)
     {
-        foreach (array('title', 'description') as $key) {
-            $value = isset($data[$key]) ? $data[$key] : '';
-            $data[$key] = strlen($value) >= 25 ? mb_substr($value, 0, 22, 'UTF-8') . '...' : $value;;
-        }
+        $title = $link->getTitle();
+        $title = strlen($title) >= 25 ? mb_substr($title, 0, 22, 'UTF-8') . '...' : $title;
+        $link->setTitle($title);
 
-        return $data;
+        $description = $link->getDescription();
+        $description = strlen($description) >= 25 ? mb_substr($description, 0, 22, 'UTF-8') . '...' : $description;
+        $link->setDescription($description);
     }
 
     //TODO: Refactor this to use locale keys or move them to fields.yml
@@ -902,39 +901,42 @@ class LinkManager
         return array('Audio', 'Video', 'Image', 'Link', 'Creator', 'Game', 'Web', 'LinkFacebook', 'LinkTwitter', 'LinkYoutube', 'LinkSpotify', 'LinkInstagram', 'LinkTumblr', 'LinkSteam');
     }
 
-    private function addSynonymousLink($id, $synonymousLinks)
+    /**
+     * @param $id
+     * @param Link[] $synonymousLinks
+     * @return array
+     * @throws \Exception
+     */
+    private function addSynonymousLink($id, array $synonymousLinks)
     {
         $synonymousResult = array();
 
-        if (!empty($synonymousLinks)) {
-            foreach ($synonymousLinks as $index => $synonymous) {
-                $synonymous = $this->addLink($synonymous);
-                $qb = $this->gm->createQueryBuilder();
-                $qb->match('(l:Link)')
-                    ->where('id(l) = { id }')
-                    ->match('(synonymousLink:Link)')
-                    ->where('id(synonymousLink) = { synonymousId }')
-                    ->merge('(l)-[:SYNONYMOUS]-(synonymousLink)')
-                    ->returns('synonymousLink')
-                    ->setParameters(
-                        array(
-                            'id' => $id,
-                            'synonymousId' => $synonymous['id'],
-                        )
-                    );
+        foreach ($synonymousLinks as $index => $synonymousLink) {
+            $synonymous = $this->mergeLink($synonymousLink);
+            $qb = $this->gm->createQueryBuilder();
+            $qb->match('(l:Link)')
+                ->where('id(l) = { id }')
+                ->match('(synonymousLink:Link)')
+                ->where('id(synonymousLink) = { synonymousId }')
+                ->merge('(l)-[:SYNONYMOUS]-(synonymousLink)')
+                ->returns('synonymousLink')
+                ->setParameters(
+                    array(
+                        'id' => $id,
+                        'synonymousId' => $synonymous['id'],
+                    )
+                );
 
-                $query = $qb->getQuery();
-                $result = $query->getResultSet();
+            $query = $qb->getQuery();
+            $result = $query->getResultSet();
 
-                if ($result->count() === 0)
-                {
-                    continue;
-                }
-
-                $linkNode = $result->current()->offsetGet('synonymousLink');
-                $link = $this->buildLink($linkNode);
-                $synonymousResult[$index] = $link;
+            if ($result->count() === 0) {
+                continue;
             }
+
+            $linkNode = $result->current()->offsetGet('synonymousLink');
+            $link = $this->buildLink($linkNode);
+            $synonymousResult[$index] = $link;
         }
 
         return $synonymousResult;

@@ -347,7 +347,7 @@ class Fixtures
 
             $link->setLanguage('en');
 
-            $createdLinks[$i] = $this->lm->addLink($link->toArray());
+            $createdLinks[$i] = $this->lm->mergeLink($link);
 
         }
 

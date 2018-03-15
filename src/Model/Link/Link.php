@@ -325,7 +325,7 @@ class Link implements \JsonSerializable
     }
 
     /**
-     * @return array
+     * @return Link[]
      */
     public function getSynonymous()
     {
@@ -333,14 +333,14 @@ class Link implements \JsonSerializable
     }
 
     /**
-     * @param array $synonymous
+     * @param Link[] $synonymous
      */
     public function setSynonymous($synonymous)
     {
         $this->synonymous = $synonymous;
     }
 
-    public function addSynonymous($synonymous)
+    public function addSynonymous(Link $synonymous)
     {
         $this->synonymous[] = $synonymous;
     }
