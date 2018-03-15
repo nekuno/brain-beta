@@ -4,7 +4,6 @@ namespace Model\Link;
 
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
-use Model\Neo4j;
 use Model\Neo4j\GraphManager;
 use Model\Recommendation\ContentRecommendation;
 use Symfony\Component\Translation\Translator;
@@ -127,7 +126,7 @@ class LinkManager
             return $this->addLink($link);
         }
 
-        if ($this->canOverwrite($savedLink, $link)){
+        if ($this->canOverwrite($savedLink, $link)) {
             return $this->updateLink($link);
         }
 
@@ -149,7 +148,9 @@ class LinkManager
         $this->validateLinkData($data);
 
         if ($saved = $this->findLinkByUrl($data['url'])) {
-            $saved = isset($data['synonymous']) ? array_merge($saved, $this->addSynonymousLink($saved['id'], $data['synonymous'])) : $saved;
+
+            $synonymous = $this->addSynonymousLink($saved['id'], $data['synonymous']);
+            $saved['synonymous'] = $synonymous;
 
             return $saved;
         }
@@ -205,7 +206,6 @@ class LinkManager
         }
 
         $query = $qb->getQuery();
-
         $result = $query->getResultSet();
 
         if (isset($data['tags'])) {
@@ -219,17 +219,15 @@ class LinkManager
         $linkArray = array();
         foreach ($result as $row) {
 
-            /** @var $link Node */
-            $link = $row->offsetGet('l');
-            foreach ($link->getProperties() as $key => $value) {
-                $linkArray[$key] = $value;
-            }
-            $linkArray['id'] = $link->getId();
+            /** @var $linkArray Node */
+            $linkNode = $row->offsetGet('l');
+            $linkArray = $this->buildLink($linkNode);
         }
 
-        $linkArray = isset($data['synonymous']) ? array_merge($linkArray, $this->addSynonymousLink($linkArray['id'], $data['synonymous'])) : $linkArray;
+        $linkSynonymous = $this->addSynonymousLink($linkArray['id'], $data['synonymous']);
+        $linkArray['synonymous'] = $linkSynonymous;
 
-        if (isset($data['additionalLabels'])){
+        if (isset($data['additionalLabels'])) {
             $linkArray['additionalLabels'] = $data['additionalLabels'];
         }
 
@@ -309,19 +307,18 @@ class LinkManager
         /* @var $row Row */
         foreach ($result as $row) {
 
-            /** @var $link Node */
-            $link = $row->offsetGet('l');
-            foreach ($link->getProperties() as $key => $value) {
-                $linkArray[$key] = $value;
-            }
-            $linkArray['id'] = $link->getId();
+            /** @var $linkArray Node */
+            $linkNode = $row->offsetGet('l');
+            $linkArray = $this->buildLink($linkNode);
         }
 
-        $linkArray = isset($data['synonymous']) ? array_merge($linkArray, $this->addSynonymousLink($linkArray['id'], $data['synonymous'])) : $linkArray;
+        $synonymous = $this->addSynonymousLink($linkArray['id'], $data['synonymous']);
+        $linkArray['synonymous'] = $synonymous;
 
-        if (isset($data['additionalLabels'])){
+        if (isset($data['additionalLabels'])) {
             $linkArray['additionalLabels'] = $data['additionalLabels'];
         }
+
         return $linkArray;
     }
 
@@ -331,7 +328,7 @@ class LinkManager
             if (in_array(Link::WEB_LABEL, $data['additionalLabels'])) {
                 return false;
             }
-            if (count(array_intersect(array(Audio::AUDIO_LABEL, Video::VIDEO_LABEL, Creator::CREATOR_LABEL, Image::IMAGE_LABEL, Game::GAME_LABEL), $data['additionalLabels']))){
+            if (count(array_intersect(array(Audio::AUDIO_LABEL, Video::VIDEO_LABEL, Creator::CREATOR_LABEL, Image::IMAGE_LABEL, Game::GAME_LABEL), $data['additionalLabels']))) {
                 return false;
             }
         }
@@ -767,6 +764,7 @@ class LinkManager
     }
 
     //TODO: Move to ConsistencyCheckerService
+
     /**
      * @param $id
      * @return array
@@ -861,6 +859,11 @@ class LinkManager
         return $link;
     }
 
+    public function buildLinkObject($linkArray)
+    {
+        return Link::buildFromArray($linkArray);
+    }
+
     private function fixMandatoryKeys($link)
     {
         $mandatoryKeys = array('title', 'description', 'url');
@@ -901,10 +904,10 @@ class LinkManager
 
     private function addSynonymousLink($id, $synonymousLinks)
     {
-        $linkArray = array();
+        $synonymousResult = array();
 
         if (!empty($synonymousLinks)) {
-            foreach ($synonymousLinks as $synonymous) {
+            foreach ($synonymousLinks as $index => $synonymous) {
                 $synonymous = $this->addLink($synonymous);
                 $qb = $this->gm->createQueryBuilder();
                 $qb->match('(l:Link)')
@@ -921,24 +924,20 @@ class LinkManager
                     );
 
                 $query = $qb->getQuery();
-
                 $result = $query->getResultSet();
 
-                $linkArray['synonymous'] = array();
-                /* @var $row Row */
-                foreach ($result as $index => $row) {
-
-                    /** @var $link Node */
-                    $link = $row->offsetGet('synonymousLink');
-                    foreach ($link->getProperties() as $key => $value) {
-                        $linkArray['synonymous'][$index][$key] = $value;
-                    }
-                    $linkArray['synonymous'][$index]['id'] = $link->getId();
+                if ($result->count() === 0)
+                {
+                    continue;
                 }
+
+                $linkNode = $result->current()->offsetGet('synonymousLink');
+                $link = $this->buildLink($linkNode);
+                $synonymousResult[$index] = $link;
             }
         }
 
-        return $linkArray;
+        return $synonymousResult;
     }
 
 }
