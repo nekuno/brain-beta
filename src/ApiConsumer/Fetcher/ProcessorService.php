@@ -528,7 +528,7 @@ class ProcessorService implements LoggerAwareInterface
         $updatedLinks = array();
 
         foreach ($links as $link) {
-            $updatedLinks[] = $this->linkModel->updateLink($link->toArray());
+            $updatedLinks[] = $this->linkModel->mergeLink($link);
         }
 
         return $updatedLinks;
