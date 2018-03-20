@@ -197,7 +197,9 @@ profile:
         label: &birthdayLabel
             en: 'Birthday'
             es: 'Cumpleaños'
-        labelEdit: *birthdayLabel
+        labelEdit: &birthdayEditLabel
+            en: 'Age'
+            es: 'Edad'
         notErasable: true
     zodiacSign:
         type: choice
@@ -720,9 +722,7 @@ user_filter:
             es: 'Similaridad mínima (%)'
     birthday:
         type: birthday_range
-        label:
-            en: 'Age'
-            es: 'Edad'
+        label: &birthdayEditLabel
         min: 14
         max: 99
     zodiacSign:
