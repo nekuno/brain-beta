@@ -722,7 +722,7 @@ user_filter:
             es: 'Similaridad mínima (%)'
     birthday:
         type: birthday_range
-        label: &birthdayLabel
+        label: *birthdayLabel
         min: 14
         max: 99
     zodiacSign:
