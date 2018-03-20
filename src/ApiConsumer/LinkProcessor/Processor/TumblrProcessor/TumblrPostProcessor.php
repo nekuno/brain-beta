@@ -68,7 +68,7 @@ class TumblrPostProcessor extends AbstractTumblrProcessor
     {
         parent::hydrateLink($preprocessedLink, $data);
         $link = $preprocessedLink->getFirstLink();
-        $audio = Audio::buildFromArray($link->toArray());
+        $audio = Audio::buildFromLink($link);
         $title = isset($data['track_name']) ? $data['track_name'] : $data['source_title'];
         $audio->setTitle($title);
         $audio->setDescription($data['album'] . ' : ' . $data['artist']);
@@ -82,7 +82,7 @@ class TumblrPostProcessor extends AbstractTumblrProcessor
     {
         $link = $preprocessedLink->getFirstLink();
         parent::hydrateLink($preprocessedLink, $data);
-        $newLink = Link::buildFromArray($link->toArray());
+        $newLink = Link::buildFromLink($link);
         $newLink->setTitle($data['title']);
         $newLink->setDescription(strip_tags($data['description']) ?: strip_tags($data['excerpt']));
 
@@ -248,7 +248,7 @@ class TumblrPostProcessor extends AbstractTumblrProcessor
         }
 
         if ($caption) {
-            $newLink = Link::buildFromArray($link->toArray());
+            $newLink = Link::buildFromLink($link);
             if ($newLinePos = strpos($caption, "\n")) {
                 $title = substr($caption, 0, $newLinePos);
                 $description = strlen($caption) > $newLinePos + 1 ? substr($caption, $newLinePos + 1) : null;
@@ -262,7 +262,7 @@ class TumblrPostProcessor extends AbstractTumblrProcessor
             $newLink->setTitle($title);
             $newLink->setDescription($description);
         } else {
-            $newLink = Image::buildFromArray($link->toArray());
+            $newLink = Image::buildFromLink($link);
         }
 
         return $newLink;
@@ -278,7 +278,7 @@ class TumblrPostProcessor extends AbstractTumblrProcessor
             $caption = null;
         }
 
-        $newLink = Video::buildFromArray($link->toArray());
+        $newLink = Video::buildFromLink($link);
         if ($caption) {
             if ($newLinePos = strpos($caption, "\n")) {
                 $title = substr($caption, 0, $newLinePos);

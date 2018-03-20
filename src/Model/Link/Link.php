@@ -25,6 +25,15 @@ class Link implements \JsonSerializable
     protected $synonymous = array();
     protected $additionalLabels = array();
 
+    public static function buildFromLink(Link $link)
+    {
+        $array = $link->toArray();
+
+        /** @var Video $me */
+        $me = self::buildFromArray($array);
+
+        return $me;
+    }
     public static function buildFromArray(array $array)
     {
         $link = new static();

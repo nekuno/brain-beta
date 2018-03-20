@@ -28,8 +28,7 @@ class LinkManager
 
     /**
      * @param string $url
-     * @return array|boolean the link or false
-     * @throws \Exception on failure
+     * @return false|Link
      */
     public function findLinkByUrl($url)
     {
@@ -55,13 +54,14 @@ class LinkManager
         $row = $result->current();
         /* @var $node Node */
         $link = $this->buildLink($row->offsetGet('link'));
+        $link = $this->buildLinkObject($link);
 
         return $link;
     }
 
     /**
      * @param array $urls
-     * @return array
+     * @return Link[]
      */
     public function findLinksByUrls(array $urls)
     {
@@ -80,7 +80,7 @@ class LinkManager
      * @param array $conditions
      * @param int $offset
      * @param int $limit
-     * @return array
+     * @return Link[]
      */
     public function getLinks($conditions = array(), $offset = 0, $limit = 100)
     {
@@ -104,7 +104,9 @@ class LinkManager
 
         $unprocessedLinks = array();
         foreach ($resultSet as $row) {
-            $unprocessedLinks[] = $this->buildLink($row->offsetGet('link'));
+            $linkArray = $this->buildLink($row->offsetGet('link'));
+            $link = $this->buildLinkObject($linkArray);
+            $unprocessedLinks[] = $link;
         }
 
         return $unprocessedLinks;
@@ -112,7 +114,7 @@ class LinkManager
 
     /**
      * @param Link $link
-     * @return array
+     * @return Link
      * @throws \Exception
      */
     public function mergeLink(Link $link)
@@ -131,14 +133,14 @@ class LinkManager
         return $savedLink;
     }
 
-    public function canOverwrite($oldLink, Link $newLink)
+    public function canOverwrite(Link $oldLink, Link $newLink)
     {
-        return $oldLink['processed'] == 0 || $newLink->getProcessed() == 1;
+        return $oldLink->getProcessed() == 0 || $newLink->getProcessed() == 1;
     }
 
     /**
      * @param array $data
-     * @return array
+     * @return false|Link
      * @throws \Exception
      */
     public function addLink(array $data)
@@ -173,17 +175,6 @@ class LinkManager
                 'l.created =  timestamp()' //TODO: If there is created, use this instead (coalesce)
             );
 
-        if (isset($data['thumbnail']) && $data['thumbnail']) {
-            $qb->set('l.thumbnail = { thumbnail }', 'l.thumbnailSmall = { thumbnailSmall }', 'l.thumbnailMedium = { thumbnailMedium }');
-        }
-        if (isset($data['additionalFields'])) {
-            foreach ($data['additionalFields'] as $field => $value) {
-                $qb->set(sprintf('l.%s = { %s }', $field, $field));
-            }
-        }
-
-        $qb->returns('l');
-
         $qb->setParameters(
             array(
                 'title' => $data['title'],
@@ -197,44 +188,46 @@ class LinkManager
             )
         );
 
+        if (isset($data['thumbnail']) && $data['thumbnail']) {
+            $qb->set('l.thumbnail = { thumbnail }', 'l.thumbnailSmall = { thumbnailSmall }', 'l.thumbnailMedium = { thumbnailMedium }');
+        }
         if (isset($data['additionalFields'])) {
             foreach ($data['additionalFields'] as $field => $value) {
+                $qb->set(sprintf('l.%s = { %s }', $field, $field));
                 $qb->setParameter($field, $value);
             }
         }
 
+        $qb->returns('l');
+
         $query = $qb->getQuery();
         $result = $query->getResultSet();
 
+        if ($result->count() === 0) {
+            return null;
+        }
+
         if (isset($data['tags'])) {
             foreach ($data['tags'] as $tag) {
-                $this->createTag($tag);
+                $this->mergeTag($tag);
                 $this->addTag($data, $tag);
             }
         }
 
-        /* @var $row Row */
-        $linkArray = array();
-        foreach ($result as $row) {
+        /** @var $linkNode Node */
+        $linkNode = $result->current()->offsetGet('l');
+        $linkArray = $this->buildLink($linkNode);
+        $link = $this->buildLinkObject($linkArray);
 
-            /** @var $linkArray Node */
-            $linkNode = $row->offsetGet('l');
-            $linkArray = $this->buildLink($linkNode);
-        }
+        $linkSynonymous = $this->addSynonymousLink($link->getId(), $data['synonymous']);
+        $link->setSynonymous($linkSynonymous);
 
-        $linkSynonymous = $this->addSynonymousLink($linkArray['id'], $data['synonymous']);
-        $linkArray['synonymous'] = $linkSynonymous;
-
-        if (isset($data['additionalLabels'])) {
-            $linkArray['additionalLabels'] = $data['additionalLabels'];
-        }
-
-        return $linkArray;
+        return $link;
     }
 
     /**
      * @param array $data
-     * @return array
+     * @return false|Link
      */
     public function updateLink(array $data)
     {
@@ -293,31 +286,28 @@ class LinkManager
         }
 
         $query = $qb->getQuery();
-
         $result = $query->getResultSet();
 
-        $linkArray = array();
         if ($result->count() == 0) {
             $link = $this->findLinkByUrl($data['url']);
-            $linkArray['id'] = $link['id'];
-        }
-
-        /* @var $row Row */
-        foreach ($result as $row) {
-
-            /** @var $linkArray Node */
-            $linkNode = $row->offsetGet('l');
+        } else {
+            /** @var $linkNode Node */
+            $linkNode = $result->current()->offsetGet('l');
             $linkArray = $this->buildLink($linkNode);
+            $link = $this->buildLinkObject($linkArray);
         }
 
-        $synonymous = $this->addSynonymousLink($linkArray['id'], $data['synonymous']);
-        $linkArray['synonymous'] = $synonymous;
-
-        if (isset($data['additionalLabels'])) {
-            $linkArray['additionalLabels'] = $data['additionalLabels'];
+        if (isset($data['tags'])) {
+            foreach ($data['tags'] as $tag) {
+                $this->mergeTag($tag);
+                $this->addTag($data, $tag);
+            }
         }
 
-        return $linkArray;
+        $linkSynonymous = $this->addSynonymousLink($link->getId(), $data['synonymous']);
+        $link->setSynonymous($linkSynonymous);
+
+        return $link;
     }
 
     private function hasToAddWebLabel($data)
@@ -453,19 +443,24 @@ class LinkManager
         return $result->count() > 0;
     }
 
+    /**
+     * @param $oldUrl
+     * @param $newUrl
+     * @return false|Link
+     */
     public function fuseLinks($oldUrl, $newUrl)
     {
         $oldLink = $this->findLinkByUrl($oldUrl);
         $newLink = $this->findLinkByUrl($newUrl);
 
-        $this->gm->fuseNodes($oldLink['id'], $newLink['id']);
+        $this->gm->fuseNodes($oldLink->getId(), $newLink->getId());
 
         $this->changeUrl($oldUrl, $newUrl);
 
-        return $newLink['id'];
+        return $newLink;
     }
 
-    public function createTag(array $tag)
+    public function mergeTag(array $tag)
     {
         $qb = $this->gm->createQueryBuilder();
         $qb->merge('(tag:Tag {name: { name }})')
@@ -498,7 +493,6 @@ class LinkManager
 
     public function addTag($link, $tag)
     {
-
         $qb = $this->gm->createQueryBuilder();
 
         $qb->match('(link:Link)', '(tag:Tag)')
@@ -523,7 +517,7 @@ class LinkManager
      * @param int $limitContent
      * @param int $limitUsers
      * @param array $filters
-     * @return array
+     * @return Link[]
      * @throws \Exception
      */
     public function getPredictedContentForAUser($userId, $limitContent = 40, $limitUsers = 20, array $filters = array())
@@ -598,7 +592,8 @@ class LinkManager
             $links = array();
             foreach ($result as $row) {
                 /* @var $row Row */
-                $links[] = $this->buildLink($row->offsetGet('link'));
+                $linkArray = $this->buildLink($row->offsetGet('link'));
+                $links[] = $this->buildLinkObject($linkArray);
             }
 
             $params['internalOffset'] += $params['internalLimit'];
@@ -790,8 +785,9 @@ class LinkManager
     }
 
     /**
-     * @param array $links
+     * @param Link[] $links
      * @return array
+     * //TODO: Move to DuplicateManager
      */
     public function findDuplicates(array $links)
     {
@@ -831,12 +827,16 @@ class LinkManager
         return $result;
     }
 
+    /**
+     * @param Link[] $links
+     * @return array
+     */
     private function getUrlsForDuplicates(array $links)
     {
         $urls = array();
         foreach ($links as $link) {
-            $urls[] = $link['url'];
-            $urls[] = strtolower($link['url']);
+            $urls[] = $link->getUrl();
+            $urls[] = strtolower($link->getUrl());
         }
 
         return $urls;
@@ -857,9 +857,30 @@ class LinkManager
         return $link;
     }
 
+    /**
+     * @param $linkArray
+     * @return Link
+     */
     public function buildLinkObject($linkArray)
     {
-        return Link::buildFromArray($linkArray);
+        if (!isset($linkArray['additionalLabels'])){
+            return Link::buildFromArray($linkArray);
+        }
+
+        switch ($linkArray['additionalLabels']) {
+            case array('Video'):
+                return Video::buildFromArray($linkArray);
+            case array('Audio'):
+                return Audio::buildFromArray($linkArray);
+            case array('Image'):
+                return Image::buildFromArray($linkArray);
+            case array('Creator'):
+                return Creator::buildFromArray($linkArray);
+            case array('Game'):
+                return Game::buildFromArray($linkArray);
+            default:
+                return Link::buildFromArray($linkArray);
+        }
     }
 
     private function fixMandatoryKeys($link)

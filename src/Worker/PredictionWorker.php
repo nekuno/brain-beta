@@ -72,10 +72,11 @@ class PredictionWorker extends LoggerAwareWorker implements RabbitMQConsumerInte
                 break;
             case $this::TRIGGER_LIVE:
                 try {
-                    $links = $this->linkModel->getLivePredictedContent($userId);
-                    foreach ($links as $link) {
-                        $affinity = $this->affinityModel->getAffinity($userId, $link->getContent()['id']);
-                        $this->logger->info(sprintf('Affinity between user %s and link %s: %s', $userId, $link->getContent()['id'], $affinity['affinity']));
+                    $contentRecommendations = $this->linkModel->getLivePredictedContent($userId);
+                    foreach ($contentRecommendations as $contentRecommendation) {
+                        $linkId = $contentRecommendation->getContent()->getId();
+                        $affinity = $this->affinityModel->getAffinity($userId, $linkId);
+                        $this->logger->info(sprintf('Affinity between user %s and link %s: %s', $userId, $linkId, $affinity['affinity']));
                     }
                 } catch (\Exception $e) {
                     $this->logger->error(sprintf('Worker: Error calculating live affinity for user %d with message %s on file %s, line %d', $userId, $e->getMessage(), $e->getFile(), $e->getLine()));

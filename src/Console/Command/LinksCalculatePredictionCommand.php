@@ -3,6 +3,7 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
+use Model\Link\Link;
 use Model\Link\LinkManager;
 use Model\User\User;
 use Model\Affinity\AffinityManager;
@@ -56,7 +57,7 @@ class LinksCalculatePredictionCommand extends ApplicationAwareCommand
                     $linkIds = $linkModel->getPredictedContentForAUser($user->getId(), $limitContent, $limitUsers, $filters);
                     foreach ($linkIds as $link) {
 
-                        $linkId = $link['id'];
+                        $linkId = $link->getId();
                         $affinity = $affinityModel->getAffinity($user->getId(), $linkId);
                         if (OutputInterface::VERBOSITY_NORMAL <= $output->getVerbosity()) {
                             $output->writeln(sprintf('User: %d --> Link: %d (Affinity: %f)', $user->getId(), $linkId, $affinity['affinity']));
@@ -89,8 +90,9 @@ class LinksCalculatePredictionCommand extends ApplicationAwareCommand
                     if (!empty($result['emailInfo'])) {
                         $emailInfo = $result['emailInfo'];
                         $linkIds = array();
+                        /** @var Link $link */
                         foreach ($emailInfo['links'] as $link) {
-                            $linkIds[] = $link['id'];
+                            $linkIds[] = $link->getId();
                         }
                         $output->writeln(sprintf('Email sent to %s users', $emailInfo['recipients']));
                         $output->writeln(sprintf('Email sent to user: %s with links: %s', $user->getId(), implode(', ', $linkIds)));

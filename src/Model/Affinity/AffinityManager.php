@@ -3,6 +3,7 @@
 namespace Model\Affinity;
 
 use Everyman\Neo4j\Node;
+use Model\Link\LinkManager;
 use Model\Neo4j\GraphManager;
 use Everyman\Neo4j\Query\Row;
 
@@ -17,9 +18,12 @@ class AffinityManager
      */
     protected $gm;
 
-    public function __construct(GraphManager $gm)
+    protected $linkManager;
+
+    public function __construct(GraphManager $gm, LinkManager $linkManager)
     {
         $this->gm = $gm;
+        $this->linkManager = $linkManager;
     }
 
     public function getAffinity($userId, $linkId, $seconds = null)
@@ -182,16 +186,12 @@ class AffinityManager
         $result = $query->getResultSet();
 
         $links = array();
-        //TODO: Change to LinkModel->build
+
         foreach ($result as $row) {
             /* @var $row Row */
             /* @var $node Node */
             $node = $row->offsetGet('link');
-
-            $link = $node->getProperties();
-            $link['id'] = $node->getId();
-
-            $links[] = $link;
+            $links[] = $node;
         }
 
         return $links;

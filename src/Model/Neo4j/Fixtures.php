@@ -4,6 +4,7 @@ namespace Model\Neo4j;
 
 use Model\Link\Audio;
 use Model\Link\Image;
+use Model\Link\Link;
 use Model\Link\LinkManager;
 use Model\Link\Video;
 use Model\Question\QuestionCorrelationManager;
@@ -304,6 +305,10 @@ class Fixtures
         }
     }
 
+    /**
+     * @return Link[]
+     * @throws \Exception
+     */
     protected function loadLinks()
     {
         $this->logger->notice(sprintf('Loading %d links', self::NUM_OF_LINKS));
@@ -361,12 +366,12 @@ class Fixtures
 
         for ($i = 1; $i <= self::NUM_OF_TAGS; $i++) {
 
-            $this->lm->createTag(
+            $this->lm->mergeTag(
                 array('name' => 'tag ' . $i,)
             );
 
             // This second call should be ignored and do not duplicate tags
-            $this->lm->createTag(
+            $this->lm->mergeTag(
                 array('name' => 'tag ' . $i,)
             );
         }
@@ -423,15 +428,17 @@ class Fixtures
         }
     }
 
+    /**
+     * @param Link[] $createdLinks
+     */
     protected function loadLikes(array $createdLinks)
     {
-
         $this->logger->notice('Loading likes');
 
         $likes = $this->scenario['likes'];
 
         foreach ($createdLinks as $link) {
-            $this->rm->userRateLink(1, $link['id']);
+            $this->rm->userRateLink(1, $link->getId());
         }
 
         foreach ($likes as $like) {

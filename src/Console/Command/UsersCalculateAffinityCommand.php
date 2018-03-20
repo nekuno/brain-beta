@@ -50,9 +50,12 @@ class UsersCalculateAffinityCommand extends ApplicationAwareCommand
 
                     foreach ($affineLinks as $link) {
 
-                        $output->write('Link: ' . $link['id'] . ' (' . $link['url'] . ') - ');
+                        $linkId = $link->getId();
+                        $linkUrl = $link->getUrl();
 
-                        $this->calculateAffinity($userId, $link['id'], $output);
+                        $output->write('Link: ' . $linkId . ' (' . $linkUrl . ') - ');
+
+                        $this->calculateAffinity($userId, $linkId, $output);
                     }
 
                 } else {

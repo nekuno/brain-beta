@@ -59,7 +59,7 @@ class ThreadCachedManager
             switch (get_class($thread)) {
                 case 'Model\Thread\ContentThread':
                     /** @var $item ContentRecommendation */
-                    $id = $item->getContent()['id'];
+                    $id = $item->getContent()->getId();
                     $qb->match('(l:Link)')
                         ->where("id(l) = {$id}")
                         ->merge('(thread)-[:RECOMMENDS]->(l)')
@@ -184,7 +184,8 @@ class ThreadCachedManager
             if (null == $linkNode) {
                 continue;
             }
-            $link =  $this->linkModel->buildLink($linkNode);
+            $linkArray =  $this->linkModel->buildLink($linkNode);
+            $link = $this->linkModel->buildLinkObject($linkArray);
             $content = new ContentRecommendation();
             $content->setContent($link);
 

@@ -5,6 +5,7 @@ namespace ApiConsumer\Fetcher;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser;
 use Model\Link\Creator;
+use Model\Link\Link;
 
 class TumblrFollowingFetcher extends BasicPaginationFetcher
 {
@@ -56,14 +57,14 @@ class TumblrFollowingFetcher extends BasicPaginationFetcher
 
         foreach ($response as $item) {
             $id = TumblrUrlParser::getBlogId($item['url']);
-            $link = array(
-                'url' => $item['url'],
-                'title' => $item['title'],
-                'description' => $item['description'],
-                'timestamp' => $item['updated'],
-            );
-            $preprocessedLink = new PreprocessedLink($link['url']);
-            $preprocessedLink->setFirstLink(Creator::buildFromArray($link));
+            $link = new Creator();
+            $link->setUrl($item['url']);
+            $link->setTitle($item['title']);
+            $link->setDescription($item['description']);
+            $link->setCreated($item['updated']);
+
+            $preprocessedLink = new PreprocessedLink($link->getUrl());
+            $preprocessedLink->setFirstLink($link);
             $preprocessedLink->setType(TumblrUrlParser::TUMBLR_BLOG);
             $preprocessedLink->setSource($this->resourceOwner->getName());
             $preprocessedLink->setResourceItemId($id);

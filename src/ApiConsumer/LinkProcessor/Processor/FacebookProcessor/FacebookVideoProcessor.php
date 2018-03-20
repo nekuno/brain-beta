@@ -29,7 +29,7 @@ class FacebookVideoProcessor extends AbstractFacebookProcessor
     {
         parent::hydrateLink($preprocessedLink, $data);
         $link = $preprocessedLink->getFirstLink();
-        $video = Video::buildFromArray($link->toArray());
+        $video = Video::buildFromLink($link);
         $video->setDescription(isset($data['description']) ? $data['description'] : null);
         $video->setTitle($this->buildTitleFromDescription($data));
         $video->setEmbedType(TokensManager::FACEBOOK);

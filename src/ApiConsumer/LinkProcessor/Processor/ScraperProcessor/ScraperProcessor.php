@@ -93,7 +93,7 @@ class ScraperProcessor extends AbstractScraperProcessor
     {
         $imageResponse = new ImageResponse($url, 200, $this->client->getResponse()->getHeader('Content-Type'));
         if ($imageResponse->isImage()) {
-            $image = Image::buildFromArray($preprocessedLink->getFirstLink()->toArray());
+            $image = Image::buildFromLink($preprocessedLink->getFirstLink());
             $preprocessedLink->setFirstLink($image);
         }
     }

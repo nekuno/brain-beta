@@ -3,12 +3,13 @@
 namespace Service;
 
 use Model\Affinity\AffinityManager;
+use Model\Link\Link;
 use Model\Link\LinkManager;
 use Model\Popularity\PopularityManager;
 
 class LinkService
 {
-    protected $linkModel;
+    protected $linkManager;
     protected $popularityManager;
     protected $affinityManager;
 
@@ -20,33 +21,44 @@ class LinkService
      */
     public function __construct(LinkManager $linkModel, PopularityManager $popularityManager, AffinityManager $affinityManager)
     {
-        $this->linkModel = $linkModel;
+        $this->linkManager = $linkModel;
         $this->popularityManager = $popularityManager;
         $this->affinityManager = $affinityManager;
     }
 
-    public function deleteNotLiked(array $links)
+    public function deleteNotLiked(array $linkUrls)
     {
-        $notLiked = array_filter($links, function($link){
-            return $link['likes'] == 0;
+        $notLiked = array_filter($linkUrls, function($linkUrl){
+            return $linkUrl['likes'] == 0;
         });
 
-        foreach ($notLiked as $link)
+        foreach ($notLiked as $linkUrl)
         {
-            $url = $link['url'];
+            $url = $linkUrl['url'];
             $this->popularityManager->deleteOneByUrl($url);
-            $this->linkModel->removeLink($url);
+            $this->linkManager->removeLink($url);
         }
     }
 
     /**
      * @param string $userId
-     * @return array of links
+     * @return Link[]
      * @throws \Exception on failure
      */
     public function findAffineLinks($userId)
     {
-        return $this->affinityManager->getAffineLinks($userId);
+        $linkNodes = $this->affinityManager->getAffineLinks($userId);
+
+        $links = array();
+        foreach ($linkNodes as $node)
+        {
+            $linkArray = $this->linkManager->buildLink($node);
+            $link = $this->linkManager->buildLinkObject($linkArray);
+
+            $links[] = $link;
+        }
+
+        return $links;
     }
 
 }

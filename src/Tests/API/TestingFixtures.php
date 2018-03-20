@@ -4,6 +4,7 @@ namespace Tests\API;
 
 use Model\Link\Audio;
 use Model\Link\Image;
+use Model\Link\Link;
 use Model\Link\LinkManager;
 use Model\Link\Video;
 use Model\Neo4j\Constraints;
@@ -214,9 +215,12 @@ class TestingFixtures
        $this->im->create($invitationData);
     }
 
+    /**
+     * @return Link[]
+     * @throws \Exception
+     */
     protected function loadLinks()
     {
-
         $this->logger->notice(sprintf('Loading %d links', self::NUM_OF_LINKS));
 
         $createdLinks = array();
@@ -272,12 +276,12 @@ class TestingFixtures
 
         for ($i = 1; $i <= self::NUM_OF_TAGS; $i++) {
 
-            $this->lm->createTag(
+            $this->lm->mergeTag(
                 array('name' => 'tag ' . $i,)
             );
 
             // This second call should be ignored and do not duplicate tags
-            $this->lm->createTag(
+            $this->lm->mergeTag(
                 array('name' => 'tag ' . $i,)
             );
         }
@@ -334,13 +338,16 @@ class TestingFixtures
         }
     }
 
+    /**
+     * @param Link[] $createdLinks
+     */
     protected function loadLikes(array $createdLinks)
     {
 
         $this->logger->notice('Loading likes');
 
         foreach ($createdLinks as $link) {
-            $this->rm->userRateLink(1, $link['id']);
+            $this->rm->userRateLink(1, $link->getId());
         }
     }
 

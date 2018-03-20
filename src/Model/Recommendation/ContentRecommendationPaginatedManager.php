@@ -106,7 +106,8 @@ class ContentRecommendationPaginatedManager extends AbstractContentPaginatedMana
         if ($needContent) {
             $newItems = $this->lm->getLivePredictedContent($id, $needContent, 2, $filters);
             foreach ($newItems as &$newItem) {
-                $newItem = $this->completeContent($newItem, null, null, $id, $newItem->getContent()['id']);
+                $contentId = $newItem->getContent()->getId();
+                $newItem = $this->completeContent($newItem, null, null, $id, $contentId);
             }
             $return['items'] = array_merge($return['items'], $newItems);
         }

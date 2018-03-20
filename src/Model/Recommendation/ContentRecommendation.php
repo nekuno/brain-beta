@@ -3,6 +3,8 @@
 namespace Model\Recommendation;
 
 
+use Model\Link\Link;
+
 class ContentRecommendation implements \JsonSerializable
 {
     protected $content;
@@ -14,7 +16,7 @@ class ContentRecommendation implements \JsonSerializable
     protected $staticThumbnail;
 
     /**
-     * @return mixed
+     * @return Link
      */
     public function getContent()
     {
@@ -24,7 +26,7 @@ class ContentRecommendation implements \JsonSerializable
     /**
      * @param mixed $content
      */
-    public function setContent($content)
+    public function setContent(Link $content)
     {
         $this->content = $content;
     }

@@ -18,11 +18,11 @@ class TwitterTweetProcessor extends AbstractTwitterProcessor
 
         $apiResponse = $this->resourceOwner->requestStatus($statusId);
 
-        $link = $this->extractLinkFromResponse($apiResponse);
+        $linkInformation = $this->extractLinkInformationFromResponse($apiResponse);
 
-        if (isset($link['url'])){
+        if (isset($linkInformation['url'])){
             try {
-                $url = LinkAnalyzer::cleanUrl($link['url']);
+                $url = LinkAnalyzer::cleanUrl($linkInformation['url']);
             } catch (\Exception $e) {}
 
             if (isset($url) && $url != $preprocessedLink->getUrl()) {
@@ -39,14 +39,14 @@ class TwitterTweetProcessor extends AbstractTwitterProcessor
         throw $exception;
     }
 
-    private function extractLinkFromResponse($apiResponse)
+    private function extractLinkInformationFromResponse($apiResponse)
     {
         //if tweet quotes another
         if (isset($apiResponse['quoted_status_id'])) {
             //if tweet is main, API returns quoted_status
             if (isset($apiResponse['quoted_status'])) {
 
-                return $this->extractLinkFromResponse($apiResponse['quoted_status']);
+                return $this->extractLinkInformationFromResponse($apiResponse['quoted_status']);
 
             } else if (isset($apiResponse['is_quote_status']) && $apiResponse['is_quote_status'] == true) {
                 return array('id' => $apiResponse['quoted_status_id']);

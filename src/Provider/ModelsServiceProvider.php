@@ -317,7 +317,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.affinity.model'] = $app->share(
             function ($app) {
 
-                return new AffinityManager($app['neo4j.graph_manager']);
+                return new AffinityManager($app['neo4j.graph_manager'], $app['links.model']);
             }
         );
 
