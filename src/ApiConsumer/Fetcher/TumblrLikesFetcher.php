@@ -58,13 +58,13 @@ class TumblrLikesFetcher extends BasicPaginationFetcher
             if (!$type = $this->getType($item)) {
                 continue;
             }
-            $link = array(
-                'id' => $item['id'],
-                'url' => $item['post_url'],
-                'timestamp' => $item['timestamp'],
-            );
-            $preprocessedLink = new PreprocessedLink($link['url']);
-            $preprocessedLink->setFirstLink(Link::buildFromArray($link));
+            $link = new Link();
+            $link->setId($item['id']);
+            $link->setUrl($item['post_url']);
+            $link->setCreated($item['timestamp']);
+
+            $preprocessedLink = new PreprocessedLink($link->getUrl());
+            $preprocessedLink->setFirstLink($link);
             $preprocessedLink->setType($type);
             $preprocessedLink->setSource($this->resourceOwner->getName());
             $preprocessedLink->setResourceItemId($item['blog_name']);

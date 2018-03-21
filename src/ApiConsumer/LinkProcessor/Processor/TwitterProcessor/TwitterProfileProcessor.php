@@ -28,8 +28,7 @@ class TwitterProfileProcessor extends AbstractTwitterProcessor implements BatchP
     public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
     {
         $profiles = $this->resourceOwner->buildProfilesFromLookup($data);
-        $profileArray = reset($profiles);
-        $link = Link::buildFromArray($profileArray);
+        $link = reset($profiles);
         $preprocessedLink->setFirstLink($link);
         $id = isset($data['id_str']) ? (int)$data['id_str'] : $data['id'];
         $preprocessedLink->setResourceItemId($id);
@@ -149,10 +148,10 @@ class TwitterProfileProcessor extends AbstractTwitterProcessor implements BatchP
 
     protected function buildLinks(array $userArrays)
     {
-        $linkArrays = $this->resourceOwner->buildProfilesFromLookup($userArrays);
-        $links = array();
-        foreach ($linkArrays as $linkArray) {
-            $links[] = Creator::buildFromArray($linkArray);
+        $links = $this->resourceOwner->buildProfilesFromLookup($userArrays);
+        $creators = array();
+        foreach ($links as $link) {
+            $creators[] = Creator::buildFromLink($link);
         }
 
         return $links;

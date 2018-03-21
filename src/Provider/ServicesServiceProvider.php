@@ -57,7 +57,7 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['link.service'] = $app->share(
             function (Application $app) {
-                return new LinkService($app['links.model'], $app['popularity.manager']);
+                return new LinkService($app['links.model'], $app['popularity.manager'], $app['users.affinity.model']);
             }
         );
 

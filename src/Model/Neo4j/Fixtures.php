@@ -2,7 +2,12 @@
 
 namespace Model\Neo4j;
 
+use Model\Link\Audio;
+use Model\Link\Image;
+use Model\Link\Link;
 use Model\Link\LinkManager;
+use Model\Link\Video;
+use Model\Question\QuestionCorrelationManager;
 use Model\User\User;
 use Model\Question\AnswerManager;
 use Model\Profile\ProfileManager;
@@ -58,7 +63,7 @@ class Fixtures
     protected $questionService;
 
     /**
-     * @var User\Question\QuestionCorrelationManager
+     * @var QuestionCorrelationManager
      */
     protected $correlationManager;
 
@@ -300,55 +305,54 @@ class Fixtures
         }
     }
 
+    /**
+     * @return Link[]
+     * @throws \Exception
+     */
     protected function loadLinks()
     {
-
         $this->logger->notice(sprintf('Loading %d links', self::NUM_OF_LINKS));
 
         $createdLinks = array();
 
         for ($i = 1; $i <= self::NUM_OF_LINKS; $i++) {
 
-            $link = array(
-                'title' => 'Title ' . $i,
-                'description' => 'Description ' . $i,
-                'url' => 'https://www.nekuno.com/link' . $i,
-                'language' => 'en',
-            );
-
             if ($i <= 50) {
-                $link['url'] = 'https://www.youtube.com/watch?v=OPf0YbXqDm0' . '?' . $i;
-                $link['title'] = 'Mark Ronson - Uptown Funk ft. Bruno Mars - YouTube';
-                $link['description'] = 'Mark Ronson - Uptown Funk ft. Bruno Mars - YouTube';
-                $link['additionalLabels'] = array('Video');
-                $link['additionalFields'] = array('embed_type' => 'youtube', 'embed_id' => 'OPf0YbXqDm0');
-                $link['tags'] = array(
-                    array('name' => 'Video Tag 1'),
-                    array('name' => 'Video Tag 2'),
-                    array('name' => 'Video Tag 3'),
-                );
+                $link = new Video();
+                $link->setUrl('https://www.youtube.com/watch?v=OPf0YbXqDm0' . '?' . $i);
+                $link->setTitle('Mark Ronson - Uptown Funk ft. Bruno Mars - YouTube');
+                $link->setDescription('Mark Ronson - Uptown Funk ft. Bruno Mars - YouTube');
+                $link->setEmbedId('OPf0YbXqDm0');
+                $link->setEmbedType('youtube');
+                $link->addTag(array('name' => 'Video Tag 1'));
+                $link->addTag(array('name' => 'Video Tag 2'));
+                $link->addTag(array('name' => 'Video Tag 3'));
             } elseif ($i <= 150) {
-                $link['url'] = 'https://open.spotify.com/album/3vLaOYCNCzngDf8QdBg2V1/32OlwWuMpZ6b0aN2RZOeMS' . '?' . $i;
-                $link['title'] = 'Uptown Funk';
-                $link['description'] = 'Uptown Special : Mark Ronson, Bruno Mars';
-                $link['additionalLabels'] = array('Audio');
-                $link['additionalFields'] = array('embed_type' => 'spotify', 'embed_id' => 'spotify:track:32OlwWuMpZ6b0aN2RZOeMS');
-                $link['tags'] = array(
-                    array('name' => 'Uptown Funk', 'additionalLabels' => array('Song'), 'additionalFields' => array('spotifyId' => '32OlwWuMpZ6b0aN2RZOeMS', 'isrc' => 'GBARL1401524')),
-                    array('name' => 'Bruno Mars', 'additionalLabels' => array('Artist'), 'additionalFields' => array('spotifyId' => '0du5cEVh5yTK9QJze8zA0C')),
-                    array('name' => 'Mark Ronson', 'additionalLabels' => array('Artist'), 'additionalFields' => array('spotifyId' => '3hv9jJF3adDNsBSIQDqcjp')),
-                    array('name' => 'Uptown Special', 'additionalLabels' => array('Album'), 'additionalFields' => array('spotifyId' => '3vLaOYCNCzngDf8QdBg2V1')),
-                );
+                $link = new Audio();
+                $link->setUrl('https://open.spotify.com/album/3vLaOYCNCzngDf8QdBg2V1/32OlwWuMpZ6b0aN2RZOeMS' . '?' . $i);
+                $link->setTitle('Uptown Funk');
+                $link->setDescription('Uptown Special : Mark Ronson, Bruno Mars');
+                $link->setEmbedId('spotify:track:32OlwWuMpZ6b0aN2RZOeMS');
+                $link->setEmbedType('spotify');
+                $link->addTag(array('name' => 'Uptown Funk', 'additionalLabels' => array('Song'), 'additionalFields' => array('spotifyId' => '32OlwWuMpZ6b0aN2RZOeMS', 'isrc' => 'GBARL1401524')));
+                $link->addTag(array('name' => 'Bruno Mars', 'additionalLabels' => array('Artist'), 'additionalFields' => array('spotifyId' => '0du5cEVh5yTK9QJze8zA0C')));
+                $link->addTag(array('name' => 'Mark Ronson', 'additionalLabels' => array('Artist'), 'additionalFields' => array('spotifyId' => '3hv9jJF3adDNsBSIQDqcjp')));
+                $link->addTag(array('name' => 'Uptown Special', 'additionalLabels' => array('Album'), 'additionalFields' => array('spotifyId' => '3vLaOYCNCzngDf8QdBg2V1')));
             } elseif ($i <= 350) {
-                $link['additionalLabels'] = array('Image');
-                $link['tags'] = array(
-                    array('name' => 'Image Tag 7'),
-                    array('name' => 'Image Tag 8'),
-                    array('name' => 'Image Tag 9'),
-                );
+                $link = new Image();
+                $link->setTitle('Title ' . $i);
+                $link->setDescription('Description ' . $i);
+                $link->setUrl('https://www.nekuno.com/link' . $i);
+                $link->addTag(array('name' => 'Image Tag 7'));
+                $link->addTag(array('name' => 'Image Tag 8'));
+                $link->addTag(array('name' => 'Image Tag 9'));
+            } else {
+                continue;
             }
 
-            $createdLinks[$i] = $this->lm->addLink($link);
+            $link->setLanguage('en');
+
+            $createdLinks[$i] = $this->lm->mergeLink($link);
 
         }
 
@@ -362,12 +366,12 @@ class Fixtures
 
         for ($i = 1; $i <= self::NUM_OF_TAGS; $i++) {
 
-            $this->lm->createTag(
+            $this->lm->mergeTag(
                 array('name' => 'tag ' . $i,)
             );
 
             // This second call should be ignored and do not duplicate tags
-            $this->lm->createTag(
+            $this->lm->mergeTag(
                 array('name' => 'tag ' . $i,)
             );
         }
@@ -424,15 +428,17 @@ class Fixtures
         }
     }
 
+    /**
+     * @param Link[] $createdLinks
+     */
     protected function loadLikes(array $createdLinks)
     {
-
         $this->logger->notice('Loading likes');
 
         $likes = $this->scenario['likes'];
 
         foreach ($createdLinks as $link) {
-            $this->rm->userRateLink(1, $link['id']);
+            $this->rm->userRateLink(1, $link->getId());
         }
 
         foreach ($likes as $like) {
@@ -582,8 +588,7 @@ Duis venenatis porta arcu sed luctus. Quisque eu mi sit amet tellus porttitor vu
         $this->logger->notice('Calculating uncorrelated questions');
         $result = $this->correlationManager->getUncorrelatedQuestions();
         $count = 0;
-        foreach ($result as $mode => $questionsByMode)
-        {
+        foreach ($result as $mode => $questionsByMode) {
             $this->correlationManager->setDivisiveQuestions($questionsByMode['questions'], $mode);
             $count += count($questionsByMode['questions']);
         }

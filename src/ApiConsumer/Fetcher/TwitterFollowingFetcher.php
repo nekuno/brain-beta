@@ -50,14 +50,12 @@ class TwitterFollowingFetcher extends AbstractTwitterFetcher
         $preprocessedLinks = array();
         if ($links == false || empty($links)) {
             foreach ($rawFeed as $id) {
-                $link = array(
-                    'url' => 'https://twitter.com/intent/user?user_id=' . $id,
-                    'title' => null,
-                    'description' => null,
-                    'timestamp' => 1000 * time(),
-                );
-                $preprocessedLink = new PreprocessedLink($link['url']);
-                $preprocessedLink->setFirstLink(Creator::buildFromArray($link));
+                $link = new Creator();
+                $link->setUrl('https://twitter.com/intent/user?user_id=' . $id);
+                $link->setCreated(1000 * time());
+
+                $preprocessedLink = new PreprocessedLink($link->getUrl());
+                $preprocessedLink->setFirstLink($link);
                 $preprocessedLink->setSource($this->resourceOwner->getName());
                 $preprocessedLink->setResourceItemId($id);
                 $preprocessedLinks[] = $preprocessedLink;
@@ -73,8 +71,8 @@ class TwitterFollowingFetcher extends AbstractTwitterFetcher
 //                        'username' => $screenName,
 //                    )
 //                );
-                $preprocessedLink = new PreprocessedLink($link['url']);
-                $preprocessedLink->setFirstLink(Creator::buildFromArray($link));
+                $preprocessedLink = new PreprocessedLink($link->getUrl());
+                $preprocessedLink->setFirstLink($link);
                 $preprocessedLinks[] = $preprocessedLink;
             }
         }

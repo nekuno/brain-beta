@@ -9,23 +9,6 @@ class Video extends Link
     protected $embed_type;
     protected $embed_id;
 
-    public static function buildFromLink(Link $link)
-    {
-        $array = $link->toArray();
-
-        /** @var Video $me */
-        $me = parent::buildFromArray($array);
-
-        if (isset($array['embed_type'])) {
-            $me->setEmbedType($array['embed_type']);
-        }
-        if (isset($array['embed_id'])) {
-            $me->setEmbedId($array['embed_id']);
-        }
-
-        return $me;
-    }
-
     public function toArray()
     {
         $array = parent::toArray();

@@ -25,6 +25,15 @@ class Link implements \JsonSerializable
     protected $synonymous = array();
     protected $additionalLabels = array();
 
+    public static function buildFromLink(Link $link)
+    {
+        $array = $link->toArray();
+
+        /** @var Video $me */
+        $me = self::buildFromArray($array);
+
+        return $me;
+    }
     public static function buildFromArray(array $array)
     {
         $link = new static();
@@ -325,7 +334,7 @@ class Link implements \JsonSerializable
     }
 
     /**
-     * @return array
+     * @return Link[]
      */
     public function getSynonymous()
     {
@@ -333,14 +342,14 @@ class Link implements \JsonSerializable
     }
 
     /**
-     * @param array $synonymous
+     * @param Link[] $synonymous
      */
     public function setSynonymous($synonymous)
     {
         $this->synonymous = $synonymous;
     }
 
-    public function addSynonymous($synonymous)
+    public function addSynonymous(Link $synonymous)
     {
         $this->synonymous[] = $synonymous;
     }

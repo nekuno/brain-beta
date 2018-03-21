@@ -38,7 +38,7 @@ class ImageScraperProcessor extends AbstractScraperProcessor
 
     public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
     {
-        $image = Image::buildFromArray($preprocessedLink->getFirstLink()->toArray());
+        $image = Image::buildFromLink($preprocessedLink->getFirstLink());
         $preprocessedLink->setFirstLink($image);
     }
 

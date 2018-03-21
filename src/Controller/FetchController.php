@@ -28,14 +28,14 @@ class FetchController
             $linkModel = $app['links.model'];
             $link = $linkModel->addLink($data);
 
-            if (empty($link)) {
+            if (null === $link) {
                 $link = $linkModel->findLinkByUrl($data['url']);
             }
 
-            if (isset($data['userId'])) {
+            if (isset($data['userId']) && $link !== null) {
                 /* @var $rateModel RateManager */
                 $rateModel = $app['users.rate.model'];
-                $rateModel->userRateLink($data['userId'], $link['id'], $data['resource'], $data['timestamp'], RateManager::LIKE);
+                $rateModel->userRateLink($data['userId'], $link->getId(), $data['resource'], $data['timestamp'], RateManager::LIKE);
             }
 
         } catch (\Exception $e) {

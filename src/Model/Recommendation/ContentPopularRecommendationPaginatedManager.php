@@ -32,8 +32,10 @@ class ContentPopularRecommendationPaginatedManager extends AbstractContentPagina
 
         /** @var ContentRecommendation $item */
         foreach ($response['items'] as $item) {
-            $content = $item->getContent();
-            $match = isset($content['popularity']) ? pow(floatval($content['popularity']), 1 / 3) : 0;
+            //TODO: Popularity is not in Link, get from result
+//            $content = $item->getContent();
+//            $match = isset($content['popularity']) ? pow(floatval($content['popularity']), 1 / 3) : 0;
+            $match = 0;
             $item->setMatch($match);
         }
         return $response;

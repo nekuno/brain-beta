@@ -5,9 +5,8 @@ namespace Console\Command;
 use Console\ApplicationAwareCommand;
 use Model\User\User;
 use Model\Affinity\AffinityManager;
-use Model\Link\LinkManager;
 use Model\User\UserManager;
-use Silex\Application;
+use Service\LinkService;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -28,8 +27,8 @@ class UsersCalculateAffinityCommand extends ApplicationAwareCommand
 
         /* @var $userManager UserManager */
         $userManager = $this->app['users.manager'];
-        /* @var $linkModel LinkManager */
-        $linkModel = $this->app['links.model'];
+        /* @var $linkService LinkService */
+        $linkService = $this->app['link.service'];
 
         $user = $input->getOption('user');
         $linkId = $input->getOption('link');
@@ -47,13 +46,16 @@ class UsersCalculateAffinityCommand extends ApplicationAwareCommand
 
                 if (null === $linkId) {
 
-                    $affineLinks = $linkModel->findLinksByUser($userId, 'AFFINITY');
+                    $affineLinks = $linkService->findAffineLinks($userId);
 
                     foreach ($affineLinks as $link) {
 
-                        $output->write('Link: ' . $link['id'] . ' (' . $link['url'] . ') - ');
+                        $linkId = $link->getId();
+                        $linkUrl = $link->getUrl();
 
-                        $this->calculateAffinity($userId, $link['id'], $output);
+                        $output->write('Link: ' . $linkId . ' (' . $linkUrl . ') - ');
+
+                        $this->calculateAffinity($userId, $linkId, $output);
                     }
 
                 } else {

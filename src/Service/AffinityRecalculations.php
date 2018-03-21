@@ -5,6 +5,7 @@ namespace Service;
 use Event\AffinityProcessEvent;
 use Event\AffinityProcessStepEvent;
 use Model\Entity\EmailNotification;
+use Model\Link\Link;
 use Model\Link\LinkManager;
 use Model\Neo4j\GraphManager;
 use Model\User\User;
@@ -84,7 +85,8 @@ class AffinityRecalculations
         $prevPercentage = 0;
         foreach ($links as $index => $link) {
 
-            $affinity = $this->affinityModel->getAffinity($userId, $link['id'], $seconds);
+            $linkId = $link->getId();
+            $affinity = $this->affinityModel->getAffinity($userId, $linkId, $seconds);
 
             $percentage = round(($index + 1) / $count * 100);
             if ($percentage > $prevPercentage) {
@@ -96,15 +98,15 @@ class AffinityRecalculations
             if ($affinity['affinity'] < $this::MIN_AFFINITY) {
                 continue;
             }
-            $affinities[$link['id']] = $affinity['affinity'];
+            $affinities[$linkId] = $affinity['affinity'];
             if ($affinity['affinity'] > $notifyLimit) {
-                $whenNotified = $this->linkModel->getWhenNotified($userId, $link['id']);
+                $whenNotified = $this->linkModel->getWhenNotified($userId, $linkId);
                 if ($whenNotified !== null) {
                     continue;
                 }
                 $linksToEmail[] = $link;
                 if ($counterNotified < $this->linksToEmail) {
-                    $this->linkModel->setLinkNotified($userId, $link['id']);
+                    $this->linkModel->setLinkNotified($userId, $linkId);
                     $counterNotified++;
                 }
             }
@@ -117,8 +119,9 @@ class AffinityRecalculations
                 $result['emailInfo'] = $this->sendEmail($linksToEmail, $user);
             }
         } catch (\Exception $ex) {
+            /** @var Link $link */
             foreach ($linksToEmail as $link) {
-                $this->linkModel->unsetLinkNotified($userId, $link['id']);
+                $this->linkModel->unsetLinkNotified($userId, $link->getId());
             }
             throw $ex;
         }

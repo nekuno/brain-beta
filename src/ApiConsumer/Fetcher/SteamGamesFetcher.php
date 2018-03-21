@@ -49,18 +49,20 @@ class SteamGamesFetcher extends AbstractFetcher
         $preprocessedLinks = array();
 
         foreach ($response as $item) {
+            $appId = $item['appid'];
+
             $type = SteamUrlParser::getGameProcessor();
-            $link = array(
-                'id' => $item['appid'],
-                'url' => "https://store.steampowered.com/app/" . $item['appid'],
-                'title' => $item['name'],
-                'thumbnail' => $this->getThumbnail($item),
-            );
-            $preprocessedLink = new PreprocessedLink($link['url']);
-            $preprocessedLink->setFirstLink(Link::buildFromArray($link));
+            $link = new Link();
+            $link->setId($appId);
+            $link->setUrl("https://store.steampowered.com/app/" . $appId);
+            $link->setTitle($item['name']);
+            $link->setThumbnail($this->getThumbnail($item));
+
+            $preprocessedLink = new PreprocessedLink($link->getUrl());
+            $preprocessedLink->setFirstLink($link);
             $preprocessedLink->setType($type);
             $preprocessedLink->setSource($this->resourceOwner->getName());
-            $preprocessedLink->setResourceItemId($item['appid']);
+            $preprocessedLink->setResourceItemId($appId);
             $preprocessedLink->setToken($this->getToken());
             $preprocessedLinks[] = $preprocessedLink;
         }

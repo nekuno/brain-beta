@@ -214,7 +214,10 @@ abstract class AbstractContentPaginatedManager implements PaginatedInterface
             /** @var Node $contentNode */
             $contentNode = $row->offsetGet('content');
 
-            $content->setContent($this->lm->buildLink($contentNode));
+            $linkArray = $this->lm->buildLink($contentNode);
+            $link = $this->lm->buildLinkObject($linkArray);
+
+            $content->setContent($link);
 
             $content = $this->completeContent($content, $row, $contentNode, $id);
 
@@ -285,11 +288,11 @@ abstract class AbstractContentPaginatedManager implements PaginatedInterface
 
     private function getStaticThumbnail(ContentRecommendation $content)
     {
-        if (isset($content->getContent()['thumbnail'])) {
-            $thumbnail = $content->getContent()['thumbnail'];
+        $link = $content->getContent();
+        if ($thumbnail = $link->getThumbnailLarge()) {
             return $this->it->isGif($thumbnail) ? $this->it->gifToPng($thumbnail) : $thumbnail;
-        } elseif (isset($content->getContent()['url']) && $this->it->isImage($content->getContent()['url'])) {
-            $thumbnail = $content->getContent()['url'];
+        } elseif ($this->it->isImage($link->getUrl())) {
+            $thumbnail = $link->getUrl();
             return $this->it->isGif($thumbnail) ? $this->it->gifToPng($thumbnail) : $thumbnail;
         }
 

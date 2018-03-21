@@ -5,6 +5,7 @@ namespace Console\Command;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use Console\ApplicationAwareCommand;
 use Model\Link\Link;
+use Model\Link\LinkManager;
 use Psr\Log\LogLevel;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -32,6 +33,7 @@ class LinksProcessDatabaseCommand extends ApplicationAwareCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        /** @var LinkManager $linksModel */
         $linksModel = $this->app['links.model'];
 
         $maxLimit = $input->getArgument('limit');
@@ -60,8 +62,8 @@ class LinksProcessDatabaseCommand extends ApplicationAwareCommand
             /* @var $preprocessedLinks PreprocessedLink[] */
             $preprocessedLinks = array();
             foreach ($links as $link) {
-                $preprocessedLink = new PreprocessedLink($link['url']);
-                $preprocessedLink->setFirstLink(Link::buildFromArray($link));
+                $preprocessedLink = new PreprocessedLink($link->getUrl());
+                $preprocessedLink->setFirstLink($link);
                 $preprocessedLinks[] = $preprocessedLink;
             }
 

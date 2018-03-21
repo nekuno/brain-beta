@@ -48,11 +48,12 @@ class EnqueueLinksService
             }
 
             foreach ($links as $link) {
+                $url = $link->getUrl();
                 if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
-                    $output->writeln('Link ' . $link['url'] . ' will be checked');
-                    $output->writeln(sprintf('Enqueuing url check for "%s"', $link['url']));
+                    $output->writeln('Link ' . $url . ' will be checked');
+                    $output->writeln(sprintf('Enqueuing url check for "%s"', $url));
                 }
-                $this->amqpManager->enqueueLinkCheck(array('link' => $link));
+                $this->amqpManager->enqueueLinkCheck(array('link' => $link->toArray()));
             }
         }
     }
@@ -81,11 +82,12 @@ class EnqueueLinksService
             }
 
             foreach ($links as $link) {
+                $url = $link->getUrl();
                 if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
-                    $output->writeln('Link ' . $link['url'] . ' will be reprocessed');
-                    $output->writeln(sprintf('Enqueuing url reprocess for "%s"', $link['url']));
+                    $output->writeln('Link ' . $url . ' will be reprocessed');
+                    $output->writeln(sprintf('Enqueuing url reprocess for "%s"', $url));
                 }
-                $this->amqpManager->enqueueLinkReprocess(array('link' => $link));
+                $this->amqpManager->enqueueLinkReprocess(array('link' => $link->toArray()));
             }
         }
     }
