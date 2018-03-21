@@ -149,8 +149,8 @@ class LinkManager
 
         if ($saved = $this->findLinkByUrl($data['url'])) {
 
-            $synonymous = $this->addSynonymousLink($saved['id'], $data['synonymous']);
-            $saved['synonymous'] = $synonymous;
+            $synonymous = $this->addSynonymousLink($saved->getId(), $data['synonymous']);
+            $saved->setSynonymous($synonymous);
 
             return $saved;
         }
@@ -925,7 +925,7 @@ class LinkManager
     /**
      * @param $id
      * @param Link[] $synonymousLinks
-     * @return array
+     * @return Link[]
      * @throws \Exception
      */
     private function addSynonymousLink($id, array $synonymousLinks)
@@ -956,7 +956,8 @@ class LinkManager
             }
 
             $linkNode = $result->current()->offsetGet('synonymousLink');
-            $link = $this->buildLink($linkNode);
+            $linkArray = $this->buildLink($linkNode);
+            $link = $this->buildLinkObject($linkArray);
             $synonymousResult[$index] = $link;
         }
 

@@ -46,6 +46,9 @@ class ProcessorService implements LoggerAwareInterface
 
     protected $linkProcessor;
 
+    //TODO: Use this instead of userId argument in this class
+    protected $userId;
+
     public function __construct(FetcherService $fetcherService, LinkProcessor $linkProcessor, LinkManager $linkModel, EventDispatcher $dispatcher, RateManager $rateModel, LinkResolver $resolver)
     {
         $this->fetcherService = $fetcherService;
@@ -68,6 +71,8 @@ class ProcessorService implements LoggerAwareInterface
      */
     public function process(array $preprocessedLinks, $userId)
     {
+        $this->userId = $userId;
+
         $links = array();
         $this->preProcess($preprocessedLinks);
 
@@ -529,6 +534,7 @@ class ProcessorService implements LoggerAwareInterface
 
         foreach ($links as $link) {
             $updatedLinks[] = $this->linkModel->mergeLink($link);
+            $this->like($this->userId, $updatedLinks, $preprocessedLink);
         }
 
         return $updatedLinks;
