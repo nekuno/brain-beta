@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "004c2d90b36df927b86bd8e2c69ef43c",
+    "content-hash": "5c27e2a9538e9a44d47477ca31c81b94",
     "packages": [
         {
             "name": "cnam/security-jwt-service-provider",
@@ -1657,16 +1657,16 @@
         },
         {
             "name": "php-amqplib/php-amqplib",
-            "version": "v2.6.3",
+            "version": "v2.7.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-amqplib/php-amqplib.git",
-                "reference": "fa2f0d4410a11008cb36b379177291be7ee9e4f6"
+                "reference": "dfd3694a86f1a7394d3693485259d4074a6ec79b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-amqplib/php-amqplib/zipball/fa2f0d4410a11008cb36b379177291be7ee9e4f6",
-                "reference": "fa2f0d4410a11008cb36b379177291be7ee9e4f6",
+                "url": "https://api.github.com/repos/php-amqplib/php-amqplib/zipball/dfd3694a86f1a7394d3693485259d4074a6ec79b",
+                "reference": "dfd3694a86f1a7394d3693485259d4074a6ec79b",
                 "shasum": ""
             },
             "require": {
@@ -1678,6 +1678,7 @@
                 "videlalvaro/php-amqplib": "self.version"
             },
             "require-dev": {
+                "phpdocumentor/phpdocumentor": "^2.9",
                 "phpunit/phpunit": "^4.8",
                 "scrutinizer/ocular": "^1.1",
                 "squizlabs/php_codesniffer": "^2.5"
@@ -1698,7 +1699,7 @@
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
-                "LGPL-2.1"
+                "LGPL-2.1-or-later"
             ],
             "authors": [
                 {
@@ -1723,7 +1724,7 @@
                 "queue",
                 "rabbitmq"
             ],
-            "time": "2016-04-11T14:30:01+00:00"
+            "time": "2018-02-11T19:28:00+00:00"
         },
         {
             "name": "pimple/pimple",
