@@ -117,7 +117,9 @@ abstract class AbstractContentPaginatedManager implements PaginatedInterface
      */
     public function validateFilters(array $filters)
     {
-        return $this->validator->validateOnUpdate($filters);
+        $this->validator->validateOnUpdate($filters);
+
+        return true;
     }
 
     /**

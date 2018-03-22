@@ -31,7 +31,7 @@ class UserRecommendationPaginatedManager extends AbstractUserRecommendationPagin
         $return = array('items' => array());
 
         $profile = $this->profileModel->getById($id);
-        $objectives = isset($profile['objective']) ? $profile['objective'] : array();
+        $objectives = $profile->get('objective') ?: array();
 
         $parameters = array(
             'offset' => (integer)$offset,

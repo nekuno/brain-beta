@@ -79,33 +79,34 @@ class UsersThreadsCreateCommand extends ApplicationAwareCommand
 
             $output->writeln('-----------------------------------------------------------------------');
 
+            $userId = $user->getId();
             if ($clear) {
-                $existingThreads = $threadManager->getAllByUserId($user->getId());
+                $existingThreads = $threadManager->getAllByUserId($userId);
                 foreach ($existingThreads as $existingThread) {
 //                    if ($existingThread->getDefault() == true) {
                     $threadManager->deleteById($existingThread->getId());
 //                    }
                 }
-                $output->writeln(sprintf('Deleted threads for user %d', $user->getId()));
+                $output->writeln(sprintf('Deleted threads for user %d', $userId));
             }
 
             if ($groupsOption) {
-                $groups = $groupModel->getAllByUserId($user->getId());
+                $groups = $groupModel->getAllByUserId($userId);
 
                 foreach ($groups as $group) {
-                    $threadService->createGroupThread($group, $user->getId());
+                    $threadService->createGroupThread($group, $userId);
                 }
-                $output->writeln(sprintf('Created %d group threads for user %d', count($groups), $user->getId()));
+                $output->writeln(sprintf('Created %d group threads for user %d', count($groups), $userId));
             }
 
             try {
-                $createdThreads = $threadService->createDefaultThreads($user, $scenario);
-                $output->writeln('Added threads for scenario ' . $scenario . ' and user with id ' . $user->getId());
+                $createdThreads = $threadService->createDefaultThreads($userId, $scenario);
+                $output->writeln('Added threads for scenario ' . $scenario . ' and user with id ' . $userId);
                 foreach ($createdThreads as $createdThread) {
 
                     $result = $recommendator->getRecommendationFromThread($createdThread);
 
-                    $threadManager->cacheResults(
+                    $threadService->cacheResults(
                         $createdThread,
                         array_slice($result['items'], 0, 5),
                         $result['pagination']['total']
@@ -122,7 +123,7 @@ class UsersThreadsCreateCommand extends ApplicationAwareCommand
                     $output->writeln($e->getQuery());
                 }
             }
-            $output->writeln(sprintf('Cached results from threads for user %d', $user->getId()));
+            $output->writeln(sprintf('Cached results from threads for user %d', $userId));
         }
     }
 }

@@ -56,11 +56,8 @@ class DeviceService
     {
         $this->validatePushData($category, $data);
         $devices = $this->dm->getAll($userId);
-        $profile = $this->pm->getById($userId);
-
-        if (isset($profile['interfaceLanguage']) && $profile['interfaceLanguage']) {
-            $this->translator->setLocale($profile['interfaceLanguage']);
-        }
+        $interfaceLanguage = $this->pm->getInterfaceLocale($userId);
+        $this->translator->setLocale($interfaceLanguage);
 
         $registrationIds = array();
         /** @var Device $device */

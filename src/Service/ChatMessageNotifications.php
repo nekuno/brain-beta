@@ -95,20 +95,14 @@ class ChatMessageNotifications
             }
 
             $user = $this->userManager->getById($userId);
-            $profile = $this->profileModel->getById($userId);
+            $interfaceLocale = $this->profileModel->getInterfaceLocale($userId);
 
-            if (!$profile && OutputInterface::VERBOSITY_VERBOSE <= $output->getVerbosity()) {
-                $output->writeln('Profile ' . $userId . ' not found. Using default locale (' . $this->translator->getLocale() . ').');
+            $this->translator->setLocale($interfaceLocale);
+
+            if (OutputInterface::VERBOSITY_VERBOSE <= $output->getVerbosity()) {
+                $output->writeln('Profile ' . $userId . ' found. Using locale ' . $interfaceLocale);
             }
 
-            if (isset($profile['interfaceLanguage']) && $profile['interfaceLanguage']) {
-                $this->translator->setLocale($profile['interfaceLanguage']);
-
-                if (OutputInterface::VERBOSITY_VERBOSE <= $output->getVerbosity()) {
-                    $output->writeln('Profile ' . $userId . ' found. Using locale ' . $profile['interfaceLanguage']);
-                }
-
-            }
 
             $this->emailNotifications->send(
                 EmailNotification::create()

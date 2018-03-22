@@ -130,4 +130,9 @@ class Location implements \JsonSerializable
         return empty($location) ? null : $location;
     }
 
+    public function toArray()
+    {
+        return $this->jsonSerialize();
+    }
+
 }

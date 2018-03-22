@@ -104,7 +104,7 @@ class SimilarityMatchingSubscriber implements EventSubscriberInterface
             $group = $this->groupModel->getById($groupId);
             if ($filterUsers = $group->getFilterUsers()) {
                 /* @var $filterUsers FilterUsers */
-                $userFilters = $filterUsers->getUserFilters();
+                $userFilters = $filterUsers->getValues();
                 if (isset($userFilters[$filter]) && $userFilters[$filter] <= $value && !$this->notificationManager->areNotified($follower, $influencer)) {
                     // Send mails
                     $this->sendFollowerMail($follower, $influencer, $filter, $value);
@@ -123,10 +123,8 @@ class SimilarityMatchingSubscriber implements EventSubscriberInterface
         $username = $user->getUsername();
         $email = $user->getEmail();
 
-        $profile = $this->profileModel->getById($follower);
-        if (isset($profile['interfaceLanguage'])) {
-            $this->translator->setLocale($profile['interfaceLanguage']);
-        }
+        $interfaceLanguage = $this->profileModel->getInterfaceLocale($follower);
+        $this->translator->setLocale($interfaceLanguage);
 
         $userOther = $this->userManager->getById($influencer);
         $usernameOther = $userOther->getUsername();
@@ -164,10 +162,8 @@ class SimilarityMatchingSubscriber implements EventSubscriberInterface
         $username = $user->getUsername();
         $email = $user->getEmail();
 
-        $profile = $this->profileModel->getById($influencer);
-        if (isset($profile['interfaceLanguage'])) {
-            $this->translator->setLocale($profile['interfaceLanguage']);
-        }
+        $interfaceLanguage = $this->profileModel->getInterfaceLocale($follower);
+        $this->translator->setLocale($interfaceLanguage);
 
         $userOther = $this->userManager->getById($follower);
         $usernameOther = $userOther->getUsername();
