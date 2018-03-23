@@ -13,7 +13,6 @@ use Service\ChatMessageNotifications;
 use Service\InstantConnection;
 use Service\ThreadService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use GuzzleHttp\Client;
 
 class UserSubscriber implements EventSubscriberInterface
 {
@@ -71,7 +70,7 @@ class UserSubscriber implements EventSubscriberInterface
             return false;
         }
 
-        $locale = isset($profile['interfaceLanguage']) ? $profile['interfaceLanguage'] : 'en';
+        $locale = $profile->get('interfaceLanguage') ?: 'en';
 
         try {
             $this->chat->createDefaultMessage($id, $locale);

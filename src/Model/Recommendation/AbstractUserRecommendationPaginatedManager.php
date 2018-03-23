@@ -391,8 +391,8 @@ abstract class AbstractUserRecommendationPaginatedManager implements PaginatedIn
 
             $profile = $this->profileModel->build($row);
             $user->setProfile($profile);
-            if (isset($profile['location'])) {
-                $user->setLocation($profile['location']);
+            if (!empty($profile->get('location'))) {
+                $user->setLocation($profile->get('location'));
             }
 
             $response[] = $user;

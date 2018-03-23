@@ -11,8 +11,6 @@ use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Model\Exception\ValidationException;
 use Model\Neo4j\QueryBuilder;
-use Model\Profile\ProfileOptionManager;
-use Model\Profile\ProfileTagManager;
 use Service\Validator\ProfileValidator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
@@ -52,7 +50,7 @@ class ProfileManager
 
     /**
      * @param int $id
-     * @return array
+     * @return Profile
      * @throws NotFoundHttpException
      */
     public function getById($id)
@@ -83,7 +81,7 @@ class ProfileManager
     /**
      * @param $id
      * @param array $data
-     * @return array
+     * @return Profile
      * @throws NotFoundHttpException|MethodNotAllowedHttpException
      */
     public function create($id, array $data)
@@ -119,7 +117,7 @@ class ProfileManager
     /**
      * @param integer $id
      * @param array $data
-     * @return array
+     * @return Profile
      * @throws ValidationException|NotFoundHttpException
      */
     public function update($id, array $data)
@@ -189,17 +187,38 @@ class ProfileManager
     {
         /* @var $node Node */
         $node = $row->offsetGet('profile');
-        $profile = $node->getProperties();
-
         $profileId = $node->getId();
-        $profile += $this->getLocation($profileId);
-        $profile += $this->getTravelling($profileId);
-        $profile += $this->getMultipleFields($profileId);
-
-        $profile += $this->profileOptionManager->buildOptions($row->offsetGet('options'));
 
         $interfaceLocale = $this->getInterfaceLocaleByProfileId($profileId);
-        $profile += $this->profileTagManager->buildTags($row, $interfaceLocale);
+        $metadata = $this->profileMetadataManager->getMetadata($interfaceLocale);
+        $profile = new Profile($metadata);
+
+        $profileProperties = $node->getProperties();
+        foreach ($profileProperties as $field => $property)
+        {
+            $profile->set($field, $property);
+        }
+
+
+        $profile->set('location', $this->getLocation($profileId));
+        $profile->set('travelling', $this->getTravelling($profileId));
+        $multipleFields = $this->getMultipleFields($profileId);
+        foreach ($multipleFields as $field => $values)
+        {
+            $profile->set($field, $values);
+        }
+
+        $profileOptions = $this->profileOptionManager->buildOptions($row->offsetGet('options'));
+        foreach ($profileOptions as $field => $profileOption)
+        {
+            $profile->set($field, $profileOption);
+        }
+
+        $profileTags = $this->profileTagManager->buildTags($row, $interfaceLocale);
+        foreach ($profileTags as $field => $profileTag)
+        {
+            $profile->set($field, $profileTag);
+        }
 
         return $profile;
     }
@@ -224,8 +243,7 @@ class ProfileManager
 
         $location = $this->locationManager->buildLocation($result->current());
 
-        //TODO: Check if can return object
-        return array('location' => $location->jsonSerialize());
+        return $location;
     }
 
     protected function getTravelling($profileId)
@@ -248,12 +266,10 @@ class ProfileManager
 
         $locations = array();
         foreach ($result as $row) {
-            $location = $this->locationManager->buildLocation($row);
-            $locations[] = $location->jsonSerialize();
+            $locations[] = $this->locationManager->buildLocation($row);
         }
 
-        //TODO: Check if can return object
-        return array('travelling' => $locations);
+        return $locations;
     }
 
     protected function getMultipleFields($profileId)
@@ -274,6 +290,7 @@ class ProfileManager
         $result = $qb->getQuery()->getResultSet();
 
         $multiples = array();
+        //TODO: Change to multiples = array(field=> Profile())
         foreach ($result as $row)
         {
             /** @var Node $multipleNode */
@@ -343,9 +360,7 @@ class ProfileManager
 
         $query = $qb->getQuery();
 
-        $result = $query->getResultSet();
-
-        return $this->build($result->current());
+        $query->getResultSet();
     }
 
     public function getIndustryIdFromDescription($description)
