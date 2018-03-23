@@ -21,7 +21,7 @@
         "symfony/process": "~2.3",
         "symfony/security": "~2.3",
         "symfony/translation": "~2.3",
-        "symfony/twig-bridge": "~2.3",
+        "symfony/twig-bridge": "~3.2",
         "symfony/validator": "~2.3",
         "dflydev/doctrine-orm-service-provider": "2.0.*@dev",
         "everyman/neo4jphp": "dev-master",
