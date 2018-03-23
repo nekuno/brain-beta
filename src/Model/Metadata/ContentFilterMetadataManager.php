@@ -3,8 +3,6 @@
 namespace Model\Metadata;
 
 use Model\Link\LinkManager;
-use Model\Neo4j\GraphManager;
-use Symfony\Component\Translation\Translator;
 
 class ContentFilterMetadataManager extends MetadataManager
 {

@@ -16,8 +16,9 @@ use EventListener\UserDataStatusSubscriber;
 use EventListener\UserRelationsSubscriber;
 use EventListener\UserSubscriber;
 use EventListener\UserTrackingSubscriber;
+use Pimple\Container;
 use Silex\Application;
-use Silex\ServiceProviderInterface;
+use Pimple\ServiceProviderInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class SubscribersServiceProvider implements ServiceProviderInterface
@@ -26,7 +27,7 @@ class SubscribersServiceProvider implements ServiceProviderInterface
     /**
      * { @inheritdoc }
      */
-    public function register(Application $app)
+    public function register(Container $app)
     {
 
     }

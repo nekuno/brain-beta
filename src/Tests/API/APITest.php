@@ -54,17 +54,13 @@ abstract class APITest extends WebTestCase
 
     protected function loadMockUps(Application $app)
     {
-        $app['auth.service'] = $app->share(
-            function (Application $app) {
-                return new AuthServiceMockUp($app['users.manager'], $app['security.password_encoder'], $app['security.jwt.encoder'], $app['oauth.service'], $app['dispatcher.service'], $app['users.tokens.model']);
-            }
-        );
-        $app['users.tokens.model'] = $app->share(
-            function ($app) {
-                $validator = $app['validator.factory']->build('tokens');
-                return new TokensManagerMockUp($app['dispatcher'], $app['neo4j.graph_manager'], $validator);
-            }
-        );
+        $app['auth.service'] = function (Application $app) {
+            return new AuthServiceMockUp($app['users.manager'], $app['security.password_encoder'], $app['security.jwt.encoder'], $app['oauth.service'], $app['dispatcher.service'], $app['users.tokens.model']);
+        };
+        $app['users.tokens.model'] = function ($app) {
+            $validator = $app['validator.factory']->build('tokens');
+            return new TokensManagerMockUp($app['dispatcher'], $app['neo4j.graph_manager'], $validator);
+        };
 
         return $app;
     }

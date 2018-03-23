@@ -11,7 +11,7 @@ use Model\Neo4j\GraphManager;
 use Model\User\User;
 use Model\Affinity\AffinityManager;
 use Model\User\UserManager;
-use Silex\Translator;
+use Symfony\Component\Translation\Translator;
 
 class AffinityRecalculations
 {

@@ -3,18 +3,17 @@
 namespace Provider;
 
 use Controller\ControllerResolver;
+use Pimple\Container;
+use Pimple\ServiceProviderInterface;
 use Silex\Application;
-use Silex\ServiceProviderInterface;
 
 class ServiceControllerServiceProvider implements ServiceProviderInterface
 {
-    public function register(Application $app)
+    public function register(Container $app)
     {
-        $app['resolver'] = $app->share(
-            function () use ($app) {
-                return new ControllerResolver($app, $app['logger']);
-            }
-        );
+        $app['resolver'] = function ($app) {
+            return new ControllerResolver($app, $app['logger']);
+        };
     }
 
     public function boot(Application $app)

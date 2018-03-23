@@ -11,8 +11,9 @@
 
 namespace Provider;
 
+use Pimple\Container;
 use Silex\Application;
-use Silex\ServiceProviderInterface;
+use Pimple\ServiceProviderInterface;
 
 /**
  * Swiftmailer Provider.
@@ -21,29 +22,29 @@ use Silex\ServiceProviderInterface;
  */
 class SwiftmailerServiceProvider implements ServiceProviderInterface
 {
-    public function register(Application $app)
+    public function register(Container $app)
     {
         $app['swiftmailer.options'] = isset($app['swiftmailer.options']) ? $app['swiftmailer.options'] : array();
         $app['swiftmailer.use_spool'] = isset($app['swiftmailer.use_spool']) ? $app['swiftmailer.use_spool'] : true;
 
         $app['mailer.initialized'] = false;
 
-        $app['mailer'] = $app->share(function ($app) {
+        $app['mailer'] = function ($app) {
             $app['mailer.initialized'] = true;
             $transport = $app['swiftmailer.use_spool'] ? $app['swiftmailer.spooltransport'] : $app['swiftmailer.transport'];
 
             return new \Swift_Mailer($transport);
-        });
+        };
 
-        $app['swiftmailer.spooltransport'] = $app->share(function ($app) {
+        $app['swiftmailer.spooltransport'] = function ($app) {
             return new \Swift_Transport_SpoolTransport($app['swiftmailer.transport.eventdispatcher'], $app['swiftmailer.spool']);
-        });
+        };
 
-        $app['swiftmailer.spool'] = $app->share(function ($app) {
+        $app['swiftmailer.spool'] = function ($app) {
             return new \Swift_MemorySpool();
-        });
+        };
 
-        $app['swiftmailer.transport'] = $app->share(function ($app) {
+        $app['swiftmailer.transport'] = function ($app) {
             $transport = $app['env'] === 'test' ? new \Swift_Transport_NullTransport($app['swiftmailer.transport.eventdispatcher'])
                 : new \Swift_Transport_EsmtpTransport(
                     $app['swiftmailer.transport.buffer'],
@@ -70,23 +71,23 @@ class SwiftmailerServiceProvider implements ServiceProviderInterface
             }
 
             return $transport;
-        });
+        };
 
-        $app['swiftmailer.transport.buffer'] = $app->share(function () {
+        $app['swiftmailer.transport.buffer'] = function () {
             return new \Swift_Transport_StreamBuffer(new \Swift_StreamFilters_StringReplacementFilterFactory());
-        });
+        };
 
-        $app['swiftmailer.transport.authhandler'] = $app->share(function () {
+        $app['swiftmailer.transport.authhandler'] = function () {
             return new \Swift_Transport_Esmtp_AuthHandler(array(
                 new \Swift_Transport_Esmtp_Auth_CramMd5Authenticator(),
                 new \Swift_Transport_Esmtp_Auth_LoginAuthenticator(),
                 new \Swift_Transport_Esmtp_Auth_PlainAuthenticator(),
             ));
-        });
+        };
 
-        $app['swiftmailer.transport.eventdispatcher'] = $app->share(function () {
+        $app['swiftmailer.transport.eventdispatcher'] = function () {
             return new \Swift_Events_SimpleEventDispatcher();
-        });
+        };
     }
 
     public function boot(Application $app)

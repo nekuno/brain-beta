@@ -10,232 +10,170 @@ use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 
 //Request::setTrustedProxies(array('127.0.0.1'));
 
-/** @var $app Silex\Application */
+$app['auth.controller'] = function () {
 
-$app['auth.controller'] = $app->share(
-    function () {
+    return new \Controller\Security\AuthController;
+};
 
-        return new \Controller\Security\AuthController;
-    }
-);
+$app['users.controller'] = function () {
 
-$app['users.controller'] = $app->share(
-    function () {
+    return new \Controller\User\UserController;
+};
 
-        return new \Controller\User\UserController;
-    }
-);
+$app['users.profile.controller'] = function () {
 
-$app['users.profile.controller'] = $app->share(
-    function () {
+    return new \Controller\User\ProfileController;
+};
 
-        return new \Controller\User\ProfileController;
-    }
-);
+$app['users.privacy.controller'] = function () {
 
-$app['users.privacy.controller'] = $app->share(
-    function () {
+    return new \Controller\User\PrivacyController;
+};
 
-        return new \Controller\User\PrivacyController;
-    }
-);
+$app['users.data.controller'] = function () {
 
-$app['users.data.controller'] = $app->share(
-    function () {
+    return new \Controller\User\DataController;
+};
 
-        return new \Controller\User\DataController;
-    }
-);
+$app['links.controller'] = function () {
 
-$app['links.controller'] = $app->share(
-    function () {
-        return new \Controller\LinkController;
-    }
-);
+    return new \Controller\LinkController;
+};
 
-$app['questionnaire.questions.controller'] = $app->share(
-    function () {
+$app['questionnaire.questions.controller'] = function () {
 
-        return new Controller\Questionnaire\QuestionController;
-    }
-);
+    return new Controller\Questionnaire\QuestionController;
+};
 
-$app['users.answers.controller'] = $app->share(
-    function () {
+$app['users.answers.controller'] = function () {
 
-        return new \Controller\User\AnswerController;
-    }
-);
+    return new \Controller\User\AnswerController;
+};
 
-$app['users.groups.controller'] = $app->share(
-    function () {
+$app['users.groups.controller'] = function () {
 
-        return new \Controller\User\GroupController;
-    }
-);
+    return new \Controller\User\GroupController;
+};
 
-$app['users.threads.controller'] = $app->share(
-    function () {
+$app['users.threads.controller'] = function () {
 
-        return new \Controller\User\ThreadController;
-    }
-);
+    return new \Controller\User\ThreadController;
+};
 
-$app['users.invitations.controller'] = $app->share(
-    function () {
+$app['users.invitations.controller'] = function () {
 
-        return new \Controller\User\InvitationController;
-    }
-);
+    return new \Controller\User\InvitationController;
+};
 
-$app['users.relations.controller'] = $app->share(
-    function () {
+$app['users.relations.controller'] = function () {
 
-        return new \Controller\User\RelationsController;
-    }
-);
+    return new \Controller\User\RelationsController;
+};
 
-$app['users.tokens.controller'] = $app->share(
-    function() {
-        return new \Controller\User\TokensController;
-    }
-);
+$app['users.tokens.controller'] = function() {
 
-$app['users.photos.controller'] = $app->share(
-    function() {
-        return new \Controller\User\PhotoController();
-    }
-);
+    return new \Controller\User\TokensController;
+};
 
-$app['users.devices.controller'] = $app->share(
-    function() {
-        return new \Controller\User\DeviceController;
-    }
-);
+$app['users.photos.controller'] = function() {
 
-$app['client.controller'] = $app->share(
-    function() {
-        return new Controller\ClientController;
-    }
-);
+    return new \Controller\User\PhotoController();
+};
 
-$app['fetch.controller'] = $app->share(
-    function () {
+$app['users.devices.controller'] = function() {
 
-        return new Controller\FetchController;
-    }
-);
+    return new \Controller\User\DeviceController;
+};
 
-$app['lookUp.controller'] = $app->share(
-    function () {
+$app['client.controller'] = function() {
 
-        return new \Controller\User\LookUpController;
-    }
-);
+    return new Controller\ClientController;
+};
 
-$app['admin.groups.controller'] = $app->share(
-    function () {
+$app['fetch.controller'] = function () {
 
-        return new \Controller\Admin\GroupController;
-    }
-);
+    return new Controller\FetchController;
+};
 
-$app['admin.invitations.controller'] = $app->share(
-    function () {
+$app['lookUp.controller'] = function () {
 
-        return new \Controller\Admin\InvitationController;
-    }
-);
+    return new \Controller\User\LookUpController;
+};
 
-$app['admin.enterpriseUsers.controller'] = $app->share(
-    function () {
+$app['admin.groups.controller'] = function () {
 
-        return new \Controller\Admin\EnterpriseUser\EnterpriseUserController;
-    }
-);
+    return new \Controller\Admin\GroupController;
+};
 
-$app['admin.enterpriseUsers.groups.controller'] = $app->share(
-    function () {
+$app['admin.invitations.controller'] = function () {
 
-        return new \Controller\Admin\EnterpriseUser\GroupController;
-    }
-);
+    return new \Controller\Admin\InvitationController;
+};
 
-$app['admin.enterpriseUsers.communities.controller'] = $app->share(
-    function () {
+$app['admin.enterpriseUsers.controller'] = function () {
 
-        return new \Controller\Admin\EnterpriseUser\CommunityController;
-    }
-);
+    return new \Controller\Admin\EnterpriseUser\EnterpriseUserController;
+};
 
-$app['admin.enterpriseUsers.invitations.controller'] = $app->share(
-    function () {
+$app['admin.enterpriseUsers.groups.controller'] = function () {
 
-        return new \Controller\Admin\EnterpriseUser\InvitationController;
-    }
-);
+    return new \Controller\Admin\EnterpriseUser\GroupController;
+};
 
-$app['admin.users.controller'] = $app->share(
-    function () {
+$app['admin.enterpriseUsers.communities.controller'] = function () {
 
-        return new \Controller\Admin\UserController;
-    }
-);
+    return new \Controller\Admin\EnterpriseUser\CommunityController;
+};
 
-$app['admin.userTracking.controller'] = $app->share(
-    function () {
+$app['admin.enterpriseUsers.invitations.controller'] = function () {
 
-        return new \Controller\Admin\UserTrackingController;
-    }
-);
+    return new \Controller\Admin\EnterpriseUser\InvitationController;
+};
 
-$app['admin.userReport.controller'] = $app->share(
-    function () {
+$app['admin.users.controller'] = function () {
 
-        return new \Controller\Admin\UserReportController;
-    }
-);
+    return new \Controller\Admin\UserController;
+};
 
-$app['admin.content.controller'] = $app->share(
-    function () {
+$app['admin.userTracking.controller'] = function () {
 
-        return new \Controller\Admin\ContentController;
-    }
-);
+    return new \Controller\Admin\UserTrackingController;
+};
 
-$app['admin.developers.controller'] = $app->share(
-    function () {
+$app['admin.userReport.controller'] = function () {
 
-        return new \Controller\Admin\DevelopersController;
-    }
-);
+    return new \Controller\Admin\UserReportController;
+};
 
-$app['admin.questions.controller'] = $app->share(
-    function() {
-        return new \Controller\Admin\QuestionController;
-    }
-);
+$app['admin.content.controller'] = function () {
 
-$app['instant.users.controller'] = $app->share(
-    function () {
+    return new \Controller\Admin\ContentController;
+};
 
-        return new \Controller\Instant\UserController;
-    }
-);
+$app['admin.developers.controller'] = function () {
 
-$app['instant.relations.controller'] = $app->share(
-    function () {
+    return new \Controller\Admin\DevelopersController;
+};
 
-        return new \Controller\Instant\RelationsController;
-    }
-);
+$app['admin.questions.controller'] = function() {
 
-$app['instant.pushNotifications.controller'] = $app->share(
-    function () {
+    return new \Controller\Admin\QuestionController;
+};
 
-        return new \Controller\Instant\PushNotificationsController;
-    }
-);
+$app['instant.users.controller'] = function () {
+
+    return new \Controller\Instant\UserController;
+};
+
+$app['instant.relations.controller'] = function () {
+
+    return new \Controller\Instant\RelationsController;
+};
+
+$app['instant.pushNotifications.controller'] = function () {
+
+    return new \Controller\Instant\PushNotificationsController;
+};
 
 
 /**
