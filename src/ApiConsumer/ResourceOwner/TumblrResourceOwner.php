@@ -10,8 +10,7 @@ use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\GenericOAuth1ResourceOwner;
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
 use HWI\Bundle\OAuthBundle\Security\OAuthUtils;
 use Model\Token\Token;
-use Model\Token\TokensManager;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use Buzz\Message\RequestInterface as HttpRequestInterface;
 
 class TumblrResourceOwner extends GenericOAuth1ResourceOwner
@@ -66,7 +65,7 @@ class TumblrResourceOwner extends GenericOAuth1ResourceOwner
     /**
      * {@inheritdoc}
      */
-    protected function configureOptions(OptionsResolverInterface $resolver)
+    protected function configureOptions(OptionsResolver $resolver)
     {
         $this->traitConfigureOptions($resolver);
         parent::configureOptions($resolver);

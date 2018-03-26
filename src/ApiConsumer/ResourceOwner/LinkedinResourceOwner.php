@@ -6,7 +6,7 @@ use ApiConsumer\Event\OAuthTokenEvent;
 use ApiConsumer\Exception\TokenException;
 use GuzzleHttp\Exception\RequestException;
 use Model\Token\Token;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\LinkedinResourceOwner as LinkedinResourceOwnerBase;
 
 class LinkedinResourceOwner extends LinkedinResourceOwnerBase
@@ -46,7 +46,7 @@ class LinkedinResourceOwner extends LinkedinResourceOwnerBase
     /**
      * {@inheritDoc}
      */
-    protected function configureOptions(OptionsResolverInterface $resolver)
+    protected function configureOptions(OptionsResolver $resolver)
     {
         $this->traitConfigureOptions($resolver);
         parent::configureOptions($resolver);
