@@ -218,7 +218,7 @@ $app->after(
  * Error handling
  */
 $app->error(
-    function (\Exception $e, $code) use ($app) {
+    function (\Exception $e, Request $request, $code) use ($app) {
 
         $response = array('error' => $e->getMessage());
 
