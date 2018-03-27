@@ -2,45 +2,41 @@
 
 namespace Controller;
 
+use Silex\Application;
 use Model\User\User;
-use Silex\ControllerResolver as BaseControllerResolver;
+use Symfony\Component\HttpKernel\Controller\ArgumentValueResolverInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 
 /**
  * Adds User as a valid argument for controllers.
  */
-class ControllerResolver extends BaseControllerResolver
+class ArgumentValueResolver implements ArgumentValueResolverInterface
 {
-    protected function doGetArguments(Request $request, $controller, array $parameters)
+    protected $app;
+
+    public function __construct(Application $app)
     {
-        foreach ($parameters as $param) {
-            /* @var $param \ReflectionParameter */
-            if ($param->getClass() && $param->getClass()->isSubclassOf('Symfony\Component\Security\Core\User\UserInterface')) {
+        $this->app = $app;
+    }
 
-                if (!$this->app['user']) {
-                    if (is_array($controller)) {
-                        $repr = sprintf('%s::%s()', get_class($controller[0]), $controller[1]);
-                    } elseif (is_object($controller)) {
-                        $repr = get_class($controller);
-                    } else {
-                        $repr = $controller;
-                    }
-                    throw new \RuntimeException(sprintf('Controller "%s" uses User "$%s" but user is not authenticated (missing jwt).', $repr, $param->name));
-                }
-
-                $this->checkOwnUser($request);
-
-                $request->attributes->set($param->getName(), $this->app['user']);
-
-                break;
-            }
+    public function supports(Request $request, ArgumentMetadata $argument)
+    {
+        if (User::class !== $argument->getType()) {
+            return false;
         }
 
+        return true;
+    }
+
+    public function resolve(Request $request, ArgumentMetadata $argument)
+    {
+        $this->checkOwnUser($request);
         $this->checkOtherUser($request);
 
-        return parent::doGetArguments($request, $controller, $parameters);
+        yield $this->app['user'];
     }
 
     protected function checkOtherUser(Request $request)
@@ -87,12 +83,12 @@ class ControllerResolver extends BaseControllerResolver
         }
     }
 
-    protected function isUserCorrect(User $user, $path)
+    protected function isUserCorrect(User $user = null, $path)
     {
         $excludedPaths = array('/users/enable', '/users');
         $mustCheckEnabled = !in_array($path, $excludedPaths);
 
-        if ($mustCheckEnabled && !$user->isEnabled()) {
+        if (!$user || $mustCheckEnabled && !$user->isEnabled()) {
             return false;
         }
 
