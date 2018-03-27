@@ -20,23 +20,25 @@ class GuzzleServiceProvider implements ServiceProviderInterface
 
         $app['guzzle.client'] = function ($app) {
 
-            $c = new Client();
+            $config = array();
             if ($app['guzzle.verify']) {
-                $c->setDefaultOption('verify', $app['guzzle.verify']);
+                $config['verify'] = $app['guzzle.verify'];
             }
 
-            return $c;
+            return new Client($config);
         };
 
         $app['instant.client'] = function ($app) {
 
-            $c = new Client(array('base_url' => $app['instant.host']));
+            $config = array(
+                'base_uri' => $app['instant.host'],
+                'auth', array('brain', $app['instant_api_secret'])
+            );
             if ($app['guzzle.verify']) {
-                $c->setDefaultOption('verify', $app['guzzle.verify']);
+                $config['verify'] = $app['guzzle.verify'];
             }
-            $c->setDefaultOption('auth', array('brain', $app['instant_api_secret']));
 
-            return $c;
+            return new Client($config);
         };
     }
 

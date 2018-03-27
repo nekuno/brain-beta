@@ -17,11 +17,11 @@ use EventListener\UserRelationsSubscriber;
 use EventListener\UserSubscriber;
 use EventListener\UserTrackingSubscriber;
 use Pimple\Container;
-use Silex\Application;
+use Silex\Api\EventListenerProviderInterface;
 use Pimple\ServiceProviderInterface;
-use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-class SubscribersServiceProvider implements ServiceProviderInterface
+class SubscribersServiceProvider implements ServiceProviderInterface, EventListenerProviderInterface
 {
 
     /**
@@ -35,12 +35,8 @@ class SubscribersServiceProvider implements ServiceProviderInterface
     /**
      * { @inheritdoc }
      */
-    public function boot(Application $app)
+    public function subscribe(Container $app, EventDispatcherInterface $dispatcher)
     {
-
-        /* @var $dispatcher EventDispatcher */
-        $dispatcher = $app['dispatcher'];
-
         $dispatcher->addSubscriber(new OAuthTokenSubscriber($app['users.tokens.model'], $app['mailer'], $app['monolog'], $app['amqp']));
         $dispatcher->addSubscriber(new AccountConnectSubscriber($app['amqpManager.service'], $app['users.manager'], $app['users.ghostuser.manager'], $app['users.socialprofile.manager'], $app['api_consumer.resource_owner_factory'], $app['users.tokens.model'], $app['users.profile.model'], $app['dispatcher.service']));
         $dispatcher->addSubscriber(new UserTrackingSubscriber($app['users.tracking.model']));
