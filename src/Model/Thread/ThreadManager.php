@@ -146,31 +146,6 @@ class ThreadManager
         return $thread;
     }
 
-    /**
-     * @param $userId
-     * @param array $threadsData
-     * @return Thread[]
-     * @throws \Exception
-     */
-    public function createBatchForUser($userId, array $threadsData)
-    {
-        $returnThreads = array();
-
-        $existingThreads = $this->getAllByUserId($userId);
-
-        foreach ($threadsData as $threadData) {
-            foreach ($existingThreads as $existingThread) {
-                if ($threadData['name'] == $existingThread->getName()) {
-                    continue 2;
-                }
-            }
-
-            $returnThreads[] = $this->create($userId, $threadData);
-        }
-
-        return $returnThreads;
-    }
-
     public function create($userId, $data)
     {
         $this->validateOnCreate($data, $userId);

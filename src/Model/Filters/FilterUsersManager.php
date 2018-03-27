@@ -6,6 +6,7 @@ use Everyman\Neo4j\Label;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
+use Model\Location\LocationManager;
 use Model\Metadata\MetadataUtilities;
 use Model\Neo4j\GraphManager;
 use Model\Metadata\UserFilterMetadataManager;
@@ -30,17 +31,20 @@ class FilterUsersManager
 
     protected $metadataUtilities;
 
+    protected $locationManager;
+
     /**
      * @var FilterUsersValidator
      */
     protected $validator;
 
-    public function __construct(GraphManager $graphManager, UserFilterMetadataManager $userFilterMetadataManager, ProfileOptionManager $profileOptionManager, MetadataUtilities $metadataUtilities, FilterUsersValidator $validator)
+    public function __construct(GraphManager $graphManager, UserFilterMetadataManager $userFilterMetadataManager, ProfileOptionManager $profileOptionManager, LocationManager $locationManager, MetadataUtilities $metadataUtilities, FilterUsersValidator $validator)
     {
         $this->graphManager = $graphManager;
         $this->userFilterMetadataManager = $userFilterMetadataManager;
         $this->profileOptionManager = $profileOptionManager;
         $this->metadataUtilities = $metadataUtilities;
+        $this->locationManager = $locationManager;
         $this->validator = $validator;
     }
 

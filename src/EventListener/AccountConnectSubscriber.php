@@ -187,10 +187,12 @@ class AccountConnectSubscriber implements EventSubscriberInterface
         $response = $userInformation->getResponse();
         if (isset($response['industry'])) {
             $profile = $this->profileModel->getById($userId);
-            if (!isset($profile['industry'])) {
+            if (!$profile->get('industry')) {
                 try {
-                    $profile['industry'] = $this->profileModel->getIndustryIdFromDescription($response['industry']);
-                    $this->profileModel->update($userId, $profile);
+                    $industry = $this->profileModel->getIndustryIdFromDescription($response['industry']);
+                    $profile->set('industry', $industry);
+                    //TODO: Change this to setProfileOption?
+                    $this->profileModel->update($userId, $profile->toArray());
                 } catch (\Exception $e) {}
             }
         }

@@ -3,6 +3,7 @@
 namespace Event;
 
 
+use Model\Profile\Profile;
 use Model\User\User;
 use Symfony\Component\EventDispatcher\Event;
 
@@ -14,18 +15,18 @@ class ProfileEvent extends Event
     protected $userId;
 
     /**
-     * @var array
+     * @var Profile
      */
     protected $profile;
 
-    public function __construct(array $profile, $userId = null)
+    public function __construct(Profile $profile, $userId = null)
     {
         $this->profile = $profile;
         $this->userId = $userId;
     }
 
     /**
-     * @return array
+     * @return Profile
      */
     public function getProfile()
     {

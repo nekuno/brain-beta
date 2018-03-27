@@ -2,8 +2,9 @@
 
 namespace Model\Thread;
 
-use Model\User\User;
 use Model\Group\Group;
+use Model\Location\Location;
+use Model\Profile\Profile;
 use Model\Profile\ProfileManager;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Translation\Translator;
@@ -37,25 +38,15 @@ class ThreadDataManager
             return array();
         }
 
-        if (!isset($profile['location'])) {
-            $profile['location'] = array(
-                'latitude' => 40.4167754,
-                'longitude' => -3.7037902,
-                'address' => 'Madrid',
-                'locality' => 'Madrid',
-                'country' => 'Spain'
-            );
+        if (!$profile->get('birthday')) {
+            $profile->set('birthday', '1970-01-01');
         }
 
-        if (!isset($profile['birthday'])) {
-            $profile['birthday'] = '1970-01-01';
-        }
-
-        $locale = isset($profile['interfaceLanguage']) ? $profile['interfaceLanguage'] : 'es';
+        $locale = $profile->get('interfaceLanguage') ?: 'es';
 
         $this->translator->setLocale($locale);
 
-        $location = $profile['location'];
+        $location = $profile->get('location') ? $profile->get('location')->toArray(): $this->getDefaultLocation() ;
 
         $birthdayRange = $this->getAgeRangeFromProfile($profile);
 
@@ -181,7 +172,7 @@ class ThreadDataManager
         }
     }
 
-    private function getDesiredFromProfile(array $profile)
+    private function getDesiredFromProfile(Profile $profile)
     {
         //QS-1001: Changed for now
 //        if (!isset($profile['orientation']) || !isset($profile['gender'])) {
@@ -203,13 +194,14 @@ class ThreadDataManager
         return 'people';
     }
 
-    private function getAgeRangeFromProfile(array $profile)
+    private function getAgeRangeFromProfile(Profile $profile)
     {
+        $birthday = $profile->get('birthday');
         $ageRangeMax = new \DateInterval('P5Y');
         $ageRangeMin = new \DateInterval('P5Y');
         $ageRangeMin->invert = 1;
-        $rawAgeMin = (new \DateTime($profile['birthday']))->add($ageRangeMax)->diff(new \DateTime())->y;
-        $rawAgeMax = (new \DateTime($profile['birthday']))->add($ageRangeMin)->diff(new \DateTime())->y;
+        $rawAgeMin = (new \DateTime($birthday))->add($ageRangeMax)->diff(new \DateTime())->y;
+        $rawAgeMax = (new \DateTime($birthday))->add($ageRangeMin)->diff(new \DateTime())->y;
 
         return array(
             'max' => $rawAgeMax <= 99 ? ($rawAgeMax >= 14 ? $rawAgeMax : 14) : 99,
@@ -217,16 +209,26 @@ class ThreadDataManager
         );
     }
 
+    protected function getDefaultLocation()
+    {
+        $location = new Location();
+        $location->setLatitude(40.4167754);
+        $location->setLongitude(-3.7037902);
+        $location->setAddress('Madrid');
+        $location->setLocality('Madrid');
+        $location->setCountry('Spain');
+
+        return $location->toArray();
+    }
+
     public function getGroupThreadData(Group $group, $userId)
     {
         try {
-            $profile = $this->profileModel->getById($userId);
+            $locale = $this->profileModel->getInterfaceLocale($userId);
+            $this->translator->setLocale($locale);
         } catch (NotFoundHttpException $e) {
             return array();
         }
-
-        $locale = isset($profile['interfaceLanguage']) ? $profile['interfaceLanguage'] : 'es';
-        $this->translator->setLocale($locale);
 
         return array(
             'name' => str_replace('%group%', $group->getName(), $this->translator->trans('threads.default.people_from_group')),

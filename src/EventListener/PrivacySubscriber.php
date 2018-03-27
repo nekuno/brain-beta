@@ -79,15 +79,14 @@ class PrivacySubscriber implements EventSubscriberInterface
     public function onPrivacyUpdated(PrivacyEvent $event)
     {
         $data = $event->getPrivacy();
+        $influencerId = $event->getUserId();
 
-        $groupsFollowers = $this->groupModel->getGroupFollowersFromInfluencerId($event->getUserId());
+        $groupsFollowers = $this->groupModel->getGroupFollowersFromInfluencerId($influencerId);
 
         if ($this->needsGroupFollowers($data)) {
-            $influencer = $this->userManager->getById($event->getUserId());
-            $influencerProfile = $this->profileModel->getById($event->getUserId());
-            if (isset($influencerProfile['interfaceLanguage'])) {
-                $this->translator->setLocale($influencerProfile['interfaceLanguage']);
-            }
+            $influencer = $this->userManager->getById($influencerId);
+            $interfaceLanguage = $this->profileModel->getInterfaceLocale($influencerId);
+            $this->translator->setLocale($interfaceLanguage);
 
             $groupName = $this->translator->trans('followers.group_name', array('%username%' => $influencer->getUsername()));
             $typeMatching = str_replace("min_", "", $data['messages']['key']);
@@ -103,7 +102,7 @@ class PrivacySubscriber implements EventSubscriberInterface
                     'country' => 'Spain'
                 ),
                 'followers' => true,
-                'influencer_id' => $event->getUserId(),
+                'influencer_id' => $influencerId,
                 'min_matching' => $data['messages']['value'],
                 'type_matching' => $typeMatching,
             );
@@ -118,7 +117,7 @@ class PrivacySubscriber implements EventSubscriberInterface
                 $compatibleOrSimilar = $typeMatching === 'compatibility' ? 'compatible' : 'similar';
                 $slogan = $this->translator->trans('followers.invitation_slogan', array('%username%' => $influencer->getUsername(), '%compatible_or_similar%' => $compatibleOrSimilar));
                 $invitationData = array(
-                    'userId' => $event->getUserId(),
+                    'userId' => $influencerId,
                     'groupId' => $group->getId(),
                     'available' => InvitationManager::MAX_AVAILABLE,
                     'slogan' => $slogan,

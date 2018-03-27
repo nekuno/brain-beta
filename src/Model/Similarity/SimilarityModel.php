@@ -9,7 +9,6 @@ use Model\Content\ContentPaginatedManager;
 use Model\Group\GroupManager;
 use Model\Profile\ProfileManager;
 use Model\Question\UserAnswerPaginatedManager;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 
@@ -345,7 +344,7 @@ class SimilarityModel
             )
             ->returns('similarity');
 
-        $result = $qb->getQuery()->getResultSet();
+        $qb->getQuery()->getResultSet();
     }
 
     /**
@@ -546,16 +545,10 @@ class SimilarityModel
         $contentLimit = 10;
         $skillLimit = 0;
 
-        try {
-            $profileA = $this->profileModel->getById($idA);
-            $profileB = $this->profileModel->getById($idB);
-        } catch (NotFoundHttpException $e) {
-            $profileA = array();
-            $profileB = array();
-        }
+        //TODO: Move "get locales for counting questions" to questionService, and this to a service too?
+        $interfaceLanguageA = $this->profileModel->getInterfaceLocale($idA);
+        $interfaceLanguageB = $this->profileModel->getInterfaceLocale($idB);
 
-        $interfaceLanguageA = isset($profileA['interfaceLanguage']) ? $profileA['interfaceLanguage'] : 'es';
-        $interfaceLanguageB = isset($profileB['interfaceLanguage']) ? $profileB['interfaceLanguage'] : 'es';
         $totalLinksA = $this->contentPaginatedModel->countTotal(array('id' => $idA));
         $totalLinksB = $this->contentPaginatedModel->countTotal(array('id' => $idB));
 

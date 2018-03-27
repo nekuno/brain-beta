@@ -108,7 +108,7 @@ class ThreadCachedManager
 
     }
 
-    protected function build(Row $cached)
+    protected function build($cached)
     {
         return array();
     }

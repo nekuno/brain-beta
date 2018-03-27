@@ -365,7 +365,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.filterusers.manager'] = function ($app) {
 
             $validator = new FilterUsersValidator($app['neo4j.graph_manager'], $app['metadata.service'], $app['fields']);
-            return new FilterUsersManager($app['neo4j.graph_manager'], $app['users.userFilterMetadata.manager'], $app['users.profileOption.manager'], $app['metadata.utilities'], $validator);
+            return new FilterUsersManager($app['neo4j.graph_manager'], $app['users.userFilterMetadata.manager'], $app['users.profileOption.manager'], $app['users.location.manager'],  $app['metadata.utilities'], $validator);
         };
 
         $app['users.filtercontent.manager'] = function ($app) {

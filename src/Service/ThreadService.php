@@ -81,7 +81,8 @@ class ThreadService
     public function createDefaultThreads($userId, $scenario)
     {
         $threadsData = $this->threadDataManager->getDefaultThreads($userId, $scenario);
-        $threads = $this->threadManager->createBatchForUser($userId, $threadsData);
+        $threads = $this->createBatchForUser($userId, $threadsData);
+
         foreach ($threads as $thread)
         {
             $this->threadManager->setAsDefault($thread->getId());
@@ -89,6 +90,31 @@ class ThreadService
         }
 
         return $threads;
+    }
+
+    /**
+     * @param $userId
+     * @param array $threadsData
+     * @return Thread[]
+     * @throws \Exception
+     */
+    public function createBatchForUser($userId, array $threadsData)
+    {
+        $returnThreads = array();
+
+        $existingThreads = $this->threadManager->getAllByUserId($userId);
+
+        foreach ($threadsData as $threadData) {
+            foreach ($existingThreads as $existingThread) {
+                if ($threadData['name'] == $existingThread->getName()) {
+                    continue 2;
+                }
+            }
+
+            $returnThreads[] = $this->createThread($userId, $threadData);
+        }
+
+        return $returnThreads;
     }
 
     public function createGroupThread(Group $group, $userId)
