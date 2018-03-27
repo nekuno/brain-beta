@@ -4,7 +4,6 @@ namespace Provider;
 
 use GuzzleHttp\Client;
 use Pimple\Container;
-use Silex\Application;
 use Pimple\ServiceProviderInterface;
 
 class GuzzleServiceProvider implements ServiceProviderInterface
@@ -40,9 +39,5 @@ class GuzzleServiceProvider implements ServiceProviderInterface
 
             return new Client($config);
         };
-    }
-
-    public function boot(Application $app)
-    {
     }
 }

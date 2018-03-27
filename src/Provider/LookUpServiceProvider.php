@@ -6,7 +6,6 @@ use GuzzleHttp\Client;
 use Pimple\Container;
 use Service\LookUp\LookUpFullContact;
 use Service\LookUp\LookUpPeopleGraph;
-use Silex\Application;
 use Pimple\ServiceProviderInterface;
 
 class LookUpServiceProvider implements ServiceProviderInterface
@@ -34,13 +33,4 @@ class LookUpServiceProvider implements ServiceProviderInterface
             return new LookUpPeopleGraph($app['peopleGraph.client'], $app['peopleGraph.consumer_key'], $app['url_generator']);
         };
     }
-
-    /**
-     * { @inheritdoc }
-     */
-    public function boot(Application $app)
-    {
-
-    }
-
 }

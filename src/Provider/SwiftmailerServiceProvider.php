@@ -12,6 +12,7 @@
 namespace Provider;
 
 use Pimple\Container;
+use Silex\Api\BootableProviderInterface;
 use Silex\Application;
 use Pimple\ServiceProviderInterface;
 
@@ -20,7 +21,7 @@ use Pimple\ServiceProviderInterface;
  *
  * @author Fabien Potencier <fabien@symfony.com>
  */
-class SwiftmailerServiceProvider implements ServiceProviderInterface
+class SwiftmailerServiceProvider implements ServiceProviderInterface, BootableProviderInterface
 {
     public function register(Container $app)
     {

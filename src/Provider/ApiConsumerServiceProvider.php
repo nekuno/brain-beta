@@ -11,7 +11,6 @@ use ApiConsumer\Factory\ResourceOwnerFactory;
 use Igorw\Silex\ConfigServiceProvider;
 use Pimple\Container;
 use Psr\Log\LoggerAwareInterface;
-use Silex\Application;
 use Pimple\ServiceProviderInterface;
 
 class ApiConsumerServiceProvider implements ServiceProviderInterface
@@ -77,14 +76,6 @@ class ApiConsumerServiceProvider implements ServiceProviderInterface
 
             return $fetcher;
         };
-    }
-
-    /**
-     * { @inheritdoc }
-     */
-    public function boot(Application $app)
-    {
-
     }
 
 }

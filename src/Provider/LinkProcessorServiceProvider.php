@@ -11,7 +11,6 @@ use ApiConsumer\LinkProcessor\LinkResolver;
 use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
 use ApiConsumer\LinkProcessor\Processor\ScraperProcessor\ScraperProcessor;
 use Pimple\Container;
-use Silex\Application;
 use Pimple\ServiceProviderInterface;
 
 class LinkProcessorServiceProvider implements ServiceProviderInterface
@@ -59,13 +58,5 @@ class LinkProcessorServiceProvider implements ServiceProviderInterface
             return new GoutteClientFactory();
         };
 
-    }
-
-    /**
-     * { @inheritdoc }
-     */
-    public function boot(Application $app)
-    {
-        // TODO: Implement boot() method.
     }
 }

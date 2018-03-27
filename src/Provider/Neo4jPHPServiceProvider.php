@@ -9,7 +9,6 @@ use Model\Neo4j\Neo4jHandler;
 use Monolog\Logger;
 use Pimple\Container;
 use Psr\Log\LoggerAwareInterface;
-use Silex\Application;
 use Pimple\ServiceProviderInterface;
 
 class Neo4jPHPServiceProvider implements ServiceProviderInterface
@@ -57,14 +56,6 @@ class Neo4jPHPServiceProvider implements ServiceProviderInterface
         };
         
         $app['monolog']->pushHandler($app['neo4j.logger.handler']);
-
-    }
-
-    /**
-     * { @inheritdoc }
-     */
-    public function boot(Application $app)
-    {
 
     }
 

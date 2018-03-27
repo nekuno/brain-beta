@@ -7,7 +7,6 @@ use HWI\Bundle\OAuthBundle\OAuth\RequestDataStorage\SessionStorage;
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Provider\OAuthProvider;
 use Pimple\Container;
 use Security\Http\ResourceOwnerMap;
-use Silex\Application;
 use Pimple\ServiceProviderInterface;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\Security\Core\User\UserChecker;
@@ -68,13 +67,4 @@ class OAuthServiceProvider implements ServiceProviderInterface
             return new OAuthProvider($app['security.users_provider'], $app['oauth.resorcer_owner_map'], $app['user.checker']);
         };
     }
-
-    /**
-     * { @inheritdoc }
-     */
-    public function boot(Application $app)
-    {
-
-    }
-
 }

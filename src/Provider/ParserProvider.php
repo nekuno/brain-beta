@@ -5,7 +5,6 @@ namespace Provider;
 use Goutte\Client;
 use Model\Parser\LinkedinParser;
 use Pimple\Container;
-use Silex\Application;
 use Pimple\ServiceProviderInterface;
 
 class ParserProvider implements ServiceProviderInterface
@@ -23,17 +22,8 @@ class ParserProvider implements ServiceProviderInterface
             return $client;
         };
 
-        $app['parser.linkedin'] = function (Application $app) {
+        $app['parser.linkedin'] = function ($app) {
             return new LinkedinParser($app['parser_provider.client']);
         };
     }
-
-    /**
-     * { @inheritdoc }
-     */
-    public function boot(Application $app)
-    {
-
-    }
-
 }

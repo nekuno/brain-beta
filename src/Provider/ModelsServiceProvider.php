@@ -70,7 +70,6 @@ use Model\User\UserTrackingManager;
 use Pimple\Container;
 use Security\UserProvider;
 use Service\Validator\FilterUsersValidator;
-use Silex\Application;
 use Pimple\ServiceProviderInterface;
 use Symfony\Component\Security\Core\Encoder\MessageDigestPasswordEncoder;
 
@@ -454,14 +453,6 @@ class ModelsServiceProvider implements ServiceProviderInterface
 
             return new UserTrackingManager($app['neo4j.graph_manager'], $app['orm.ems']['mysql_brain'], $app['dispatcher']);
         };
-    }
-
-    /**
-     * { @inheritdoc }
-     */
-    public function boot(Application $app)
-    {
-
     }
 
 }

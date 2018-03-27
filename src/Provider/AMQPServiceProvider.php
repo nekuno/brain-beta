@@ -5,7 +5,6 @@ namespace Provider;
 
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use Pimple\Container;
-use Silex\Application;
 use Pimple\ServiceProviderInterface;
 
 
@@ -28,12 +27,4 @@ class AMQPServiceProvider implements ServiceProviderInterface
             );
         };
     }
-
-    /**
-     * @param Application $app
-     */
-    public function boot(Application $app)
-    {
-    }
-
 }
