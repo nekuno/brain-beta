@@ -2,6 +2,7 @@
 
 namespace Paginator;
 
+use Model\Exception\ErrorList;
 use Model\Exception\ValidationException;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -55,9 +56,7 @@ class Paginator
 
         $offset = $request->get('offset', 0);
 
-        if (!$paginated->validateFilters($filters)) {
-            throw new ValidationException(array(), sprintf('Invalid filters in "%s"', get_class($paginated)));
-        }
+        $this->checkFilters($filters, $paginated);
 
         $items = $paginated->slice($filters, $offset, $limit);
         $total = $paginated->countTotal($filters);
@@ -136,5 +135,15 @@ class Paginator
         }
 
         return $nextLink;
+    }
+
+    protected function checkFilters(array $filters, PaginatedInterface $paginated)
+    {
+        if (!$paginated->validateFilters($filters)) {
+            $errorList = new ErrorList();
+            $errorMessage = sprintf('Invalid filters in "%s"', get_class($paginated));
+
+            throw new ValidationException($errorList, $errorMessage);
+        }
     }
 }

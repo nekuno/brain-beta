@@ -2,6 +2,7 @@
 
 namespace Model\Photo;
 
+use Model\Exception\ErrorList;
 use Model\Exception\ValidationException;
 use Model\User\User;
 
@@ -25,7 +26,9 @@ class GalleryManager
         $saved = file_put_contents($this->base . $path, $file);
 
         if ($saved === false) {
-            throw new ValidationException(array('photo' => 'File can not be saved'));
+            $errorList = new ErrorList();
+            $errorList->addError('photo', 'File can not be saved');
+            throw new ValidationException($errorList);
         }
 
         return $path;

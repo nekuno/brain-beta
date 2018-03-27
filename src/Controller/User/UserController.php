@@ -4,7 +4,6 @@ namespace Controller\User;
 
 use Model\Exception\ValidationException;
 use Model\Content\ContentPaginatedManager;
-use Model\Metadata\UserFilterMetadataManager;
 use Model\Rate\RateManager;
 use Model\Content\ContentReportManager;
 use Model\User\UserManager;
@@ -121,7 +120,7 @@ class UserController
 
         if (!$enabled) {
 
-            /** @var User\Device\DeviceModel $deviceModel */
+            /** @var \Model\Device\DeviceManager $deviceModel */
             $deviceModel = $app['users.device.model'];
             $allDevices = $deviceModel->getAll($user->getId());
             foreach ($allDevices as $device) {
