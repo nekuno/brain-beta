@@ -7,6 +7,7 @@ use Event\UserEvent;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
+use Model\Exception\ErrorList;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 use Model\Neo4j\Neo4jException;
@@ -15,7 +16,6 @@ use Model\LookUp\LookUpManager;
 use Model\Photo\PhotoManager;
 use Model\SocialNetwork\SocialProfile;
 use Model\Token\TokensManager;
-use Model\User\UserStatus;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -368,14 +368,11 @@ class UserManager
     //TODO: Move to Validator
     public function validate(array $data, $isUpdate = false)
     {
-
-        $errors = array();
+        $errorList = new ErrorList();
 
         $metadata = $this->getMetadata($isUpdate);
 
         foreach ($metadata as $fieldName => $fieldData) {
-
-            $fieldErrors = array();
 
             if (isset($fieldData['editable']) && $fieldData['editable'] === false) {
                 continue;
@@ -383,7 +380,7 @@ class UserManager
 
             if (!isset($data[$fieldName]) || !$data[$fieldName]) {
                 if (isset($fieldData['required']) && $fieldData['required'] === true) {
-                    $fieldErrors[] = sprintf('"%s" is required', $fieldName);
+                    $errorList->addError($fieldName, sprintf('"%s" is required', $fieldName));
                 }
             } else {
 
@@ -392,40 +389,36 @@ class UserManager
                 switch ($fieldData['type']) {
                     case 'integer':
                         if (!is_integer($fieldValue)) {
-                            $fieldErrors[] = sprintf('"%s" must be an integer', $fieldName);
+                            $errorList->addError($fieldName, sprintf('"%s" must be an integer', $fieldName));
                         }
                         break;
                     case 'string':
                         if (!is_string($fieldValue)) {
-                            $fieldErrors[] = sprintf('"%s" must be a string', $fieldName);
+                            $errorList->addError($fieldName, sprintf('"%s" must be a string', $fieldName));
                         }
                         break;
                     case 'photo':
                         if (!is_string($fieldValue)) {
-                            $fieldErrors[] = sprintf('"%s" must be a string', $fieldName);
+                            $errorList->addError($fieldName, sprintf('"%s" must be a string', $fieldName));
                         }
                         break;
                     case 'boolean':
                         if ($fieldValue !== true && $fieldValue !== false) {
-                            $fieldErrors[] = 'Must be a boolean.';
+                            $errorList->addError($fieldName, 'Must be a boolean.');
                         }
                         break;
                     case 'datetime':
                         $date = \DateTime::createFromFormat('Y-m-d H:i:s', $fieldValue);
                         if (!($date && $date->format('Y-m-d H:i:s') == $fieldValue)) {
-                            $fieldErrors[] = 'Invalid datetime format, valid format is "Y-m-d H:i:s".';
+                            $errorList->addError($fieldName, 'Invalid datetime format, valid format is "Y-m-d H:i:s".');
                         }
                         break;
                     case 'array':
                         if (!is_array($fieldValue)) {
-                            $fieldErrors[] = sprintf('"%s" must be an array', $fieldName);
+                            $errorList->addError($fieldName, sprintf('"%s" must be an array', $fieldName));
                         }
                         break;
                 }
-            }
-
-            if (count($fieldErrors) > 0) {
-                $errors[$fieldName] = $fieldErrors;
             }
 
         }
@@ -438,7 +431,7 @@ class UserManager
         }
 
         if ($isUpdate && !isset($data['userId'])) {
-            $errors['userId'] = array('user ID is not defined');
+            $errorList->addError('userId', 'user ID is not defined');
         }
 
         if (isset($data['userId'])) {
@@ -448,32 +441,28 @@ class UserManager
         $diff = array_diff_key($data, $public);
         if (count($diff) > 0) {
             foreach ($diff as $invalidKey => $invalidValue) {
-                $errors[$invalidKey] = array(sprintf('Invalid key "%s"', $invalidKey));
+                $errorList->addError($invalidKey, sprintf('Invalid key "%s"', $invalidKey));
             }
         }
 
-        if (count($errors) > 0) {
-            throw new ValidationException($errors);
+        if ($errorList->hasErrors()) {
+            throw new ValidationException($errorList);
         }
     }
 
     public function validateUsername($userId, $username)
     {
+        $errorList = new ErrorList();
         $username = trim($username);
         if (!ctype_alnum(str_replace('_', '', $username))) {
-            throw new ValidationException(
-                array(
-                    'username' => array('Invalid username. Only letters, numbers and _ are valid.')
-                )
-            );
+            $errorList->addError('username', 'Invalid username. Only letters, numbers and _ are valid.');
+            throw new ValidationException($errorList);
         }
         if (strlen($username) > 25) {
-            throw new ValidationException(
-                array(
-                    'username' => array('Invalid username. Max 25 characters.')
-                )
-            );
+            $errorList->addError('username', 'Invalid username. Max 25 characters.');
+            throw new ValidationException($errorList);
         }
+
         $user = array('username' => $username);
         $this->updateCanonicalFields($user);
         foreach (array('usernameCanonical' => $user['usernameCanonical'], 'slug' => $user['slug']) as $key => $value) {
@@ -493,11 +482,8 @@ class UserManager
             $result = $query->getResultSet();
 
             if ($result->count() > 0 || !$username) {
-                throw new ValidationException(
-                    array(
-                        'username' => array('Invalid username. Username already exists')
-                    )
-                );
+                $errorList->addError('username', 'Invalid username. Username already exists');
+                throw new ValidationException($errorList);
             }
         }
     }

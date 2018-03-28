@@ -7,6 +7,7 @@ use Everyman\Neo4j\Label;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
+use Model\Exception\ErrorList;
 use Model\Exception\ValidationException;
 use Model\Metadata\MetadataManager;
 use Model\Neo4j\GraphManager;
@@ -153,6 +154,7 @@ class PrivacyManager
 
         $this->savePrivacyData($privacyNode, $data);
         $this->dispatcher->dispatch(\AppEvents::PRIVACY_UPDATED, new PrivacyEvent($id, $data));
+
         return $this->getById($id);
     }
 
@@ -178,12 +180,10 @@ class PrivacyManager
      */
     public function validate(array $data)
     {
-        $errors = array();
+        $errorList = new ErrorList();
         $metadata = $this->getMetadata();
 
         foreach ($metadata as $fieldName => $fieldData) {
-
-            $fieldErrors = array();
 
             if (isset($data[$fieldName]) && isset($data[$fieldName]['key'])) {
 
@@ -195,44 +195,39 @@ class PrivacyManager
                         case 'choice':
                             $choices = $fieldData['choices'];
                             if (!in_array($fieldValueName, array_keys($choices))) {
-                                $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $fieldValueName, implode("', '", array_keys($choices)));
+                                $errorList->addError($fieldName, sprintf('Option with value "%s" is not valid, possible values are "%s"', $fieldValueName, implode("', '", array_keys($choices))));
                             }
                             $valueRequired = isset($choices[$fieldValueName]['value_required']) ? $choices[$fieldValueName]['value_required'] : null;
                             if ($valueRequired && !is_int($fieldValue)) {
-                                $fieldErrors[] = sprintf('Integer value required for "%s"', $fieldValueName);
+                                $errorList->addError($fieldName, sprintf('Integer value required for "%s"', $fieldValueName));
                             }
                             $minValue = isset($choices[$fieldValueName]['min_value']) ? $choices[$fieldValueName]['min_value'] : null;
                             if ($valueRequired
                                 && !is_null($minValue)
                                 && $fieldValue < $minValue) {
-                                $fieldErrors[] = sprintf('Value "%s" for "%s" must be equal or greater than "%s"', $fieldValue, $fieldValueName, $minValue);
+                                $errorList->addError($fieldName, sprintf('Value "%s" for "%s" must be equal or greater than "%s"', $fieldValue, $fieldValueName, $minValue));
                             }
                             $maxValue = isset($choices[$fieldValueName]['max_value']) ? $choices[$fieldValueName]['max_value'] : null;
                             if ($valueRequired
                                 && !is_null($maxValue)
                                 && $fieldValue > $maxValue) {
-                                $fieldErrors[] = sprintf('Value "%s" for "%s" must be equal or lesser than "%s"', $fieldValue, $fieldValueName, $maxValue);
+                                $errorList->addError($fieldName, sprintf('Value "%s" for "%s" must be equal or lesser than "%s"', $fieldValue, $fieldValueName, $maxValue));
                             }
                             if (!$valueRequired && $fieldValue) {
-                                $fieldErrors[] = sprintf('"%s" option can`t have a value', $fieldValueName);
+                                $errorList->addError($fieldName, sprintf('"%s" option can`t have a value', $fieldValueName));
                             }
                             break;
                     }
                 }
             } else {
-
                 if (isset($fieldData['required']) && $fieldData['required'] === true) {
-                    $fieldErrors[] = 'It\'s required.';
+                    $errorList->addError($fieldName, 'It\'s required.');
                 }
-            }
-
-            if (count($fieldErrors) > 0) {
-                $errors[$fieldName] = $fieldErrors;
             }
         }
 
-        if (count($errors) > 0) {
-            throw new ValidationException($errors);
+        if ($errorList->hasErrors()) {
+            throw new ValidationException($errorList);
         }
     }
 

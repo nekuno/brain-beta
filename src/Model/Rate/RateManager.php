@@ -5,6 +5,7 @@ namespace Model\Rate;
 use Event\ContentRatedEvent;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
+use Model\Exception\ErrorList;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 use Model\Token\TokensManager;
@@ -389,13 +390,13 @@ class RateManager
      */
     private function validate($rate)
     {
-        $errors = array();
+        $errorList = new ErrorList();
         if ($rate !== self::LIKE && $rate != self::DISLIKE && $rate !== self::UNRATE && $rate != self::IGNORE) {
-            $errors['rate'] = array(sprintf('%s is not a valid rate', $rate));
+            $errorList->addError('rate', sprintf('%s is not a valid rate', $rate));
         }
 
-        if (count($errors) > 0) {
-            throw new ValidationException($errors);
+        if ($errorList->hasErrors()) {
+            throw new ValidationException($errorList);
         }
     }
 

@@ -3,7 +3,9 @@
 namespace Controller\User;
 
 use Event\UserEvent;
+use Model\Exception\ErrorList;
 use Model\Exception\ValidationException;
+use Model\Photo\PhotoManager;
 use Model\User\User;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
@@ -11,6 +13,10 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class PhotoController
 {
+    /**
+     * @var PhotoManager
+     */
+    protected $manager;
 
     public function getAllAction(Application $app, User $user)
     {
@@ -33,29 +39,41 @@ class PhotoController
 
     public function postAction(Application $app, Request $request, User $user)
     {
-        $manager = $app['users.photo.manager'];
+        $this->manager = $app['users.photo.manager'];
 
-        if ($request->request->has('base64')) {
-            if (!$file = base64_decode($request->request->get('base64'))) {
-                throw new ValidationException(array('photo' => array('Invalid "base64" provided')));
-            }
-        } elseif ($request->request->has('url')) {
-            $url = $request->request->get('url');
-            if (filter_var($url, FILTER_VALIDATE_URL) === false) {
-                throw new ValidationException(array('photo' => array('Invalid "url" provided')));
-            }
-            $file = @file_get_contents($url);
-            if (!$file) {
-                throw new ValidationException(array('photo' => array('Unable to get photo from "url"')));
-            }
-        } else {
-            throw new ValidationException(array('photo' => array('Invalid photo provided, param "base64" or "url" must be provided')));
-
-        }
-
-        $photo = $manager->create($user, $file);
+        $file = $this->getPostFile($request);
+        $photo = $this->manager->create($user, $file);
 
         return $app->json($photo, 201);
+    }
+
+    protected function getPostFile(Request $request)
+    {
+        if ($request->request->has('base64')) {
+            $file = base64_decode($request->request->get('base64'));
+            if (!$file) {
+                $this->manager->throwPhotoException('Invalid "base64" provided');
+            }
+
+            return $file;
+        }
+
+        if ($request->request->has('url')) {
+            $url = $request->request->get('url');
+            if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+                $this->manager->throwPhotoException('Invalid "url" provided');
+            }
+
+            $file = @file_get_contents($url);
+            if (!$file) {
+                $this->manager->throwPhotoException('Unable to get photo from "url"');
+            }
+
+            return $file;
+        }
+
+        $this->manager->throwPhotoException('Invalid photo provided, param "base64" or "url" must be provided');
+        return null;
     }
 
     public function postProfileAction(Application $app, Request $request, User $user, $photoId)

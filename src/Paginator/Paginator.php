@@ -117,7 +117,7 @@ class Paginator
      * @param int $offset
      * @param int $limit
      * @param int $total
-     * @return \Symfony\Component\HttpFoundation\Request mixed
+     * @return string mixed
      */
     protected function createNextLink(Request $request, $offset, $limit, $total)
     {
