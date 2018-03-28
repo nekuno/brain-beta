@@ -31,7 +31,7 @@ class GuzzleServiceProvider implements ServiceProviderInterface
 
             $config = array(
                 'base_uri' => $app['instant.host'],
-                'auth', array('brain', $app['instant_api_secret'])
+                'auth' => array('brain', $app['instant_api_secret'])
             );
             if ($app['guzzle.verify']) {
                 $config['verify'] = $app['guzzle.verify'];
