@@ -6,7 +6,7 @@ namespace Worker;
 use Model\Link\LinkManager;
 use Model\Neo4j\Neo4jException;
 use Model\Affinity\AffinityManager;
-use Model\Similarity\SimilarityModel;
+use Model\Similarity\SimilarityManager;
 use PhpAmqpLib\Channel\AMQPChannel;
 use Service\AffinityRecalculations;
 use Service\AMQPManager;
@@ -35,7 +35,7 @@ class PredictionWorker extends LoggerAwareWorker implements RabbitMQConsumerInte
     protected $linkModel;
 
     /**
-     * @var SimilarityModel
+     * @var SimilarityManager
      */
     protected $similarityModel;
 

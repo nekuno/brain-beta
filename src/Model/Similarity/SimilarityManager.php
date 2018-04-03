@@ -12,7 +12,7 @@ use Model\Question\UserAnswerPaginatedManager;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 
-class SimilarityModel
+class SimilarityManager
 {
     const numberOfSecondsToCache = 30;
     const ALL = 1;

@@ -53,7 +53,7 @@ use Model\Recommendation\UserRecommendationPaginatedManager;
 use Model\Relations\RelationsManager;
 use Model\Relations\RelationsPaginatedManager;
 use Model\Shares\SharesManager;
-use Model\Similarity\SimilarityModel;
+use Model\Similarity\SimilarityManager;
 use Model\SocialNetwork\LinkedinSocialNetworkManager;
 use Model\SocialNetwork\SocialProfileManager;
 use Model\Thread\ThreadCachedManager;
@@ -283,7 +283,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.similarity.model'] = $app->share(
             function ($app) {
 
-                return new SimilarityModel($app['dispatcher'], $app['neo4j.graph_manager'], $app['users.questions.model'], $app['users.content.model'], $app['users.profile.model'], $app['users.groups.model']);
+                return new SimilarityManager($app['dispatcher'], $app['neo4j.graph_manager'], $app['users.questions.model'], $app['users.content.model'], $app['users.profile.model'], $app['users.groups.model']);
             }
         );
 

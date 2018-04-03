@@ -13,7 +13,7 @@ use Model\Popularity\PopularityManager;
 use Model\Question\QuestionManager;
 use Model\User\User;
 use Model\Matching\MatchingManager;
-use Model\Similarity\SimilarityModel;
+use Model\Similarity\SimilarityManager;
 use Model\User\UserManager;
 use PhpAmqpLib\Channel\AMQPChannel;
 use Service\AffinityRecalculations;
@@ -40,7 +40,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
      */
     protected $matchingModel;
     /**
-     * @var SimilarityModel
+     * @var SimilarityManager
      */
     protected $similarityModel;
     /**
@@ -68,7 +68,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
         AMQPChannel $channel,
         UserManager $userManager,
         MatchingManager $matchingModel,
-        SimilarityModel $similarityModel,
+        SimilarityManager $similarityModel,
         UserStatsService $userStatsService,
         QuestionManager $questionModel,
         AffinityRecalculations $affinityRecalculations,
@@ -124,7 +124,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                         /* @var $currentUser User */
                         $userB = $currentUser->getId();
                         $this->popularityManager->updatePopularityByUser($userB);
-                        $similarity = $this->similarityModel->getSimilarityBy(SimilarityModel::INTERESTS, $userA, $userB);
+                        $similarity = $this->similarityModel->getSimilarityBy(SimilarityManager::INTERESTS, $userA, $userB);
                         $percentage = round(($userIndex + 1) / $usersCount * 100);
                         $this->logger->info(sprintf('   Similarity by interests between users %d - %d: %s', $userA, $userB, $similarity['interests']));
                         if ($percentage > $prevPercentage) {
@@ -222,7 +222,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
             /* @var $currentUser User */
             $userB = $currentUser->getId();
             if ($userA <> $userB) {
-                $similarity = $this->similarityModel->getSimilarityBy(SimilarityModel::QUESTIONS, $userA, $userB);
+                $similarity = $this->similarityModel->getSimilarityBy(SimilarityManager::QUESTIONS, $userA, $userB);
                 $matching = $this->matchingModel->calculateMatchingBetweenTwoUsersBasedOnAnswers($userA, $userB);
                 $percentage = round(($userIndex + 1) / $usersCount * 100);
                 $this->logger->info(sprintf('   Similarity by questions between users %d - %d: %s', $userA, $userB, $similarity['questions']));

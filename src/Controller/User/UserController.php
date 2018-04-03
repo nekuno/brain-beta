@@ -252,7 +252,7 @@ class UserController
         }
 
         try {
-            /* @var $model \Model\Similarity\SimilarityModel */
+            /* @var $model \Model\Similarity\SimilarityManager */
             $model = $app['users.similarity.model'];
             $similarity = $model->getCurrentSimilarity($user->getId(), $otherUserId);
             $result = array('similarity' => $similarity['similarity']);
