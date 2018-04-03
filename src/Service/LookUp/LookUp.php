@@ -4,6 +4,7 @@ namespace Service\LookUp;
 
 use GuzzleHttp\Client;
 use Model\Entity\LookUpData;
+use Model\Exception\ErrorList;
 use Model\Exception\ValidationException;
 use Service\LookUp\LookUpInterface\LookUpInterface;
 use Symfony\Component\Routing\Generator\UrlGenerator;
@@ -49,7 +50,9 @@ abstract class LookUp implements LookUpInterface
     protected function validateType($lookUpType)
     {
         if (!in_array($lookUpType, $this->getBaseTypes())) {
-            throw new ValidationException(array($lookUpType . ' type is not valid'));
+            $errorList = new ErrorList();
+            $errorList->addError('lookUp', $lookUpType . ' type is not valid');
+            throw new ValidationException($errorList);
         }
     }
 

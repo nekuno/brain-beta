@@ -92,7 +92,7 @@ class ExceptionLoggerSubscriber implements EventSubscriberInterface, LoggerAware
             foreach ($fieldErrors as $error)
             {
                 /** @var ConsistencyError $error */
-                $lines[] = sprintf('%s error in field : %s', $error->getErrorType(), $field,  $error->getMessage());
+                $lines[] = sprintf('ERROR: "%s" in field: %s', $error->getMessage(), $field);
             }
         }
 

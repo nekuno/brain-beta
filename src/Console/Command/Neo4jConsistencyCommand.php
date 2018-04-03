@@ -101,7 +101,7 @@ class Neo4jConsistencyCommand extends ApplicationAwareCommand
         }
 
         foreach ($relationshipOtherLabelConsistencyErrors as $message => $nodeIds) {
-            $this->outputErrorIds('Relationships with messsage ' . $message, $nodeIds, $output);
+            $this->outputErrorIds('Relationships with message ' . $message, $nodeIds, $output);
         }
 
         $this->outputGeneralErrors($generalErrors, $output);

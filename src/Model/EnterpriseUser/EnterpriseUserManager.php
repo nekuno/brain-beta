@@ -3,6 +3,7 @@
 namespace Model\EnterpriseUser;
 
 use Everyman\Neo4j\Query\Row;
+use Model\Exception\ErrorList;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -111,28 +112,28 @@ class EnterpriseUserManager
 
     public function validate(array $data)
     {
-        $errors = array();
+        $errorList = new ErrorList();
 
         if (!isset($data['admin_id']) || !$data['admin_id']) {
-            $errors['admin_id'] = array('"admin_id" is required');
+            $errorList->addError('admin_id', '"admin_id" is required');
         } elseif ((string)(int)$data['admin_id'] !== (string)$data['admin_id']) {
-            $errors['admin_id'] = array('"admin_id" must be an integer');
+            $errorList->addError('admin_id', '"admin_id" must be an integer');
         }
 
         if (!isset($data['username']) || !$data['username']) {
-            $errors['username'] = array('"username" is required');
+            $errorList->addError('username', '"username" is required');
         } elseif (!is_string($data['username'])) {
-            $errors['username'] = array('"username" must be string');
+            $errorList->addError('username', '"username" must be string');
         }
 
         if (!isset($data['email']) || !$data['email']) {
-            $errors['email'] = array('"email" is required');
+            $errorList->addError('email', '"email" is required');
         } elseif (isset($data['email']) && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            $errors['email'] = array('"email" must be a valid email');
+            $errorList->addError('email', '"email" must be a valid email');
         }
 
-        if (count($errors) > 0) {
-            throw new ValidationException($errors);
+        if ($errorList->hasErrors()) {
+            throw new ValidationException($errorList);
         }
     }
 

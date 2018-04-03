@@ -3,6 +3,7 @@
 namespace Service\LookUp;
 
 use Model\Entity\LookUpData;
+use Model\Exception\ErrorList;
 use Model\Exception\ValidationException;
 
 class LookUpPeopleGraph extends LookUp
@@ -88,21 +89,21 @@ class LookUpPeopleGraph extends LookUp
 
     protected function validateValue($lookUpType, $value)
     {
-        $error = '';
+        $errorList = new ErrorList();
         if ($lookUpType === self::EMAIL_TYPE) {
             if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
-                $error = $value . ' is not a valid email';
+                $errorList->addError('lookUp', $value . ' is not a valid email');
             }
         } elseif ($lookUpType === self::URL_TYPE) {
             if (!filter_var($value, FILTER_VALIDATE_URL)) {
-                $error = $value . ' is not a valid url';
+                $errorList->addError('lookUp', $value . ' is not a valid url');
             }
         } else {
-            $error = $lookUpType . ' is not a valid type';
+            $errorList->addError('lookUp', $value . ' is not a valid type');
         }
 
-        if ($error !== '') {
-            throw new ValidationException(array($error));
+        if ($errorList->hasErrors()) {
+            throw new ValidationException($errorList);
         }
 
         return true;
