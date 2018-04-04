@@ -2,23 +2,18 @@
 
 namespace Provider;
 
-use Controller\ControllerResolver;
-use Silex\Application;
-use Silex\ServiceProviderInterface;
+use Controller\ArgumentValueResolver;
+use Pimple\Container;
+use Pimple\ServiceProviderInterface;
+use Silex\AppArgumentValueResolver;
+use Symfony\Component\HttpKernel\Controller\ArgumentResolver;
 
 class ServiceControllerServiceProvider implements ServiceProviderInterface
 {
-    public function register(Application $app)
+    public function register(Container $app)
     {
-        $app['resolver'] = $app->share(
-            function () use ($app) {
-                return new ControllerResolver($app, $app['logger']);
-            }
-        );
-    }
-
-    public function boot(Application $app)
-    {
-        // noop
+        $app['argument_value_resolvers'] = function ($app) {
+            return array_merge([new ArgumentValueResolver($app)], [new AppArgumentValueResolver($app)], ArgumentResolver::getDefaultArgumentValueResolvers());
+        };
     }
 }

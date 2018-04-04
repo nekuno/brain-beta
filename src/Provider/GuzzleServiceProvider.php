@@ -3,8 +3,8 @@
 namespace Provider;
 
 use GuzzleHttp\Client;
-use Silex\Application;
-use Silex\ServiceProviderInterface;
+use Pimple\Container;
+use Pimple\ServiceProviderInterface;
 
 class GuzzleServiceProvider implements ServiceProviderInterface
 {
@@ -12,38 +12,32 @@ class GuzzleServiceProvider implements ServiceProviderInterface
     /**
      * Register Guzzle with Silex
      *
-     * @param Application $app Application to register with
+     * @param Container $app Application to register with
      */
-    public function register(Application $app)
+    public function register(Container $app)
     {
 
-        $app['guzzle.client'] = $app->share(
-            function () use ($app) {
+        $app['guzzle.client'] = function ($app) {
 
-                $c = new Client();
-                if ($app['guzzle.verify']) {
-                    $c->setDefaultOption('verify', $app['guzzle.verify']);
-                }
-
-                return $c;
+            $config = array();
+            if ($app['guzzle.verify']) {
+                $config['verify'] = $app['guzzle.verify'];
             }
-        );
 
-        $app['instant.client'] = $app->share(
-            function (Application $app) {
+            return new Client($config);
+        };
 
-                $c = new Client(array('base_url' => $app['instant.host']));
-                if ($app['guzzle.verify']) {
-                    $c->setDefaultOption('verify', $app['guzzle.verify']);
-                }
-                $c->setDefaultOption('auth', array('brain', $app['instant_api_secret']));
+        $app['instant.client'] = function ($app) {
 
-                return $c;
+            $config = array(
+                'base_uri' => $app['instant.host'],
+                'auth' => array('brain', $app['instant_api_secret'])
+            );
+            if ($app['guzzle.verify']) {
+                $config['verify'] = $app['guzzle.verify'];
             }
-        );
-    }
 
-    public function boot(Application $app)
-    {
+            return new Client($config);
+        };
     }
 }

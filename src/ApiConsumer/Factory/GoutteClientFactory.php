@@ -33,10 +33,10 @@ class GoutteClientFactory
     {
         $defaultOptions = array(
             'timeout' => 10,
-            'connect_timeout' => 10
+            'connect_timeout' => 10,
+            'verify' => false
         );
-        $config = array('defaults' => $defaultOptions);
 
-        return $config;
+        return $defaultOptions;
     }
 }

@@ -8,8 +8,7 @@ use Buzz\Exception\RequestException;
 use Buzz\Message\Response;
 use Model\Link\Link;
 use Model\Token\Token;
-use Model\Token\TokensManager;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\TwitterResourceOwner as TwitterResourceOwnerBase;
 
 class TwitterResourceOwner extends TwitterResourceOwnerBase
@@ -32,7 +31,7 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
     /**
      * {@inheritDoc}
      */
-    protected function configureOptions(OptionsResolverInterface $resolver)
+    protected function configureOptions(OptionsResolver $resolver)
     {
         $this->traitConfigureOptions($resolver);
         parent::configureOptions($resolver);

@@ -4,8 +4,8 @@ namespace Provider;
 
 use Paginator\ContentPaginator;
 use Paginator\Paginator;
-use Silex\Application;
-use Silex\ServiceProviderInterface;
+use Pimple\Container;
+use Pimple\ServiceProviderInterface;
 
 class PaginatorServiceProvider implements ServiceProviderInterface
 {
@@ -13,31 +13,19 @@ class PaginatorServiceProvider implements ServiceProviderInterface
     /**
      * { @inheritdoc }
      */
-    public function register(Application $app)
+    public function register(Container $app)
     {
-        $app['paginator'] = $app->share(
-            function ($app) {
-                $paginator = new Paginator();
+        $app['paginator'] = function ($app) {
+            $paginator = new Paginator();
 
-                return $paginator;
-            }
-        );
+            return $paginator;
+        };
 
-        $app['paginator.content'] = $app->share(
-            function ($app) {
-                $paginator = new ContentPaginator();
+        $app['paginator.content'] = function ($app) {
+            $paginator = new ContentPaginator();
 
-                return $paginator;
-            }
-        );
-    }
-
-    /**
-     * { @inheritdoc }
-     */
-    public function boot(Application $app)
-    {
-
+            return $paginator;
+        };
     }
 
 }

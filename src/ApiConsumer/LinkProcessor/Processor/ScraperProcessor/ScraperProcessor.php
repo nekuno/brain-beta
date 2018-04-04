@@ -45,8 +45,6 @@ class ScraperProcessor extends AbstractScraperProcessor
         $url = $preprocessedLink->getUrl();
 
         try {
-            $this->client->getClient()->setDefaultOption('timeout', 30.0);
-            $this->client->getClient()->setDefaultOption('connect_timeout', 10);
             $crawler = $this->client->request('GET', $url);
         } catch (\LogicException $e) {
             $this->client = $this->clientFactory->build();

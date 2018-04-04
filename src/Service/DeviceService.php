@@ -6,7 +6,7 @@ use GuzzleHttp\Client;
 use Model\Device\Device;
 use Model\Device\DeviceManager;
 use Model\Profile\ProfileManager;
-use Silex\Translator;
+use Symfony\Component\Translation\Translator;
 
 class DeviceService
 {

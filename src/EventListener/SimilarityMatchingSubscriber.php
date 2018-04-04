@@ -11,7 +11,7 @@ use Model\Profile\ProfileManager;
 use Model\User\UserManager;
 use Service\EmailNotifications;
 use Service\NotificationManager;
-use Silex\Translator;
+use Symfony\Component\Translation\Translator;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class SimilarityMatchingSubscriber implements EventSubscriberInterface

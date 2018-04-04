@@ -8,7 +8,7 @@ use Model\Invitation\InvitationManager;
 use Model\Profile\ProfileManager;
 use Model\User\UserManager;
 use Service\GroupService;
-use Silex\Translator;
+use Symfony\Component\Translation\Translator;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class PrivacySubscriber implements EventSubscriberInterface

@@ -14,7 +14,6 @@ use Model\Token\Token;
 use Model\Token\TokensManager;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use Symfony\Component\Security\Http\HttpUtils;
 use Buzz\Message\RequestInterface as HttpRequestInterface;
 
@@ -273,9 +272,9 @@ trait AbstractResourceOwnerTrait
     /**
      * Configure the option resolver
      *
-     * @param OptionsResolverInterface $resolver
+     * @param OptionsResolver $resolver
      */
-    protected function configureOptions(OptionsResolverInterface $resolver)
+    protected function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setRequired(
             array()

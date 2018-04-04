@@ -4,7 +4,7 @@ namespace ApiConsumer\ResourceOwner;
 
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
 use Model\Token\Token;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\GoogleResourceOwner as GoogleResourceOwnerBase;
 
 class GoogleResourceOwner extends GoogleResourceOwnerBase
@@ -67,7 +67,7 @@ class GoogleResourceOwner extends GoogleResourceOwnerBase
     /**
      * {@inheritDoc}
      */
-    protected function configureOptions(OptionsResolverInterface $resolver)
+    protected function configureOptions(OptionsResolver $resolver)
     {
         $this->traitConfigureOptions($resolver);
         parent::configureOptions($resolver);

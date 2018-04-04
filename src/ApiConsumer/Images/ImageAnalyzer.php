@@ -3,8 +3,8 @@
 namespace ApiConsumer\Images;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\Message\Response;
-use GuzzleHttp\Message\ResponseInterface;
+use GuzzleHttp\Psr7\Response;
+use Psr\Http\Message\ResponseInterface;
 use Model\Link\Image;
 use Model\Link\Link;
 
@@ -177,9 +177,9 @@ class ImageAnalyzer
         }
 
         $length = $this->getLength($head, $imageUrl);
+        $contentType = isset($head->getHeader('Content-Type')[0]) ? $head->getHeader('Content-Type')[0] : null;
 
-        $response = new ImageResponse($imageUrl, $head->getStatusCode(), $head->getHeader('Content-Type'), $length);
-
+        $response = new ImageResponse($imageUrl, $head->getStatusCode(), $contentType, $length);
         $this->responses[$imageUrl] = $response;
 
         return $response;
@@ -187,7 +187,7 @@ class ImageAnalyzer
 
     private function getLength(ResponseInterface $response, $imageUrl)
     {
-        $length = !empty($response->getHeader('Content-Length')) ? $response->getHeader('Content-Length') : null;
+        $length = !empty($response->getHeader('Content-Length')) ? $response->getHeader('Content-Length')[0] : null;
 
         $length = $length ?: ($response->getHeader('Accept-Ranges') ? $this->getPartialImage($imageUrl) : null);
 

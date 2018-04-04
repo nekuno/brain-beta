@@ -1,6 +1,6 @@
 <?php
 
-use Dflydev\Silex\Provider\DoctrineOrm\DoctrineOrmServiceProvider;
+use Dflydev\Provider\DoctrineOrm\DoctrineOrmServiceProvider;
 use Igorw\Silex\ConfigServiceProvider;
 use Provider\AMQPServiceProvider;
 use Provider\ApiConsumerServiceProvider;
@@ -18,9 +18,10 @@ use Silex\Provider\DoctrineServiceProvider;
 use Silex\Provider\MonologServiceProvider;
 use Silex\Provider\ServiceControllerServiceProvider;
 use Provider\SwiftmailerServiceProvider;
-use Silex\Provider\UrlGeneratorServiceProvider;
+use Silex\Provider\RoutingServiceProvider;
 use Silex\Provider\ValidatorServiceProvider;
 use Silex\Provider\TwigServiceProvider;
+use Silex\Provider\LocaleServiceProvider;
 use Silex\Provider\TranslationServiceProvider;
 use Sorien\Provider\PimpleDumpProvider;
 
@@ -41,7 +42,7 @@ $app['images_web_dir'] = __DIR__ . $app['images_relative_dir'];
 $app->register(new DoctrineServiceProvider());
 $app->register(new DoctrineOrmServiceProvider());
 $app->register(new Neo4jPHPServiceProvider());
-$app->register(new UrlGeneratorServiceProvider());
+$app->register(new RoutingServiceProvider());
 $app->register(new GuzzleServiceProvider());
 $app->register(new ValidatorServiceProvider());
 $app->register(new \Provider\ServiceControllerServiceProvider());
@@ -53,12 +54,13 @@ $app->register(new LookUpServiceProvider());
 $app->register(new PaginatorServiceProvider());
 $app->register(new SwiftmailerServiceProvider());
 $app->register(new AMQPServiceProvider());
+$app->register(new LocaleServiceProvider());
 $app->register(new TranslationServiceProvider(), array('locale_fallbacks' => array('en', 'es')));
 $app->register(new ServicesServiceProvider());
 $app->register(new ModelsServiceProvider());
 $app->register(new \Provider\OAuthServiceProvider());
 $app->register(new Silex\Provider\SecurityServiceProvider());
-$app->register(new Cocur\Slugify\Bridge\Silex\SlugifyServiceProvider());
+$app->register(new Cocur\Slugify\Bridge\Silex2\SlugifyServiceProvider());
 $app['security.jwt'] = array(
     'secret_key' => $app['secret'],
     'life_time' => $app['life_time'],

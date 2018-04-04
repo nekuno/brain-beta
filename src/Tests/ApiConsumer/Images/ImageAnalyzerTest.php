@@ -4,7 +4,7 @@ namespace Tests\ApiConsumer\Images;
 
 use ApiConsumer\Images\ImageAnalyzer;
 use ApiConsumer\Images\ProcessingImage;
-use GuzzleHttp\Message\Response;
+use GuzzleHttp\Psr7\Response;
 use Model\Link\Image;
 use Model\Link\Link;
 
@@ -20,7 +20,9 @@ class ImageAnalyzerTest extends \PHPUnit_Framework_TestCase
             $imageUrls[] = new ProcessingImage($url);
         }
 
-        $client = $this->getMockBuilder('GuzzleHttp\Client')->getMock();
+        $client = $this->getMockBuilder('GuzzleHttp\Client')
+            ->setMethods(['head'])
+            ->getMock();
         $client
             ->expects($this->atLeastOnce())
             ->method('head')
@@ -74,7 +76,9 @@ class ImageAnalyzerTest extends \PHPUnit_Framework_TestCase
      */
     public function testFilterToReprocess(array $links, $responses, $expectedLinks, $message)
     {
-        $client = $this->getMockBuilder('GuzzleHttp\Client')->getMock();
+        $client = $this->getMockBuilder('GuzzleHttp\Client')
+            ->setMethods(['head'])
+            ->getMock();
         $client
             ->expects($this->any())
             ->method('head')

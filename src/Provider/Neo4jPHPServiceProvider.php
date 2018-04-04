@@ -7,9 +7,9 @@ use Model\Neo4j\Constraints;
 use Model\Neo4j\GraphManager;
 use Model\Neo4j\Neo4jHandler;
 use Monolog\Logger;
+use Pimple\Container;
 use Psr\Log\LoggerAwareInterface;
-use Silex\Application;
-use Silex\ServiceProviderInterface;
+use Pimple\ServiceProviderInterface;
 
 class Neo4jPHPServiceProvider implements ServiceProviderInterface
 {
@@ -17,60 +17,45 @@ class Neo4jPHPServiceProvider implements ServiceProviderInterface
     /**
      * { @inheritdoc }
      */
-    public function register(Application $app)
+    public function register(Container $app)
     {
 
         // Initialize neo4j
-        $app['neo4j.client'] = $app->share(
-            function ($app) {
+        $app['neo4j.client'] = function ($app) {
 
-                $client = new Client($app['neo4j.options']['host'], $app['neo4j.options']['port']);
+            $client = new Client($app['neo4j.options']['host'], $app['neo4j.options']['port']);
 
-                if (isset($app['neo4j.options']['auth']) && $app['neo4j.options']['auth']) {
-                    $client
-                        ->getTransport()
-                        ->setAuth($app['neo4j.options']['user'], $app['neo4j.options']['pass']);
-                }
-
-                return $client;
+            if (isset($app['neo4j.options']['auth']) && $app['neo4j.options']['auth']) {
+                $client
+                    ->getTransport()
+                    ->setAuth($app['neo4j.options']['user'], $app['neo4j.options']['pass']);
             }
-        );
 
-        $app['neo4j.graph_manager'] = $app->share(
-            function ($app) {
+            return $client;
+        };
 
-                $manager = new GraphManager($app['neo4j.client']);
+        $app['neo4j.graph_manager'] = function ($app) {
 
-                if ($manager instanceof LoggerAwareInterface) {
-                    $manager->setLogger($app['monolog']);
-                }
+            $manager = new GraphManager($app['neo4j.client']);
 
-                return $manager;
+            if ($manager instanceof LoggerAwareInterface) {
+                $manager->setLogger($app['monolog']);
             }
-        );
 
-        $app['neo4j.constraints'] = $app->share(
-            function ($app) {
+            return $manager;
+        };
 
-                return new Constraints($app['neo4j.graph_manager']);
-            }
-        );
+        $app['neo4j.constraints'] = function ($app) {
+
+            return new Constraints($app['neo4j.graph_manager']);
+        };
         
-        $app['neo4j.logger.handler'] = $app->share(
-            function ($app) {
-                return new Neo4jHandler(Logger::ERROR);
-            }
-        );
+        $app['neo4j.logger.handler'] = function ($app) {
+
+            return new Neo4jHandler(Logger::ERROR);
+        };
         
         $app['monolog']->pushHandler($app['neo4j.logger.handler']);
-
-    }
-
-    /**
-     * { @inheritdoc }
-     */
-    public function boot(Application $app)
-    {
 
     }
 
