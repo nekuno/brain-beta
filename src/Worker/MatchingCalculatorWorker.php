@@ -194,7 +194,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                             break;
                         case 'answer':
                             $matching = $this->matchingModel->calculateMatchingBetweenTwoUsersBasedOnAnswers($user1, $user2);
-                            $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $user1, $user2, $matching));
+                            $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $user1, $user2, $matching->getMatching()));
                             break;
                     }
                 } catch (\Exception $e) {
@@ -226,7 +226,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                 $matching = $this->matchingModel->calculateMatchingBetweenTwoUsersBasedOnAnswers($userA, $userB);
                 $percentage = round(($userIndex + 1) / $usersCount * 100);
                 $this->logger->info(sprintf('   Similarity by questions between users %d - %d: %s', $userA, $userB, $similarity->getQuestions()));
-                $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $userA, $userB, $matching));
+                $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $userA, $userB, $matching->getMatching()));
                 if ($percentage > $prevPercentage) {
                     $matchingProcessStepEvent = new MatchingProcessStepEvent($userA, $processId, $percentage);
                     $this->dispatcher->dispatch(\AppEvents::MATCHING_PROCESS_STEP, $matchingProcessStepEvent);

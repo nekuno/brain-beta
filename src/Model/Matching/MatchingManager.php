@@ -4,6 +4,8 @@ namespace Model\Matching;
 
 use Event\MatchingEvent;
 use Event\MatchingExpiredEvent;
+use Everyman\Neo4j\Node;
+use Everyman\Neo4j\Relationship;
 use Model\Neo4j\GraphManager;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
@@ -39,12 +41,11 @@ class MatchingManager
     /**
      * @param $id1
      * @param $id2
-     * @return array
+     * @return Matching
      * @throws \Exception
      */
-    public function getMatchingBetweenTwoUsers($id1, $id2)
+    protected function getMatchingBetweenTwoUsers($id1, $id2)
     {
-
         $qb = $this->graphManager->createQueryBuilder();
 
         $qb->setParameters(
@@ -64,12 +65,13 @@ class MatchingManager
 
         if ($result->count() > 0) {
 
-            $matching = null;
+            $matching = new Matching();
 
             foreach ($result as $match) {
-                if ($match['m']) {
-                    $matching['matching_questions'] = $match['m']->getProperty('matching_questions') ?: 0;
-                    $matching['timestamp_questions'] = $match['m']->getProperty('timestamp_questions') ?: 0;
+                /** @var Relationship $matchRelationship */
+                if ($matchRelationship = $match['m']) {
+                    $matching->setMatching($matchRelationship->getProperty('matching_questions') ?: 0);
+                    $matching->setTimestamp($matchRelationship->getProperty('timestamp_questions') ?: 0);
                 }
             }
 
@@ -82,56 +84,47 @@ class MatchingManager
 
     /**
      * @param $rawMatching
-     * @param $tsIndex
-     * @param $matchingIndex
-     * @return int
+     * @return bool
      */
-    public function isNecessaryToRecalculateIt($rawMatching, $tsIndex, $matchingIndex)
+    protected function isNecessaryToRecalculateIt(Matching $rawMatching)
     {
-
-        if (isset($rawMatching[$matchingIndex]) && $rawMatching[$matchingIndex] !== null) {
-            $matchingUpdatedAt = $rawMatching[$tsIndex] ? $rawMatching[$tsIndex] : 0;
-            $currentTimeInMillis = time() * 1000;
-            $lastUpdatePlusOneDay = $matchingUpdatedAt + (1000 * 60 * 60 * 24);
-            if ($lastUpdatePlusOneDay < $currentTimeInMillis) {
-                return true;
-            }
+        if (0 == $rawMatching->getMatching()) {
+            return false;
         }
 
-        return false;
+        $matchingUpdatedAt = $rawMatching->getTimestamp();
+
+        $currentTimeInMillis = time() * 1000;
+        $lastUpdatePlusOneDay = $matchingUpdatedAt + (1000 * 60 * 60 * 24);
+
+        return $lastUpdatePlusOneDay < $currentTimeInMillis;
     }
 
     /**
      * @param $id1
      * @param $id2
-     * @return int
+     * @return Matching
      * @throws \Exception
      */
     public function getMatchingBetweenTwoUsersBasedOnAnswers($id1, $id2)
     {
+        $matching = $this->getMatchingBetweenTwoUsers($id1, $id2);
 
-        $rawMatching = $this->getMatchingBetweenTwoUsers($id1, $id2);
-
-        if ($this->isNecessaryToRecalculateIt($rawMatching, 'timestamp_questions', 'matching_questions')) {
+        if ($this->isNecessaryToRecalculateIt($matching)) {
             $this->dispatcher->dispatch(\AppEvents::MATCHING_EXPIRED, new MatchingExpiredEvent($id1, $id2, 'answer'));
         }
 
-        $response['matching'] = $rawMatching['matching_questions'] ? $rawMatching['matching_questions'] : 0;
-
-        return $response;
+        return $matching;
     }
 
     /**
      * @param $id1  int id of the first user
      * @param $id2 int id of the second user
-     * @return float matching by questions between both users
+     * @return Matching
      * @throws \Exception
      */
     public function calculateMatchingBetweenTwoUsersBasedOnAnswers($id1, $id2)
     {
-
-        //Calculate matching
-
         $qb = $this->graphManager->createQueryBuilder();
 
         $qb->setParameters(
@@ -208,22 +201,30 @@ class MatchingManager
 
         $result = $qb->getQuery()->getResultSet();
 
-        $matching = 0;
+        $matchingValue = 0;
         if ($result->count() == 1) {
-            $matching = $result->current()->offsetGet('matching');
+            $matchingValue = $result->current()->offsetGet('matching');
         }
 
-        //Create the matching relationship with the appropriate value
+        $matchingValue = $matchingValue == null ? 0 : $matchingValue;
 
+        $matching = $this->mergeMatching($id1, $id2, $matchingValue);
+
+        $this->dispatcher->dispatch(\AppEvents::MATCHING_UPDATED, new MatchingEvent($id1, $id2, $matching->getMatching()));
+
+        return $matching;
+    }
+
+    protected function mergeMatching($id1, $id2, $matching)
+    {
         $qb = $this->graphManager->createQueryBuilder();
 
         $qb->match('(u1:User)', '(u2:User)')
             ->where('u1.qnoow_id = {id1}', 'u2.qnoow_id = {id2}')
-            ->createUnique('(u1)-[m:MATCHES]-(u2)')
+            ->merge('(u1)-[m:MATCHES]-(u2)')
             ->set('m.matching_questions = {matching}', 'm.timestamp_questions = timestamp()')
             ->returns('m');
 
-        //State the value of the variables in the query string
         $qb->setParameters(
             array(
                 'id1' => (integer)$id1,
@@ -232,11 +233,19 @@ class MatchingManager
             )
         );
 
-        $qb->getQuery()->getResultSet();
+        $resultSet = $qb->getQuery()->getResultSet();
 
-        $matching = $matching == null ? 0 : $matching;
+        if ($resultSet->count() == 0)
+        {
+            return null;
+        }
 
-        $this->dispatcher->dispatch(\AppEvents::MATCHING_UPDATED, new MatchingEvent($id1, $id2, $matching));
+        /** @var Node $matchingNode */
+        $matchingNode = $resultSet->current()->offsetGet('m');
+
+        $matching = new Matching();
+        $matching->setMatching($matchingNode->getProperty('matching_questions'));
+        $matching->setTimestamp($matchingNode->getProperty('timestamp_questions'));
 
         return $matching;
     }

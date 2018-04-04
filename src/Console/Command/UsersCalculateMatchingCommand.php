@@ -60,7 +60,7 @@ class UsersCalculateMatchingCommand extends ApplicationAwareCommand
                 }
                 continue;
             }
-            $output->writeln(sprintf('Matching between users %d - %d old: %s new: %s', $userA, $userB, $oldQuestionMatching['matching'], $newQuestionMatching['matching']));
+            $output->writeln(sprintf('Matching between users %d - %d old: %s new: %s', $userA, $userB, $oldQuestionMatching->getMatching(), $newQuestionMatching->getMatching()));
         }
 
         $output->writeln('Done.');

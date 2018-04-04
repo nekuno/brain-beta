@@ -224,7 +224,7 @@ class UserController
         try {
             /* @var $model \Model\Matching\MatchingManager */
             $model = $app['users.matching.model'];
-            $result = $model->getMatchingBetweenTwoUsersBasedOnAnswers($user->getId(), $otherUserId);
+            $matching = $model->getMatchingBetweenTwoUsersBasedOnAnswers($user->getId(), $otherUserId);
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
                 throw $e;
@@ -233,7 +233,7 @@ class UserController
             return $app->json(array(), 500);
         }
 
-        return $app->json($result, !empty($result) ? 201 : 200);
+        return $app->json($matching, !empty($matching) ? 201 : 200);
     }
 
     /**
