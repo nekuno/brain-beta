@@ -4,6 +4,7 @@ namespace Model\Photo;
 
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
+use Model\Exception\ErrorList;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 use Model\User\User;
@@ -202,16 +203,15 @@ class PhotoManager
 
     public function validate($file)
     {
-
         $max = 5000000;
         if (strlen($file) > $max) {
-            throw new ValidationException(array('photo' => array(sprintf('Max "%s" bytes file size exceed ("%s")', $max, strlen($file)))));
+            $this->throwPhotoException(sprintf('Max "%s" bytes file size exceed ("%s")', $max, strlen($file)));
         }
 
         $extension = null;
 
         if (!$finfo = new \finfo(FILEINFO_MIME_TYPE)) {
-            throw new ValidationException(array('photo' => array('Unable to guess file mime type')));
+            $this->throwPhotoException('Unable to guess file mime type');
         }
 
         $mimeType = $finfo->buffer($file);
@@ -223,7 +223,7 @@ class PhotoManager
         );
 
         if (!isset($validTypes[$mimeType])) {
-            throw new ValidationException(array('photo' => array(sprintf('Invalid mime type, possibles values are "%s".', implode('", "', array_keys($validTypes))))));
+            $this->throwPhotoException(sprintf('Invalid mime type, possibles values are "%s".', implode('", "', array_keys($validTypes))));
         }
 
         return $validTypes[$mimeType];
@@ -284,11 +284,22 @@ class PhotoManager
                 imagegif($crop, $fullPath);
                 break;
             default:
-                throw new ValidationException(array('photo' => array('Invalid mimetype')));
+                $this->throwPhotoException('Invalid mimetype');
                 break;
         }
 
         return $fullPath;
+    }
+
+    /**
+     * @param $message
+     * @throws ValidationException
+     */
+    public function throwPhotoException($message)
+    {
+        $errorList = new ErrorList();
+        $errorList->addError('photo', $message);
+        throw new ValidationException($errorList);
     }
 
 }

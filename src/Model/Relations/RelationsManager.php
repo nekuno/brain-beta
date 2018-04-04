@@ -7,6 +7,7 @@ use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
+use Model\Exception\ErrorList;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 use Model\Neo4j\QueryBuilder;
@@ -205,8 +206,9 @@ class RelationsManager
 
         if (!in_array($relation, $relations)) {
             $message = sprintf('Relation type "%s" not allowed, possible values "%s"', $relation, implode('", "', $relations));
-            $errors = array('type' => array($message));
-            throw new ValidationException($errors, $message);
+            $errorList = new ErrorList();
+            $errorList->addError('type', $message);
+            throw new ValidationException($errorList, $message);
         }
     }
 

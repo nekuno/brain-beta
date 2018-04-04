@@ -2,6 +2,7 @@
 
 namespace Service\Consistency;
 
+use Model\Exception\ErrorList;
 use Model\Exception\ValidationException;
 use Service\Consistency\ConsistencyErrors\ConsistencyError;
 use Service\Consistency\ConsistencyErrors\MissingPropertyConsistencyError;
@@ -32,7 +33,7 @@ class ConsistencyChecker
 
             list($incoming, $outgoing) = $this->chooseByRule($nodeData, $rule);
             $totalRelationships = array_merge($incoming + $outgoing);
-            $errors = array();
+            $errors = new ErrorList();
 
             $count = count($totalRelationships);
             if ($count < $rule->getMinimum() || $count > $rule->getMaximum()) {
@@ -41,7 +42,7 @@ class ConsistencyChecker
                 $error->setMinimum($rule->getMinimum());
                 $error->setMaximum($rule->getMaximum());
                 $error->setType($rule->getType());
-                $errors[] = $error;
+                $errors->addError($rule->getType(), $error);
             }
 
             foreach ($incoming as $relationship) {
@@ -56,7 +57,7 @@ class ConsistencyChecker
                     $error->setType($relationship->getType());
                     $error->setOtherNodeLabel($rule->getOtherNode());
                     $error->setRelationshipId($relationship->getId());
-                    $errors[] = $error;
+                    $errors->addError($relationship->getType(), $error);
                 }
 
                 $this->checkProperties($relationship->getProperties(), $relationship->getId(), $rule->getProperties());
@@ -64,7 +65,8 @@ class ConsistencyChecker
 
             foreach ($outgoing as $relationship) {
                 if ($rule->getDirection() == 'incoming'){
-                    $errors[] = new ReverseRelationshipConsistencyError($relationship->getId());
+                    $error = new ReverseRelationshipConsistencyError($relationship->getId());
+                    $errors->addError($relationship->getType(), $error);
                 }
 
                 $otherNodeLabels = $relationship->getEndNodeLabels();
@@ -73,7 +75,7 @@ class ConsistencyChecker
                 if (!in_array($rule->getOtherNode(), $otherNodeLabels)) {
                     $error = new ConsistencyError();
                     $error->setMessage(sprintf('Label of node for relationship %d is not correct', $relationship->getId()));
-                    $errors[] = $error;
+                    $errors->addError($relationship->getType(), $error);
                 }
 
                 $this->checkProperties($relationship->getProperties(), $relationship->getId(), $rule->getProperties());
@@ -87,7 +89,7 @@ class ConsistencyChecker
     {
         foreach ($propertyRules as $name => $propertyRule) {
 
-            $errors = array();
+            $errors = new ErrorList();
             $rule = new ConsistencyPropertyRule($name, $propertyRule);
 
             if (!isset($properties[$name])) {
@@ -97,7 +99,7 @@ class ConsistencyChecker
 
                 $error = new MissingPropertyConsistencyError();
                 $error->setPropertyName($name);
-                $errors[] = $error;
+                $errors->addError($name, $error);
             } else {
                 $value = $properties[$name];
 
@@ -106,7 +108,7 @@ class ConsistencyChecker
                     if (!in_array($value, $options)) {
                         $error = new ConsistencyError();
                         $error->setMessage(sprintf('Element with id %d has property %s with invalid value %s', $id, $name, $value));
-                        $errors[] = $error;
+                        $errors->addError($name, $error);
                     }
                 }
 
@@ -117,18 +119,18 @@ class ConsistencyChecker
                         if (!is_int($value)) {
                             $error = new ConsistencyError();
                             $error->setMessage(sprintf('Element with id %d has property %s with value %s which should be an integer', $id, $name, $value));
-                            $errors[] = $error;
+                            $errors->addError($name, $error);
                         } else {
                             if ($rule->getMaximum() && $value > $rule->getMaximum()) {
                                 $error = new ConsistencyError();
                                 $error->setMessage(sprintf('Element with id %d has property %d greater than maximum %d', $id, $name, $value, $rule->getMaximum()));
-                                $errors[] = $error;
+                                $errors->addError($name, $error);
                             }
 
                             if ($rule->getMinimum() && $value < $rule->getMinimum()) {
                                 $error = new ConsistencyError();
                                 $error->setMessage(sprintf('Element with id %d has property %d lower than minimum %d', $id, $name, $value, $rule->getMinimum()));
-                                $errors[] = $error;
+                                $errors->addError($name, $error);
                             }
                         }
                         break;
@@ -136,28 +138,28 @@ class ConsistencyChecker
                         if (!is_bool($value)) {
                             $error = new ConsistencyError();
                             $error->setMessage(sprintf('Element with id %d has property %s that should be a value', $id, json_encode($value)));
-                            $errors[] = $error;
+                            $errors->addError($name, $error);
                         };
                         break;
                     case ConsistencyPropertyRule::TYPE_ARRAY:
                         if (!is_array($value)) {
                             $error = new ConsistencyError();
                             $error->setMessage(sprintf('Element with id %d has property %s with value %s which should be an array', $id, $name, $value));
-                            $errors[] = $error;
+                            $errors->addError($name, $error);
                         };
                         break;
                     case ConsistencyPropertyRule::TYPE_DATETIME:
-                        $date = new \DateTime($value);
+                        $date = $this->getDateTimeFromTimestamp($value);
 
                         if ($rule->getMaximum() && $date > new \DateTime($rule->getMaximum())) {
                             $error = new ConsistencyError();
                             $error->setMessage(sprintf('Element with id %d has property %s later than maximum %s', $id, $name, $rule->getMaximum()));
-                            $errors[] = $error;
+                            $errors->addError($name, $error);
                         }
                         if ($rule->getMinimum() && $value < $rule->getMinimum()) {
                             $error = new ConsistencyError();
                             $error->setMessage(sprintf('Element with id %d has property %s earlier than minimum %s', $id, $name, $rule->getMinimum()));
-                            $errors[] = $error;
+                            $errors->addError($name, $error);
                         }
                         break;
                     default:
@@ -168,6 +170,15 @@ class ConsistencyChecker
             $this->throwErrors($errors, $id);
         }
     }
+
+    protected function getDateTimeFromTimestamp($timestamp)
+    {
+        $dateTime = new \DateTime();
+        $dateTime->setTimestamp($timestamp);
+
+        return $dateTime;
+    }
+
 
     /**
      * @param ConsistencyNodeData $nodeData
@@ -193,9 +204,9 @@ class ConsistencyChecker
         return array($incoming, $outgoing);
     }
 
-    protected function throwErrors(array $errors, $id)
+    protected function throwErrors(ErrorList $errors, $id)
     {
-        if (!empty($errors)) {
+        if ($errors->hasErrors()) {
             throw new ValidationException($errors, 'Properties consistency error for element ' . $id);
         }
     }

@@ -29,19 +29,25 @@ class ConsistencyCheckerService
         $this->consistencyNodeRetriever = new ConsistencyNodeRetriever($this->graphManager);
     }
 
+    /**
+     * @param null $label
+     * @param int $offset
+     * @param null $limit
+     * @return ConsistencyError[]
+     */
     public function getDatabaseErrors($label = null, $offset = 0, $limit = null)
     {
         //dispatch consistency start
         $this->dispatcher->dispatch(\AppEvents::CONSISTENCY_START);
         $paginationSize = 1000;
 
-        $errorList = array();
+        $errors = array();
         do {
             $nodes = $this->consistencyNodeRetriever->getNodeData($paginationSize, $offset, $label);
 
             foreach ($nodes as $node) {
                 $nodeErrors = $this->checkSingle($node);
-                $errorList = array_merge($errorList, $nodeErrors);
+                $errors = array_merge($errors, $nodeErrors);
             }
 
             $moreResultsAvailable = count($nodes) >= $paginationSize;
@@ -54,7 +60,7 @@ class ConsistencyCheckerService
         //dispatch consistency end
         $this->dispatcher->dispatch(\AppEvents::CONSISTENCY_END);
 
-        return $errorList;
+        return $errors;
     }
 
     /** @var $errors ConsistencyError[]
@@ -73,9 +79,9 @@ class ConsistencyCheckerService
 
     /**
      * @param ConsistencyNodeData $nodeData
-     * @return array
+     * @return ConsistencyError[]
      */
-    public function checkSingle(ConsistencyNodeData $nodeData)
+    protected function checkSingle(ConsistencyNodeData $nodeData)
     {
         $nodeId = $nodeData->getId();
 
@@ -91,12 +97,15 @@ class ConsistencyCheckerService
                 $checker->checkNode($nodeData, $nodeRule);
             } catch (ValidationException $e) {
                 $newErrors = $e->getErrors();
-                foreach ($newErrors as $newError) {
-                    /** @var ConsistencyError $newError */
-                    $newError->setRule($nodeRule);
-                    $newError->setNodeId($nodeId);
+                foreach ($newErrors as $field => $fieldErrors) {
+                    foreach ($fieldErrors as $newError) {
+                        /** @var ConsistencyError $newError */
+                        $newError->setRule($nodeRule);
+                        $newError->setNodeId($nodeId);
+                    }
+
+                    $errors += $fieldErrors;
                 }
-                $errors += $newErrors;
 
                 $this->dispatcher->dispatch(\AppEvents::CONSISTENCY_ERROR, new ExceptionEvent($e, 'Checking node ' . $nodeId));
             }

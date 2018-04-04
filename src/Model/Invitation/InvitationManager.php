@@ -662,7 +662,7 @@ class InvitationManager
             return $this->build($row);
         }
 
-        throw new ValidationException(array(), sprintf('There is no invitation available with token %s', $token));
+        throw new ValidationException(null, sprintf('There is no invitation available with token %s', $token));
     }
 
     public function validateUpdate(array $data)

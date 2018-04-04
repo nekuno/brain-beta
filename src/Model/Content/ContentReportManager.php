@@ -3,8 +3,10 @@
 namespace Model\Content;
 
 use Everyman\Neo4j\Node;
+use Everyman\Neo4j\Query\ResultSet;
 use Everyman\Neo4j\Query\Row;
 use Everyman\Neo4j\Relationship;
+use Model\Exception\ErrorList;
 use Model\Exception\ValidationException;
 
 class ContentReportManager extends ContentPaginatedManager
@@ -98,9 +100,7 @@ class ContentReportManager extends ContentPaginatedManager
         $query = $qb->getQuery();
         $result = $query->getResultSet();
 
-        if ($result->count() < 1) {
-            throw new ValidationException(array('report' => array('Content not found')));
-        }
+        $this->checkCount($result, 'report');
 
         return $this->buildResponse($result);
     }
@@ -229,9 +229,7 @@ class ContentReportManager extends ContentPaginatedManager
         $query = $qb->getQuery();
         $result = $query->getResultSet();
 
-        if ($result->count() < 1) {
-            throw new ValidationException(array('report' => array('Content not found')));
-        }
+        $this->checkCount($result, 'report');
 
         /* @var $row Row */
         $row = $result->current();
@@ -260,9 +258,7 @@ class ContentReportManager extends ContentPaginatedManager
         $query = $qb->getQuery();
         $result = $query->getResultSet();
 
-        if ($result->count() < 1) {
-            throw new ValidationException(array('disable_report' => array('Content not found')));
-        }
+        $this->checkCount($result, 'disable_report');
 
         /* @var $row Row */
         $row = $result->current();
@@ -291,9 +287,7 @@ class ContentReportManager extends ContentPaginatedManager
         $query = $qb->getQuery();
         $result = $query->getResultSet();
 
-        if ($result->count() < 1) {
-            throw new ValidationException(array('enable_report' => array('Content not found')));
-        }
+        $this->checkCount($result, 'enable_report');
 
         /* @var $row Row */
         $row = $result->current();
@@ -303,16 +297,16 @@ class ContentReportManager extends ContentPaginatedManager
 
     protected function validate($reason, $reasonText)
     {
-        $errors = array();
+        $errorList = new ErrorList();
         if (!in_array($reason, $this->getValidReasons())) {
-            $errors['reason'] = array(sprintf('%s is not a valid reason', $reason));
+            $errorList->addError('reason', sprintf('%s is not a valid reason', $reason));
         }
         if (isset($reasonText) && !is_string($reasonText)) {
-            $errors['reasonText'] = array(sprintf('%s is not a valid reason text', $reasonText));
+            $errorList->addError('reasonText', sprintf('%s is not a valid reason text', $reasonText));
         }
 
-        if (count($errors) > 0) {
-            throw new ValidationException($errors);
+        if ($errorList->hasErrors()) {
+            throw new ValidationException($errorList);
         }
     }
 
@@ -338,5 +332,14 @@ class ContentReportManager extends ContentPaginatedManager
             self::SPAM,
             self::OTHER,
         );
+    }
+
+    protected function checkCount(ResultSet $result, $reason)
+    {
+        if ($result->count() < 1) {
+            $errorList = new ErrorList();
+            $errorList->addError($reason, 'Content not found');
+            throw new ValidationException($errorList);
+        }
     }
 } 

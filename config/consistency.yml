@@ -151,12 +151,18 @@ profile:
 
 thread:
     label: Thread
+    checkerClass: Service\Consistency\ThreadConsistencyChecker
 
     relationships:
         filter:
             type: HAS_FILTER
             direction: outgoing
             otherNode: Filter
+        user:
+            type: HAS_THREAD
+            direction: incoming
+            otherNode: User
+            maximum: 1
 
     properties:
         name:

@@ -2,9 +2,9 @@
 
 namespace Controller\User;
 
+use Model\Exception\ErrorList;
 use Model\Exception\ValidationException;
 use Model\Content\ContentPaginatedManager;
-use Model\Metadata\UserFilterMetadataManager;
 use Model\Rate\RateManager;
 use Model\Content\ContentReportManager;
 use Model\User\UserManager;
@@ -121,7 +121,7 @@ class UserController
 
         if (!$enabled) {
 
-            /** @var User\Device\DeviceModel $deviceModel */
+            /** @var \Model\Device\DeviceManager $deviceModel */
             $deviceModel = $app['users.device.model'];
             $allDevices = $deviceModel->getAll($user->getId());
             foreach ($allDevices as $device) {
@@ -143,7 +143,7 @@ class UserController
         try {
             $data = $request->request->all();
             if (!isset($data['user']) || !isset($data['profile']) || !isset($data['token']) || !isset($data['oauth']) || !isset($data['trackingData'])) {
-                throw new ValidationException(array('registration' => 'Bad format'));
+                $this->throwRegistrationException('Bad format');
             }
             $user = $app['register.service']->register($data['user'], $data['profile'], $data['token'], $data['oauth'], $data['trackingData']);
         } catch (\Exception $e) {
@@ -162,10 +162,21 @@ class UserController
             $app['mailer']->send($message);
 
             $exceptionMessage = $app['env'] === 'dev' ? $errorMessage . ' ' . $e->getFile() . ' ' . $e->getLine() : "Error registering user";
-            throw new ValidationException(array('registration' => $exceptionMessage));
+            $this->throwRegistrationException($exceptionMessage);
         }
 
         return $app->json($user, 201);
+    }
+
+    /**
+     * @param $message
+     * @throws ValidationException
+     */
+    protected function throwRegistrationException($message)
+    {
+        $errorList = new ErrorList();
+        $errorList->addError('registration', $message);
+        throw new ValidationException($errorList);
     }
 
     /**
