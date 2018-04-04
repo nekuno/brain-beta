@@ -126,7 +126,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                         $this->popularityManager->updatePopularityByUser($userB);
                         $similarity = $this->similarityModel->getSimilarityBy(SimilarityManager::INTERESTS, $userA, $userB);
                         $percentage = round(($userIndex + 1) / $usersCount * 100);
-                        $this->logger->info(sprintf('   Similarity by interests between users %d - %d: %s', $userA, $userB, $similarity['interests']));
+                        $this->logger->info(sprintf('   Similarity by interests between users %d - %d: %s', $userA, $userB, $similarity->getInterests()));
                         if ($percentage > $prevPercentage) {
                             $similarityProcessStepEvent = new SimilarityProcessStepEvent($userA, $processId, $percentage);
                             $this->dispatcher->dispatch(\AppEvents::SIMILARITY_PROCESS_STEP, $similarityProcessStepEvent);
@@ -225,7 +225,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                 $similarity = $this->similarityModel->getSimilarityBy(SimilarityManager::QUESTIONS, $userA, $userB);
                 $matching = $this->matchingModel->calculateMatchingBetweenTwoUsersBasedOnAnswers($userA, $userB);
                 $percentage = round(($userIndex + 1) / $usersCount * 100);
-                $this->logger->info(sprintf('   Similarity by questions between users %d - %d: %s', $userA, $userB, $similarity['questions']));
+                $this->logger->info(sprintf('   Similarity by questions between users %d - %d: %s', $userA, $userB, $similarity->getQuestions()));
                 $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $userA, $userB, $matching));
                 if ($percentage > $prevPercentage) {
                     $matchingProcessStepEvent = new MatchingProcessStepEvent($userA, $processId, $percentage);
