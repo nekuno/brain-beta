@@ -222,7 +222,7 @@ class UsersTest extends UsersAPITest
     {
         $this->assertValidationErrorFormat($exception);
         $this->assertArrayHasKey('registration', $exception['validationErrors'], "User validation error does not have invalid key \"registration\"'");
-        $this->assertEquals('Error registering user', $exception['validationErrors']['registration'], "registration key is not \"Error registering user\"");
+        $this->assertEquals(array('Error registering user'), $exception['validationErrors']['registration'], "registration error is not \"Error registering user\"");
     }
 
     protected function getUserAFixtures()

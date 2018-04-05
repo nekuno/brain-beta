@@ -393,7 +393,7 @@ class ProfileTest extends ProfileAPITest
     {
         $this->assertValidationErrorFormat($exception);
         $this->assertArrayHasKey('birthday', $exception['validationErrors'], "Profile has not birthday key");
-        $this->assertEquals('Invalid date format, valid format is "YYYY-MM-DD".', $exception['validationErrors']['birthday'][0], "birthday key is not Invalid date format, valid format is \"YYYY-MM-DD\".");
+        $this->assertEquals('Invalid date format, valid format is "Y-m-d".', $exception['validationErrors']['birthday'][0], "birthday key is not Invalid date format, valid format is \"YYYY-MM-DD\".");
     }
 
     protected function assertLocationValidationErrorFormat($exception)

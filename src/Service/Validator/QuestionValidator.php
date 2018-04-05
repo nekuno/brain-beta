@@ -2,6 +2,7 @@
 
 namespace Service\Validator;
 
+use Model\Exception\ErrorList;
 use Model\Metadata\MetadataManager;
 
 class QuestionValidator extends Validator
@@ -26,12 +27,12 @@ class QuestionValidator extends Validator
 
     public function validateOnDelete($data)
     {
-        $errors = array();
+        $errorList = new ErrorList();
         if (!isset($data['questionId'])) {
-            $errors['questionId'] = 'Question Id is not set when deleting question';
+            $errorList->addError('questionId', 'Question Id is not set when deleting question');
         }
 
-        $this->throwException($errors);
+        $this->throwException($errorList);
     }
 
     protected function getChoices()
