@@ -2,6 +2,7 @@
 
 namespace Service\Validator;
 
+use Model\Exception\ErrorList;
 use Model\Question\Answer;
 
 class AnswerValidator extends Validator
@@ -23,7 +24,9 @@ class AnswerValidator extends Validator
 
         foreach ($data['acceptedAnswers'] as $acceptedAnswer) {
             if (!is_int($acceptedAnswer)) {
-                $this->throwException(array('acceptedAnswers' => 'acceptedAnswers items must be integers'));
+                $errorList = new ErrorList();
+                $errorList->addError('acceptedAnswers', 'acceptedAnswers items must be integers');
+                $this->throwException($errorList);
             }
             $this->validateAnswerId($data['questionId'], $acceptedAnswer);
         }
@@ -37,14 +40,17 @@ class AnswerValidator extends Validator
         /** @var Answer $answer */
         $answer = $data['userAnswer'];
         if (!$answer->isEditable()) {
-            $this->throwException(array('answer' => array(sprintf('This answer cannot be edited now. Please wait %s seconds', $answer->getEditableIn()))));
+            $errorList = new ErrorList();
+            $errorList->addError('answer', sprintf('This answer cannot be edited now. Please wait %s seconds', $answer->getEditableIn()));
+            $this->throwException($errorList);
         }
     }
 
     protected function validateAnswerId($questionId, $answerId, $desired = true)
     {
-        $errors = array('answerId' => $this->existenceValidator->validateAnswerId($questionId, $answerId, $desired));
+        $errorList = new ErrorList();
+        $errorList->setErrors('answerId', $this->existenceValidator->validateAnswerId($questionId, $answerId, $desired));
 
-        $this->throwException($errors);
+        $this->throwException($errorList);
     }
 }

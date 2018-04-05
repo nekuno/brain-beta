@@ -2,6 +2,8 @@
 
 namespace Service\Validator;
 
+use Model\Exception\ErrorList;
+
 class InvitationValidator extends Validator
 {
     public function validateOnCreate($data)
@@ -44,37 +46,42 @@ class InvitationValidator extends Validator
 
     protected function validateInvitationId($invitationId, $desired = true)
     {
-        $errors = array('invitationId' => $this->existenceValidator->validateInvitationId($invitationId, $desired));
-
-        $this->throwException($errors);
+        $errorList = new ErrorList();
+        $errorList->setErrors('invitationId', $this->existenceValidator->validateInvitationId($invitationId, $desired));
+        $this->throwException($errorList);
     }
 
     protected function validateInvitationToken($token, $excludedId = null, $desired = true)
     {
+        $errorList = new ErrorList();
+
         if (!is_string($token) && !is_numeric($token)) {
-            $this->throwException(array('token' => array('Token must be a string or a numeric')));
+            $errorList->addError('token', 'Token must be a string or a numeric');
+            $this->throwException($errorList);
         }
 
-        $errors = array('invitationToken' => $this->existenceValidator->validateInvitationToken($token, $excludedId, $desired));
-
-        $this->throwException($errors);
+        $errorList->setErrors('invitationToken', $this->existenceValidator->validateInvitationToken($token, $excludedId, $desired));
+        $this->throwException($errorList);
     }
 
     protected function validateGroupId($groupId, $desired = true)
     {
+        $errorList = new ErrorList();
         if (!is_int($groupId)) {
-            $errors = array('groupId' => array('Group Id must be an integer'));
+            $errorList->addError('groupId', 'Group Id must be an integer');
         } else {
-            $errors = array('groupId' => $this->existenceValidator->validateGroupId($groupId, $desired));
+            $errorList->setErrors('groupId', $this->existenceValidator->validateGroupId($groupId, $desired));
         }
 
-        $this->throwException($errors);
+        $this->throwException($errorList);
     }
 
     protected function validateGroupInData(array $data, $groupIdRequired = true)
     {
         if ($groupIdRequired && !isset($data['groupId'])) {
-            $this->throwException(array('groupId', 'Group id is required for this action'));
+            $errorList = new ErrorList();
+            $errorList->addError('groupId', 'Group id is required for this action');
+            $this->throwException($errorList);
         }
 
         if (isset($data['groupId'])) {

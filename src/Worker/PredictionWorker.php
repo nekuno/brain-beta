@@ -6,7 +6,7 @@ namespace Worker;
 use Model\Link\LinkManager;
 use Model\Neo4j\Neo4jException;
 use Model\Affinity\AffinityManager;
-use Model\Similarity\SimilarityModel;
+use Model\Similarity\SimilarityManager;
 use PhpAmqpLib\Channel\AMQPChannel;
 use Service\AffinityRecalculations;
 use Service\AMQPManager;
@@ -35,7 +35,7 @@ class PredictionWorker extends LoggerAwareWorker implements RabbitMQConsumerInte
     protected $linkModel;
 
     /**
-     * @var SimilarityModel
+     * @var SimilarityManager
      */
     protected $similarityModel;
 
@@ -76,7 +76,7 @@ class PredictionWorker extends LoggerAwareWorker implements RabbitMQConsumerInte
                     foreach ($contentRecommendations as $contentRecommendation) {
                         $linkId = $contentRecommendation->getContent()->getId();
                         $affinity = $this->affinityModel->getAffinity($userId, $linkId);
-                        $this->logger->info(sprintf('Affinity between user %s and link %s: %s', $userId, $linkId, $affinity['affinity']));
+                        $this->logger->info(sprintf('Affinity between user %s and link %s: %s', $userId, $linkId, $affinity->getAffinity()));
                     }
                 } catch (\Exception $e) {
                     $this->logger->error(sprintf('Worker: Error calculating live affinity for user %d with message %s on file %s, line %d', $userId, $e->getMessage(), $e->getFile(), $e->getLine()));

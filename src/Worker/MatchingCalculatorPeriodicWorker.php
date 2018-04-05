@@ -42,7 +42,7 @@ class MatchingCalculatorPeriodicWorker extends MatchingCalculatorWorker
                     $similarity = $this->similarityModel->getSimilarity($user1, $user2);
                     $matching = $this->matchingModel->calculateMatchingBetweenTwoUsersBasedOnAnswers($user1, $user2);
                     $this->logger->info(sprintf('   Similarity between users %d - %d: %s', $user1, $user2, $similarity['similarity']));
-                    $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $user1, $user2, $matching));
+                    $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $user1, $user2, $matching->getMatching()));
                     $this->userStatsService->updateShares($user1, $user2);
                 } catch (\Exception $e) {
                     $this->logger->error(sprintf('Worker: Error calculating similarity and matching between user %d and user %d with message %s on file %s, line %d', $user1, $user2, $e->getMessage(), $e->getFile(), $e->getLine()));

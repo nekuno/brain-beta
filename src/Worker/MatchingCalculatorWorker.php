@@ -13,7 +13,7 @@ use Model\Popularity\PopularityManager;
 use Model\Question\QuestionManager;
 use Model\User\User;
 use Model\Matching\MatchingManager;
-use Model\Similarity\SimilarityModel;
+use Model\Similarity\SimilarityManager;
 use Model\User\UserManager;
 use PhpAmqpLib\Channel\AMQPChannel;
 use Service\AffinityRecalculations;
@@ -40,7 +40,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
      */
     protected $matchingModel;
     /**
-     * @var SimilarityModel
+     * @var SimilarityManager
      */
     protected $similarityModel;
     /**
@@ -68,7 +68,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
         AMQPChannel $channel,
         UserManager $userManager,
         MatchingManager $matchingModel,
-        SimilarityModel $similarityModel,
+        SimilarityManager $similarityModel,
         UserStatsService $userStatsService,
         QuestionManager $questionModel,
         AffinityRecalculations $affinityRecalculations,
@@ -124,9 +124,9 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                         /* @var $currentUser User */
                         $userB = $currentUser->getId();
                         $this->popularityManager->updatePopularityByUser($userB);
-                        $similarity = $this->similarityModel->getSimilarityBy(SimilarityModel::INTERESTS, $userA, $userB);
+                        $similarity = $this->similarityModel->getSimilarityBy(SimilarityManager::INTERESTS, $userA, $userB);
                         $percentage = round(($userIndex + 1) / $usersCount * 100);
-                        $this->logger->info(sprintf('   Similarity by interests between users %d - %d: %s', $userA, $userB, $similarity['interests']));
+                        $this->logger->info(sprintf('   Similarity by interests between users %d - %d: %s', $userA, $userB, $similarity->getInterests()));
                         if ($percentage > $prevPercentage) {
                             $similarityProcessStepEvent = new SimilarityProcessStepEvent($userA, $processId, $percentage);
                             $this->dispatcher->dispatch(\AppEvents::SIMILARITY_PROCESS_STEP, $similarityProcessStepEvent);
@@ -194,7 +194,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                             break;
                         case 'answer':
                             $matching = $this->matchingModel->calculateMatchingBetweenTwoUsersBasedOnAnswers($user1, $user2);
-                            $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $user1, $user2, $matching));
+                            $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $user1, $user2, $matching->getMatching()));
                             break;
                     }
                 } catch (\Exception $e) {
@@ -222,11 +222,11 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
             /* @var $currentUser User */
             $userB = $currentUser->getId();
             if ($userA <> $userB) {
-                $similarity = $this->similarityModel->getSimilarityBy(SimilarityModel::QUESTIONS, $userA, $userB);
+                $similarity = $this->similarityModel->getSimilarityBy(SimilarityManager::QUESTIONS, $userA, $userB);
                 $matching = $this->matchingModel->calculateMatchingBetweenTwoUsersBasedOnAnswers($userA, $userB);
                 $percentage = round(($userIndex + 1) / $usersCount * 100);
-                $this->logger->info(sprintf('   Similarity by questions between users %d - %d: %s', $userA, $userB, $similarity['questions']));
-                $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $userA, $userB, $matching));
+                $this->logger->info(sprintf('   Similarity by questions between users %d - %d: %s', $userA, $userB, $similarity->getQuestions()));
+                $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $userA, $userB, $matching->getMatching()));
                 if ($percentage > $prevPercentage) {
                     $matchingProcessStepEvent = new MatchingProcessStepEvent($userA, $processId, $percentage);
                     $this->dispatcher->dispatch(\AppEvents::MATCHING_PROCESS_STEP, $matchingProcessStepEvent);

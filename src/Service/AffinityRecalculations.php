@@ -67,7 +67,6 @@ class AffinityRecalculations
      */
     public function recalculateAffinities($userId, $limitContent = 40, $limitUsers = 20, $notifyLimit = 99999, $seconds = null)
     {
-
         $user = $this->userManager->getById((integer)$userId, true);
 
         $processId = time();
@@ -95,11 +94,11 @@ class AffinityRecalculations
                 $prevPercentage = $percentage;
             }
 
-            if ($affinity['affinity'] < $this::MIN_AFFINITY) {
+            if ($affinity->getAffinity() < $this::MIN_AFFINITY) {
                 continue;
             }
-            $affinities[$linkId] = $affinity['affinity'];
-            if ($affinity['affinity'] > $notifyLimit) {
+            $affinities[$linkId] = $affinity->getAffinity();
+            if ($affinity->getAffinity() > $notifyLimit) {
                 $whenNotified = $this->linkModel->getWhenNotified($userId, $linkId);
                 if ($whenNotified !== null) {
                     continue;

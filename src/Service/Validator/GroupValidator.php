@@ -2,6 +2,8 @@
 
 namespace Service\Validator;
 
+use Model\Exception\ErrorList;
+
 class GroupValidator extends Validator
 {
     public function validateOnCreate($data)
@@ -32,44 +34,47 @@ class GroupValidator extends Validator
         $metadata = $this->metadata;
         $this->validateMetadata($data, $metadata);
 
-        $errors = array();
+        $errorList = new ErrorList();
         if (isset($data['followers']) && $data['followers']) {
-            $errors += $this->validateBoolean($data['followers']);
+            $errorList->setErrors('followers', $this->validateBoolean($data['followers']));
             if (!isset($data['influencer_id'])) {
-                $errors['influencer_id'] = array('"influencer_id" is required for followers groups');
+                $errorList->addError('influencer_id', '"influencer_id" is required for followers groups');
             } elseif (!is_int($data['influencer_id'])) {
-                $errors['influencer_id'] = array('"influencer_id" must be integer');
+                $errorList->addError('influencer_id', '"influencer_id" must be integer');
             }
             if (!isset($data['min_matching'])) {
-                $errors['min_matching'] = array('"min_matching" is required for followers groups');
+                $errorList->addError('min_matching', '"min_matching" is required for followers groups');
             } elseif (!is_int($data['min_matching'])) {
-                $errors['min_matching'] = array('"min_matching" must be integer');
+                $errorList->addError('min_matching', '"min_matching" must be integer');
             }
             if (!isset($data['type_matching'])) {
-                $errors['type_matching'] = array('"type_matching" is required for followers groups');
+                $errorList->addError('type_matching', '"type_matching" is required for followers groups');
             } elseif ($data['type_matching'] !== 'similarity' && $data['type_matching'] !== 'compatibility') {
-                $errors['type_matching'] = array('"type_matching" must be "similarity" or "compatibility"');
+                $errorList->addError('type_matching', '"type_matching" must be "similarity" or "compatibility"');
             }
         }
 
-        $this->throwException($errors);
+        $this->throwException($errorList);
     }
 
     protected function validateGroupId($groupId, $desired = true)
     {
+        $errorList = new ErrorList();
         if (!is_int($groupId)) {
-            $errors = array('groupId' => array('Group Id must be an integer'));
+            $errorList->addError('groupId', 'Group Id must be an integer');
         } else {
-            $errors = array('groupId' => $this->existenceValidator->validateGroupId($groupId, $desired));
+            $errorList->setErrors('groupId', $this->existenceValidator->validateGroupId($groupId, $desired));
         }
 
-        $this->throwException($errors);
+        $this->throwException($errorList);
     }
 
     protected function validateGroupInData(array $data, $groupIdRequired = true)
     {
         if ($groupIdRequired && !isset($data['groupId'])) {
-            $this->throwException(array('groupId', 'Group id is required for this action'));
+            $errorList = new ErrorList();
+            $errorList->addError('groupId', 'Group id is required for this action');
+            $this->throwException($errorList);
         }
 
         if (isset($data['groupId'])) {

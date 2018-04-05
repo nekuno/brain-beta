@@ -12,7 +12,7 @@ use Model\Question\UserAnswerPaginatedManager;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 
-class SimilarityModel
+class SimilarityManager
 {
     const numberOfSecondsToCache = 30;
     const ALL = 1;
@@ -69,7 +69,7 @@ class SimilarityModel
      * Recalculates outdated similarities and returns total
      * @param $idA
      * @param $idB
-     * @return array
+     * @return Similarity
      */
     public function getSimilarity($idA, $idB)
     {
@@ -79,9 +79,9 @@ class SimilarityModel
         $similarity = $this->getCurrentSimilarity($idA, $idB);
 
         $minTimestampForCache = time() - self::numberOfSecondsToCache;
-        $hasToRecalculateQuestions = ($similarity['questionsUpdated'] / 1000) < $minTimestampForCache;
-        $hasToRecalculateContent = ($similarity['interestsUpdated'] / 1000) < $minTimestampForCache;
-        $hasToRecalculateSkills = ($similarity['skillsUpdated'] / 1000) < $minTimestampForCache;
+        $hasToRecalculateQuestions = ($similarity->getQuestionsUpdated() / 1000) < $minTimestampForCache;
+        $hasToRecalculateContent = ($similarity->getInterestsUpdated() / 1000) < $minTimestampForCache;
+        $hasToRecalculateSkills = ($similarity->getSkillsUpdated() / 1000) < $minTimestampForCache;
 
         if ($hasToRecalculateQuestions || $hasToRecalculateContent || $hasToRecalculateSkills) {
             if ($hasToRecalculateQuestions) {
@@ -95,7 +95,7 @@ class SimilarityModel
             }
 
             $similarity = $this->getCurrentSimilarity($idA, $idB);
-            $this->dispatcher->dispatch(\AppEvents::SIMILARITY_UPDATED, new SimilarityEvent($idA, $idB, $similarity['similarity']));
+            $this->dispatcher->dispatch(\AppEvents::SIMILARITY_UPDATED, new SimilarityEvent($idA, $idB, $similarity->getSimilarity()));
         }
 
         return $this->returnSimilarity($similarity, $idA, $idB);
@@ -106,7 +106,7 @@ class SimilarityModel
      * @param $category
      * @param $idA
      * @param $idB
-     * @return array
+     * @return Similarity
      */
     public function getSimilarityBy($category, $idA, $idB)
     {
@@ -127,10 +127,10 @@ class SimilarityModel
                 break;
             default:
                 //TODO: throw InvalidArgumentException
-                return array();
+                return new Similarity();
         }
         $similarity = $this->getCurrentSimilarity($idA, $idB);
-        $this->dispatcher->dispatch(\AppEvents::SIMILARITY_UPDATED, new SimilarityEvent($idA, $idB, $similarity['similarity']));
+        $this->dispatcher->dispatch(\AppEvents::SIMILARITY_UPDATED, new SimilarityEvent($idA, $idB, $similarity->getSimilarity()));
         return $this->returnSimilarity($similarity, $idA, $idB);
     }
 
@@ -162,16 +162,8 @@ class SimilarityModel
         $query = $qb->getQuery();
         $result = $query->getResultSet();
 
-        $similarity = array(
-            'questions' => 0,
-            'interests' => 0,
-            'skills' => 0,
-            'similarity' => 0,
-            'questionsUpdated' => 0,
-            'interestsUpdated' => 0,
-            'skillsUpdated' => 0,
-            'similarityUpdated' => 0,
-        );
+        $similarity = new Similarity();
+
         if ($result->count() > 0) {
             /* @var $row Row */
             $row = $result->current();
@@ -534,12 +526,12 @@ class SimilarityModel
 
     /**
      * Calculates averages and sets to database. To be called only from public "get" methods.
-     * @param array $similarity
+     * @param Similarity $similarity
      * @param $idA
      * @param $idB
-     * @return array
+     * @return Similarity
      */
-    private function returnSimilarity(array $similarity, $idA, $idB)
+    private function returnSimilarity(Similarity $similarity, $idA, $idB)
     {
         $questionLimit = 0;
         $contentLimit = 10;
@@ -572,31 +564,29 @@ class SimilarityModel
         //To change when we implement countSkills
 //        $userASkills = $totalSkillsA > $skillLimit;
 //        $userBSkills = $totalSkillsA > $skillLimit;
-        $userASkills = $similarity['skills'] > 0;
-        $userBSkills = $similarity['skills'] > 0;
+        $userASkills = $similarity->getSkills() > 0;
+        $userBSkills = $similarity->getSkills() > 0;
 
 
         //"Do not use questions if and only if any user has no questions and has more than 100 links"
         $questionsFactor = ((($userALinks || $userASkills) && !$userAQuestions) || (($userBLinks || $userBSkills) && !$userBQuestions)) ? 0 : 1;
         $contentsFactor = ($userALinks || $userAQuestions) && ($userBLinks || $userBQuestions) ? 1 : 0; //include questions to be consistent with previous behaviour
 //        $skillsFactor = $userASkills & $userBSkills ? 1 : 0;
-        $skillsFactor = $similarity['skills'] > 0 ? 1 : 0;
+        $skillsFactor = $similarity->getSkills() > 0 ? 1 : 0;
 
         $denominator = $questionsFactor + $contentsFactor + $skillsFactor;
 
         $this->specialCases($similarity, $idA, $idB);
 
-        $similarity['similarity'] = $denominator == 0 ? 0 :
-            (($similarity['interests'] * $contentsFactor + $similarity['questions'] * $questionsFactor + $similarity['skills'] * $skillsFactor)
-                / ($denominator)
-            );
+        $newSimilarity = $denominator == 0 ? 0 : (($similarity->getInterests() * $contentsFactor + $similarity->getQuestions() * $questionsFactor + $similarity->getSkills() * $skillsFactor) / ($denominator)) ;
+        $similarity->setSimilarity($newSimilarity);
 
-        $this->setSimilarity($idA, $idB, $similarity['similarity']);
+        $this->setSimilarity($idA, $idB, $similarity->getSimilarity());
 
         return $similarity;
     }
 
-    private function specialCases(&$similarity, $idA, $idB)
+    private function specialCases(Similarity $similarity, $idA, $idB)
     {
         $limitSimilarity = 0.85;
         $newLimitSimilarity = 0.4;
@@ -604,11 +594,13 @@ class SimilarityModel
 
         foreach ($groupIds as $groupId) {
             if ($this->groupModel->isUserFromGroup($groupId, $idA) && $this->groupModel->isUserFromGroup($groupId, $idB)) {
-                if ($similarity['interests'] > $limitSimilarity) {
-                    $similarity['interests'] = (($similarity['interests'] - $limitSimilarity) / (1 - $limitSimilarity)) * (1 - $newLimitSimilarity) + $newLimitSimilarity;
+                //With old and new intervals delimited by limitSimilarity, this transformation is a strecht/compress.
+                if ($similarity->getInterests() > $limitSimilarity) {
+                    $newInterests = (($similarity->getInterests() - $limitSimilarity) / (1 - $limitSimilarity)) * (1 - $newLimitSimilarity) + $newLimitSimilarity;
                 } else {
-                    $similarity['interests'] = (($similarity['interests']) / $limitSimilarity) * $newLimitSimilarity;
+                    $newInterests = (($similarity->getInterests()) / $limitSimilarity) * $newLimitSimilarity;
                 }
+                $similarity->setInterests($newInterests);
             }
         }
     }
@@ -631,17 +623,22 @@ class SimilarityModel
         $qb->getQuery()->getResultSet();
     }
 
+    /**
+     * @param Row $row
+     * @return Similarity
+     */
     private function buildSimilarity(Row $row)
     {
-        $similarity = array();
-        $similarity['questions'] = $row->offsetExists('questions') ? $row->offsetGet('questions') : 0;
-        $similarity['interests'] = $row->offsetExists('interests') ? $row->offsetGet('interests') : 0;
-        $similarity['skills'] = $row->offsetExists('skills') ? $row->offsetGet('skills') : 0;
-        $similarity['similarity'] = $row->offsetExists('similarity') ? $row->offsetGet('similarity') : 0;
-        $similarity['questionsUpdated'] = $row->offsetExists('questionsUpdated') ? $row->offsetGet('questionsUpdated') : 0;
-        $similarity['interestsUpdated'] = $row->offsetExists('interestsUpdated') ? $row->offsetGet('interestsUpdated') : 0;
-        $similarity['skillsUpdated'] = $row->offsetExists('skillsUpdated') ? $row->offsetGet('skillsUpdated') : 0;
-        $similarity['similarityUpdated'] = $row->offsetExists('similarityUpdated') ? $row->offsetGet('similarityUpdated') : 0;
+        $similarity = new Similarity();
+
+        $similarity->setQuestions($row->offsetExists('questions') ? $row->offsetGet('questions') : 0);
+        $similarity->setQuestionsUpdated($row->offsetExists('questionsUpdated') ? $row->offsetGet('questionsUpdated') : 0);
+        $similarity->setInterests($row->offsetExists('interests') ? $row->offsetGet('interests') : 0);
+        $similarity->setInterestsUpdated($row->offsetExists('interestsUpdated') ? $row->offsetGet('interestsUpdated') : 0);
+        $similarity->setSkills($row->offsetExists('skills') ? $row->offsetGet('skills') : 0);
+        $similarity->setSkillsUpdated($row->offsetExists('similarityUpdated') ? $row->offsetGet('similarityUpdated') : 0);
+        $similarity->setSimilarity($row->offsetExists('similarity') ? $row->offsetGet('similarity') : 0);
+        $similarity->setSimilarityUpdated($row->offsetExists('similarityUpdated') ? $row->offsetGet('similarityUpdated') : 0);
 
         return $similarity;
     }

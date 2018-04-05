@@ -53,7 +53,7 @@ use Model\Recommendation\UserRecommendationPaginatedManager;
 use Model\Relations\RelationsManager;
 use Model\Relations\RelationsPaginatedManager;
 use Model\Shares\SharesManager;
-use Model\Similarity\SimilarityModel;
+use Model\Similarity\SimilarityManager;
 use Model\SocialNetwork\LinkedinSocialNetworkManager;
 use Model\SocialNetwork\SocialProfileManager;
 use Model\Thread\ThreadCachedManager;

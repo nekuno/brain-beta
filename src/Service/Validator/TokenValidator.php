@@ -2,6 +2,7 @@
 
 namespace Service\Validator;
 
+use Model\Exception\ErrorList;
 use Model\Token\TokensManager;
 
 class TokenValidator extends Validator
@@ -61,8 +62,10 @@ class TokenValidator extends Validator
         $userId = isset($data['userId']) ? $data['userId'] : null;
         $resourceOwner = $data['resourceOwner'];
         $resourceId = $data['resourceId'];
-        $errors = array('tokenResourceId' => $this->existenceValidator->validateTokenResourceId($resourceId, $userId, $resourceOwner, $desired));
 
-        $this->throwException($errors);
+        $errorList = new ErrorList();
+        $errorList->setErrors('tokenResourceId', $this->existenceValidator->validateTokenResourceId($resourceId, $userId, $resourceOwner, $desired));
+
+        $this->throwException($errorList);
     }
 }

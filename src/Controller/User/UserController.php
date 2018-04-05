@@ -224,7 +224,7 @@ class UserController
         try {
             /* @var $model \Model\Matching\MatchingManager */
             $model = $app['users.matching.model'];
-            $result = $model->getMatchingBetweenTwoUsersBasedOnAnswers($user->getId(), $otherUserId);
+            $matching = $model->getMatchingBetweenTwoUsersBasedOnAnswers($user->getId(), $otherUserId);
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
                 throw $e;
@@ -233,7 +233,7 @@ class UserController
             return $app->json(array(), 500);
         }
 
-        return $app->json($result, !empty($result) ? 201 : 200);
+        return $app->json($matching, !empty($matching) ? 201 : 200);
     }
 
     /**
@@ -252,10 +252,10 @@ class UserController
         }
 
         try {
-            /* @var $model \Model\Similarity\SimilarityModel */
+            /* @var $model \Model\Similarity\SimilarityManager */
             $model = $app['users.similarity.model'];
             $similarity = $model->getCurrentSimilarity($user->getId(), $otherUserId);
-            $result = array('similarity' => $similarity['similarity']);
+            $result = array('similarity' => $similarity->getSimilarity());
 
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
@@ -504,7 +504,6 @@ class UserController
             /* @var $model \Model\Affinity\AffinityManager */
             $model = $app['users.affinity.model'];
             $affinity = $model->getAffinity($user->getId(), $linkId);
-            $result = array('affinity' => $affinity['affinity']);
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
                 throw $e;
@@ -513,7 +512,7 @@ class UserController
             return $app->json(array(), 500);
         }
 
-        return $app->json($result, !empty($result) ? 201 : 200);
+        return $app->json($affinity, !empty($affinity) ? 201 : 200);
     }
 
     /**

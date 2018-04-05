@@ -4,6 +4,7 @@ namespace Model\Recommendation;
 
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
+use Model\Affinity\Affinity;
 use Model\Link\LinkManager;
 use Model\Affinity\AffinityManager;
 use Model\Neo4j\GraphManager;
@@ -220,10 +221,10 @@ class ContentRecommendationPaginatedManager extends AbstractContentPaginatedMana
         if ($contentId && $id) {
             $affinity = $this->am->getAffinity((integer)$id, $contentId);
         } else {
-            $affinity = array('affinity' => 0);
+            $affinity = new Affinity();
         }
 
-        $contentRecommendation->setMatch($affinity['affinity']);
+        $contentRecommendation->setMatch($affinity->getAffinity());
 
         return $contentRecommendation;
     }

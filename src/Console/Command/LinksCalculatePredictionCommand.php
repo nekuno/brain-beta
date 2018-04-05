@@ -60,7 +60,7 @@ class LinksCalculatePredictionCommand extends ApplicationAwareCommand
                         $linkId = $link->getId();
                         $affinity = $affinityModel->getAffinity($user->getId(), $linkId);
                         if (OutputInterface::VERBOSITY_NORMAL <= $output->getVerbosity()) {
-                            $output->writeln(sprintf('User: %d --> Link: %d (Affinity: %f)', $user->getId(), $linkId, $affinity['affinity']));
+                            $output->writeln(sprintf('User: %d --> Link: %d (Affinity: %f)', $user->getId(), $linkId, $affinity->getAffinity()));
                         }
                     }
                 }

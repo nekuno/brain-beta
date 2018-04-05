@@ -32,7 +32,7 @@ class AffinityManager
 
         $numberOfSecondsToCache = $seconds ?: self::numberOfSecondsToCache;
         $minTimestampForCache = time() - $numberOfSecondsToCache;
-        $hasToRecalculate = ($affinity['updated'] / 1000) < $minTimestampForCache;
+        $hasToRecalculate = ($affinity->getUpdated() / 1000) < $minTimestampForCache;
 
         if ($hasToRecalculate) {
             $this->calculateAffinity($userId, $linkId);
@@ -43,7 +43,13 @@ class AffinityManager
         return $affinity;
     }
 
-    public function getCurrentAffinity($userId, $linkId)
+    /**
+     * @param $userId
+     * @param $linkId
+     * @return Affinity
+     * @throws \Exception
+     */
+    protected function getCurrentAffinity($userId, $linkId)
     {
         $qb = $this->gm->createQueryBuilder();
         $qb
@@ -65,15 +71,12 @@ class AffinityManager
         $query = $qb->getQuery();
         $result = $query->getResultSet();
 
-        $affinity = array(
-            'affinity' => 0,
-            'updated' => 0,
-        );
+        $affinity = new Affinity();
         if ($result->count() > 0) {
             /* @var $row Row */
             $row = $result->current();
-            $affinity['affinity'] = $row->offsetGet('affinity');
-            $affinity['updated'] = $row->offsetGet('updated');
+            $affinity->setAffinity($row->offsetGet('affinity'));
+            $affinity->setUpdated($row->offsetGet('updated'));
         }
 
         return $affinity;
