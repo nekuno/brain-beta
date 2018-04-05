@@ -4,14 +4,14 @@ namespace Model\Similarity;
 
 class Similarity implements \JsonSerializable
 {
-    protected $questions;
-    protected $questionsUpdated;
-    protected $interests;
-    protected $interestsUpdated;
-    protected $skills;
-    protected $skillsUpdated;
-    protected $similarity;
-    protected $similarityUpdated;
+    protected $questions = 0;
+    protected $questionsUpdated = 0;
+    protected $interests = 0;
+    protected $interestsUpdated = 0;
+    protected $skills = 0;
+    protected $skillsUpdated = 0;
+    protected $similarity = 0;
+    protected $similarityUpdated = 0;
 
     /**
      * @return mixed

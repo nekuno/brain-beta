@@ -76,7 +76,7 @@ class PredictionWorker extends LoggerAwareWorker implements RabbitMQConsumerInte
                     foreach ($contentRecommendations as $contentRecommendation) {
                         $linkId = $contentRecommendation->getContent()->getId();
                         $affinity = $this->affinityModel->getAffinity($userId, $linkId);
-                        $this->logger->info(sprintf('Affinity between user %s and link %s: %s', $userId, $linkId, $affinity['affinity']));
+                        $this->logger->info(sprintf('Affinity between user %s and link %s: %s', $userId, $linkId, $affinity->getAffinity()));
                     }
                 } catch (\Exception $e) {
                     $this->logger->error(sprintf('Worker: Error calculating live affinity for user %d with message %s on file %s, line %d', $userId, $e->getMessage(), $e->getFile(), $e->getLine()));

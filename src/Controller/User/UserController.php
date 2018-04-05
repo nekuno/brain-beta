@@ -504,7 +504,6 @@ class UserController
             /* @var $model \Model\Affinity\AffinityManager */
             $model = $app['users.affinity.model'];
             $affinity = $model->getAffinity($user->getId(), $linkId);
-            $result = array('affinity' => $affinity['affinity']);
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
                 throw $e;
@@ -513,7 +512,7 @@ class UserController
             return $app->json(array(), 500);
         }
 
-        return $app->json($result, !empty($result) ? 201 : 200);
+        return $app->json($affinity, !empty($affinity) ? 201 : 200);
     }
 
     /**

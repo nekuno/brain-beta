@@ -6,7 +6,7 @@ class Matching
 {
     protected $matching = 0;
 
-    protected $timestamp;
+    protected $timestamp = 0;
 
     /**
      * @return mixed

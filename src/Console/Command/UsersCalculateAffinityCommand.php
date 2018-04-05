@@ -24,7 +24,6 @@ class UsersCalculateAffinityCommand extends ApplicationAwareCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-
         /* @var $userManager UserManager */
         $userManager = $this->app['users.manager'];
         /* @var $linkService LinkService */
@@ -81,7 +80,7 @@ class UsersCalculateAffinityCommand extends ApplicationAwareCommand
 
         $affinity = $affinityModel->getAffinity($userId, $linkId);
 
-        $output->writeln('Affinity: ' . $affinity['affinity'] . ' - Last Updated: ' . $affinity['updated']);
+        $output->writeln('Affinity: ' . $affinity->getAffinity() . ' - Last Updated: ' . $affinity->getUpdated());
 
     }
 }
