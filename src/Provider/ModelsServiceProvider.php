@@ -233,7 +233,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
 
         $app['users.similarity.model'] = function ($app) {
 
-            return new SimilarityModel($app['dispatcher'], $app['neo4j.graph_manager'], $app['users.questions.model'], $app['users.content.model'], $app['users.profile.model'], $app['users.groups.model']);
+            return new SimilarityManager($app['dispatcher'], $app['neo4j.graph_manager'], $app['users.questions.model'], $app['users.content.model'], $app['users.profile.model'], $app['users.groups.model']);
         };
 
         $app['links.popularity.paginated.model'] = function ($app) {
