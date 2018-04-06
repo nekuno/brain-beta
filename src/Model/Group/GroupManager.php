@@ -304,9 +304,8 @@ class GroupManager
         $qb->match('(g:Group)')
             ->where('id(g) = { id }')
             ->setParameter('id', (integer)$id)
-            ->optionalMatch('(g)-[r]-()')
-            ->optionalMatch('()-[relationships]-(i:Invitation)-[:HAS_GROUP]->(g)')
-            ->delete('g', 'r', 'i', 'relationships');
+            ->optionalMatch('(g)<-[:HAS_GROUP]-(i:Invitation)')
+            ->detachDelete('g', 'i');
 
         $query = $qb->getQuery();
 
