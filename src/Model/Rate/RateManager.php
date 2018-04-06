@@ -50,8 +50,7 @@ class RateManager
      * @param bool $fireEvent
      * @param string $originContext
      * @param string $originName
-     * @return array
-     * //TODO: Refactor to accept Rate object
+     * @return Rate[]
      */
     public function userRateLink($userId, $linkId, $resource = 'nekuno', $timestamp = null, $rate = self::LIKE, $fireEvent = true, $originContext = null, $originName = null)
     {
@@ -85,7 +84,7 @@ class RateManager
      * @param $userId
      * @param $rate
      * @param int $limit
-     * @return array
+     * @return Rate[]
      * @throws \Exception
      */
     public function getRatesByUser($userId, $rate, $limit = 999999)
@@ -113,60 +112,6 @@ class RateManager
         }
 
         return $rates;
-    }
-
-    public function getRatesByLink($linkUrl, $rate, $limit = 999999)
-    {
-        $this->validate($rate);
-
-        $qb = $this->gm->createQueryBuilder();
-
-        $qb->match('(l:Link {url: { linkUrl }})')
-            ->match("(u:User)-[r:$rate]->(l)")
-            ->returns('r', 'l.url as linkUrl, u.qnoow_id as userId')
-            ->limit('{limit}');
-
-        $qb->setParameters(array(
-            'linkUrl' => (integer)$linkUrl,
-            'limit' => (integer) $limit,
-        ));
-
-        $rs = $qb->getQuery()->getResultSet();
-
-        $rates = array();
-        foreach ($rs as $row)
-        {
-            $rates[] = $this->buildLike($row);
-        }
-
-        return $rates;
-    }
-
-    /**
-     * Meant to work only on empty likes as is.
-     * @param $likeId
-     * @return array|bool
-     * @throws \Model\Neo4j\Neo4jException
-     */
-    public function completeLikeById($likeId){
-
-        $rate = self::LIKE;
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match("(u:User)-[r:$rate]->(l:Link)")
-            ->where('id(r)={likeId}')
-            ->set('r.nekuno = timestamp()', 'r.updatedAt = timestamp()')
-            ->returns('r', 'l.url AS linkUrl');
-        $qb->setParameters(array(
-            'likeId' => (integer)$likeId
-        ));
-
-        $rs = $qb->getQuery()->getResultSet();
-
-        if ($rs->count() == 0){
-            return false;
-        }
-
-        return $this->buildLike($rs->current());
     }
 
     /**
@@ -210,7 +155,6 @@ class RateManager
      */
     protected function userLikeLink($userId, $linkId, $resource = 'nekuno', $timestamp, $originContext, $originName)
     {
-
         if (empty($userId) || empty($linkId)) return array('empty thing' => 'true'); //TODO: Fix this return
 
         $qb = $this->gm->createQueryBuilder();
@@ -358,7 +302,7 @@ class RateManager
     /**
      * Intended to mimic a Like object
      * @param Row $row with r as Like relationship
-     * @return array
+     * @return Rate
      */
     protected function buildLike($row)
     {
@@ -373,15 +317,16 @@ class RateManager
             }
         }
 
-        return array(
-            'id' => $relationship->getId(),
-            'resources' => $resources,
-            'timestamp' => $relationship->getProperty('updatedAt'),
-            'linkUrl' => $row->offsetGet('linkUrl'),
-            'userId' => $row->offsetGet('userId'),
-            'originContext' => $relationship->getProperty('originContext'),
-            'originName' => $relationship->getProperty('originName'),
-        );
+        $rate = new Rate();
+        $rate->setId($relationship->getId());
+        $rate->setResources($resources);
+        $rate->setTimestamp($relationship->getProperty('updatedAt'));
+        $rate->setLinkUrl($row->offsetGet('linkUrl'));
+        $rate->setUserId($row->offsetGet('userId'));
+        $rate->setOriginContext($relationship->getProperty('originContext'));
+        $rate->setOriginName($relationship->getProperty('originName'));
+
+        return $rate;
     }
 
     /**

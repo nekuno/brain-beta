@@ -553,23 +553,18 @@ class ProcessorService implements LoggerAwareInterface
      * @param $userId
      * @param Link[] $links
      * @param PreprocessedLink $preprocessedLink
-     * @return array
      */
     private function like($userId, array $links, PreprocessedLink $preprocessedLink)
     {
-        $likes = array();
         $source = $preprocessedLink->getSource() ?: 'nekuno';
         foreach ($links as $link) {
             $linkId = $link->getId();
             try {
-                $like = $this->rateModel->userRateLink($userId, $linkId, $source, null, RateManager::LIKE, false);
-                $likes[] = $like;
+                $this->rateModel->userRateLink($userId, $linkId, $source, null, RateManager::LIKE, false);
             } catch (\Exception $e) {
                 $this->logError($e, sprintf('liking while processing link with id %d for user $d', $linkId, $userId));
             }
         }
-
-        return $likes;
     }
 
     private function logNotice($message)
