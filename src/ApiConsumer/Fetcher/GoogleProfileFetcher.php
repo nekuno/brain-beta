@@ -32,7 +32,7 @@ class GoogleProfileFetcher extends AbstractFetcher{
         $url = $this->getUrl($username);
         $query = array();
 
-        $response = $this->resourceOwner->requestAsClient($url, $query, $this->token);
+        $response = $this->resourceOwner->requestAsClient($url, $query);
 
         return $this->parseLinks($response);
     }

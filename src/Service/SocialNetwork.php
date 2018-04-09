@@ -2,8 +2,8 @@
 
 namespace Service;
 
-use ApiConsumer\Factory\FetcherFactory;
-use ApiConsumer\LinkProcessor\LinkAnalyzer;
+use ApiConsumer\Fetcher\FetcherService;
+use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
 use Model\LookUp\LookUpManager;
 use Model\Profile\ProfileManager;
@@ -19,34 +19,31 @@ class SocialNetwork
     /**
      * @var LinkedinSocialNetworkManager
      */
-    protected $linkedinSocialNetworkModel;
+    protected $linkedinSocialNetworkManager;
 
     /**
      * @var LookUpManager
      */
-    protected $lookupModel;
+    protected $lookUpManager;
 
-    protected $profileTagModel;
+    protected $profileTagManager;
 
-    protected $profileModel;
+    protected $profileManager;
 
-    /**
-     * @var FetcherFactory
-     */
-    protected $fetcherFactory;
+    protected $fetcherService;
 
     function __construct(
-        LinkedinSocialNetworkManager $linkedinSocialNetworkModel,
-        LookUpManager $lookupModel,
-        ProfileTagManager $profileTagModel,
-        ProfileManager $profileModel,
-        FetcherFactory $fetcherFactory
+        LinkedinSocialNetworkManager $linkedinSocialNetworkManager,
+        LookUpManager $lookUpManager,
+        ProfileTagManager $profileTagManager,
+        ProfileManager $profileManager,
+        FetcherService $fetcherService
     ) {
-        $this->linkedinSocialNetworkModel = $linkedinSocialNetworkModel;
-        $this->lookupModel = $lookupModel;
-        $this->profileTagModel = $profileTagModel;
-        $this->profileModel = $profileModel;
-        $this->fetcherFactory = $fetcherFactory;
+        $this->linkedinSocialNetworkManager = $linkedinSocialNetworkManager;
+        $this->lookUpManager = $lookUpManager;
+        $this->profileTagManager = $profileTagManager;
+        $this->profileManager = $profileManager;
+        $this->fetcherService = $fetcherService;
     }
 
     public function setSocialNetworksInfo($userId, $socialNetworks, LoggerInterface $logger = null)
@@ -60,15 +57,15 @@ class SocialNetwork
     {
         switch ($resource) {
             case 'linkedin':
-                $this->linkedinSocialNetworkModel->set($userId, $profileUrl, $logger);
-                $data = $this->linkedinSocialNetworkModel->getData($profileUrl, $logger);
-                $locale = $this->profileModel->getInterfaceLocale($userId);
+                $this->linkedinSocialNetworkManager->set($userId, $profileUrl, $logger);
+                $data = $this->linkedinSocialNetworkManager->getData($profileUrl, $logger);
+                $locale = $this->profileManager->getInterfaceLocale($userId);
 
                 $skills = array_filter($data['tags']);
-                $this->profileTagModel->addTags($userId, $locale, 'Profession', $skills);
+                $this->profileTagManager->addTags($userId, $locale, 'Profession', $skills);
 
                 $languages = array_filter($data['languages']);
-                $this->profileTagModel->addTags($userId, $locale, 'Language', $languages);
+                $this->profileTagManager->addTags($userId, $locale, 'Language', $languages);
 
                 if ($logger) {
                     $logger->info('linkedin social network info added for user ' . $userId . ' (' . $profileUrl . ')');
@@ -83,22 +80,20 @@ class SocialNetwork
                     $logger->info('Analyzing google plus profile for getting youtube profile');
                 }
 
-                $googleId = LinkAnalyzer::getUsername($profileUrl);
-
-                $googleProfileFetcher = $this->fetcherFactory->build('google_profile');
-                $profiles = $googleProfileFetcher->fetchAsClient($googleId);
+                $profiles = $this->fetcherService->fetchGoogleProfiles($profileUrl);
 
                 if (count($profiles) !== 1) {
                     $logger->info('Youtube profile not found.');
                     break;
                 }
 
+                /** @var PreprocessedLink $profile */
                 foreach ($profiles as $profile) {
                     $url = $profile->getUrl();
                     if (strpos($url, 'youtube.com')) {
                         $socialProfile = array(YoutubeUrlParser::GENERAL_URL => $url);
-                        $this->lookupModel->setSocialProfiles($socialProfile, $userId);
-                        $this->lookupModel->dispatchSocialNetworksAddedEvent($userId, $socialProfile);
+                        $this->lookUpManager->setSocialProfiles($socialProfile, $userId);
+                        $this->lookUpManager->dispatchSocialNetworksAddedEvent($userId, $socialProfile);
                         if ($logger) {
                             $logger->info('Youtube url ' . $url . ' found and joined to user ' . $userId . '.');
                         }

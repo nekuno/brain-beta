@@ -244,4 +244,14 @@ class FetcherService implements LoggerAwareInterface
 
         return $fetchers;
     }
+
+    public function fetchGoogleProfiles($profileUrl)
+    {
+        $googleId = LinkAnalyzer::getUsername($profileUrl);
+        $googleProfileFetcher = $this->fetcherFactory->build('google_profile');
+
+        $profiles = $googleProfileFetcher->fetchAsClient($googleId);
+
+        return $profiles;
+    }
 }

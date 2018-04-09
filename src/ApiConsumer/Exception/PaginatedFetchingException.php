@@ -22,7 +22,7 @@ class PaginatedFetchingException extends \Exception
     }
 
     /**
-     * @return string
+     * @return array
      */
     public function getLinks()
     {
@@ -30,7 +30,7 @@ class PaginatedFetchingException extends \Exception
     }
 
     /**
-     * @param string $links
+     * @param array $links
      */
     public function setLinks($links)
     {
