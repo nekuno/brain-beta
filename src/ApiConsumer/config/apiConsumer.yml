@@ -46,8 +46,11 @@ api_consumer.config:
         youtube:
             class: ApiConsumer\Fetcher\YoutubeFetcher
             resourceOwner: google
-        spotify:
-            class: ApiConsumer\Fetcher\SpotifyFetcher
+        spotify_tracks:
+            class: ApiConsumer\Fetcher\SpotifyPlaylistTracksFetcher
+            resourceOwner: spotify
+        spotify_favorites:
+            class: ApiConsumer\Fetcher\SpotifyFavoritesFetcher
             resourceOwner: spotify
         tumblr_blogs:
             class: ApiConsumer\Fetcher\TumblrBlogsFetcher

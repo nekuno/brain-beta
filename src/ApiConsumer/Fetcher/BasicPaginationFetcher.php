@@ -35,6 +35,10 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
         return $this->paginationField;
     }
 
+    /**
+     * @param null $paginationId
+     * @return array
+     */
     protected function getQuery($paginationId = null)
     {
         $query = null == $paginationId ? array() : array($this->getPaginationField() => $paginationId);

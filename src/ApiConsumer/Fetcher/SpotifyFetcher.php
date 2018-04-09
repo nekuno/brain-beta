@@ -6,7 +6,7 @@ use ApiConsumer\LinkProcessor\PreprocessedLink;
 use Model\Link\Link;
 use Model\Token\Token;
 
-class SpotifyFetcher extends BasicPaginationFetcher
+abstract class SpotifyFetcher extends BasicPaginationFetcher
 {
     //max limits allowed by Spotify API to reduce calls
     const MAX_PLAYLISTS_PER_USER = 50;
@@ -23,57 +23,6 @@ class SpotifyFetcher extends BasicPaginationFetcher
     protected $query = array();
 
     protected $paginationField = 'offset';
-
-    /**
-     * { @inheritdoc }
-     */
-    public function fetchLinksFromUserFeed(Token $token)
-    {
-        $this->setUpToken($token);
-
-        $spotifyId = $token->getResourceId();
-
-        $this->url .= 'users/' . $spotifyId . '/playlists/';
-
-        try {
-            $this->setQuery(array('limit' => $this::MAX_PLAYLISTS_PER_USER));
-            $playlists = $this->getLinksByPage();
-            $this->rawFeed = array();
-
-            if (isset($playlists)) {
-                foreach ($playlists as $playlist) {
-                    if ($playlist['owner']['id'] == $spotifyId) {
-
-                        $this->url = 'users/' . $spotifyId . '/playlists/' . $playlist['id'] . '/tracks';
-
-                        try {
-                            $this->setQuery(array('limit' => $this::MAX_TRACKS_PER_PLAYLIST));
-                            $this->getLinksByPage();
-
-                        } catch (\Exception $e) {
-                            continue;
-                        }
-                    }
-                }
-            }
-
-            $this->url = 'users/' . $spotifyId . '/starred/tracks';
-            $this->setQuery(array('limit' => $this::MAX_TRACKS_PER_PLAYLIST));
-            $this->getLinksByPage();
-
-            $parsed = $this->parseLinks($this->rawFeed);
-
-            $links = array();
-            foreach ($parsed as $parsedLink){
-                $links[$parsedLink->getUrl()] = $parsedLink;
-            }
-
-        } catch (\Exception $e) {
-            throw $e;
-        }
-
-        return $links;
-    }
 
     /**
      * { @inheritdoc }
@@ -119,6 +68,7 @@ class SpotifyFetcher extends BasicPaginationFetcher
     public function getQuery($paginationId = null)
     {
         $parentQuery = parent::getQuery($paginationId);
+
         return array_merge($parentQuery, $this->query);
     }
 
@@ -141,9 +91,15 @@ class SpotifyFetcher extends BasicPaginationFetcher
             $startPos = strpos($response['next'], 'offset=') + 7;
             $endPos = strpos($response['next'], '&');
             $length = $endPos - $startPos;
+
             return substr($response['next'], $startPos, $length);
         } else {
             return null;
         }
+    }
+
+    protected function getResourceId()
+    {
+        return $this->username ?: ($this->token instanceof Token ? $this->token->getResourceId() : null);
     }
 }
