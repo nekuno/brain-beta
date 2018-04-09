@@ -381,17 +381,19 @@ class InvitationManager
             isset($data['groupId']) ? $qb->with('inv, g') : $qb->with('inv');
             $qb->optionalMatch('(old_user:User)-[our:CREATED_INVITATION]->(inv)')
                 ->delete('our');
-            isset($data['groupId']) ? $qb->with('inv, g') : $qb->with('inv');
-            $qb->match('(user:User)')
-                ->where('user.qnoow_id = { userId }')
-                ->createUnique('(user)-[r:CREATED_INVITATION]->(inv)')
-                ->setParameters(
-                    array(
-                        'userId' => (integer)$data['userId'],
-                        'groupId' => isset($data['groupId']) ? (integer)$data['groupId'] : null,
-                        'invitationId' => (integer)$data['invitationId'],
-                    )
-                );
+            if (isset($data['userId'])) {
+                isset($data['groupId']) ? $qb->with('inv, g') : $qb->with('inv');
+                $qb->match('(user:User)')
+                    ->where('user.qnoow_id = { userId }')
+                    ->createUnique('(user)-[r:CREATED_INVITATION]->(inv)')
+                    ->setParameters(
+                        array(
+                            'userId' => (integer)$data['userId'],
+                            'groupId' => isset($data['groupId']) ? (integer)$data['groupId'] : null,
+                            'invitationId' => (integer)$data['invitationId'],
+                        )
+                    );
+            }
         }
 
         if (isset($data['groupId'])) {

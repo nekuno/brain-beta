@@ -67,6 +67,9 @@ class DeviceService
 
         $payloadData = $this->getPayloadData($category, $data);
 
+        if (empty($devices)) {
+            return null;
+        }
         $payload = array(
             'notification' => array(
                 'title' => $payloadData['title'],
