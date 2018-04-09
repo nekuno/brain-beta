@@ -157,6 +157,7 @@ class LinkAnalyzer
     {
         $parser = self::getUrlParser($url);
 
+        $url = $parser->cleanURL($url);
         return $parser->getUsername($url);
     }
 

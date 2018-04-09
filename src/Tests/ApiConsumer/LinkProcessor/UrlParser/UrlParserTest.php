@@ -74,6 +74,15 @@ class UrlParserTest extends \PHPUnit_Framework_TestCase
         $this->parser->cleanURL($url);
     }
 
+    /**
+     * @dataProvider getUsername
+     */
+    public function testGetUsername($url, $expectedUsername)
+    {
+        $username = $this->parser->getUsername($url);
+        $this->assertEquals($expectedUsername, $username, 'Username extracted from url is not valid');
+    }
+
     public function getBadUrls()
     {
         return array(
@@ -102,6 +111,14 @@ class UrlParserTest extends \PHPUnit_Framework_TestCase
         return array(
             array('http://www.google.com/', 'http://www.google.com'),
             array('http://facebook.com?', 'http://facebook.com'),
+        );
+    }
+
+    public function getUsername()
+    {
+        return array(
+            array('https://twitter.com/yawmoght', 'yawmoght'),
+            array('https://www.facebook.com/AsociacionOniros/', 'AsociacionOniros')
         );
     }
 
