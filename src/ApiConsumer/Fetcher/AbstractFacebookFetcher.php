@@ -18,9 +18,9 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
     /**
      * @inheritdoc
      */
-    public function getUrl($userId = null)
+    public function getUrl()
     {
-        return $userId ?: $this->token->getResourceId();
+        return $this->getResourceId();
     }
 
     /**

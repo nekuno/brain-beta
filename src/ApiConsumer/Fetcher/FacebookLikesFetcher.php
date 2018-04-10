@@ -8,9 +8,9 @@ use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 
 class FacebookLikesFetcher extends AbstractFacebookFetcher
 {
-    public function getUrl($userId = null)
+    public function getUrl()
     {
-        return parent::getUrl($userId) . '/likes';
+        return parent::getUrl() . '/likes';
     }
 
     protected function getQuery($paginationId = null)

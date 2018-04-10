@@ -17,7 +17,7 @@ class GoogleProfileFetcher extends AbstractFetcher{
     public function fetchLinksFromUserFeed(Token $token)
     {
         $this->setToken($token);
-        $url = $this->getUrl($token->getResourceId());
+        $url = $this->getUrlFromUsername($token->getResourceId());
         $query = array();
         $response = $this->resourceOwner->requestAsUser($url, $query, $token);
 
@@ -29,7 +29,7 @@ class GoogleProfileFetcher extends AbstractFetcher{
      */
     public function fetchAsClient($username)
     {
-        $url = $this->getUrl($username);
+        $url = $this->getUrlFromUsername($username);
         $query = array();
 
         $response = $this->resourceOwner->requestAsClient($url, $query);
@@ -37,7 +37,7 @@ class GoogleProfileFetcher extends AbstractFetcher{
         return $this->parseLinks($response);
     }
 
-    public function getUrl($username = null)
+    public function getUrlFromUsername($username = null)
     {
         return  $username ? $this->url . $username : $this->url;
     }

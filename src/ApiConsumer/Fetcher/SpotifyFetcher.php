@@ -97,9 +97,4 @@ abstract class SpotifyFetcher extends BasicPaginationFetcher
             return null;
         }
     }
-
-    protected function getResourceId()
-    {
-        return $this->username ?: ($this->token instanceof Token ? $this->token->getResourceId() : null);
-    }
 }

@@ -46,6 +46,11 @@ abstract class BasicPaginationFetcher extends AbstractFetcher
         return $query;
     }
 
+    protected function getResourceId()
+    {
+        return $this->username ?: ($this->token instanceof Token ? $this->token->getResourceId() : null);
+    }
+
     /**
      * @return array
      * @throws PaginatedFetchingException

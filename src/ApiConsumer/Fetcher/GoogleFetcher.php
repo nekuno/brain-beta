@@ -4,7 +4,6 @@ namespace ApiConsumer\Fetcher;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use Model\Link\Link;
-use Model\Token\Token;
 
 class GoogleFetcher extends BasicPaginationFetcher
 {
@@ -19,7 +18,8 @@ class GoogleFetcher extends BasicPaginationFetcher
      */
     public function getUrl()
     {
-        $googleId = $this->username ?: ($this->token instanceof Token ? $this->token->getResourceId() : null);
+        $googleId = $this->getResourceId();
+
         return 'plus/v1/people/' . $googleId . '/activities/public';
     }
 
@@ -63,7 +63,6 @@ class GoogleFetcher extends BasicPaginationFetcher
         return $paginationId;
     }
 
-
     /**
      * {@inheritDoc}
      */
@@ -87,9 +86,11 @@ class GoogleFetcher extends BasicPaginationFetcher
             if (array_key_exists('updated', $item)) {
                 $date = new \DateTime($item['updated']);
                 $timestamp = ($date->getTimestamp()) * 1000;
-            } else if (array_key_exists('published', $item)) {
-                $date = new \DateTime($item['published']);
-                $timestamp = $date->getTimestamp() * 1000;
+            } else {
+                if (array_key_exists('published', $item)) {
+                    $date = new \DateTime($item['published']);
+                    $timestamp = $date->getTimestamp() * 1000;
+                }
             }
             $link->setCreated($timestamp);
 
