@@ -8,7 +8,6 @@ use ApiConsumer\LinkProcessor\Processor\BatchProcessorInterface;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 use Model\Link\Creator;
-use Model\Link\Link;
 use Model\Token\Token;
 use Model\Token\TokensManager;
 
@@ -27,7 +26,7 @@ class TwitterProfileProcessor extends AbstractTwitterProcessor implements BatchP
 
     public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
     {
-        $profiles = $this->resourceOwner->buildProfilesFromLookup($data);
+        $profiles = $this->buildProfilesFromLookup($data);
         $link = reset($profiles);
         $preprocessedLink->setFirstLink($link);
         $id = isset($data['id_str']) ? (int)$data['id_str'] : $data['id'];

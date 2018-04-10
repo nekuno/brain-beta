@@ -118,44 +118,6 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
         sleep($fifteenMinutes);
     }
 
-    /**
-     * @param $content array[]
-     * @return Link[]
-     */
-    //TODO: Move this to Processor and use getImages. Is it really necessary in TwitterFollowingFetcher? Are we doing this multiple times?
-    public function buildProfilesFromLookup(array $content)
-    {
-        foreach ($content as &$user) {
-            $user = $this->buildProfileFromLookup($user);
-        }
-
-        return $content;
-    }
-
-    /**
-     * @param $user array
-     * @return Link
-     */
-    protected function buildProfileFromLookup(array $user)
-    {
-        if (!$user) {
-            return null;
-        }
-
-        $profile = new Link();
-        $profile->setUrl($this->getUserUrl($user));
-        $profile->setTitle(isset($user['name']) ? $user['name'] : $profile->getUrl());
-        $profile->setDescription(isset($user['description']) ? $user['description'] : $profile->getTitle());
-        $profile->setThumbnail($this->urlParser->getOriginalProfileUrl($user, null));
-        $profile->setThumbnailMedium($this->urlParser->getMediumProfileUrl($user, null));
-        $profile->setThumbnailSmall($this->urlParser->getSmallProfileUrl($user, null));
-        $profile->setCreated(1000 * time());
-        $profile->addAdditionalLabels(AbstractTwitterProcessor::TWITTER_LABEL);
-        $profile->setProcessed(true);
-
-        return $profile;
-    }
-
     public function requestProfileUrl(Token $token)
     {
         try {
@@ -165,12 +127,7 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
             return null;
         }
 
-        return $this->getUserUrl($account);
-    }
-
-    public function getUserUrl(array $user)
-    {
-        return isset($user['screen_name']) ? $this->urlParser->buildUserUrl($user['screen_name']) : null;
+        return $this->urlParser->getUserUrl($account);
     }
 
     public function requestStatus($statusId)

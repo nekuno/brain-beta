@@ -251,4 +251,9 @@ class TwitterUrlParser extends UrlParser
 
         return $url;
     }
+
+    public function getUserUrl(array $user)
+    {
+        return isset($user['screen_name']) ? $this->buildUserUrl($user['screen_name']) : null;
+    }
 }
