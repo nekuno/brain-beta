@@ -154,9 +154,8 @@ class QuestionCorrelationManager
             ->with('id(q1) AS q1,id(q2) AS q2,id(a1) AS a1,id(a2) AS a2,count(distinct(u)) AS users')
             //Use standard deviation as a correlation measure
             ->with('q1, q2, sum(users) as totalUsers,  stdevp(users) AS std, (count(distinct(a1))+count(distinct(a2))) AS answers')
-            ->where('totalUsers>0')
             //Normalizations to get it between 0 and 1
-            ->with('q1, q2, std/totalUsers as normstd, answers')
+            ->with('q1, q2, CASE WHEN totalUsers > 0 THEN std/totalUsers ELSE 0.5 END as normstd, answers')
             ->with('q1,q2,normstd*sqrt(answers) as finalstd')
             ->returns('q1,q2,finalstd');
 
