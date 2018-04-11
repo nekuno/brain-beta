@@ -118,7 +118,7 @@ class UrlParserTest extends \PHPUnit_Framework_TestCase
     {
         return array(
             array('https://twitter.com/yawmoght', 'yawmoght'),
-            array('https://www.facebook.com/AsociacionOniros/', 'AsociacionOniros')
+            array('https://www.facebook.com/AsociacionOniros/', '')
         );
     }
 

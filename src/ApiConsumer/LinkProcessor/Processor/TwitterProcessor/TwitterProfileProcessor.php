@@ -29,7 +29,7 @@ class TwitterProfileProcessor extends AbstractTwitterProcessor implements BatchP
         $profiles = $this->buildProfilesFromLookup($data);
         $link = reset($profiles);
         $preprocessedLink->setFirstLink($link);
-        $id = isset($data['id_str']) ? (int)$data['id_str'] : $data['id'];
+        $id = isset($data[0]['id_str']) ? (int)$data[0]['id_str'] : $data[0]['id'];
         $preprocessedLink->setResourceItemId($id);
     }
 

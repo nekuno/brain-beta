@@ -61,19 +61,19 @@ class TwitterIntentProcessorTest extends AbstractProcessorTest
     /**
      * @dataProvider getProfileForRequestItem
      */
-    public function testRequestItem($url, $id, $profiles, $links)
+    public function testRequestItem($url, $id, $profiles, $userUrl)
     {
         $this->parser->expects($this->once())
             ->method('getProfileId')
             ->will($this->returnValue($id));
 
+        $this->parser->expects($this->once())
+            ->method('getUserUrl')
+            ->will($this->returnValue($userUrl));
+
         $this->resourceOwner->expects($this->once())
             ->method('lookupUsersBy')
             ->will($this->returnValue($profiles));
-
-        $this->resourceOwner->expects($this->once())
-            ->method('buildProfilesFromLookup')
-            ->will($this->returnValue($links));
 
         $this->setExpectedException('ApiConsumer\Exception\UrlChangedException', 'Url changed from https://twitter.com/intent/user?screen_name=yawmoght to https://twitter.com/yawmoght');
 
@@ -106,7 +106,7 @@ class TwitterIntentProcessorTest extends AbstractProcessorTest
                 $this->getProfileUrl(),
                 $this->getProfileId(),
                 $this->getProfileResponse(),
-                array($this->getProfileLink()),
+                'https://twitter.com/yawmoght',
             )
         );
     }

@@ -9,8 +9,7 @@ use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\AbstractTwitterProcesso
 use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterProfileProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
-use Model\Link\Creator;
-use Model\Token\TokensManager;
+use Model\Link\Link;
 use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
 class TwitterProfileProcessorTest extends AbstractProcessorTest
@@ -79,14 +78,19 @@ class TwitterProfileProcessorTest extends AbstractProcessorTest
     /**
      * @dataProvider getResponseHydration
      */
-    public function testHydrateLink($url, $response, $linkArrays, $expectedArray, $expectedId)
+    public function testHydrateLink($url, $response, $userUrl, $thumbnailUrl, $expectedArray, $expectedId)
     {
-        $this->resourceOwner->expects($this->once())
-            ->method('buildProfilesFromLookup')
-            ->will($this->returnValue($linkArrays));
+        $this->parser->expects($this->once())
+            ->method('getUserUrl')
+            ->will($this->returnValue($userUrl));
+
+        $this->parser->expects($this->once())
+            ->method('getOriginalProfileUrl')
+            ->will($this->returnValue($thumbnailUrl));
 
         $link = new PreprocessedLink($url);
         $this->processor->hydrateLink($link, $response);
+        $link->getFirstLink()->setCreated(null);
 
         $this->assertEquals($expectedArray, $link->getFirstLink()->toArray(), 'Asserting correct hydrated link for ' . $url);
         $this->assertEquals($expectedId, $link->getResourceItemId(), 'Asserting correct resourceItemId while hydrating ' . $url);
@@ -151,20 +155,21 @@ class TwitterProfileProcessorTest extends AbstractProcessorTest
 
     public function getResponseHydration()
     {
-        $expected = new Creator();
+        $expected = new Link();
         $expected->setTitle('yawmoght');
         $expected->setDescription('Tool developer & data junkie');
         $expected->setThumbnail('http://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png');
         $expected->setUrl('https://twitter.com/yawmoght');
-        $expected->setCreated(time() * 1000);
+        $expected->setCreated(null);
         $expected->addAdditionalLabels(AbstractTwitterProcessor::TWITTER_LABEL);
         $expected->setProcessed(true);
 
         return array(
             array(
                 $this->getProfileUrl(),
-                $this->getProfileItemResponse(),
-                array($this->getProfileLink()),
+                array($this->getProfileItemResponse()),
+                'https://twitter.com/yawmoght',
+                'http://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png',
                 $expected->toArray(),
                 34529134,
             )
@@ -293,11 +298,11 @@ class TwitterProfileProcessorTest extends AbstractProcessorTest
 
     public function getProfileLink()
     {
-        $link = new Creator();
+        $link = new Link();
         $link->setUrl('https://twitter.com/yawmoght');
         $link->setDescription('Tool developer & data junkie');
         $link->setThumbnail("http://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png");
-        $link->setCreated(1000 * time());
+        $link->setCreated(1523452369000);
         $link->setProcessed(1);
         $link->setTitle('yawmoght');
         $link->addAdditionalLabels('LinkTwitter');
