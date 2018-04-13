@@ -210,7 +210,7 @@ class Fixtures
                     'country' => 'Spain'
                 ),
                 'mode' => 'contact',
-                'objective' => array('contact')
+                'objective' => array('human-contact')
             );
             $this->pm->create($i, $profileData);
         }
