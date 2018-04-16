@@ -5,7 +5,7 @@ namespace Console\Command;
 use Console\ApplicationAwareCommand;
 use Model\Entity\DataStatus;
 use Model\Neo4j\Neo4jException;
-use Model\User\Token\TokenStatus\TokenStatusManager;
+use Model\Token\TokenStatus\TokenStatusManager;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;

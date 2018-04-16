@@ -4,9 +4,9 @@ namespace Controller\User;
 
 use Event\AnswerEvent;
 use Model\Metadata\MetadataManager;
-use Model\User\Question\QuestionModel;
-use Model\User\Question\UserAnswerPaginatedModel;
-use Model\User;
+use Model\Question\QuestionManager;
+use Model\Question\UserAnswerPaginatedManager;
+use Model\User\User;
 use Silex\Application;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
@@ -30,10 +30,16 @@ class AnswerController
         $paginator = $app['paginator'];
 
         $filters = array('id' => $user->getId(), 'locale' => $locale);
-        /* @var $model UserAnswerPaginatedModel */
+        /* @var $model UserAnswerPaginatedManager */
         $model = $app['users.questions.model'];
 
         $result = $paginator->paginate($filters, $model, $request);
+
+        foreach ($result['items'] as &$questionData)
+        {
+            $question = $questionData['question'];
+            $questionData['question'] = $this->setIsRegisterQuestion($question, $user, $app);
+        }
 
         return $app->json($result);
     }
@@ -71,7 +77,7 @@ class AnswerController
         $userAnswer = $app['users.answers.model']->answer($data);
 
         // TODO: Refactor this to listener
-        /* @var $questionModel QuestionModel */
+        /* @var $questionModel QuestionManager */
         $questionModel = $app['questionnaire.questions.model'];
         $questionModel->setOrUpdateRankingForQuestion($data['questionId']);
 
@@ -94,7 +100,7 @@ class AnswerController
         $userAnswer = $app['users.answers.model']->update($data);
 
         // TODO: Refactor this to listener
-        /* @var $questionModel QuestionModel */
+        /* @var $questionModel QuestionManager */
         $questionModel = $app['questionnaire.questions.model'];
         $questionModel->setOrUpdateRankingForQuestion($data['questionId']);
 
@@ -173,7 +179,7 @@ class AnswerController
         $dispatcher = $app['dispatcher'];
         $dispatcher->dispatch(\AppEvents::ANSWER_ADDED, new AnswerEvent($user->getId(),$questionId));
 
-        /* @var $questionModel QuestionModel */
+        /* @var $questionModel QuestionManager */
         $questionModel = $app['questionnaire.questions.model'];
 
         try {
@@ -207,7 +213,7 @@ class AnswerController
 
         $filters = array('id' => $otherUserId, 'id2' => $user->getId(), 'locale' => $locale, 'showOnlyCommon' => $showOnlyCommon);
 
-        /* @var $model \Model\User\Question\OldQuestionComparePaginatedModel */
+        /* @var $model \Model\Question\OldQuestionComparePaginatedManager */
         $model = $app['old.users.questions.compare.model'];
 
         try {
@@ -245,11 +251,20 @@ class AnswerController
 
         $filters = array('id' => $otherUserId, 'id2' => $user->getId(), 'locale' => $locale, 'showOnlyCommon' => $showOnlyCommon);
 
-        /* @var $model \Model\User\Question\QuestionComparePaginatedModel */
+        /* @var $model \Model\Question\QuestionComparePaginatedManager */
         $model = $app['users.questions.compare.model'];
 
         try {
             $result = $paginator->paginate($filters, $model, $request);
+
+            foreach ($result['items'] as &$questionData)
+            {
+                if (empty($question)){
+                    continue;
+                }
+                $question = $questionData['question'];
+                $questionData['question'] = $this->setIsRegisterQuestion($question, $user, $app);
+            }
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
                 throw $e;
@@ -270,5 +285,26 @@ class AnswerController
         }
 
         return $locale;
+    }
+
+    protected function setIsRegisterQuestion($question, User $user, Application $app)
+    {
+        $registerModes = isset($question['registerModes']) ? $question['registerModes'] : array();
+
+        if (empty($registerModes)) {
+            $question['isRegisterQuestion'] = false;
+            unset($question['registerModes']);
+            return $question;
+        }
+
+        $userId = $user->getId();
+
+        $questionCorrelationManager = $app['users.questionCorrelation.manager'];
+        $mode = $questionCorrelationManager->getMode($userId);
+
+        unset($question['registerModes']);
+        $question['isRegisterQuestion'] = in_array($mode, $registerModes);
+
+        return $question;
     }
 }

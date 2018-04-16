@@ -7,7 +7,7 @@ use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\SynonymousParameters;
 use ApiConsumer\ResourceOwner\GoogleResourceOwner;
 use Model\Link\Link;
-use Model\User\Token\Token;
+use Model\Token\Token;
 
 class YoutubeFetcher extends BasicPaginationFetcher
 {
@@ -278,12 +278,13 @@ class YoutubeFetcher extends BasicPaginationFetcher
 
             $preprocessedLink = new PreprocessedLink($url);
 
-            $link = array();
-            $link['title'] = array_key_exists('title', $item['snippet']) ? $item['snippet']['title'] : '';
-            $link['description'] = array_key_exists('description', $item['snippet']) ? $item['snippet']['description'] : '';
-            $link['timestamp'] = $timestamp;
+            $link = new Link();
+            $link->setTitle(array_key_exists('title', $item['snippet']) ? $item['snippet']['title'] : '');
+            $link->setDescription(array_key_exists('description', $item['snippet']) ? $item['snippet']['description'] : '');
+            $link->setCreated($timestamp);
+            $link->setUrl($url);
 
-            $preprocessedLink->setFirstLink(Link::buildFromArray($link));
+            $preprocessedLink->setFirstLink($link);
             $preprocessedLink->setResourceItemId(array_key_exists('id', $item) ? $item['id'] : null);
             $preprocessedLink->setSource($this->resourceOwner->getName());
 

@@ -4,7 +4,7 @@
 namespace ApiConsumer\EventListener;
 
 use Event\ReprocessEvent;
-use Model\Link\LinkModel;
+use Model\Link\LinkManager;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -18,11 +18,11 @@ class ReprocessLinksSubscriber implements EventSubscriberInterface
     protected $output;
 
     /**
-     * @var LinkModel
+     * @var LinkManager
      */
     protected $linkModel;
 
-    public function __construct(OutputInterface $output, LinkModel $linkModel)
+    public function __construct(OutputInterface $output, LinkManager $linkModel)
     {
         $this->output = $output;
         $this->linkModel = $linkModel;
@@ -51,7 +51,7 @@ class ReprocessLinksSubscriber implements EventSubscriberInterface
 
         $linksProcessedCount = 0;
         foreach ($event->getLinks() as $link) {
-            isset($link['processed']) && $link['processed'] ? $linksProcessedCount++ : null;
+            $link->getProcessed() ? $linksProcessedCount++ : null;
         }
 
         if ($linksProcessedCount > 0) {

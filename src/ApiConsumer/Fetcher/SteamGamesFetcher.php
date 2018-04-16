@@ -6,7 +6,7 @@ use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\SteamUrlParser;
 use ApiConsumer\ResourceOwner\SteamResourceOwner;
 use Model\Link\Link;
-use Model\User\Token\Token;
+use Model\Token\Token;
 
 class SteamGamesFetcher extends AbstractFetcher
 {
@@ -49,18 +49,20 @@ class SteamGamesFetcher extends AbstractFetcher
         $preprocessedLinks = array();
 
         foreach ($response as $item) {
+            $appId = $item['appid'];
+
             $type = SteamUrlParser::getGameProcessor();
-            $link = array(
-                'id' => $item['appid'],
-                'url' => "https://store.steampowered.com/app/" . $item['appid'],
-                'title' => $item['name'],
-                'thumbnail' => $this->getThumbnail($item),
-            );
-            $preprocessedLink = new PreprocessedLink($link['url']);
-            $preprocessedLink->setFirstLink(Link::buildFromArray($link));
+            $link = new Link();
+            $link->setId($appId);
+            $link->setUrl("https://store.steampowered.com/app/" . $appId);
+            $link->setTitle($item['name']);
+            $link->setThumbnail($this->getThumbnail($item));
+
+            $preprocessedLink = new PreprocessedLink($link->getUrl());
+            $preprocessedLink->setFirstLink($link);
             $preprocessedLink->setType($type);
             $preprocessedLink->setSource($this->resourceOwner->getName());
-            $preprocessedLink->setResourceItemId($item['appid']);
+            $preprocessedLink->setResourceItemId($appId);
             $preprocessedLink->setToken($this->getToken());
             $preprocessedLinks[] = $preprocessedLink;
         }
@@ -71,7 +73,7 @@ class SteamGamesFetcher extends AbstractFetcher
     public function getThumbnail($item)
     {
         $gameId = $item['appid'];
-        if (isset($item['img_logo_url'])) {
+        if (isset($item['img_logo_url']) && $item['img_logo_url']) {
             $hash = $item['img_logo_url'];
             return "http://media.steampowered.com/steamcommunity/public/images/apps/$gameId/$hash.jpg";
         }

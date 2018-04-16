@@ -2,7 +2,7 @@
 
 namespace Service\Validator;
 
-use Model\Link\LinkModel;
+use Model\Link\LinkManager;
 
 class FilterContentValidator extends Validator
 {
@@ -22,7 +22,7 @@ class FilterContentValidator extends Validator
 
     protected function getChoices()
     {
-        return array('type' => LinkModel::getValidTypes());
+        return array('type' => LinkManager::getValidTypes());
     }
 
 }

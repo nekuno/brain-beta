@@ -3,8 +3,10 @@
 namespace ApiConsumer\Images;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\Message\Response;
-use GuzzleHttp\Message\ResponseInterface;
+use GuzzleHttp\Psr7\Response;
+use Psr\Http\Message\ResponseInterface;
+use Model\Link\Image;
+use Model\Link\Link;
 
 class ImageAnalyzer
 {
@@ -108,6 +110,10 @@ class ImageAnalyzer
         return $image->isValid() ? $image : null;
     }
 
+    /**
+     * @param Link[] $links
+     * @return Link[]
+     */
     public function filterToReprocess(array $links)
     {
         $toReprocess = array();
@@ -120,7 +126,7 @@ class ImageAnalyzer
         return $toReprocess;
     }
 
-    private function needsReprocessing(array $link)
+    private function needsReprocessing(Link $link)
     {
         $isOld = $this->isImageOld($link);
         $isInvalid = !$this->isValidThumbnail($link);
@@ -128,18 +134,18 @@ class ImageAnalyzer
         return $isOld || $isInvalid;
     }
 
-    private function isImageOld(array $link)
+    private function isImageOld(Link $link)
     {
         $timeToReprocess = 1000 * 3600 * 24 * 7; //1 week in milliseconds
 
         //we save timestamps in neo4j as milliseconds
-        $imageTimestamp = isset($link['imageProcessed']) ? $link['imageProcessed'] : 1;
+        $imageTimestamp = $link->getImageProcessed() ?: 1;
         $nowTimestamp = (new \DateTime())->getTimestamp() * 1000;
 
         return $imageTimestamp < ($nowTimestamp - $timeToReprocess);
     }
 
-    private function isValidThumbnail($link)
+    private function isValidThumbnail(Link $link)
     {
         $thumbnailUrl = $this->getThumbnailFromLink($link);
 
@@ -147,10 +153,11 @@ class ImageAnalyzer
     }
 
     //this logic could go in Link->getImageUrl()
-    private function getThumbnailFromLink($link)
+    private function getThumbnailFromLink(Link $link)
     {
-        return isset($link['additionalLabels']) && in_array('Image', array($link['additionalLabels'])) ? $link['url']
-            : isset($link['thumbnail']) ? $link['thumbnail'] : null;
+        $isImage = $link instanceof Image;
+
+        return $isImage ? $link->getUrl() : $link->getThumbnailLarge();
     }
 
     public function buildResponse($imageUrl)
@@ -160,15 +167,19 @@ class ImageAnalyzer
         }
 
         try {
-            $head = $this->client->head($imageUrl);
+            $config = array(
+                'timeout' => 10,
+                'connect_timeout' => 10
+            );
+            $head = $this->client->head($imageUrl, $config);
         } catch (\Exception $e) {
             $head = new Response(404);
         }
 
         $length = $this->getLength($head, $imageUrl);
+        $contentType = isset($head->getHeader('Content-Type')[0]) ? $head->getHeader('Content-Type')[0] : null;
 
-        $response = new ImageResponse($imageUrl, $head->getStatusCode(), $head->getHeader('Content-Type'), $length);
-
+        $response = new ImageResponse($imageUrl, $head->getStatusCode(), $contentType, $length);
         $this->responses[$imageUrl] = $response;
 
         return $response;
@@ -176,7 +187,7 @@ class ImageAnalyzer
 
     private function getLength(ResponseInterface $response, $imageUrl)
     {
-        $length = !empty($response->getHeader('Content-Length')) ? $response->getHeader('Content-Length') : null;
+        $length = !empty($response->getHeader('Content-Length')) ? $response->getHeader('Content-Length')[0] : null;
 
         $length = $length ?: ($response->getHeader('Accept-Ranges') ? $this->getPartialImage($imageUrl) : null);
 

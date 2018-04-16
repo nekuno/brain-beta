@@ -2,6 +2,7 @@
 
 namespace Service\Consistency;
 
+use Model\Exception\ErrorList;
 use Service\Consistency\ConsistencyErrors\ConsistencyError;
 
 class WebConsistencyChecker extends ConsistencyChecker
@@ -20,7 +21,10 @@ class WebConsistencyChecker extends ConsistencyChecker
         {
             $error = new ConsistencyError();
             $error->setMessage(sprintf('Web with id %d is marked as processed but lacks title and thumbnail', $id));
-            $this->throwErrors(array($error), $id);
+
+            $errorList = new ErrorList();
+            $errorList->addError('processed', $error);
+            $this->throwErrors($errorList, $id);
         }
     }
 

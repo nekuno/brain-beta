@@ -3,10 +3,10 @@
 namespace Service;
 
 use GuzzleHttp\Client;
-use Model\User\Device\Device;
-use Model\User\Device\DeviceModel;
-use Model\User\ProfileModel;
-use Silex\Translator;
+use Model\Device\Device;
+use Model\Device\DeviceManager;
+use Model\Profile\ProfileManager;
+use Symfony\Component\Translation\Translator;
 
 class DeviceService
 {
@@ -21,12 +21,12 @@ class DeviceService
     protected $client;
 
     /**
-     * @var DeviceModel
+     * @var DeviceManager
      */
     protected $dm;
 
     /**
-     * @var ProfileModel
+     * @var ProfileManager
      */
     protected $pm;
 
@@ -40,7 +40,7 @@ class DeviceService
     protected $serverPublicKey;
     protected $serverPrivateKey;
 
-    public function __construct(Client $client, DeviceModel $dm, ProfileModel $pm, Translator $translator, $fireBaseUrl, $fireBaseApiKey, $serverPublicKey, $serverPrivateKey)
+    public function __construct(Client $client, DeviceManager $dm, ProfileManager $pm, Translator $translator, $fireBaseUrl, $fireBaseApiKey, $serverPublicKey, $serverPrivateKey)
     {
         $this->client = $client;
         $this->dm = $dm;
@@ -56,11 +56,8 @@ class DeviceService
     {
         $this->validatePushData($category, $data);
         $devices = $this->dm->getAll($userId);
-        $profile = $this->pm->getById($userId);
-
-        if (isset($profile['interfaceLanguage']) && $profile['interfaceLanguage']) {
-            $this->translator->setLocale($profile['interfaceLanguage']);
-        }
+        $interfaceLanguage = $this->pm->getInterfaceLocale($userId);
+        $this->translator->setLocale($interfaceLanguage);
 
         $registrationIds = array();
         /** @var Device $device */
@@ -70,6 +67,9 @@ class DeviceService
 
         $payloadData = $this->getPayloadData($category, $data);
 
+        if (empty($devices)) {
+            return null;
+        }
         $payload = array(
             'notification' => array(
                 'title' => $payloadData['title'],

@@ -6,13 +6,13 @@ use ApiConsumer\ResourceOwner\FacebookResourceOwner;
 use Console\BaseCommand;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\AbstractResourceOwner;
 use Model\Exception\ValidationException;
-use Model\User;
-use Model\User\Token\TokensModel;
+use Model\User\User;
+use Model\Token\TokensManager;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Manager\UserManager;
+use Model\User\UserManager;
 
 class UsersSocialMediaRefreshCommand extends BaseCommand
 {
@@ -41,7 +41,7 @@ class UsersSocialMediaRefreshCommand extends BaseCommand
         /* @var $resourceOwner AbstractResourceOwner */
         $resourceOwner = $this->app['api_consumer.resource_owner.' . $input->getArgument('resource')];
 
-        /* @var $tokensModel TokensModel */
+        /* @var $tokensModel TokensManager */
         $tokensModel = $this->app['users.tokens.model'];
 
         foreach ($users as $user) {

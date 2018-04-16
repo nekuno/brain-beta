@@ -5,12 +5,13 @@ namespace Service;
 use Event\AffinityProcessEvent;
 use Event\AffinityProcessStepEvent;
 use Model\Entity\EmailNotification;
-use Model\Link\LinkModel;
+use Model\Link\Link;
+use Model\Link\LinkManager;
 use Model\Neo4j\GraphManager;
-use Model\User;
-use Model\User\Affinity\AffinityModel;
-use Manager\UserManager;
-use Silex\Translator;
+use Model\User\User;
+use Model\Affinity\AffinityManager;
+use Model\User\UserManager;
+use Symfony\Component\Translation\Translator;
 
 class AffinityRecalculations
 {
@@ -27,20 +28,20 @@ class AffinityRecalculations
     /* @var $graphManager GraphManager */
     protected $graphManager;
 
-    /* @var $linkModel LinkModel */
+    /* @var $linkModel LinkManager */
     protected $linkModel;
 
     /* @var $userManager UserManager */
     protected $userManager;
 
-    /* @var $affinityModel AffinityModel */
+    /* @var $affinityModel AffinityManager */
     protected $affinityModel;
 
     protected $linksToEmail = 3;
 
     const MIN_AFFINITY = 0.7;
 
-    public function __construct(EventDispatcher $dispatcher, EmailNotifications $emailNotifications, Translator $translator, GraphManager $graphManager, LinkModel $linkModel, UserManager $userManager, AffinityModel $affinityModel)
+    public function __construct(EventDispatcher $dispatcher, EmailNotifications $emailNotifications, Translator $translator, GraphManager $graphManager, LinkManager $linkModel, UserManager $userManager, AffinityManager $affinityModel)
     {
         $this->dispatcher = $dispatcher;
         $this->emailNotifications = $emailNotifications;
@@ -66,7 +67,6 @@ class AffinityRecalculations
      */
     public function recalculateAffinities($userId, $limitContent = 40, $limitUsers = 20, $notifyLimit = 99999, $seconds = null)
     {
-
         $user = $this->userManager->getById((integer)$userId, true);
 
         $processId = time();
@@ -84,7 +84,8 @@ class AffinityRecalculations
         $prevPercentage = 0;
         foreach ($links as $index => $link) {
 
-            $affinity = $this->affinityModel->getAffinity($userId, $link['id'], $seconds);
+            $linkId = $link->getId();
+            $affinity = $this->affinityModel->getAffinity($userId, $linkId, $seconds);
 
             $percentage = round(($index + 1) / $count * 100);
             if ($percentage > $prevPercentage) {
@@ -93,18 +94,18 @@ class AffinityRecalculations
                 $prevPercentage = $percentage;
             }
 
-            if ($affinity['affinity'] < $this::MIN_AFFINITY) {
+            if ($affinity->getAffinity() < $this::MIN_AFFINITY) {
                 continue;
             }
-            $affinities[$link['id']] = $affinity['affinity'];
-            if ($affinity['affinity'] > $notifyLimit) {
-                $whenNotified = $this->linkModel->getWhenNotified($userId, $link['id']);
+            $affinities[$linkId] = $affinity->getAffinity();
+            if ($affinity->getAffinity() > $notifyLimit) {
+                $whenNotified = $this->linkModel->getWhenNotified($userId, $linkId);
                 if ($whenNotified !== null) {
                     continue;
                 }
                 $linksToEmail[] = $link;
                 if ($counterNotified < $this->linksToEmail) {
-                    $this->linkModel->setLinkNotified($userId, $link['id']);
+                    $this->linkModel->setLinkNotified($userId, $linkId);
                     $counterNotified++;
                 }
             }
@@ -117,8 +118,9 @@ class AffinityRecalculations
                 $result['emailInfo'] = $this->sendEmail($linksToEmail, $user);
             }
         } catch (\Exception $ex) {
+            /** @var Link $link */
             foreach ($linksToEmail as $link) {
-                $this->linkModel->unsetLinkNotified($userId, $link['id']);
+                $this->linkModel->unsetLinkNotified($userId, $link->getId());
             }
             throw $ex;
         }

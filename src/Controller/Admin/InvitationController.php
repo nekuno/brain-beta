@@ -2,7 +2,7 @@
 
 namespace Controller\Admin;
 
-use Model\User\InvitationModel;
+use Model\Invitation\InvitationManager;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -10,7 +10,7 @@ class InvitationController
 {
     public function indexAction(Request $request, Application $app)
     {
-        /* @var $model InvitationModel */
+        /* @var $model InvitationManager */
         $model = $app['users.invitations.model'];
 
         $result = $model->getPaginatedInvitations($request->get('offset') ?: 0, $request->get('limit') ?: 20);
@@ -20,7 +20,7 @@ class InvitationController
 
     public function getAction(Application $app, $id)
     {
-        /* @var $model InvitationModel */
+        /* @var $model InvitationManager */
         $model = $app['users.invitations.model'];
 
         $result = $model->getById($id);
@@ -33,7 +33,7 @@ class InvitationController
 
         $data = $request->request->all();
 
-        /* @var $model InvitationModel */
+        /* @var $model InvitationManager */
         $model = $app['users.invitations.model'];
         $invitation = $model->create($data);
 
@@ -45,7 +45,7 @@ class InvitationController
 
         $data = $request->request->all();
 
-        /* @var $model InvitationModel */
+        /* @var $model InvitationManager */
         $model = $app['users.invitations.model'];
 
         $invitation = $model->update($data + array('invitationId' => $id));
@@ -56,7 +56,7 @@ class InvitationController
     public function deleteAction(Application $app, $id)
     {
 
-        /* @var $model InvitationModel */
+        /* @var $model InvitationManager */
         $model = $app['users.invitations.model'];
 
         $invitation = $model->getById($id);
@@ -71,7 +71,7 @@ class InvitationController
 
         $data = $request->request->all();
 
-        /* @var $model InvitationModel */
+        /* @var $model InvitationManager */
         $model = $app['users.invitations.model'];
         if (isset($data['invitationId'])) {
             $model->validateUpdate($data);

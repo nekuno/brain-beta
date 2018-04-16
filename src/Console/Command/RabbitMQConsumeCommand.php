@@ -25,6 +25,7 @@ use Worker\LinkProcessorWorker;
 use Worker\LinksCheckWorker;
 use Worker\LinksReprocessWorker;
 use Worker\LoggerAwareWorker;
+use Worker\MatchingCalculatorPeriodicWorker;
 use Worker\MatchingCalculatorWorker;
 use Worker\PredictionWorker;
 use Worker\SocialNetworkDataProcessorWorker;
@@ -72,6 +73,10 @@ class RabbitMQConsumeCommand extends ApplicationAwareCommand
 
             case AMQPManager::MATCHING:
                 $worker = $this->buildMatching($channel);
+                break;
+
+            case AMQPManager::MATCHING_PERIODIC:
+                $worker = $this->buildMatchingPeriodic($channel);
                 break;
 
             case AMQPManager::PREDICTION:
@@ -192,6 +197,40 @@ class RabbitMQConsumeCommand extends ApplicationAwareCommand
             $this->app['userStats.service'],
             $this->app['questionnaire.questions.model'],
             $this->app['affinityRecalculations.service'],
+            $this->app['popularity.manager'],
+            $this->app['dbs']['mysql_brain'],
+            $dispatcher
+        );
+        $worker->setLogger($this->logger);
+        $this->noticeStart($worker);
+
+        return $worker;
+    }
+
+
+    /**
+     * @param AMQPChannel $channel
+     * @return MatchingCalculatorPeriodicWorker
+     * @internal param OutputInterface $output
+     */
+    protected function buildMatchingPeriodic(AMQPChannel $channel)
+    {
+        $subscribers = array(
+            new ExceptionLoggerSubscriber($this->app['monolog']),
+            new UserStatusSubscriber($this->app['instant.client']),
+            new SimilarityMatchingProcessSubscriber($this->app['instant.client']),
+        );
+        $dispatcher = $this->getDispatcher($subscribers);
+
+        $worker = new MatchingCalculatorPeriodicWorker(
+            $channel,
+            $this->app['users.manager'],
+            $this->app['users.matching.model'],
+            $this->app['users.similarity.model'],
+            $this->app['userStats.service'],
+            $this->app['questionnaire.questions.model'],
+            $this->app['affinityRecalculations.service'],
+            $this->app['popularity.manager'],
             $this->app['dbs']['mysql_brain'],
             $dispatcher
         );

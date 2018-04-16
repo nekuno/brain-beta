@@ -9,8 +9,8 @@ use ApiConsumer\LinkProcessor\Processor\ProcessorInterface;
 use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\YoutubeVideoProcessor;
 use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use Model\Link\Link;
-use Model\User\Token\Token;
-use Model\User\Token\TokensModel;
+use Model\Token\Token;
+use Model\Token\TokensManager;
 
 class LinkProcessor
 {
@@ -19,7 +19,7 @@ class LinkProcessor
     private $tokensModel;
     private $batch = array();
 
-    public function __construct(ProcessorFactory $processorFactory, ImageAnalyzer $imageAnalyzer, TokensModel $tokensModel)
+    public function __construct(ProcessorFactory $processorFactory, ImageAnalyzer $imageAnalyzer, TokensManager $tokensModel)
     {
         $this->processorFactory = $processorFactory;
         $this->imageAnalyzer = $imageAnalyzer;
@@ -189,6 +189,10 @@ class LinkProcessor
 
     public function isLinkWorking($url)
     {
+        if (!$url || $url === ''){
+            return true;
+        }
+        
         $preprocessedLink = new PreprocessedLink($url);
         $processor = $this->selectProcessor($preprocessedLink);
 

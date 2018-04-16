@@ -5,7 +5,8 @@ namespace ApiConsumer\Fetcher;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\TumblrUrlParser;
 use Model\Link\Creator;
-use Model\User\Token\Token;
+use Model\Link\Link;
+use Model\Token\Token;
 
 class TumblrBlogsFetcher extends AbstractFetcher
 {
@@ -42,9 +43,11 @@ class TumblrBlogsFetcher extends AbstractFetcher
                 continue;
             }
             $id = TumblrUrlParser::getBlogId($item['url']);
-            $link = array('url' => $item['url']);
-            $preprocessedLink = new PreprocessedLink($link['url']);
-            $preprocessedLink->setFirstLink(Creator::buildFromArray($link));
+            $link = new Creator();
+            $link->setUrl($item['url']);
+
+            $preprocessedLink = new PreprocessedLink($link->getUrl());
+            $preprocessedLink->setFirstLink($link);
             $preprocessedLink->setType(TumblrUrlParser::TUMBLR_BLOG);
             $preprocessedLink->setSource($this->resourceOwner->getName());
             $preprocessedLink->setResourceItemId($id);

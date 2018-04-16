@@ -3,7 +3,7 @@
 namespace EventListener;
 
 use Event\UserRegisteredEvent;
-use Model\User\UserTrackingModel;
+use Model\User\UserTrackingManager;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class UserTrackingSubscriber implements EventSubscriberInterface
@@ -12,7 +12,7 @@ class UserTrackingSubscriber implements EventSubscriberInterface
 
     protected $userTrackingModel;
 
-    public function __construct(UserTrackingModel $userTrackingModel)
+    public function __construct(UserTrackingManager $userTrackingModel)
     {
         $this->userTrackingModel = $userTrackingModel;
     }
@@ -28,6 +28,6 @@ class UserTrackingSubscriber implements EventSubscriberInterface
     {
         $user = $event->getUser();
         $trackingData = $event->getTrackingData();
-//        $this->userTrackingModel->set($user->getId(), 'Registration success', 'Registration', null, $trackingData);
+        $this->userTrackingModel->set($user->getId(), 'Registration success', 'Registration', null, $trackingData);
     }
 }

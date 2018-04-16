@@ -2,6 +2,7 @@
 
 namespace Model\Neo4j;
 
+use Model\Exception\ErrorList;
 use Model\Exception\ValidationException;
 use Monolog\Logger;
 use Psr\Log\LoggerAwareInterface;
@@ -41,12 +42,14 @@ class Query extends \Everyman\Neo4j\Cypher\Query implements LoggerAwareInterface
 
             if (isset($data['cause']['exception']) && $data['cause']['exception'] === 'UniquePropertyConstraintViolationKernelException') {
 
-                $errors = $data;
+                $errorList = new ErrorList();
+                $errorList->addError('cause', $data['cause']);
+
                 if (isset($data['message']) && preg_match('/^.* property "(.*)".*/', $data['message'], $matches)) {
-                    $errors = array($matches[1] => array($data['message']));
+                    $errorList->addError($matches[1], $data['message']);
                 }
 
-                throw new ValidationException($errors);
+                throw new ValidationException($errorList);
             }
 
             throw new Neo4jException($e->getMessage(), $e->getCode(), $e->getHeaders(), $e->getData(), $query);

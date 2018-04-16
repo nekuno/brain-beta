@@ -2,8 +2,8 @@
 
 namespace Controller\Admin;
 
-use Model\User\RelationsModel;
-use Model\User\RelationsPaginatedModel;
+use Model\Relations\RelationsManager;
+use Model\Relations\RelationsPaginatedManager;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -14,14 +14,14 @@ class UserReportController
         $from = $request->get('from', null);
         $to = $request->get('to', null);
         $filters = array(
-            'relation' => RelationsModel::REPORTS,
+            'relation' => RelationsManager::REPORTS,
             'from' => $from,
             'to' => $to
         );
 
         /* @var $paginator \Paginator\Paginator */
         $paginator = $app['paginator'];
-        /* @var $model RelationsPaginatedModel */
+        /* @var $model RelationsPaginatedManager */
         $model = $app['users.relations.paginated.model'];
 
         try {
@@ -44,7 +44,7 @@ class UserReportController
 
         /* @var $paginator \Paginator\Paginator */
         $paginator = $app['paginator'];
-        /* @var $model RelationsPaginatedModel */
+        /* @var $model RelationsPaginatedManager */
         $model = $app['users.disabled.paginated.model'];
 
         try {

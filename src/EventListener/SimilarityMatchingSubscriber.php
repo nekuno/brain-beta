@@ -5,13 +5,13 @@ namespace EventListener;
 use Event\MatchingEvent;
 use Event\SimilarityEvent;
 use Model\Entity\EmailNotification;
-use Model\User\Filters\FilterUsers;
-use Model\User\Group\GroupModel;
-use Model\User\ProfileModel;
-use Manager\UserManager;
+use Model\Filters\FilterUsers;
+use Model\Group\GroupManager;
+use Model\Profile\ProfileManager;
+use Model\User\UserManager;
 use Service\EmailNotifications;
 use Service\NotificationManager;
-use Silex\Translator;
+use Symfony\Component\Translation\Translator;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class SimilarityMatchingSubscriber implements EventSubscriberInterface
@@ -27,12 +27,12 @@ class SimilarityMatchingSubscriber implements EventSubscriberInterface
     protected $userManager;
 
     /**
-     * @var ProfileModel
+     * @var ProfileManager
      */
     protected $profileModel;
 
     /**
-     * @var GroupModel
+     * @var GroupManager
      */
     protected $groupModel;
 
@@ -51,7 +51,7 @@ class SimilarityMatchingSubscriber implements EventSubscriberInterface
      */
     protected $socialHost;
 
-    public function __construct(EmailNotifications $emailNotifications, UserManager $userManager, ProfileModel $profileModel, GroupModel $groupModel, Translator $translator, NotificationManager $notificationManager, $socialHost)
+    public function __construct(EmailNotifications $emailNotifications, UserManager $userManager, ProfileManager $profileModel, GroupManager $groupModel, Translator $translator, NotificationManager $notificationManager, $socialHost)
     {
         $this->emailNotifications = $emailNotifications;
         $this->userManager = $userManager;
@@ -104,7 +104,7 @@ class SimilarityMatchingSubscriber implements EventSubscriberInterface
             $group = $this->groupModel->getById($groupId);
             if ($filterUsers = $group->getFilterUsers()) {
                 /* @var $filterUsers FilterUsers */
-                $userFilters = $filterUsers->getUserFilters();
+                $userFilters = $filterUsers->getValues();
                 if (isset($userFilters[$filter]) && $userFilters[$filter] <= $value && !$this->notificationManager->areNotified($follower, $influencer)) {
                     // Send mails
                     $this->sendFollowerMail($follower, $influencer, $filter, $value);
@@ -123,10 +123,8 @@ class SimilarityMatchingSubscriber implements EventSubscriberInterface
         $username = $user->getUsername();
         $email = $user->getEmail();
 
-        $profile = $this->profileModel->getById($follower);
-        if (isset($profile['interfaceLanguage'])) {
-            $this->translator->setLocale($profile['interfaceLanguage']);
-        }
+        $interfaceLanguage = $this->profileModel->getInterfaceLocale($follower);
+        $this->translator->setLocale($interfaceLanguage);
 
         $userOther = $this->userManager->getById($influencer);
         $usernameOther = $userOther->getUsername();
@@ -164,10 +162,8 @@ class SimilarityMatchingSubscriber implements EventSubscriberInterface
         $username = $user->getUsername();
         $email = $user->getEmail();
 
-        $profile = $this->profileModel->getById($influencer);
-        if (isset($profile['interfaceLanguage'])) {
-            $this->translator->setLocale($profile['interfaceLanguage']);
-        }
+        $interfaceLanguage = $this->profileModel->getInterfaceLocale($follower);
+        $this->translator->setLocale($interfaceLanguage);
 
         $userOther = $this->userManager->getById($follower);
         $usernameOther = $userOther->getUsername();

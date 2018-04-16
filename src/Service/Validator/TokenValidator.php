@@ -2,7 +2,8 @@
 
 namespace Service\Validator;
 
-use Model\User\Token\TokensModel;
+use Model\Exception\ErrorList;
+use Model\Token\TokensManager;
 
 class TokenValidator extends Validator
 {
@@ -10,7 +11,7 @@ class TokenValidator extends Validator
     {
         $metadata = $this->metadata;
         $metadata['resourceId']['required'] = true;
-        if (isset($data['resourceOwner']) && $data['resourceOwner'] === TokensModel::STEAM) {
+        if (isset($data['resourceOwner']) && $data['resourceOwner'] === TokensManager::STEAM) {
             $metadata['oauthToken']['required'] = false;
         }
         $choices = $this->getChoices();
@@ -52,7 +53,7 @@ class TokenValidator extends Validator
     private function getChoices()
     {
         return array(
-            'resourceOwner' => TokensModel::getResourceOwners(),
+            'resourceOwner' => TokensManager::getResourceOwners(),
         );
     }
 
@@ -61,8 +62,10 @@ class TokenValidator extends Validator
         $userId = isset($data['userId']) ? $data['userId'] : null;
         $resourceOwner = $data['resourceOwner'];
         $resourceId = $data['resourceId'];
-        $errors = array('tokenResourceId' => $this->existenceValidator->validateTokenResourceId($resourceId, $userId, $resourceOwner, $desired));
 
-        $this->throwException($errors);
+        $errorList = new ErrorList();
+        $errorList->setErrors('tokenResourceId', $this->existenceValidator->validateTokenResourceId($resourceId, $userId, $resourceOwner, $desired));
+
+        $this->throwException($errorList);
     }
 }

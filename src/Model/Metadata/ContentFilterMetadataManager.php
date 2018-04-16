@@ -2,9 +2,7 @@
 
 namespace Model\Metadata;
 
-use Model\Link\LinkModel;
-use Model\Neo4j\GraphManager;
-use Symfony\Component\Translation\Translator;
+use Model\Link\LinkManager;
 
 class ContentFilterMetadataManager extends MetadataManager
 {
@@ -20,8 +18,8 @@ class ContentFilterMetadataManager extends MetadataManager
                 if (isset($choiceOptions[$name])) {
                     $publicField['choices'] = $choiceOptions[$name];
                 }
-                if (isset($values['max_choices'])) {
-                    $publicField['max_choices'] = $values['max_choices'];
+                if (isset($values['max'])) {
+                    $publicField['max'] = $values['max'];
                 };
                 break;
             case 'tags':
@@ -42,7 +40,7 @@ class ContentFilterMetadataManager extends MetadataManager
     protected function getValidTypesLabels()
     {
         $types = array();
-        $keyTypes = LinkModel::getValidTypes();
+        $keyTypes = LinkManager::getValidTypes();
 
         foreach ($keyTypes as $type) {
             $types[$type] = $this->translator->trans('types.' . lcfirst($type));

@@ -45,7 +45,6 @@ class ScraperProcessor extends AbstractScraperProcessor
         $url = $preprocessedLink->getUrl();
 
         try {
-            $this->client->getClient()->setDefaultOption('timeout', 30.0);
             $crawler = $this->client->request('GET', $url);
         } catch (\LogicException $e) {
             $this->client = $this->clientFactory->build();
@@ -92,7 +91,7 @@ class ScraperProcessor extends AbstractScraperProcessor
     {
         $imageResponse = new ImageResponse($url, 200, $this->client->getResponse()->getHeader('Content-Type'));
         if ($imageResponse->isImage()) {
-            $image = Image::buildFromArray($preprocessedLink->getFirstLink()->toArray());
+            $image = Image::buildFromLink($preprocessedLink->getFirstLink());
             $preprocessedLink->setFirstLink($image);
         }
     }
@@ -190,7 +189,7 @@ class ScraperProcessor extends AbstractScraperProcessor
     {
         $response = $this->client->getClient()->head($url);
 
-        return $response->getStatusCode() > 200 && $response->getStatusCode() < 300;
+        return $response->getStatusCode() >= 200 && $response->getStatusCode() < 300;
     }
 
 }

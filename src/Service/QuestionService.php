@@ -2,15 +2,17 @@
 
 namespace Service;
 
-use Model\Metadata\MetadataManager;
-use Model\User\Question\Admin\QuestionAdminDataFormatter;
-use Model\User\Question\Admin\QuestionAdminManager;
-use Model\User\Question\QuestionModel;
+use Model\Question\Admin\QuestionAdminDataFormatter;
+use Model\Question\Admin\QuestionAdminManager;
+use Model\Question\QuestionCategory\QuestionCategoryManager;
+use Model\Question\QuestionCorrelationManager;
+use Model\Question\QuestionManager;
+use Model\Question\QuestionNextSelector;
 
 class QuestionService
 {
     /**
-     * @var QuestionModel
+     * @var QuestionManager
      */
     protected $questionModel;
 
@@ -19,16 +21,28 @@ class QuestionService
      */
     protected $questionAdminManager;
 
+    protected $questionCategoryManager;
+
     protected $questionAdminDataFormatter;
+    
+    protected $questionNextSelector;
+
+    protected $questionCorrelationManager;
 
     /**
-     * @param QuestionModel $questionModel
+     * @param QuestionManager $questionModel
      * @param QuestionAdminManager $questionAdminManager
+     * @param QuestionCategoryManager $questionCategoryManager
+     * @param QuestionNextSelector $questionNextSelector
+     * @param QuestionCorrelationManager $questionCorrelationManager
      */
-    public function __construct(QuestionModel $questionModel, QuestionAdminManager $questionAdminManager)
+    public function __construct(QuestionManager $questionModel, QuestionAdminManager $questionAdminManager, QuestionCategoryManager $questionCategoryManager, QuestionNextSelector $questionNextSelector, QuestionCorrelationManager $questionCorrelationManager)
     {
         $this->questionModel = $questionModel;
         $this->questionAdminManager = $questionAdminManager;
+        $this->questionCategoryManager = $questionCategoryManager;
+        $this->questionNextSelector = $questionNextSelector;
+        $this->questionCorrelationManager = $questionCorrelationManager;
         $this->questionAdminDataFormatter = new QuestionAdminDataFormatter();
     }
 
@@ -37,8 +51,9 @@ class QuestionService
         $data = $this->questionAdminDataFormatter->getCreateData($data);
         $created = $this->questionAdminManager->create($data);
         $questionId = $created->getQuestionId();
+        $this->questionCategoryManager->setQuestionCategories($questionId, $data);
 
-        return $this->getOneMultilanguage($questionId);
+        return $this->getOneAdmin($questionId);
     }
 
     public function updateQuestion(array $data)
@@ -46,8 +61,9 @@ class QuestionService
         $data = $this->questionAdminDataFormatter->getUpdateData($data);
         $created = $this->questionAdminManager->update($data);
         $questionId = $created->getQuestionId();
+        $this->questionCategoryManager->setQuestionCategories($questionId, $data);
 
-        return $this->getOneMultilanguage($questionId);
+        return $this->getOneAdmin($questionId);
     }
 
     public function getById($questionId, $locale)
@@ -56,7 +72,7 @@ class QuestionService
 
     }
 
-    public function getOneMultilanguage($questionId)
+    public function getOneAdmin($questionId)
     {
         return $this->questionAdminManager->getById($questionId);
     }
@@ -70,5 +86,35 @@ class QuestionService
         $data = array('questionId' => $questionId);
 
         return $this->questionModel->delete($data);
+    }
+    
+    public function getNextByUser($userId, $locale, $sortByRanking = true)
+    {
+        $row = $this->questionNextSelector->getNextByUser($userId, $locale, $sortByRanking);
+        return $this->questionModel->build($row, $locale);
+    }
+
+    public function getNextByOtherUser($userId, $otherUserId, $locale, $sortByRanking = true)
+    {
+        $row = $this->questionNextSelector->getNextByOtherUser($userId, $otherUserId, $locale, $sortByRanking);
+        return $this->questionModel->build($row, $locale);
+    }
+
+    public function getDivisiveQuestions($locale)
+    {
+        $result = $this->questionCorrelationManager->getDivisiveQuestions($locale);
+
+        $questions = array();
+        foreach ($result as $row)
+        {
+            $questions[] = $this->questionModel->build($row, $locale);
+        }
+
+        return $questions;
+    }
+
+    public function createQuestionCategories()
+    {
+        $this->questionCategoryManager->createQuestionCategoriesFromModes();
     }
 }

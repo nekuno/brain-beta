@@ -10,11 +10,10 @@ use Buzz\Message\Response;
 use HWI\Bundle\OAuthBundle\DependencyInjection\Configuration;
 use HWI\Bundle\OAuthBundle\OAuth\RequestDataStorageInterface;
 use HWI\Bundle\OAuthBundle\Security\OAuthUtils;
-use Model\User\Token\Token;
-use Model\User\Token\TokensModel;
+use Model\Token\Token;
+use Model\Token\TokensManager;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use Symfony\Component\Security\Http\HttpUtils;
 use Buzz\Message\RequestInterface as HttpRequestInterface;
 
@@ -168,7 +167,7 @@ trait AbstractResourceOwnerTrait
 
     protected function sendAuthorizedRequest($url, array $query = array(), Token $token = null)
     {
-        if (Configuration::getResourceOwnerType($this->name) == 'oauth2' &&  $token->getResourceOwner() !== TokensModel::TUMBLR) {
+        if (Configuration::getResourceOwnerType($this->name) == 'oauth2' &&  $token->getResourceOwner() !== TokensManager::TUMBLR) {
             $query = $this->buildOauth2Query($query, $token);
         } else {
             $query = $this->buildOauth1Query($url, $query, $token);
@@ -273,9 +272,9 @@ trait AbstractResourceOwnerTrait
     /**
      * Configure the option resolver
      *
-     * @param OptionsResolverInterface $resolver
+     * @param OptionsResolver $resolver
      */
-    protected function configureOptions(OptionsResolverInterface $resolver)
+    protected function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setRequired(
             array()

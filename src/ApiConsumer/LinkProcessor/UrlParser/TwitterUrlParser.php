@@ -199,13 +199,17 @@ class TwitterUrlParser extends UrlParser
     {
         $parts = parse_url($url);
 
-        $path = explode('/', trim($parts['path'], '/'));
-        if (isset($path[3]) && in_array($path[3], array('photo', 'video'))) {
-            $path = array_slice($path, 0, 3);
-            $parts['path'] = implode('/', $path);
+        if (isset($parts['path'])) {
+            $path = explode('/', trim($parts['path'], '/'));
+            if (isset($path[3]) && in_array($path[3], array('photo', 'video'))) {
+                $path = array_slice($path, 0, 3);
+                $parts['path'] = implode('/', $path);
+            }
+
+            return http_build_url($parts);
         }
 
-        return http_build_url($parts);
+        return $url;
     }
 
     public function checkUrlValid($url, $urlDecoded = null)

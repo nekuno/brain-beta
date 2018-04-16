@@ -5,7 +5,7 @@ namespace ApiConsumer\LinkProcessor\Processor\YoutubeProcessor;
 use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
-use Model\User\Token\Token;
+use Model\Token\Token;
 
 class YoutubeChannelProcessor extends AbstractYoutubeProcessor
 {

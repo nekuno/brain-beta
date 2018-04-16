@@ -4,7 +4,7 @@ namespace ApiConsumer\Fetcher;
 
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
-use Model\User\Token\Token;
+use Model\Token\Token;
 
 class GoogleProfileFetcher extends AbstractFetcher{
 

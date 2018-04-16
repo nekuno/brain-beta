@@ -8,6 +8,7 @@ use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
+use ApiConsumer\LinkProcessor\UrlParser\UrlParser;
 
 class TwitterTweetProcessor extends AbstractTwitterProcessor
 {
@@ -17,29 +18,35 @@ class TwitterTweetProcessor extends AbstractTwitterProcessor
 
         $apiResponse = $this->resourceOwner->requestStatus($statusId);
 
-        $link = $this->extractLinkFromResponse($apiResponse);
+        $linkInformation = $this->extractLinkInformationFromResponse($apiResponse);
 
-        if (isset($link['url'])){
-            $url = LinkAnalyzer::cleanUrl($link['url']);
+        if (isset($linkInformation['url'])){
+            try {
+                $url = LinkAnalyzer::cleanUrl($linkInformation['url']);
+            } catch (\Exception $e) {}
 
-            if ($url != $preprocessedLink->getUrl()){
-                throw new UrlChangedException($preprocessedLink->getUrl(), $link['url']);
-            } else {
-                return array();
+            if (isset($url) && $url != $preprocessedLink->getUrl()) {
+                $host = parse_url($url, PHP_URL_HOST);
+                if ($host && strpos($host, 'twitter') === false) {
+                    $preprocessedLink->setType(UrlParser::SCRAPPER);
+                    throw new UrlChangedException($preprocessedLink->getUrl(), $url);
+                }
             }
-        } else {
-            throw new CannotProcessException($preprocessedLink->getUrl(), 'We do not want tweets without url content');
         }
+
+        $exception = new CannotProcessException($preprocessedLink->getUrl(), 'We do not want tweets without url content');
+        $exception->setCanScrape(false);
+        throw $exception;
     }
 
-    private function extractLinkFromResponse($apiResponse)
+    private function extractLinkInformationFromResponse($apiResponse)
     {
         //if tweet quotes another
         if (isset($apiResponse['quoted_status_id'])) {
             //if tweet is main, API returns quoted_status
             if (isset($apiResponse['quoted_status'])) {
 
-                return $this->extractLinkFromResponse($apiResponse['quoted_status']);
+                return $this->extractLinkInformationFromResponse($apiResponse['quoted_status']);
 
             } else if (isset($apiResponse['is_quote_status']) && $apiResponse['is_quote_status'] == true) {
                 return array('id' => $apiResponse['quoted_status_id']);
@@ -78,10 +85,11 @@ class TwitterTweetProcessor extends AbstractTwitterProcessor
 
     public function getImages(PreprocessedLink $preprocessedLink, array $data)
     {
-        $profileAvatar = null;
+        $default = $this->brainBaseUrl . TwitterUrlParser::DEFAULT_IMAGE_PATH;
         if (isset($data['user'])){
-            $default = $this->brainBaseUrl . TwitterUrlParser::DEFAULT_IMAGE_PATH;
             $profileAvatar = isset($data['user']['profile_image_url_https']) ? $data['user']['profile_image_url_https'] : $this->parser->getOriginalProfileUrl($data['user'], $default);
+        } else {
+            $profileAvatar = $default;
         }
 
         return array(new ProcessingImage($profileAvatar));

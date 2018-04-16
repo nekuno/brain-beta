@@ -2,19 +2,23 @@
 
 namespace Tests\API;
 
-use Model\Link\LinkModel;
+use Model\Link\Audio;
+use Model\Link\Image;
+use Model\Link\Link;
+use Model\Link\LinkManager;
+use Model\Link\Video;
 use Model\Neo4j\Constraints;
 use Model\Neo4j\GraphManager;
 use Model\Neo4j\PrivacyOptions;
 use Model\Neo4j\ProfileOptions;
-use Model\User\Question\QuestionModel;
-use Model\User\Question\AnswerManager;
-use Model\User\ProfileModel;
-use Model\User\Rate\RateModel;
-use Model\User\Group\GroupModel;
-use Model\User\InvitationModel;
+use Model\Question\QuestionCorrelationManager;
+use Model\Question\AnswerManager;
+use Model\Profile\ProfileManager;
+use Model\Rate\RateManager;
+use Model\Invitation\InvitationManager;
 use Psr\Log\LoggerInterface;
 use Service\GroupService;
+use Service\QuestionService;
 use Service\RegisterService;
 use Silex\Application;
 
@@ -50,15 +54,18 @@ class TestingFixtures
     protected $registerService;
 
     /**
-     * @var LinkModel
+     * @var LinkManager
      */
     protected $lm;
 
     /**
-     * @var QuestionModel
+     * @var QuestionService
      */
-    protected $qm;
+    protected $questionService;
 
+    /**
+     * @var QuestionCorrelationManager
+     */
     protected $correlationManager;
 
     /**
@@ -67,7 +74,7 @@ class TestingFixtures
     protected $am;
 
     /**
-     * @var ProfileModel
+     * @var ProfileManager
      */
     protected $pm;
 
@@ -77,12 +84,12 @@ class TestingFixtures
     protected $groupService;
 
     /**
-     * @var InvitationModel
+     * @var InvitationManager
      */
     protected $im;
 
     /**
-     * @var RateModel
+     * @var RateManager
      */
     protected $rm;
 
@@ -94,7 +101,7 @@ class TestingFixtures
         $this->groupService = $app['group.service'];
         $this->im = $app['users.invitations.model'];
         $this->lm = $app['links.model'];
-        $this->qm = $app['questionnaire.questions.model'];
+        $this->questionService = $app['question.service'];
         $this->correlationManager = $app['users.questionCorrelation.manager'];
         $this->rm = $app['users.rate.model'];
         $this->logger = $app['logger'];
@@ -208,55 +215,54 @@ class TestingFixtures
        $this->im->create($invitationData);
     }
 
+    /**
+     * @return Link[]
+     * @throws \Exception
+     */
     protected function loadLinks()
     {
-
         $this->logger->notice(sprintf('Loading %d links', self::NUM_OF_LINKS));
 
         $createdLinks = array();
 
         for ($i = 1; $i <= self::NUM_OF_LINKS; $i++) {
 
-            $link = array(
-                'title' => 'Title ' . $i,
-                'description' => 'Description ' . $i,
-                'url' => 'https://www.nekuno.com/link' . $i,
-                'language' => 'en',
-            );
-
             if ($i <= 50) {
-                $link['url'] = 'https://www.youtube.com/watch?v=OPf0YbXqDm0' . '?' . $i;
-                $link['title'] = 'Mark Ronson - Uptown Funk ft. Bruno Mars - YouTube';
-                $link['description'] = 'Mark Ronson - Uptown Funk ft. Bruno Mars - YouTube';
-                $link['additionalLabels'] = array('Video');
-                $link['additionalFields'] = array('embed_type' => 'youtube', 'embed_id' => 'OPf0YbXqDm0');
-                $link['tags'] = array(
-                    array('name' => 'Video Tag 1'),
-                    array('name' => 'Video Tag 2'),
-                    array('name' => 'Video Tag 3'),
-                );
+                $link = new Video();
+                $link->setUrl('https://www.youtube.com/watch?v=OPf0YbXqDm0' . '?' . $i);
+                $link->setTitle('Mark Ronson - Uptown Funk ft. Bruno Mars - YouTube');
+                $link->setDescription('Mark Ronson - Uptown Funk ft. Bruno Mars - YouTube');
+                $link->setEmbedId('OPf0YbXqDm0');
+                $link->setEmbedType('youtube');
+                $link->addTag(array('name' => 'Video Tag 1'));
+                $link->addTag(array('name' => 'Video Tag 2'));
+                $link->addTag(array('name' => 'Video Tag 3'));
             } elseif ($i <= 150) {
-                $link['url'] = 'https://open.spotify.com/album/3vLaOYCNCzngDf8QdBg2V1/32OlwWuMpZ6b0aN2RZOeMS' . '?' . $i;
-                $link['title'] = 'Uptown Funk';
-                $link['description'] = 'Uptown Special : Mark Ronson, Bruno Mars';
-                $link['additionalLabels'] = array('Audio');
-                $link['additionalFields'] = array('embed_type' => 'spotify', 'embed_id' => 'spotify:track:32OlwWuMpZ6b0aN2RZOeMS');
-                $link['tags'] = array(
-                    array('name' => 'Uptown Funk', 'additionalLabels' => array('Song'), 'additionalFields' => array('spotifyId' => '32OlwWuMpZ6b0aN2RZOeMS', 'isrc' => 'GBARL1401524')),
-                    array('name' => 'Bruno Mars', 'additionalLabels' => array('Artist'), 'additionalFields' => array('spotifyId' => '0du5cEVh5yTK9QJze8zA0C')),
-                    array('name' => 'Mark Ronson', 'additionalLabels' => array('Artist'), 'additionalFields' => array('spotifyId' => '3hv9jJF3adDNsBSIQDqcjp')),
-                    array('name' => 'Uptown Special', 'additionalLabels' => array('Album'), 'additionalFields' => array('spotifyId' => '3vLaOYCNCzngDf8QdBg2V1')),
-                );
+                $link = new Audio();
+                $link->setUrl('https://open.spotify.com/album/3vLaOYCNCzngDf8QdBg2V1/32OlwWuMpZ6b0aN2RZOeMS' . '?' . $i);
+                $link->setTitle('Uptown Funk');
+                $link->setDescription('Uptown Special : Mark Ronson, Bruno Mars');
+                $link->setEmbedId('spotify:track:32OlwWuMpZ6b0aN2RZOeMS');
+                $link->setEmbedType('spotify');
+                $link->addTag(array('name' => 'Uptown Funk', 'additionalLabels' => array('Song'), 'additionalFields' => array('spotifyId' => '32OlwWuMpZ6b0aN2RZOeMS', 'isrc' => 'GBARL1401524')));
+                $link->addTag(array('name' => 'Bruno Mars', 'additionalLabels' => array('Artist'), 'additionalFields' => array('spotifyId' => '0du5cEVh5yTK9QJze8zA0C')));
+                $link->addTag(array('name' => 'Mark Ronson', 'additionalLabels' => array('Artist'), 'additionalFields' => array('spotifyId' => '3hv9jJF3adDNsBSIQDqcjp')));
+                $link->addTag(array('name' => 'Uptown Special', 'additionalLabels' => array('Album'), 'additionalFields' => array('spotifyId' => '3vLaOYCNCzngDf8QdBg2V1')));
             } elseif ($i <= 350) {
-                $link['additionalLabels'] = array('Image');
-                $link['tags'] = array(
-                    array('name' => 'Image Tag 7'),
-                    array('name' => 'Image Tag 8'),
-                    array('name' => 'Image Tag 9'),
-                );
+                $link = new Image();
+                $link->setTitle('Title ' . $i);
+                $link->setDescription('Description ' . $i);
+                $link->setUrl('https://www.nekuno.com/link' . $i);
+                $link->addTag(array('name' => 'Image Tag 7'));
+                $link->addTag(array('name' => 'Image Tag 8'));
+                $link->addTag(array('name' => 'Image Tag 9'));
+            } else {
+                continue;
             }
 
-            $createdLinks[$i] = $this->lm->addLink($link);
+            $link->setLanguage('en');
+
+            $createdLinks[$i] = $this->lm->mergeLink($link);
 
         }
 
@@ -270,12 +276,12 @@ class TestingFixtures
 
         for ($i = 1; $i <= self::NUM_OF_TAGS; $i++) {
 
-            $this->lm->createTag(
+            $this->lm->mergeTag(
                 array('name' => 'tag ' . $i,)
             );
 
             // This second call should be ignored and do not duplicate tags
-            $this->lm->createTag(
+            $this->lm->mergeTag(
                 array('name' => 'tag ' . $i,)
             );
         }
@@ -283,47 +289,37 @@ class TestingFixtures
 
     protected function loadQuestions()
     {
+        $this->logger->notice('Creating question categories');
+
+        $this->questionService->createQuestionCategories();
+
         $this->logger->notice(sprintf('Loading %d questions', self::NUM_OF_QUESTIONS));
 
         $halfQuestions = (int)round(self::NUM_OF_QUESTIONS / 2);
         for ($i = 1; $i <= self::NUM_OF_QUESTIONS; $i++) {
 
-            $answers = array();
-
-            for ($j = 1; $j <= 3; $j++) {
-                $answers[] = $i < $halfQuestions ?
-                    array('text' => 'Answer ' . $j . ' to Question ' . $i) :
-                    array('text' => 'Answer ' . $j . ' to Question ' . $i . '. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vestibulum augue dolor, non malesuada tellus suscipit quis.');
-            }
-
             $questionText = $i < $halfQuestions ? 'Question ' . $i : 'Question ' . $i . '. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vestibulum augue dolor, non malesuada tellus suscipit quis.';
-            $question = $this->qm->create(
-                array(
-                    'locale' => 'en',
-                    'text' => $questionText,
-                    'userId' => 1,
-                    'answers' => $answers,
-                )
+            $data = array(
+                'textEs' => $questionText,
+                'textEn' => $questionText
             );
 
-            $answers = $question['answers'];
-            $j = 1;
-            foreach ($answers as $answer) {
-                $answers[] = $i < $halfQuestions ?
-                    array('answerId' => $answer['answerId'], 'text' => 'Respuesta ' . $j . ' a la pregunta ' . $i) :
-                    array('answerId' => $answer['answerId'], 'text' => 'Respuesta ' . $j . ' a la pregunta ' . $i . '. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vestibulum augue dolor, non malesuada tellus suscipit quis.');
-                $j++;
+            $answers = array();
+            for ($j = 1; $j <= 3; $j++) {
+                $answers [] = 'Answer ' . $j . ' to ' . $questionText;
+            }
+            foreach ($answers as $index => $answer) {
+                foreach (array('En', 'Es') as $locale) {
+                    $key = 'answer' . ($index + 1) . $locale;
+                    $data[$key] = $answer;
+                }
             }
 
-            $questionText = $i < $halfQuestions ? 'Pregunta ' . $i : 'Pregunta ' . $i . '. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vestibulum augue dolor, non malesuada tellus suscipit quis.';
-            $this->qm->update(
-                array(
-                    'questionId' => $question['questionId'],
-                    'locale' => 'es',
-                    'text' => $questionText,
-                    'answers' => $answers,
-                )
-            );
+            $categories = $this->correlationManager->getAllModes();
+
+            $data['categories'] = $categories;
+
+            $this->questionService->createQuestion($data);
         }
     }
 
@@ -342,13 +338,16 @@ class TestingFixtures
         }
     }
 
+    /**
+     * @param Link[] $createdLinks
+     */
     protected function loadLikes(array $createdLinks)
     {
 
         $this->logger->notice('Loading likes');
 
         foreach ($createdLinks as $link) {
-            $this->rm->userRateLink(1, $link['id']);
+            $this->rm->userRateLink(1, $link->getId());
         }
     }
 
@@ -400,8 +399,13 @@ class TestingFixtures
     {
         $this->logger->notice('Calculating uncorrelated questions');
         $result = $this->correlationManager->getUncorrelatedQuestions();
-        $this->correlationManager->setDivisiveQuestions($result['questions']);
-        $this->logger->notice(sprintf('Obtained and saved %d questions', count($result['questions'])));
+        $count = 0;
+        foreach ($result as $mode => $questionsByMode)
+        {
+            $this->correlationManager->setDivisiveQuestions($questionsByMode['questions'], $mode);
+            $count += count($questionsByMode['questions']);
+        }
+        $this->logger->notice(sprintf('Obtained and saved %d questions', $count));
 
     }
 
@@ -431,7 +435,8 @@ class TestingFixtures
             ),
             "gender" => "male",
             "orientation" => array("heterosexual"),
-            "interfaceLanguage" => "es"
+            "interfaceLanguage" => "es",
+            "mode" => "explore"
         );
     }
 
@@ -472,7 +477,8 @@ class TestingFixtures
             ),
             "gender" => "male",
             "orientation" => array("heterosexual"),
-            "interfaceLanguage" => "es"
+            "interfaceLanguage" => "es",
+            "mode" => "explore"
         );
     }
 

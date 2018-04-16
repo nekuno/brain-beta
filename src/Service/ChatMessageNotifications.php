@@ -4,12 +4,11 @@ namespace Service;
 
 use Model\Entity\EmailNotification;
 use Doctrine\ORM\EntityManager;
-use Model\User;
-use Model\User\ProfileModel;
-use Manager\UserManager;
+use Model\User\User;
+use Model\Profile\ProfileManager;
+use Model\User\UserManager;
 use Doctrine\DBAL\Connection;
-use Silex\Translator;
-use Silex\Application;
+use Symfony\Component\Translation\Translator;
 use Symfony\Component\Console\Output\OutputInterface;
 use Console\Command\SwiftMailerChatSendCommand;
 use GuzzleHttp\Client;
@@ -51,11 +50,11 @@ class ChatMessageNotifications
     protected $userManager;
 
     /**
-     * @var ProfileModel
+     * @var ProfileManager
      */
     protected $profileModel;
 
-    function __construct(Client $client, EmailNotifications $emailNotifications, EntityManager $entityManagerBrain, Connection $connectionBrain, Translator $translator, UserManager $userManager, ProfileModel $profileModel)
+    function __construct(Client $client, EmailNotifications $emailNotifications, EntityManager $entityManagerBrain, Connection $connectionBrain, Translator $translator, UserManager $userManager, ProfileManager $profileModel)
     {
         $this->client = $client;
         $this->emailNotifications = $emailNotifications;
@@ -95,20 +94,14 @@ class ChatMessageNotifications
             }
 
             $user = $this->userManager->getById($userId);
-            $profile = $this->profileModel->getById($userId);
+            $interfaceLocale = $this->profileModel->getInterfaceLocale($userId);
 
-            if (!$profile && OutputInterface::VERBOSITY_VERBOSE <= $output->getVerbosity()) {
-                $output->writeln('Profile ' . $userId . ' not found. Using default locale (' . $this->translator->getLocale() . ').');
+            $this->translator->setLocale($interfaceLocale);
+
+            if (OutputInterface::VERBOSITY_VERBOSE <= $output->getVerbosity()) {
+                $output->writeln('Profile ' . $userId . ' found. Using locale ' . $interfaceLocale);
             }
 
-            if (isset($profile['interfaceLanguage']) && $profile['interfaceLanguage']) {
-                $this->translator->setLocale($profile['interfaceLanguage']);
-
-                if (OutputInterface::VERBOSITY_VERBOSE <= $output->getVerbosity()) {
-                    $output->writeln('Profile ' . $userId . ' found. Using locale ' . $profile['interfaceLanguage']);
-                }
-
-            }
 
             $this->emailNotifications->send(
                 EmailNotification::create()

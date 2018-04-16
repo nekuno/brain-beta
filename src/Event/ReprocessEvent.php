@@ -2,6 +2,7 @@
 
 namespace Event;
 
+use Model\Link\Link;
 use Symfony\Component\EventDispatcher\Event;
 
 class ReprocessEvent extends Event
@@ -9,6 +10,9 @@ class ReprocessEvent extends Event
 
     protected $url;
 
+    /**
+     * @var Link[]
+     */
     protected $links;
 
     protected $error;

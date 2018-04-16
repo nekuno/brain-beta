@@ -6,7 +6,7 @@ use ApiConsumer\Fetcher\ProcessorService;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use Event\ReprocessEvent;
 use Model\Link\Link;
-use Model\Link\LinkModel;
+use Model\Link\LinkManager;
 use PhpAmqpLib\Channel\AMQPChannel;
 use Service\AMQPManager;
 use Service\EventDispatcher;
@@ -16,7 +16,7 @@ class LinksReprocessWorker extends LoggerAwareWorker implements RabbitMQConsumer
     protected $queue = AMQPManager::LINKS_REPROCESS;
 
     /**
-     * @var LinkModel
+     * @var LinkManager
      */
     protected $linkModel;
 
@@ -25,7 +25,7 @@ class LinksReprocessWorker extends LoggerAwareWorker implements RabbitMQConsumer
      */
     protected $processorService;
 
-    public function __construct(AMQPChannel $channel, EventDispatcher $dispatcher, LinkModel $linkModel, ProcessorService $processorService)
+    public function __construct(AMQPChannel $channel, EventDispatcher $dispatcher, LinkManager $linkModel, ProcessorService $processorService)
     {
         parent::__construct($dispatcher, $channel);
         $this->linkModel = $linkModel;

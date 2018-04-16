@@ -2,7 +2,7 @@
 
 namespace Service\Links;
 
-use Model\Link\LinkModel;
+use Model\Link\LinkManager;
 use Service\AMQPManager;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -10,7 +10,7 @@ class EnqueueLinksService
 {
     const LINKS_LIMIT = 1000;
     /**
-     * @var LinkModel
+     * @var LinkManager
      */
     protected $linkModel;
 
@@ -19,7 +19,7 @@ class EnqueueLinksService
      */
     protected $amqpManager;
 
-    public function __construct(LinkModel $linkModel, AMQPManager $amqpManager)
+    public function __construct(LinkManager $linkModel, AMQPManager $amqpManager)
     {
         $this->linkModel = $linkModel;
         $this->amqpManager = $amqpManager;
@@ -48,11 +48,12 @@ class EnqueueLinksService
             }
 
             foreach ($links as $link) {
+                $url = $link->getUrl();
                 if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
-                    $output->writeln('Link ' . $link['url'] . ' will be checked');
-                    $output->writeln(sprintf('Enqueuing url check for "%s"', $link['url']));
+                    $output->writeln('Link ' . $url . ' will be checked');
+                    $output->writeln(sprintf('Enqueuing url check for "%s"', $url));
                 }
-                $this->amqpManager->enqueueLinkCheck(array('link' => $link));
+                $this->amqpManager->enqueueLinkCheck(array('link' => $link->toArray()));
             }
         }
     }
@@ -81,11 +82,12 @@ class EnqueueLinksService
             }
 
             foreach ($links as $link) {
+                $url = $link->getUrl();
                 if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
-                    $output->writeln('Link ' . $link['url'] . ' will be reprocessed');
-                    $output->writeln(sprintf('Enqueuing url reprocess for "%s"', $link['url']));
+                    $output->writeln('Link ' . $url . ' will be reprocessed');
+                    $output->writeln(sprintf('Enqueuing url reprocess for "%s"', $url));
                 }
-                $this->amqpManager->enqueueLinkReprocess(array('link' => $link));
+                $this->amqpManager->enqueueLinkReprocess(array('link' => $link->toArray()));
             }
         }
     }

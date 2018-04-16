@@ -3,17 +3,18 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
-use Manager\UserManager;
+use Model\User\UserManager;
 use Service\AMQPManager;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Worker\MatchingCalculatorPeriodicWorker;
 use Worker\MatchingCalculatorWorker;
 
 class RabbitMQEnqueueMatchingCommand extends ApplicationAwareCommand
 {
-    protected $defaultTrigger = MatchingCalculatorWorker::TRIGGER_PERIODIC;
+    protected $defaultTrigger = MatchingCalculatorPeriodicWorker::TRIGGER_PERIODIC;
 
     protected function configure()
     {
@@ -31,8 +32,9 @@ class RabbitMQEnqueueMatchingCommand extends ApplicationAwareCommand
         $trigger = $input->getOption('trigger');
 
         switch ($trigger) {
-            case MatchingCalculatorWorker::TRIGGER_PERIODIC:
-                if ($userA == $userB) {
+            case MatchingCalculatorPeriodicWorker::TRIGGER_PERIODIC:
+                $output->writeln(sprintf('Periodic calculation'));
+                if ($userA && $userB && $userA === $userB) {
                     $output->writeln('The two users must be different.');
 
                     return;
@@ -45,7 +47,7 @@ class RabbitMQEnqueueMatchingCommand extends ApplicationAwareCommand
                 $data = $this->buildContentData($userA);
                 break;
             default:
-                $validTriggers = json_encode(array(MatchingCalculatorWorker::TRIGGER_PERIODIC, MatchingCalculatorWorker::TRIGGER_PROCESS_FINISHED, MatchingCalculatorWorker::TRIGGER_CONTENT_RATED));
+                $validTriggers = json_encode(array(MatchingCalculatorPeriodicWorker::TRIGGER_PERIODIC, MatchingCalculatorWorker::TRIGGER_PROCESS_FINISHED, MatchingCalculatorWorker::TRIGGER_CONTENT_RATED));
                 $output->writeln(sprintf('Not a valid trigger. Valid triggers are %s', $validTriggers));
 
                 return;
@@ -55,7 +57,14 @@ class RabbitMQEnqueueMatchingCommand extends ApplicationAwareCommand
             /* @var $amqpManager AMQPManager */
             $amqpManager = $this->app['amqpManager.service'];
 
-            $amqpManager->enqueueMatching($singleData, $trigger);
+            switch ($trigger) {
+                case MatchingCalculatorPeriodicWorker::TRIGGER_PERIODIC:
+                    $amqpManager->enqueueMatchingPeriodic($singleData, $trigger);
+                    break;
+                default:
+                    $amqpManager->enqueueMatching($singleData, $trigger);
+                    break;
+            }
         }
     }
 

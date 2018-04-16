@@ -4,9 +4,10 @@ namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
 use Model\Popularity\PopularityManager;
-use Model\User;
-use Manager\UserManager;
-use Silex\Application;
+use Model\Rate\RateManager;
+use Model\Similarity\Similarity;
+use Model\User\User;
+use Model\User\UserManager;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -89,12 +90,13 @@ class Neo4jStatsCommand extends ApplicationAwareCommand
             $output->writeln('Getting similarities for user ' . $user->getId());
             $similarityData = $this->app['users.similarity.model']->getAllCurrentByUser($user->getId(), $includeGhost);
 
+            /** @var Similarity[] $similarities */
             $similarities = $similarityData['similarities'];
             foreach ($similarities as $similarity) {
-                $this->similaritiesDistribution['interests'][$similarity['interests'] == 0 ? 'zero' : floor($similarity['interests'] / 0.1)]++;
-                $this->similaritiesDistribution['questions'][$similarity['questions'] == 0 ? 'zero' : floor($similarity['questions'] / 0.1)]++;
-                $this->similaritiesDistribution['skills'][$similarity['skills'] == 0 ? 'zero' : floor($similarity['skills'] / 0.1)]++;
-                $this->similaritiesDistribution['similarity'][$similarity['similarity'] == 0 ? 'zero' : floor($similarity['similarity'] / 0.1)]++;
+                $this->similaritiesDistribution['interests'][$this->toInterval($similarity->getInterests())]++;
+                $this->similaritiesDistribution['questions'][$this->toInterval($similarity->getQuestions())]++;
+                $this->similaritiesDistribution['skills'][$this->toInterval($similarity->getSkills())]++;
+                $this->similaritiesDistribution['similarity'][$this->toInterval($similarity->getSimilarity())]++;
             }
 
             $popularityData = $similarityData['popularityData'];
@@ -119,6 +121,11 @@ class Neo4jStatsCommand extends ApplicationAwareCommand
         $this->exportDistribution($this->popularityCalculations['popularityOnly'], $path, 'Only one user content popularity, rounded');
     }
 
+    protected function toInterval($number)
+    {
+        return $number == 0 ? 'zero' : floor($number / 0.1);
+    }
+
     /**
      * @param $users User[]
      * @param $output
@@ -129,7 +136,7 @@ class Neo4jStatsCommand extends ApplicationAwareCommand
         $output->writeln('Getting likes per user');
 
         foreach ($users as $user) {
-            $rates = $this->app['users.rate.model']->getRatesByUser($user->getId(), User\Rate\RateModel::LIKE);
+            $rates = $this->app['users.rate.model']->getRatesByUser($user->getId(), RateManager::LIKE);
             $output->writeln(sprintf('Got %d likes from user %d ', count($rates), $user->getId()));
             $this->likesPerUserDistribution[intval(floor(count($rates) / 10))]++;
         }

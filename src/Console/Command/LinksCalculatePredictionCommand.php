@@ -3,10 +3,11 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
-use Model\Link\LinkModel;
-use Model\User;
-use Model\User\Affinity\AffinityModel;
-use Manager\UserManager;
+use Model\Link\Link;
+use Model\Link\LinkManager;
+use Model\User\User;
+use Model\Affinity\AffinityManager;
+use Model\User\UserManager;
 use Service\AffinityRecalculations;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -30,9 +31,9 @@ class LinksCalculatePredictionCommand extends ApplicationAwareCommand
     {
         /* @var $userManager UserManager */
         $userManager = $this->app['users.manager'];
-        /* @var $linkModel LinkModel */
+        /* @var $linkModel LinkManager */
         $linkModel = $this->app['links.model'];
-        /* @var $affinityModel AffinityModel */
+        /* @var $affinityModel AffinityManager */
         $affinityModel = $this->app['users.affinity.model'];
 
         $user = $input->getOption('user');
@@ -56,10 +57,10 @@ class LinksCalculatePredictionCommand extends ApplicationAwareCommand
                     $linkIds = $linkModel->getPredictedContentForAUser($user->getId(), $limitContent, $limitUsers, $filters);
                     foreach ($linkIds as $link) {
 
-                        $linkId = $link['id'];
+                        $linkId = $link->getId();
                         $affinity = $affinityModel->getAffinity($user->getId(), $linkId);
                         if (OutputInterface::VERBOSITY_NORMAL <= $output->getVerbosity()) {
-                            $output->writeln(sprintf('User: %d --> Link: %d (Affinity: %f)', $user->getId(), $linkId, $affinity['affinity']));
+                            $output->writeln(sprintf('User: %d --> Link: %d (Affinity: %f)', $user->getId(), $linkId, $affinity->getAffinity()));
                         }
                     }
                 }
@@ -70,10 +71,10 @@ class LinksCalculatePredictionCommand extends ApplicationAwareCommand
                     /* @var $user User */
                     $count = $affinityModel->countPotentialAffinities($user->getId(), $limitUsers);
                     $estimatedTime = $affinityRecalculations->estimateTime($count);
-                    $targetTime = AffinityModel::numberOfSecondsToCalculateAffinity;
+                    $targetTime = AffinityManager::numberOfSecondsToCalculateAffinity;
                     if ($estimatedTime > $targetTime) {
                         $usedLimitUsers = max(
-                            AffinityModel::minimumUsersToPredict,
+                            AffinityManager::minimumUsersToPredict,
                             intval($limitUsers * sqrt($targetTime / $estimatedTime))
                         );
                     } else {
@@ -89,8 +90,9 @@ class LinksCalculatePredictionCommand extends ApplicationAwareCommand
                     if (!empty($result['emailInfo'])) {
                         $emailInfo = $result['emailInfo'];
                         $linkIds = array();
+                        /** @var Link $link */
                         foreach ($emailInfo['links'] as $link) {
-                            $linkIds[] = $link['id'];
+                            $linkIds[] = $link->getId();
                         }
                         $output->writeln(sprintf('Email sent to %s users', $emailInfo['recipients']));
                         $output->writeln(sprintf('Email sent to user: %s with links: %s', $user->getId(), implode(', ', $linkIds)));

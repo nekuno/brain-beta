@@ -2,22 +2,18 @@
 
 namespace Tests\API;
 
-use Doctrine\DBAL\Connection;
 use Doctrine\ORM\Tools\SchemaTool;
-use Model\User\Token\Token;
-use Model\User\Token\TokensModel;
 use Silex\Application;
 use Silex\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
-use Service\AuthService;
 use Tests\API\MockUp\AuthServiceMockUp;
-use Tests\API\MockUp\TokensModelMockUp;
+use Tests\API\MockUp\TokensManagerMockUp;
 
 abstract class APITest extends WebTestCase
 {
     const OWN_USER_ID = 1;
-    const OTHER_USER_ID = 2;
-    const UNDEFINED_USER_ID = 3;
+    const OTHER_USER_SLUG = 'janedoe';
+    const UNDEFINED_USER_SLUG = 'undefined';
 
     protected $app;
 
@@ -45,7 +41,7 @@ abstract class APITest extends WebTestCase
         $schemaTool->dropDatabase();
         $metadatas = $em->getMetadataFactory()->getAllMetadata();
         $schemaTool->createSchema($metadatas);
-//
+
 //        /* @var $bm Connection */
         $bm = $app['dbs']['mysql_brain'];
         $bm->executeQuery('DROP TABLE IF EXISTS chat_message');
@@ -58,17 +54,13 @@ abstract class APITest extends WebTestCase
 
     protected function loadMockUps(Application $app)
     {
-        $app['auth.service'] = $app->share(
-            function (Application $app) {
-                return new AuthServiceMockUp($app['users.manager'], $app['security.password_encoder'], $app['security.jwt.encoder'], $app['oauth.service'], $app['dispatcher.service'], $app['users.tokens.model']);
-            }
-        );
-        $app['users.tokens.model'] = $app->share(
-            function ($app) {
-                $validator = $app['validator.factory']->build('tokens');
-                return new TokensModelMockUp($app['dispatcher'], $app['neo4j.graph_manager'], $validator);
-            }
-        );
+        $app['auth.service'] = function (Application $app) {
+            return new AuthServiceMockUp($app['users.manager'], $app['security.password_encoder'], $app['security.jwt.encoder'], $app['oauth.service'], $app['dispatcher.service'], $app['users.tokens.model']);
+        };
+        $app['users.tokens.model'] = function ($app) {
+            $validator = $app['validator.factory']->build('tokens');
+            return new TokensManagerMockUp($app['dispatcher'], $app['neo4j.graph_manager'], $validator);
+        };
 
         return $app;
     }

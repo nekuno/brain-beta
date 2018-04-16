@@ -9,11 +9,12 @@ use Event\SimilarityProcessEvent;
 use Event\SimilarityProcessStepEvent;
 use Event\UserStatusChangedEvent;
 use Model\Neo4j\Neo4jException;
-use Model\User\Question\QuestionModel;
-use Model\User;
-use Model\User\Matching\MatchingModel;
-use Model\User\Similarity\SimilarityModel;
-use Manager\UserManager;
+use Model\Popularity\PopularityManager;
+use Model\Question\QuestionManager;
+use Model\User\User;
+use Model\Matching\MatchingManager;
+use Model\Similarity\SimilarityManager;
+use Model\User\UserManager;
 use PhpAmqpLib\Channel\AMQPChannel;
 use Service\AffinityRecalculations;
 use Service\AMQPManager;
@@ -23,7 +24,6 @@ use Service\UserStatsService;
 class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQConsumerInterface
 {
 
-    const TRIGGER_PERIODIC = 'periodic';
     const TRIGGER_QUESTION = 'question_answered';
     const TRIGGER_CONTENT_RATED = 'content_rated';
     const TRIGGER_PROCESS_FINISHED = 'process_finished';
@@ -36,11 +36,11 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
      */
     protected $userManager;
     /**
-     * @var MatchingModel
+     * @var MatchingManager
      */
     protected $matchingModel;
     /**
-     * @var SimilarityModel
+     * @var SimilarityManager
      */
     protected $similarityModel;
     /**
@@ -48,13 +48,17 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
      */
     protected $userStatsService;
     /**
-     * @var QuestionModel
+     * @var QuestionManager
      */
     protected $questionModel;
     /**
      * @var AffinityRecalculations
      */
     protected $affinityRecalculations;
+    /**
+     * @var PopularityManager
+     */
+    protected $popularityManager;
     /**
      * @var Connection
      */
@@ -63,11 +67,12 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
     public function __construct(
         AMQPChannel $channel,
         UserManager $userManager,
-        MatchingModel $matchingModel,
-        SimilarityModel $similarityModel,
+        MatchingManager $matchingModel,
+        SimilarityManager $similarityModel,
         UserStatsService $userStatsService,
-        QuestionModel $questionModel,
+        QuestionManager $questionModel,
         AffinityRecalculations $affinityRecalculations,
+        PopularityManager $popularityManager,
         Connection $connectionBrain,
         EventDispatcher $dispatcher
     ) {
@@ -78,6 +83,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
         $this->userStatsService = $userStatsService;
         $this->questionModel = $questionModel;
         $this->affinityRecalculations = $affinityRecalculations;
+        $this->popularityManager = $popularityManager;
         $this->connectionBrain = $connectionBrain;
     }
 
@@ -113,12 +119,14 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                     $this->dispatcher->dispatch(\AppEvents::SIMILARITY_PROCESS_START, $similarityProcessEvent);
                     $usersCount = count($usersWithSameContent);
                     $prevPercentage = 0;
+                    $this->popularityManager->updatePopularityByUser($userA);
                     foreach ($usersWithSameContent as $userIndex => $currentUser) {
                         /* @var $currentUser User */
                         $userB = $currentUser->getId();
-                        $similarity = $this->similarityModel->getSimilarityBy(SimilarityModel::INTERESTS, $userA, $userB);
+                        $this->popularityManager->updatePopularityByUser($userB);
+                        $similarity = $this->similarityModel->getSimilarityBy(SimilarityManager::INTERESTS, $userA, $userB);
                         $percentage = round(($userIndex + 1) / $usersCount * 100);
-                        $this->logger->info(sprintf('   Similarity by interests between users %d - %d: %s', $userA, $userB, $similarity['interests']));
+                        $this->logger->info(sprintf('   Similarity by interests between users %d - %d: %s', $userA, $userB, $similarity->getInterests()));
                         if ($percentage > $prevPercentage) {
                             $similarityProcessStepEvent = new SimilarityProcessStepEvent($userA, $processId, $percentage);
                             $this->dispatcher->dispatch(\AppEvents::SIMILARITY_PROCESS_STEP, $similarityProcessStepEvent);
@@ -186,7 +194,7 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                             break;
                         case 'answer':
                             $matching = $this->matchingModel->calculateMatchingBetweenTwoUsersBasedOnAnswers($user1, $user2);
-                            $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $user1, $user2, $matching));
+                            $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $user1, $user2, $matching->getMatching()));
                             break;
                     }
                 } catch (\Exception $e) {
@@ -195,25 +203,6 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
                         $this->logger->error(sprintf('Query: %s' . "\n" . 'Data: %s', $e->getQuery(), print_r($e->getData(), true)));
                     }
                     $this->dispatchError($e, 'Matching because matching expired');
-                }
-                break;
-            case self:: TRIGGER_PERIODIC:
-                $user1 = $data['user_1_id'];
-                $user2 = $data['user_2_id'];
-                $this->logger->notice(sprintf('[%s] Calculating matching by trigger "%s" for users %d - %d', date('Y-m-d H:i:s'), $trigger, $user1, $user2));
-
-                try {
-                    $similarity = $this->similarityModel->getSimilarity($user1, $user2);
-                    $matching = $this->matchingModel->calculateMatchingBetweenTwoUsersBasedOnAnswers($user1, $user2);
-                    $this->logger->info(sprintf('   Similarity between users %d - %d: %s', $user1, $user2, $similarity['similarity']));
-                    $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $user1, $user2, $matching));
-                    $this->userStatsService->updateShares($user1, $user2);
-                } catch (\Exception $e) {
-                    $this->logger->error(sprintf('Worker: Error calculating similarity and matching between user %d and user %d with message %s on file %s, line %d', $user1, $user2, $e->getMessage(), $e->getFile(), $e->getLine()));
-                    if ($e instanceof Neo4jException) {
-                        $this->logger->error(sprintf('Query: %s' . "\n" . 'Data: %s', $e->getQuery(), print_r($e->getData(), true)));
-                    }
-                    $this->dispatchError($e, 'Matching with periodic trigger');
                 }
                 break;
             default;
@@ -233,11 +222,11 @@ class MatchingCalculatorWorker extends LoggerAwareWorker implements RabbitMQCons
             /* @var $currentUser User */
             $userB = $currentUser->getId();
             if ($userA <> $userB) {
-                $similarity = $this->similarityModel->getSimilarityBy(SimilarityModel::QUESTIONS, $userA, $userB);
+                $similarity = $this->similarityModel->getSimilarityBy(SimilarityManager::QUESTIONS, $userA, $userB);
                 $matching = $this->matchingModel->calculateMatchingBetweenTwoUsersBasedOnAnswers($userA, $userB);
                 $percentage = round(($userIndex + 1) / $usersCount * 100);
-                $this->logger->info(sprintf('   Similarity by questions between users %d - %d: %s', $userA, $userB, $similarity['questions']));
-                $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $userA, $userB, $matching));
+                $this->logger->info(sprintf('   Similarity by questions between users %d - %d: %s', $userA, $userB, $similarity->getQuestions()));
+                $this->logger->info(sprintf('   Matching by questions between users %d - %d: %s', $userA, $userB, $matching->getMatching()));
                 if ($percentage > $prevPercentage) {
                     $matchingProcessStepEvent = new MatchingProcessStepEvent($userA, $processId, $percentage);
                     $this->dispatcher->dispatch(\AppEvents::MATCHING_PROCESS_STEP, $matchingProcessStepEvent);

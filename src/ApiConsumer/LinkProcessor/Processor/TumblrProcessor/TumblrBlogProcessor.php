@@ -26,7 +26,7 @@ class TumblrBlogProcessor extends AbstractTumblrProcessor
     {
         parent::hydrateLink($preprocessedLink, $data);
         $link = $preprocessedLink->getFirstLink();
-        $creator = Creator::buildFromArray($link->toArray());
+        $creator = Creator::buildFromLink($link);
         if (isset($data['title'])) {
             $creator->setTitle($data['title']);
             $creator->setDescription(null);

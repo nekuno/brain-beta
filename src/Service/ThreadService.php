@@ -4,15 +4,15 @@ namespace Service;
 
 use Everyman\Neo4j\Node;
 use Model\Exception\ValidationException;
-use Model\User\Filters\FilterContentManager;
-use Model\User\Filters\FilterUsersManager;
-use Model\User\Group\Group;
-use Model\User\Thread\ContentThread;
-use Model\User\Thread\Thread;
-use Model\User\Thread\ThreadCachedManager;
-use Model\User\Thread\ThreadDataManager;
-use Model\User\Thread\ThreadManager;
-use Model\User\Thread\UsersThread;
+use Model\Filters\FilterContentManager;
+use Model\Filters\FilterUsersManager;
+use Model\Group\Group;
+use Model\Thread\ContentThread;
+use Model\Thread\Thread;
+use Model\Thread\ThreadCachedManager;
+use Model\Thread\ThreadDataManager;
+use Model\Thread\ThreadManager;
+use Model\Thread\UsersThread;
 
 class ThreadService
 {
@@ -66,7 +66,7 @@ class ThreadService
         $filters = $this->getFiltersData($data);
 
         try{
-            $this->validateFilters($data, $thread->getId());
+            $this->validateFilters($data, $thread->getId(), $userId);
         } catch (ValidationException $e)
         {
             $this->deleteById($thread->getId());
@@ -81,7 +81,8 @@ class ThreadService
     public function createDefaultThreads($userId, $scenario)
     {
         $threadsData = $this->threadDataManager->getDefaultThreads($userId, $scenario);
-        $threads = $this->threadManager->createBatchForUser($userId, $threadsData);
+        $threads = $this->createBatchForUser($userId, $threadsData);
+
         foreach ($threads as $thread)
         {
             $this->threadManager->setAsDefault($thread->getId());
@@ -89,6 +90,31 @@ class ThreadService
         }
 
         return $threads;
+    }
+
+    /**
+     * @param $userId
+     * @param array $threadsData
+     * @return Thread[]
+     * @throws \Exception
+     */
+    public function createBatchForUser($userId, array $threadsData)
+    {
+        $returnThreads = array();
+
+        $existingThreads = $this->threadManager->getAllByUserId($userId);
+
+        foreach ($threadsData as $threadData) {
+            foreach ($existingThreads as $existingThread) {
+                if ($threadData['name'] == $existingThread->getName()) {
+                    continue 2;
+                }
+            }
+
+            $returnThreads[] = $this->createThread($userId, $threadData);
+        }
+
+        return $returnThreads;
     }
 
     public function createGroupThread(Group $group, $userId)
@@ -102,7 +128,7 @@ class ThreadService
 
     public function updateThread($threadId, $userId, array $data)
     {
-        $this->validateFilters($data, $threadId);
+        $this->validateFilters($data, $threadId, $userId);
         //TODO: remove userId, get from thread?
         $thread = $this->threadManager->update($threadId, $userId, $data);
         $filters = $this->getFiltersData($data);
@@ -152,14 +178,14 @@ class ThreadService
         }
     }
 
-    protected function validateFilters($data, $threadId)
+    protected function validateFilters($data, $threadId, $userId = null)
     {
         $filters = $this->getFiltersData($data);
 
         $thread = $this->threadManager->getById($threadId);
         if ($thread instanceof UsersThread)
         {
-            $this->filterUsersManager->validateOnUpdate($filters);
+            $this->filterUsersManager->validateOnUpdate($filters, $userId);
         } else {
             $this->filterContentManager->validateOnUpdate($filters);
         }

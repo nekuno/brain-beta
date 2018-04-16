@@ -2,7 +2,7 @@
 
 namespace Controller\Instant;
 
-use Manager\UserManager;
+use Model\User\UserManager;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;
 

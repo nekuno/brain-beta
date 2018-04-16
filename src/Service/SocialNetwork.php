@@ -5,8 +5,10 @@ namespace Service;
 use ApiConsumer\Factory\FetcherFactory;
 use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
-use Model\User\LookUpModel;
-use Model\User\SocialNetwork\LinkedinSocialNetworkModel;
+use Model\LookUp\LookUpManager;
+use Model\Profile\ProfileManager;
+use Model\Profile\ProfileTagManager;
+use Model\SocialNetwork\LinkedinSocialNetworkManager;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -15,14 +17,18 @@ use Psr\Log\LoggerInterface;
 class SocialNetwork
 {
     /**
-     * @var LinkedinSocialNetworkModel
+     * @var LinkedinSocialNetworkManager
      */
     protected $linkedinSocialNetworkModel;
 
     /**
-     * @var LookupModel
+     * @var LookUpManager
      */
     protected $lookupModel;
+
+    protected $profileTagModel;
+
+    protected $profileModel;
 
     /**
      * @var FetcherFactory
@@ -30,12 +36,16 @@ class SocialNetwork
     protected $fetcherFactory;
 
     function __construct(
-        LinkedinSocialNetworkModel $linkedinSocialNetworkModel,
-        LookUpModel $lookupModel,
+        LinkedinSocialNetworkManager $linkedinSocialNetworkModel,
+        LookUpManager $lookupModel,
+        ProfileTagManager $profileTagModel,
+        ProfileManager $profileModel,
         FetcherFactory $fetcherFactory
     ) {
         $this->linkedinSocialNetworkModel = $linkedinSocialNetworkModel;
         $this->lookupModel = $lookupModel;
+        $this->profileTagModel = $profileTagModel;
+        $this->profileModel = $profileModel;
         $this->fetcherFactory = $fetcherFactory;
     }
 
@@ -51,6 +61,15 @@ class SocialNetwork
         switch ($resource) {
             case 'linkedin':
                 $this->linkedinSocialNetworkModel->set($userId, $profileUrl, $logger);
+                $data = $this->linkedinSocialNetworkModel->getData($profileUrl, $logger);
+                $locale = $this->profileModel->getInterfaceLocale($userId);
+
+                $skills = array_filter($data['tags']);
+                $this->profileTagModel->addTags($userId, $locale, 'Profession', $skills);
+
+                $languages = array_filter($data['languages']);
+                $this->profileTagModel->addTags($userId, $locale, 'Language', $languages);
+
                 if ($logger) {
                     $logger->info('linkedin social network info added for user ' . $userId . ' (' . $profileUrl . ')');
                 }

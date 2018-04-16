@@ -3,10 +3,10 @@
 
 namespace Worker;
 
-use Model\Link\LinkModel;
+use Model\Link\LinkManager;
 use Model\Neo4j\Neo4jException;
-use Model\User\Affinity\AffinityModel;
-use Model\User\Similarity\SimilarityModel;
+use Model\Affinity\AffinityManager;
+use Model\Similarity\SimilarityManager;
 use PhpAmqpLib\Channel\AMQPChannel;
 use Service\AffinityRecalculations;
 use Service\AMQPManager;
@@ -25,25 +25,25 @@ class PredictionWorker extends LoggerAwareWorker implements RabbitMQConsumerInte
     protected $affinityRecalculations;
 
     /**
-     * @var AffinityModel
+     * @var AffinityManager
      */
     protected $affinityModel;
 
     /**
-     * @var LinkModel
+     * @var LinkManager
      */
     protected $linkModel;
 
     /**
-     * @var SimilarityModel
+     * @var SimilarityManager
      */
     protected $similarityModel;
 
     public function __construct(AMQPChannel $channel,
                                 EventDispatcher $dispatcher,
                                 AffinityRecalculations $affinityRecalculations,
-                                AffinityModel $affinityModel,
-                                LinkModel $linkModel)
+                                AffinityManager $affinityModel,
+                                LinkManager $linkModel)
     {
         parent::__construct($dispatcher, $channel);
         $this->linkModel = $linkModel;
@@ -72,10 +72,11 @@ class PredictionWorker extends LoggerAwareWorker implements RabbitMQConsumerInte
                 break;
             case $this::TRIGGER_LIVE:
                 try {
-                    $links = $this->linkModel->getLivePredictedContent($userId);
-                    foreach ($links as $link) {
-                        $affinity = $this->affinityModel->getAffinity($userId, $link->getContent()['id']);
-                        $this->logger->info(sprintf('Affinity between user %s and link %s: %s', $userId, $link->getContent()['id'], $affinity['affinity']));
+                    $contentRecommendations = $this->linkModel->getLivePredictedContent($userId);
+                    foreach ($contentRecommendations as $contentRecommendation) {
+                        $linkId = $contentRecommendation->getContent()->getId();
+                        $affinity = $this->affinityModel->getAffinity($userId, $linkId);
+                        $this->logger->info(sprintf('Affinity between user %s and link %s: %s', $userId, $linkId, $affinity->getAffinity()));
                     }
                 } catch (\Exception $e) {
                     $this->logger->error(sprintf('Worker: Error calculating live affinity for user %d with message %s on file %s, line %d', $userId, $e->getMessage(), $e->getFile(), $e->getLine()));

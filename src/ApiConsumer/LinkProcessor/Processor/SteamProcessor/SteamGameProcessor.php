@@ -28,8 +28,8 @@ class SteamGameProcessor extends AbstractSteamProcessor
     {
         parent::hydrateLink($preprocessedLink, $data);
         $link = $preprocessedLink->getFirstLink();
-        $creator = Game::buildFromArray($link->toArray());
-        if (isset($data['gameName'])) {
+        $creator = Game::buildFromLink($link);
+        if (isset($data['gameName']) && $data['gameName']) {
             $creator->setTitle($data['gameName']);
             $creator->setDescription(null);
         }

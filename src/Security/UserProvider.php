@@ -4,8 +4,8 @@ namespace Security;
 
 use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
 use HWI\Bundle\OAuthBundle\Security\Core\User\OAuthAwareUserProviderInterface;
-use Manager\UserManager;
-use Model\User;
+use Model\User\UserManager;
+use Model\User\User;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
@@ -70,7 +70,7 @@ class UserProvider implements UserProviderInterface, OAuthAwareUserProviderInter
         }
 
         if (!$this->supportsClass(get_class($user))) {
-            throw new UnsupportedUserException(sprintf('Expected an instance of %s, but got "%s".', '\\Model\\User', get_class($user)));
+            throw new UnsupportedUserException(sprintf('Expected an instance of %s, but got "%s".', '\\Manager\\User', get_class($user)));
         }
 
         if (null === $reloadedUser = $this->userManager->findUserBy(array('id' => $user->getId()))) {
@@ -85,7 +85,7 @@ class UserProvider implements UserProviderInterface, OAuthAwareUserProviderInter
      */
     public function supportsClass($class)
     {
-        $userClass = '\\Model\\User';
+        $userClass = '\\Manager\\User';
 
         return $userClass === $class || is_subclass_of($class, $userClass);
     }

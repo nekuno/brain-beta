@@ -4,7 +4,7 @@ namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
 use Model\Neo4j\Neo4jException;
-use Model\User\Similarity\SimilarityModel;
+use Model\Similarity\SimilarityManager;
 use Symfony\Component\Console\Helper\TableHelper;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -30,7 +30,7 @@ class UsersCalculateSimilarityCommand extends ApplicationAwareCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        /* @var $model SimilarityModel */
+        /* @var $model SimilarityManager */
         $model = $this->app['users.similarity.model'];
 
         $userA = $input->getArgument('userA');

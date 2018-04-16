@@ -7,12 +7,12 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ValidationException extends HttpException
 {
-    protected $errors = array();
+    protected $errorList;
 
-    public function __construct(array $errors, $message = 'Validation error', \Exception $previous = null, array $headers = array(), $code = 0)
+    public function __construct(ErrorList $errorList, $message = 'Validation error', \Exception $previous = null, array $headers = array(), $code = 0)
     {
         // https://tools.ietf.org/html/rfc4918#page-78
-        $this->errors = $errors;
+        $this->errorList = $errorList;
         parent::__construct(422, $message, $previous, $headers, $code);
     }
 
@@ -23,7 +23,12 @@ class ValidationException extends HttpException
      */
     public function getErrors()
     {
-        return $this->errors;
+        if (null == $this->errorList)
+        {
+            return array();
+        }
+
+        return $this->errorList->jsonSerialize();
     }
 
 }

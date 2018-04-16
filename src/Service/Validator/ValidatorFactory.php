@@ -2,7 +2,6 @@
 
 namespace Service\Validator;
 
-use Model\Metadata\MetadataManagerFactory;
 use Model\Neo4j\GraphManager;
 use Service\MetadataService;
 

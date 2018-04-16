@@ -49,11 +49,24 @@ categories:
         - label:
             en: Others
             es: Otros
-          fields: [income, diet, pets, profession, allergy, sons, zodiacSign, handicap, industry]
+          fields: [income, diet, pets, allergy, sons, zodiacSign, handicap]
+        - label:
+            en: Work, ideas and projects
+            es: Trabajo, ideas y proyectos
+          fields: [profession, industry, proposal]
+        - label:
+            en: Hobbies
+            es: Aficiones
+          fields: [sports, games, creative]
+        - label:
+            en: Leisure
+            es: Ocio
+          fields: [leisureMoney, leisureTime, tickets, activity, travelling, leisurePlan]
         - label:
             en: Description
             es: Descripción
           fields: [description, descriptionImportant, descriptionTime, descriptionSkills, descriptionNotice, descriptionFan, descriptionLive, descriptionThinking, descriptionFriday, descriptionMessage]
+
     filters:
         - label:
             en: Basic
@@ -78,8 +91,27 @@ categories:
         - label:
             en: Others
             es: Otros
-          fields: [income, diet, pets, profession, allergy, sons, zodiacSign, handicap, industry]
+          fields: [income, diet, pets, allergy, sons, zodiacSign, handicap]
+        - label:
+            en: Work, ideas and projects
+            es: Trabajo, ideas y proyectos
+          fields: [profession, industry]
+        - label:
+            en: Hobbies
+            es: Aficiones
+          fields: [sports, games, creative]
+        - label:
+            en: Leisure
+            es: Ocio
+          fields: [leisureMoney, leisureTime, tickets, activity, travelling]
 profile:
+    mode:
+        type: choice
+        label: &modeLabel
+            en: 'Mode'
+            es: 'Modo'
+        notErasable: true
+        hidden: true
     description:
         type: textarea
         min: 0
@@ -163,9 +195,11 @@ profile:
     birthday:
         type: birthday
         label: &birthdayLabel
+            en: 'Age'
+            es: 'Edad'
+        labelEdit:
             en: 'Birthday'
             es: 'Cumpleaños'
-        labelEdit: *birthdayLabel
         notErasable: true
     zodiacSign:
         type: choice
@@ -185,11 +219,12 @@ profile:
             es: 'Altura (cm)'
         labelEdit: *heightLabel
     industry:
-        type: choice
+        type: multiple_choices
         label: &industryLabel
             en: 'Industry'
             es: 'Sector'
         labelEdit: *industryLabel
+        max: 3
     allergy:
         type: tags
         label:
@@ -268,14 +303,14 @@ profile:
             en: 'Gender'
             es: 'Género'
         labelEdit: *descriptiveGenderLabel
-        max_choices: 5
+        max: 5
     objective:
         type: multiple_choices
         label: &objectiveLabel
             en: 'Objectives'
             es: 'Objetivos'
         labelEdit: *objectiveLabel
-        min_choices: 1
+        min: 1
         notErasable: true
     hairColor:
         type: choice
@@ -425,6 +460,7 @@ profile:
             en: 'Skills'
             es: 'Habilidades profesionales'
         labelEdit: *professionLabel
+        max: 10
     education:
         type: tags
         label: &educationLabel
@@ -438,6 +474,106 @@ profile:
             es: 'Ubicación'
         labelEdit: *locationLabel
         notErasable: true
+    sports:
+        type: tags
+        label: &sportsLabel
+            en: 'Sports and physical'
+            es: 'Deportes y físico'
+        labelEdit: *sportsLabel
+    games:
+        type: tags
+        label: &gamesLabel
+            en: 'Videogames and board games'
+            es: 'Videojuegos y juegos de mesa'
+        labelEdit: *gamesLabel
+        schema: VideoGame
+    creative:
+        type: tags
+        label: &creativeLabel
+            en: 'Creative'
+            es: 'Creativo'
+        labelEdit: *creativeLabel
+    leisureMoney:
+        type: multiple_choices
+        label: &leisureMoneyLabel
+            en: 'Money for leisure'
+            es: 'Dinero para ocio'
+        labelEdit: *leisureMoneyLabel
+        min: 0
+        max: 4
+        isRange: true
+    leisureTime:
+        type: multiple_choices
+        label: &leisureTimeLabel
+            en: 'Leisure time'
+            es: 'Tiempo de ocio'
+        labelEdit: *leisureTimeLabel
+        min: 0
+        max: 5
+        isRange: true
+    tickets:
+        type: multiple_choices
+        label: &ticketsLabel
+            en: 'Tickets'
+            es: 'Entradas'
+        labelEdit: *ticketsLabel
+    activity:
+        type: multiple_choices
+        label: &activityLabel
+            en: 'Activities'
+            es: 'Actividades'
+        labelEdit: *activityLabel
+    travelling:
+        type: multiple_locations
+        max: 10
+        label: &travellingLabel
+            en: 'Travelling'
+            es: 'Viajes'
+        labelEdit: *travellingLabel
+    leisurePlan:
+        type: multiple_fields
+        label: &leisurePlanLabel
+            en: 'Planes'
+            es: 'Planes'
+        labelEdit: *leisurePlanLabel
+        max: 3
+        metadata:
+            name:
+                type: textarea
+                required: true
+                max: 100
+                label: &leisurePlanNameLabel
+                    en: 'Plan description'
+                    es: 'Descripción del plan'
+                labelEdit: *leisurePlanNameLabel
+    proposal:
+        type: multiple_fields
+        label: &proposalLabel
+            en: 'Proposals'
+            es: 'Propuestas'
+        labelEdit: *proposalLabel
+        max: 3
+        metadata:
+            name:
+                type: textarea
+                required: true
+                max: 100
+                label: &proposalNameLabel
+                    en: 'Proposal description'
+                    es: 'Descripción de la propuesta'
+                labelEdit: *proposalNameLabel
+            industry:
+                type: multiple_choices
+                max: 3
+                label: *industryLabel
+                labelEdit: *industryLabel
+            profession:
+                type: tags
+                max: 10
+                label: *professionLabel
+                labelEdit: *professionLabel
+
+    
 content:
     type:
         type: choice
@@ -549,7 +685,7 @@ tokens:
 content_filter:
     type:
         type: multiple_choices
-        max_choices: 5
+        max: 5
         label:
             en: 'Type of content (Music, images, etc…)'
             es: 'Tipo de contenido (Música, imágenes, etc…)'
@@ -586,9 +722,7 @@ user_filter:
             es: 'Similaridad mínima (%)'
     birthday:
         type: birthday_range
-        label:
-            en: 'Age'
-            es: 'Edad'
+        label: *birthdayLabel
         min: 14
         max: 99
     zodiacSign:
@@ -653,7 +787,7 @@ user_filter:
     industry:
         type: multiple_choices
         label: *industryLabel
-        max_choices: 10
+        max: 10
     orientation:
         type: multiple_choices
         label: *orientationLabel

@@ -154,7 +154,7 @@ class PaginatorTest extends \PHPUnit_Framework_TestCase {
 
     public function getPaginatedMock($validate=true)
     {
-        $paginatedMock = $this->getMock('\Paginator\PaginatedInterface');
+        $paginatedMock = $this->getMockBuilder('\Paginator\PaginatedInterface')->getMock();
         $paginatedMock
             ->expects($this->any())
             ->method('validateFilters')

@@ -3,13 +3,13 @@ namespace Console\Command;
 
 use Console\BaseCommand;
 use Model\Exception\ValidationException;
-use Model\User;
+use Model\User\User;
 use Silex\Application;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Model\User\LookUpModel;
-use Manager\UserManager;
+use Model\LookUp\LookUpManager;
+use Model\User\UserManager;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use EventListener\LookUpSocialNetworkSubscriber;
 
@@ -31,7 +31,7 @@ class LookUpAllUsersCommand extends BaseCommand
         $usersModel = $this->app['users.manager'];
         $users = $usersModel->getAll();
 
-        /* @var $lookUpModel LookUpModel */
+        /* @var $lookUpModel LookUpManager */
         $lookUpModel = $this->app['users.lookup.model'];
 
         foreach ($users as $user) {

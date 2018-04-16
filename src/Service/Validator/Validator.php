@@ -2,6 +2,7 @@
 
 namespace Service\Validator;
 
+use Model\Exception\ErrorList;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
 
@@ -43,20 +44,23 @@ class Validator implements ValidatorInterface
 
     public function validateUserId($userId, $desired = true)
     {
+        $errorList = new ErrorList();
         if (!is_int($userId)) {
-            $errors = array('userId' => array('User Id must be an integer'));
+            $errorList->addError('userId', 'User Id must be an integer');
         } else {
-            $errors = array('userId' => $this->existenceValidator->validateUserId($userId, $desired));
+            $errorList->setErrors('userId', $this->existenceValidator->validateUserId($userId, $desired));
         }
 
-        $this->throwException($errors);
+        $this->throwException($errorList);
     }
 
     protected function validateUserInData(array $data, $userIdRequired = true)
     {
         $isMissing = $userIdRequired && (!isset($data['userId']) || null === $data['userId']);
         if ($isMissing) {
-            $this->throwException(array('userId', 'User id is required for this action'));
+            $errorList = new ErrorList();
+            $errorList->addError('userId', 'User id is required for this action');
+            $this->throwException($errorList);
         }
 
         if (isset($data['userId'])) {
@@ -66,27 +70,25 @@ class Validator implements ValidatorInterface
 
     protected function validateExtraFields($data, $metadata)
     {
-        $errors = array();
+        $errorList = new ErrorList();
 
         $diff = array_diff_key($data, $metadata);
-        if (count($diff) > 0) {
-            foreach ($diff as $invalidKey => $invalidValue) {
-                $errors[$invalidKey] = array(sprintf('Invalid key "%s"', $invalidKey));
-            }
+        foreach ($diff as $invalidKey => $invalidValue) {
+            $errorList->addError($invalidKey, sprintf('Invalid key "%s"', $invalidKey));
         }
 
-        $this->throwException($errors);
+        $this->throwException($errorList);
     }
 
     protected function validateMetadata($data, $metadata, $dataChoices = array())
     {
-        $errors = array();
+        $errorList = new ErrorList();
         foreach ($metadata as $fieldName => $fieldData) {
 
-            $fieldErrors = array();
             $choices = $this->buildChoices($dataChoices, $fieldData, $fieldName);
 
-            if (isset($data[$fieldName])) {
+            $isDataSet = isset($data[$fieldName]) && !(is_array($data[$fieldName]) && empty($data[$fieldName]));
+            if ($isDataSet) {
 
                 $dataValue = $data[$fieldName];
                 switch ($fieldData['type']) {
@@ -94,312 +96,287 @@ class Validator implements ValidatorInterface
                     case 'textarea':
                         if (isset($fieldData['min'])) {
                             if (strlen($dataValue) < $fieldData['min']) {
-                                $fieldErrors[] = 'Must have ' . $fieldData['min'] . ' characters min.';
+                                $errorList->addError($fieldName, 'Must have ' . $fieldData['min'] . ' characters min.');
                             }
                         }
                         if (isset($fieldData['max'])) {
                             if (strlen($dataValue) > $fieldData['max']) {
-                                $fieldErrors[] = 'Must have ' . $fieldData['max'] . ' characters max.';
+                                $errorList->addError($fieldName, 'Must have ' . $fieldData['max'] . ' characters max.');
                             }
                         }
                         break;
 
                     case 'integer':
                         if (!is_integer($dataValue)) {
-                            $fieldErrors[] = 'Must be an integer';
+                            $errorList->addError($fieldName, 'Must be an integer');
                         }
                         if (isset($fieldData['min'])) {
                             if (!empty($dataValue) && $dataValue < $fieldData['min']) {
-                                $fieldErrors[] = 'Must be greater than ' . $fieldData['min'];
+                                $errorList->addError($fieldName, 'Must be greater than ' . $fieldData['min']);
                             }
                         }
                         if (isset($fieldData['max'])) {
                             if ($dataValue > $fieldData['max']) {
-                                $fieldErrors[] = 'Must be less than ' . $fieldData['max'];
+                                $errorList->addError($fieldName, 'Must be less than ' . $fieldData['max']);
                             }
                         }
                         break;
 
                     case 'array':
                         if (!is_array($dataValue)) {
-                            $fieldErrors[] = 'Must be an array';
+                            $errorList->addError($fieldName, 'Must be an array');
                         } else {
-                            if (isset($fieldData['min'])) {
-                                if (count($dataValue) < $fieldData['min']) {
-                                    $fieldErrors[] = 'Array length must be greater than ' . $fieldData['min'];
-                                }
-                            }
-                            if (isset($fieldData['max'])) {
-                                if (count($dataValue) > $fieldData['max']) {
-                                    $fieldErrors[] = 'Array length must be less than ' . $fieldData['max'];
-                                }
-                            }
+                            $errorList->addError($fieldName, $this->validateMin($dataValue, $fieldData));
+                            $errorList->addError($fieldName, $this->validateMax($dataValue, $fieldData));
                         }
                         break;
                     case 'birthday_range':
                     case 'integer_range':
                         if (!is_array($dataValue)) {
-                            $fieldErrors[] = 'Must be an array';
+                            $errorList->addError($fieldName, 'Must be an array');
                             continue;
                         }
                         if (isset($dataValue['max']) && !is_int($dataValue['max'])) {
-                            $fieldErrors[] = 'Maximum value must be an integer';
+                            $errorList->addError($fieldName, 'Maximum value must be an integer');
                         }
                         if (isset($dataValue['min']) && !is_int($dataValue['min'])) {
-                            $fieldErrors[] = 'Minimum value must be an integer';
+                            $errorList->addError($fieldName, 'Minimum value must be an integer');
                         }
                         if (isset($fieldData['min']) && isset($dataValue['min']) && $dataValue['min'] < $fieldData['min']) {
-                            $fieldErrors[] = 'Minimum value must be greater than ' . $fieldData['min'];
+                            $errorList->addError($fieldName, 'Minimum value must be greater than ' . $fieldData['min']);
                         }
                         if (isset($fieldData['max']) && isset($dataValue['max']) && $dataValue['max'] > $fieldData['max']) {
-                            $fieldErrors[] = 'Maximum value must be less than ' . $fieldData['max'];
+                            $errorList->addError($fieldName, 'Maximum value must be less than ' . $fieldData['max']);
                         }
                         if (isset($dataValue['min']) && isset($dataValue['max']) && $dataValue['min'] > $dataValue['max']) {
-                            $fieldErrors[] = 'Minimum value must be smaller or equal than maximum value';
+                            $errorList->addError($fieldName, 'Minimum value must be smaller or equal than maximum value');
                         }
                         break;
 
                     case 'date':
-                        $date = \DateTime::createFromFormat('Y-m-d', $dataValue);
-                        if (!($date && $date->format('Y-m-d') == $dataValue)) {
-                            $fieldErrors[] = 'Invalid date format, valid format is "Y-m-d".';
-                        }
+                        $errorList->addError($fieldName, $this->validateDateFormat($dataValue));
                         break;
 
                     case 'birthday':
-                        if (!is_string($dataValue)) {
-                            $fieldErrors[] = 'Birthday value must be a string';
+                        $errorList->addError($fieldName, $this->validateString($dataValue));
+                        if ($errorList->hasFieldErrors($fieldName)){
                             continue;
                         }
+
+                        $errorList->addError($fieldName, $this->validateDateFormat($dataValue));
+
                         $date = \DateTime::createFromFormat('Y-m-d', $dataValue);
                         $now = new \DateTime();
-                        if (!($date && $date->format('Y-m-d') == $dataValue)) {
-                            $fieldErrors[] = 'Invalid date format, valid format is "YYYY-MM-DD".';
-                        } elseif ($now < $date) {
-                            $fieldErrors[] = 'Invalid birthday date, can not be in the future.';
+
+                        if ($now < $date) {
+                            $errorList->addError($fieldName, 'Invalid birthday date, can not be in the future.');
                         } elseif ($now->modify('-14 year') < $date) {
-                            $fieldErrors[] = 'Invalid birthday date, you must be older than 14 years.';
+                            $errorList->addError($fieldName, 'Invalid birthday date, you must be older than 14 years.');
                         }
                         break;
 
                     case 'boolean':
-                        $fieldErrors = $this->validateBoolean($dataValue);
+                        $errorList->addError($fieldName, $this->validateBoolean($dataValue));
                         break;
 
                     case 'choice':
-                        if (!in_array($dataValue, $choices)) {
-                            $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $dataValue, implode("', '", $choices));
-                        }
+                        $errorList->addError($fieldName, $this->validateChoice($dataValue, $choices));
                         break;
 
                     case 'double_choice':
                         $thisChoices = $choices + array('' => '');
-                        if (!in_array($dataValue['choice'], $thisChoices)) {
-                            $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $dataValue['choice'], implode("', '", $thisChoices));
-                        }
+                        $errorList->addError($fieldName, $this->validateChoice($dataValue['choice'], $thisChoices));
+
                         $doubleChoices = $fieldData['doubleChoices'] + array('' => '');
                         if (!isset($doubleChoices[$dataValue['choice']]) || isset($dataValue['detail']) && $dataValue['detail'] && !isset($doubleChoices[$dataValue['choice']][$dataValue['detail']])) {
-                            $fieldErrors[] = sprintf('Option choice and detail must be set in "%s"', $dataValue['choice']);
-                        } elseif ($dataValue['detail'] && !in_array($dataValue['detail'], array_keys($doubleChoices[$dataValue['choice']]))) {
-                            $fieldErrors[] = sprintf('Detail with value "%s" is not valid, possible values are "%s"', $dataValue['detail'], implode("', '", array_keys($doubleChoices)));
+                            $errorList->addError($fieldName, sprintf('Option choice and detail must be set in "%s"', $dataValue['choice']));
+                        } elseif ($dataValue['detail']) {
+                            $errorList->addError($fieldName, $this->validateChoice($dataValue['detail'], array_keys($doubleChoices[$dataValue['choice']])));
                         }
                         break;
                     case 'double_multiple_choices':
                         if (!is_array($dataValue)) {
-                            $fieldErrors[] = 'Double multiple choices value must be an array';
+                            $errorList->addError($fieldName, 'Double multiple choices value must be an array');
                             continue;
                         }
                         $thisChoices = $choices + array('' => '');
                         $doubleChoices = $fieldData['doubleChoices'] + array('' => '');
 
                         if (!isset($dataValue['choices']) || !is_array($dataValue['choices'])) {
-                            $fieldErrors[] = sprintf('Option choices must be set and must be an array in "%s"', $fieldName);
+                            $errorList->addError($fieldName, sprintf('Option choices must be set and must be an array in "%s"', $fieldName));
                         }
                         if (isset($dataValue['details']) && !is_array($dataValue['details'])) {
-                            $fieldErrors[] = sprintf('Details must be an array in "%s"', $fieldName);
+                            $errorList->addError($fieldName, sprintf('Details must be an array in "%s"', $fieldName));
                         }
 
                         foreach ($dataValue['choices'] as $choice) {
-                            if (!in_array($choice, $thisChoices)) {
-                                $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $choice, implode("', '", $thisChoices));
-                            }
+                            $errorList->addError($fieldName, $this->validateChoice($choice, $thisChoices));
                             $details = isset($dataValue['details']) ? $dataValue['details'] : array();
                             foreach ($details as $detail) {
                                 if (!isset($doubleChoices[$choice][$detail])) {
-                                    $fieldErrors[] = sprintf('Detail with value "%s" is not valid, possible values are "%s"', $detail, implode("', '", array_keys($doubleChoices)));
+                                    $errorList->addError($fieldName, sprintf('Detail with value "%s" is not valid, possible values are "%s"', $detail, implode("', '", array_keys($doubleChoices))));
                                 }
                             }
                         }
                         break;
                     case 'choice_and_multiple_choices':
                         if (!is_array($dataValue)) {
-                            $fieldErrors[] = 'Choice and multiple choices value must be an array';
+                            $errorList->addError($fieldName, 'Choice and multiple choices value must be an array');
                             continue;
                         }
                         $thisChoices = $choices + array('' => '');
                         $doubleChoices = $fieldData['doubleChoices'] + array('' => '');
 
                         if (!isset($dataValue['choice'])) {
-                            $fieldErrors[] = sprintf('Option choice must be set in "%s"', $fieldName);
+                            $errorList->addError($fieldName, sprintf('Option choice must be set in "%s"', $fieldName));
                         }
                         if (isset($dataValue['details']) && !is_array($dataValue['details'])) {
-                            $fieldErrors[] = sprintf('Details must be an array in "%s"', $fieldName);
+                            $errorList->addError($fieldName, sprintf('Details must be an array in "%s"', $fieldName));
                         }
                         $choice = $dataValue['choice'];
-                        if (!in_array($choice, $thisChoices)) {
-                            $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $choice, implode("', '", $thisChoices));
-                        }
+                        $this->validateChoice($choice, $thisChoices);
                         $details = isset($dataValue['details']) ? $dataValue['details'] : array();
                         foreach ($details as $detail) {
                             if (!isset($doubleChoices[$choice][$detail])) {
-                                $fieldErrors[] = sprintf('Detail with value "%s" is not valid, possible values are "%s"', $detail, implode("', '", array_keys($doubleChoices)));
+                                $errorList->addError($fieldName, sprintf('Detail with value "%s" is not valid, possible values are "%s"', $detail, implode("', '", array_keys($doubleChoices))));
                             }
                         }
                         break;
                     case 'tags':
+                        $errorList->addError($fieldName, $this->validateMax($dataValue, $fieldData, self::MAX_TAGS_AND_CHOICE_LENGTH));
                         break;
                     case 'tags_and_choice':
                         if (!is_array($dataValue)) {
-                            $fieldErrors[] = 'Tags and choice value must be an array';
+                            $errorList->addError($fieldName, 'Tags and choice value must be an array');
                         }
-                        if (count($dataValue) > self::MAX_TAGS_AND_CHOICE_LENGTH) {
-                            $fieldErrors[] = sprintf('Tags and choice length "%s" is too long. "%s" is the maximum', count($dataValue), self::MAX_TAGS_AND_CHOICE_LENGTH);
-                        }
+                        $errorList->addError($fieldName, $this->validateMax($dataValue, $fieldData, self::MAX_TAGS_AND_CHOICE_LENGTH));
+
                         foreach ($dataValue as $tagAndChoice) {
                             if (!isset($tagAndChoice['tag']) || !array_key_exists('choice', $tagAndChoice)) {
-                                $fieldErrors[] = sprintf('Tag and choice must be defined for tags and choice type');
+                                $errorList->addError($fieldName, sprintf('Tag and choice must be defined for tags and choice type'));
                             }
-                            if (isset($tagAndChoice['choice']) && $tagAndChoice['choice'] && isset($choices) && !in_array($tagAndChoice['choice'], array_keys($choices))) {
-                                $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $tagAndChoice['choice'], implode("', '", array_keys($choices)));
+                            if (isset($tagAndChoice['choice']) && $tagAndChoice['choice']) {
+                                $errorList->addError($fieldName, $this->validateChoice($tagAndChoice['choice'], array_keys($choices)));
                             }
                         }
                         break;
                     case 'tags_and_multiple_choices':
                         if (!is_array($dataValue)) {
-                            $fieldErrors[] = 'Tags and multiple choices value must be an array';
+                            $errorList->addError($fieldName, 'Tags and multiple choices value must be an array');
                         }
-                        if (count($dataValue) > self::MAX_TAGS_AND_CHOICE_LENGTH) {
-                            $fieldErrors[] = sprintf('Tags and multiple choices length "%s" is too long. "%s" is the maximum', count($dataValue), self::MAX_TAGS_AND_CHOICE_LENGTH);
-                        }
+                        $errorList->addError($fieldName, $this->validateMax($dataValue, $fieldData, self::MAX_TAGS_AND_CHOICE_LENGTH));
+
                         foreach ($dataValue as $tagAndMultipleChoices) {
                             if (!isset($tagAndMultipleChoices['tag']) || !array_key_exists('choices', $tagAndMultipleChoices)) {
-                                $fieldErrors[] = sprintf('Tag and choices must be defined for tags and multiple choices type');
+                                $errorList->addError($fieldName, sprintf('Tag and choices must be defined for tags and multiple choices type'));
                             }
                             if (isset($tagAndMultipleChoices['choices'])) {
                                 foreach ($tagAndMultipleChoices['choices'] as $singleChoice) {
-                                    if ($singleChoice && isset($choices) && !in_array($singleChoice, array_keys($choices))) {
-                                        $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $singleChoice, implode("', '", array_keys($choices)));
-                                    }
+                                    $errorList->addError($fieldName, $this->validateChoice($singleChoice, array_keys($choices)));
                                 }
                             }
                         }
                         break;
                     case 'multiple_choices':
-                        $multipleChoices = $choices;
                         if (!is_array($dataValue)) {
-                            $fieldErrors[] = 'Multiple choices value must be an array';
+                            $errorList->addError($fieldName, 'Multiple choices value must be an array');
                             continue;
                         }
 
-                        if (isset($fieldData['max_choices'])) {
-                            if (count($dataValue) > $fieldData['max_choices']) {
-                                $fieldErrors[] = sprintf('Option length "%s" is too long. "%s" is the maximum', count($dataValue), $fieldData['max_choices']);
-                            }
-                        }
-                        if (isset($fieldData['min_choices'])) {
-                            if (count($dataValue) < $fieldData['min_choices']) {
-                                $fieldErrors[] = sprintf('Option length "%s" is too short. "%s" is the minimum', count($dataValue), $fieldData['min_choices']);
-                            }
-                        }
+                        $errorList->addError($fieldName, $this->validateMin($dataValue, $fieldData));
+                        $errorList->addError($fieldName, $this->validateMax($dataValue, $fieldData));
+
                         foreach ($dataValue as $singleValue) {
-                            if (!in_array($singleValue, $multipleChoices)) {
-                                $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $singleValue, implode("', '", $multipleChoices));
-                            }
+                            $errorList->addError($fieldName, $this->validateChoice($singleValue, $choices));
                         }
                         break;
                     case 'location':
-                        foreach ($this->validateLocation($dataValue) as $error) {
-                            $fieldErrors[] = $error;
+                        $errorList->setErrors($fieldName, $this->validateLocation($dataValue));
+                        break;
+                    case 'multiple_locations':
+                        if (!is_array($dataValue)) {
+                            $errorList->addError($fieldName, 'Multiple locations value must be an array');
+                            continue;
+                        }
+                        $errorList->addError($fieldName, $this->validateMax($dataValue, $fieldData));
+
+                        foreach ($dataValue as $value) {
+                            $errorList->setErrors($fieldName, $this->validateLocation($value));
                         }
 
                         break;
                     case 'location_distance':
                         if (!is_array($dataValue)) {
-                            $fieldErrors[] = 'The location distance value must be an array';
+                            $errorList->addError($fieldName, 'The location distance value must be an array');
                             continue;
                         }
                         if (!isset($dataValue['distance'])) {
-                            $fieldErrors[] = 'Distance required';
+                            $errorList->addError($fieldName, 'Distance required');
                         }
                         if (!isset($dataValue['location'])) {
-                            $fieldErrors[] = 'Location required';
+                            $errorList->addError($fieldName, 'Location required');
                             continue;
                         }
 
                         foreach ($this->validateLocation($dataValue['location']) as $error) {
-                            $fieldErrors[] = $error;
+                            $errorList->addError($fieldName, $error);
                         }
                         break;
                     case 'email':
                         if (!filter_var($dataValue, FILTER_VALIDATE_EMAIL)) {
-                            $fieldErrors[] = 'Value must be a valid email';
+                            $errorList->addError($fieldName, 'Value must be a valid email');
                         }
                         break;
                     case 'url':
                         if (!filter_var($dataValue, FILTER_VALIDATE_URL)) {
-                            $fieldErrors[] = 'Value must be a valid URL';
+                            $errorList->addError($fieldName, 'Value must be a valid URL');
                         }
                         break;
                     case 'image_path':
                         if (!preg_match('/^[\w\/\\-]+\.(png|jpe?g|gif|tiff)$/i', $dataValue)) {
-                            $fieldErrors[] = 'Value must be a valid path';
+                            $errorList->addError($fieldName, 'Value must be a valid path');
                         }
                         break;
                     case 'timestamp':
                         if (!(is_int($dataValue) || is_double($dataValue))) {
-                            $fieldErrors[] = 'Value must be a valid timestamp';
+                            $errorList->addError($fieldName, 'Value must be a valid timestamp');
                         }
                         break;
                     case 'string':
-                        if (!is_string($dataValue)) {
-                            $fieldErrors[] = 'Value must be a string';
-                        }
+                        $errorList->addError($fieldName, $this->validateString($dataValue));
                         break;
                     case 'order':
-                        if (!in_array($dataValue, array('similarity', 'matching'))) {
-                            $fieldErrors[] = sprintf('Option with value "%s" is not valid, possible values are "%s"', $dataValue, implode("', '", array('similarity', 'matching')));
+                        $orderChoices = array('similarity', 'matching');
+                        $errorList->addError($fieldName, $this->validateChoice($dataValue, $orderChoices));
+                        break;
+                    case 'multiple_fields':
+                        $internalMetadata = $fieldData['metadata'];
+                        foreach ($dataValue as $multiData) {
+                            $this->validateMetadata($multiData, $internalMetadata, $dataChoices);
                         }
+                        break;
+                    default:
                         break;
                 }
             } else {
                 if (isset($fieldData['required']) && $fieldData['required'] === true) {
-                    $fieldErrors[] = 'It\'s required.';
+                    $errorList->addError($fieldName, 'It\'s required.');
                 }
-            }
-
-            if (count($fieldErrors) > 0) {
-                $errors[$fieldName] = $fieldErrors;
             }
         }
 
-        $this->throwException($errors);
+        $this->throwException($errorList);
 
         return true;
     }
 
     /**
-     * @param $errors
+     * @param ErrorList $errorList
      */
-    protected function throwException($errors)
+    protected function throwException(ErrorList $errorList)
     {
-        foreach ($errors as $field => $fieldErrors){
-            if (empty($fieldErrors)){
-                unset($errors[$field]);
-            }
-        }
-
-        if (count($errors) > 0) {
-            throw new ValidationException($errors);
+        if ($errorList->hasErrors()){
+            throw new ValidationException($errorList);
         }
     }
 
@@ -419,43 +396,100 @@ class Validator implements ValidatorInterface
 
     private function validateLocation($dataValue)
     {
-        $fieldErrors = array();
+        $errors = array();
         if (!is_array($dataValue)) {
-            $fieldErrors[] = sprintf('The value "%s" is not valid, it should be an array with "latitude" and "longitude" keys', $dataValue);
+            $errors[] = sprintf('The value "%s" is not valid, it should be an array with "latitude" and "longitude" keys', $dataValue);
         } else {
             if (!isset($dataValue['address']) || !$dataValue['address'] || !is_string($dataValue['address'])) {
-                $fieldErrors[] = 'Address required';
+                $errors[] = 'Address required';
             } else {
                 if (!isset($dataValue['latitude']) || !preg_match(Validator::LATITUDE_REGEX, $dataValue['latitude'])) {
-                    $fieldErrors[] = 'Latitude not valid';
+                    $errors[] = 'Latitude not valid';
                 } elseif (!is_float($dataValue['latitude'])) {
-                    $fieldErrors[] = 'Latitude must be float';
+                    $errors[] = 'Latitude must be float';
                 }
                 if (!isset($dataValue['longitude']) || !preg_match(Validator::LONGITUDE_REGEX, $dataValue['longitude'])) {
-                    $fieldErrors[] = 'Longitude not valid';
+                    $errors[] = 'Longitude not valid';
                 } elseif (!is_float($dataValue['longitude'])) {
-                    $fieldErrors[] = 'Longitude must be float';
+                    $errors[] = 'Longitude must be float';
                 }
                 if (!isset($dataValue['locality']) || !$dataValue['locality'] || !is_string($dataValue['locality'])) {
-                    $fieldErrors[] = 'Locality required';
+                    $errors[] = 'Locality required';
                 }
                 if (!isset($dataValue['country']) || !$dataValue['country'] || !is_string($dataValue['country'])) {
-                    $fieldErrors[] = 'Country required';
+                    $errors[] = 'Country required';
                 }
             }
         }
 
-        return $fieldErrors;
+        return $errors;
     }
 
     protected function validateBoolean($value, $name = null)
     {
         $errors = array();
         if (!is_bool($value)) {
-            $fieldErrors[] = sprintf('%s must be a boolean, %s given', $name, $value);
+            $errors[] = sprintf('%s must be a boolean, %s given', $name, $value);
         }
 
         return $errors;
+    }
+
+    protected function validateMax($value, $fieldData, $forceMax = null)
+    {
+        if (!isset($fieldData['max']) && $forceMax === null) {
+            return null;
+        }
+
+        $max = $forceMax !== null ? $forceMax : $fieldData['max'];
+        if (count($value) > $max) {
+            return sprintf('Option length "%s" is too long. "%s" is the maximum', count($value), $max);
+        }
+
+        return null;
+    }
+
+    protected function validateMin(array $value, $fieldData, $forceMin = null)
+    {
+        if (!isset($fieldData['min']) && $forceMin === null) {
+            return null;
+        }
+
+        $min = $forceMin !== null ? $forceMin : $fieldData['min'];
+        if (count($value) < $min) {
+            return sprintf('Option length "%s" is too short. "%s" is the minimum', count($value), $min);
+        }
+
+        return null;
+    }
+
+    protected function validateChoice($choice, array $validChoices)
+    {
+        if (!in_array($choice, $validChoices)) {
+            return sprintf('Option with value "%s" is not valid, possible values are "%s"', $choice, implode("', '", $validChoices));
+        }
+
+        return null;
+    }
+
+    protected function validateDateFormat($dataValue)
+    {
+        $date = \DateTime::createFromFormat('Y-m-d', $dataValue);
+
+        if (!($date && $date->format('Y-m-d') == $dataValue)) {
+            return ('Invalid date format, valid format is "Y-m-d".');
+        }
+
+        return null;
+    }
+
+    protected function validateString($dataValue)
+    {
+        if (!is_string($dataValue)) {
+            return 'Value must be a string';
+        }
+
+        return null;
     }
 
 }

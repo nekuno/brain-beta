@@ -2,8 +2,7 @@
 
 namespace Model\Metadata;
 
-use Model\User\ProfileOptionManager;
-use Silex\Translator;
+use Symfony\Component\Translation\Translator;
 
 class MetadataManagerFactory
 {

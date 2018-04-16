@@ -2,6 +2,7 @@
 
 namespace Service\Validator;
 
+use Model\Exception\ErrorList;
 use Model\Metadata\MetadataManager;
 
 class QuestionAdminValidator extends Validator
@@ -44,21 +45,21 @@ class QuestionAdminValidator extends Validator
 
     protected function validateLocales($texts)
     {
-        $errors = array();
+        $errorList = new ErrorList();
         $validLocales = MetadataManager::$validLocales;
         if (count($texts) < count($validLocales)){
-            $errors['texts'][] = sprintf('There are incomplete texts');
+            $errorList->addError('texts', sprintf('There are incomplete texts'));
         }
         foreach ($texts as $locale => $text) {
             if (!in_array($locale, $validLocales)) {
-                $errors['texts'][] = sprintf('Locale %s is not valid, valid locales are %s', $locale, json_encode($validLocales));
+                $errorList->addError('texts', sprintf('Locale %s is not valid, valid locales are %s', $locale, json_encode($validLocales)));
             }
 
             if (!is_string($text)) {
-                $errors['texts'][] = sprintf('Texts into questions and answers must be strings');
+                $errorList->addError('texts', sprintf('Texts into questions and answers must be strings'));
             }
         }
 
-        $this->throwException($errors);
+        $this->throwException($errorList);
     }
 }

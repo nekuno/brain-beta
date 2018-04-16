@@ -5,8 +5,8 @@ namespace Service;
 use Model\Metadata\MetadataManagerFactory;
 use Model\Metadata\MetadataManagerInterface;
 use Model\Metadata\MetadataUtilities;
-use Model\User\Group\GroupModel;
-use Model\User\ProfileOptionManager;
+use Model\Group\GroupManager;
+use Model\Profile\ProfileOptionManager;
 
 class MetadataService
 {
@@ -20,11 +20,11 @@ class MetadataService
     /**
      * MetadataService constructor.
      * @param MetadataManagerFactory $metadataManagerFactory
-     * @param GroupModel $groupModel
+     * @param GroupManager $groupModel
      * @param ProfileOptionManager $profileOptionManager
      * @param MetadataUtilities $metadataUtilities
      */
-    public function __construct(MetadataManagerFactory $metadataManagerFactory, GroupModel $groupModel, ProfileOptionManager $profileOptionManager, MetadataUtilities $metadataUtilities)
+    public function __construct(MetadataManagerFactory $metadataManagerFactory, GroupManager $groupModel, ProfileOptionManager $profileOptionManager, MetadataUtilities $metadataUtilities)
     {
         $this->metadataManagerFactory = $metadataManagerFactory;
         $this->groupModel = $groupModel;
@@ -52,6 +52,13 @@ class MetadataService
     public function getProfileMetadata($locale = null)
     {
         $metadata = $this->getBasicMetadata($locale, 'profile');
+
+        return $metadata;
+    }
+
+    public function getProfileMetadataWithChoices($locale = null)
+    {
+        $metadata = $this->getProfileMetadata($locale);
 
         $choices = $this->profileOptionManager->getLocaleOptions($locale);
         $metadata = $this->addChoices($metadata, $choices, $locale);
@@ -108,8 +115,13 @@ class MetadataService
                     break;
                 case 'multiple_choices':
                     $field = $this->mergeSingleChoices($field, $name, $choices);
-                    $field['max_choices'] = isset($field['max_choices']) ? $field['max_choices'] : 999;
-                    $field['min_choices'] = isset($field['min_choices']) ? $field['min_choices'] : 0;
+                    $field['max'] = isset($field['max']) ? $field['max'] : 999;
+                    $field['min'] = isset($field['min']) ? $field['min'] : 0;
+                    break;
+                case 'multiple_fields':
+                    $field['metadata'] = $this->addChoices($field['metadata'], $choices, $locale);
+                    $field['max'] = isset($field['max']) ? $field['max'] : 999;
+                    $field['min'] = isset($field['min']) ? $field['min'] : 0;
                     break;
                 case 'tags_and_choice':
                     $field = $this->mergeSingleChoices($field, $name, $choices);
@@ -188,7 +200,9 @@ class MetadataService
         foreach ($metadata as &$field) {
             if (isset($field['choices']) && is_array($field['choices'])) {
                 foreach ($field['choices'] as $id => $choice) {
-                    $field['choices'][$id] = $id;
+                    if(isset($choice['id'])){
+                        $field['choices'][$id] = $choice['id'];
+                    }
                 }
             }
         }

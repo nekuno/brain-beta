@@ -4,7 +4,7 @@ namespace ApiConsumer\Fetcher;
 
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use Model\Link\Link;
-use Model\User\Token\Token;
+use Model\Token\Token;
 
 class SpotifyFetcher extends BasicPaginationFetcher
 {
@@ -84,9 +84,9 @@ class SpotifyFetcher extends BasicPaginationFetcher
 
         foreach ($response as $item) {
             if (isset($item['track']) && null !== $item['track']['id']) {
-                $link = array();
-                $link['url'] = $item['track']['external_urls']['spotify'];
-                $link['title'] = $item['track']['name'];
+                $link = new Link();
+                $link->setUrl($item['track']['external_urls']['spotify']);
+                $link->setTitle($item['track']['name']);
 
                 $artistList = array();
                 foreach ($item['track']['artists'] as $artist) {
@@ -99,12 +99,12 @@ class SpotifyFetcher extends BasicPaginationFetcher
                     $timestamp = ($date->getTimestamp()) * 1000;
                 }
 
-                $preprocessedLink = new PreprocessedLink($link['url']);
+                $preprocessedLink = new PreprocessedLink($link->getUrl());
 
-                $link['description'] = $item['track']['album']['name'] . ' : ' . implode(', ', $artistList);
-                $link['timestamp'] = $timestamp;
+                $link->setDescription($item['track']['album']['name'] . ' : ' . implode(', ', $artistList));
+                $link->setCreated($timestamp);
 
-                $preprocessedLink->setFirstLink(Link::buildFromArray($link));
+                $preprocessedLink->setFirstLink($link);
                 $preprocessedLink->setResourceItemId($item['track']['id']);
                 $preprocessedLink->setSource($this->resourceOwner->getName());
                 $preprocessedLink->setToken($this->getToken());

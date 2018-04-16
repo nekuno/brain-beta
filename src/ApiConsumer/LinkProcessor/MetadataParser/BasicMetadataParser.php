@@ -98,22 +98,26 @@ class BasicMetadataParser implements MetadataParserInterface
 
     /**
      * @param Crawler $crawler
+     * @param integer $max
      * @return array
      */
-    public function getImages(Crawler $crawler)
+    public function getImages(Crawler $crawler, $max = 20)
     {
         try {
-            $images = $crawler->filter('img')->each(
-                function ($node) {
-                    /* @var $node Crawler */
-                    return $node->attr('src');
-                }
-            );
-
-            return $images;
+            $images = $crawler->filter('img');
+            $slicedImages = $images->slice(0, $max);
+            // TODO: Sometimes slice returns null (maybe could be solved updating crawler)
+            $images = $slicedImages ?: $images;
         } catch (\InvalidArgumentException $e) {
             return array();
         }
+
+        return $images->each(
+            function ($node) {
+                /* @var $node Crawler */
+                return $node->attr('src');
+            }
+        );
     }
 
     /**

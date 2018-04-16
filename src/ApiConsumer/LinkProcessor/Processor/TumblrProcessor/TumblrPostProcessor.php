@@ -11,7 +11,7 @@ use Model\Link\Audio;
 use Model\Link\Image;
 use Model\Link\Link;
 use Model\Link\Video;
-use Model\User\Token\TokensModel;
+use Model\Token\TokensManager;
 
 class TumblrPostProcessor extends AbstractTumblrProcessor
 {
@@ -30,12 +30,12 @@ class TumblrPostProcessor extends AbstractTumblrProcessor
         $post = isset($response['response']['posts'][0]) ? $response['response']['posts'][0] : null;
 
         if (isset($post['video_type']) && $post['video_type'] === 'youtube' && isset($post['permalink_url'])) {
-            $preprocessedLink->setSource(TokensModel::GOOGLE);
+            $preprocessedLink->setSource(TokensManager::GOOGLE);
             $preprocessedLink->setType(YoutubeUrlParser::VIDEO_URL);
             throw new UrlChangedException($firstLink->getUrl(), $post['permalink_url']);
         }
         if (isset($post['audio_type']) && $post['audio_type'] === 'spotify' && isset($post['audio_source_url'])) {
-            $preprocessedLink->setSource(TokensModel::SPOTIFY);
+            $preprocessedLink->setSource(TokensManager::SPOTIFY);
             $preprocessedLink->setType(null);
             throw new UrlChangedException($firstLink->getUrl(), $post['audio_source_url']);
         }
@@ -68,7 +68,7 @@ class TumblrPostProcessor extends AbstractTumblrProcessor
     {
         parent::hydrateLink($preprocessedLink, $data);
         $link = $preprocessedLink->getFirstLink();
-        $audio = Audio::buildFromArray($link->toArray());
+        $audio = Audio::buildFromLink($link);
         $title = isset($data['track_name']) ? $data['track_name'] : $data['source_title'];
         $audio->setTitle($title);
         $audio->setDescription($data['album'] . ' : ' . $data['artist']);
@@ -82,7 +82,7 @@ class TumblrPostProcessor extends AbstractTumblrProcessor
     {
         $link = $preprocessedLink->getFirstLink();
         parent::hydrateLink($preprocessedLink, $data);
-        $newLink = Link::buildFromArray($link->toArray());
+        $newLink = Link::buildFromLink($link);
         $newLink->setTitle($data['title']);
         $newLink->setDescription(strip_tags($data['description']) ?: strip_tags($data['excerpt']));
 
@@ -248,7 +248,7 @@ class TumblrPostProcessor extends AbstractTumblrProcessor
         }
 
         if ($caption) {
-            $newLink = Link::buildFromArray($link->toArray());
+            $newLink = Link::buildFromLink($link);
             if ($newLinePos = strpos($caption, "\n")) {
                 $title = substr($caption, 0, $newLinePos);
                 $description = strlen($caption) > $newLinePos + 1 ? substr($caption, $newLinePos + 1) : null;
@@ -262,7 +262,7 @@ class TumblrPostProcessor extends AbstractTumblrProcessor
             $newLink->setTitle($title);
             $newLink->setDescription($description);
         } else {
-            $newLink = Image::buildFromArray($link->toArray());
+            $newLink = Image::buildFromLink($link);
         }
 
         return $newLink;
@@ -278,7 +278,7 @@ class TumblrPostProcessor extends AbstractTumblrProcessor
             $caption = null;
         }
 
-        $newLink = Video::buildFromArray($link->toArray());
+        $newLink = Video::buildFromLink($link);
         if ($caption) {
             if ($newLinePos = strpos($caption, "\n")) {
                 $title = substr($caption, 0, $newLinePos);

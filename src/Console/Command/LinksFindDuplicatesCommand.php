@@ -8,6 +8,7 @@ use Console\ApplicationAwareCommand;
 use Event\ConsistencyEvent;
 use EventListener\ConsistencySubscriber;
 use Everyman\Neo4j\Query\ResultSet;
+use Model\Link\Link;
 use Model\Neo4j\Neo4jException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -42,8 +43,8 @@ class LinksFindDuplicatesCommand extends ApplicationAwareCommand
 
             $links = $linkModel->getLinks(array(), $offset, $limit);
 
-            foreach ($links as &$link) {
-                $link = $this->updateURL($link, $output);
+            foreach ($links as $link) {
+                $this->updateURL($link, $output);
             }
 
             $duplicates = $linkModel->findDuplicates($links);
@@ -130,27 +131,28 @@ class LinksFindDuplicatesCommand extends ApplicationAwareCommand
         $output->writeln('Finished.');
     }
 
-    private function updateURL($link, OutputInterface $output)
+    private function updateURL(Link $link, OutputInterface $output)
     {
-        if (!isset($link['url'])) {
-            return false;
+        $url = $link->getUrl();
+        if (!$url) {
+            return;
         }
 
         try {
-            $cleanUrl = LinkAnalyzer::cleanUrl($link['url']);
+            $cleanUrl = LinkAnalyzer::cleanUrl($url);
         } catch (UrlNotValidException $e) {
             //TODO: log
-            $output->writeln(sprintf('Could not clean URL %s', $link['url']));
-            return false;
+            $output->writeln(sprintf('Could not clean URL %s', $url));
+            return;
         }
 
         $linkModel = $this->app['links.model'];
 
-        if ($cleanUrl !== $link['url']) {
-            $output->writeln('Changing ' . $link['url'] . ' to ' . $cleanUrl);
-            $linkModel->changeUrl($link['url'], $cleanUrl);
+        if ($cleanUrl !== $url) {
+            $output->writeln('Changing ' . $url . ' to ' . $cleanUrl);
+            $linkModel->changeUrl($url, $cleanUrl);
         }
 
-        return $link;
+        $link->setUrl($url);
     }
 }

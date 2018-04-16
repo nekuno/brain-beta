@@ -2,10 +2,9 @@
 
 namespace ApiConsumer\Fetcher;
 
-use ApiConsumer\LinkProcessor\LinkAnalyzer;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
 use Model\Link\Link;
-use Model\User\Token\Token;
+use Model\Token\Token;
 
 class GoogleFetcher extends BasicPaginationFetcher
 {
@@ -77,6 +76,13 @@ class GoogleFetcher extends BasicPaginationFetcher
                 continue;
             }
 
+            $item = $item['object']['attachments'][0];
+
+            $link = new Link();
+            $link->setUrl($item['url']);
+            $link->setTitle(array_key_exists('displayName', $item) ? $item['displayName'] : null);
+            $link->setDescription(array_key_exists('content', $item) ? $item['content'] : null);
+
             $timestamp = null;
             if (array_key_exists('updated', $item)) {
                 $date = new \DateTime($item['updated']);
@@ -85,16 +91,10 @@ class GoogleFetcher extends BasicPaginationFetcher
                 $date = new \DateTime($item['published']);
                 $timestamp = $date->getTimestamp() * 1000;
             }
+            $link->setCreated($timestamp);
 
-            $item = $item['object']['attachments'][0];
-
-            $link['url'] = $item['url'];
-            $link['title'] = array_key_exists('displayName', $item) ? $item['displayName'] : null;
-            $link['description'] = array_key_exists('content', $item) ? $item['content'] : null;
-            $link['timestamp'] = $timestamp;
-
-            $preprocessedLink = new PreprocessedLink($link['url']);
-            $preprocessedLink->setFirstLink(Link::buildFromArray($link));
+            $preprocessedLink = new PreprocessedLink($link->getUrl());
+            $preprocessedLink->setFirstLink($link);
             $preprocessedLink->setResourceItemId(array_key_exists('id', $item) ? $item['id'] : null);
             $preprocessedLink->setSource($this->resourceOwner->getName());
             $parsed[] = $preprocessedLink;

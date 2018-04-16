@@ -10,7 +10,7 @@ use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\TwitterProfileProcessor
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use ApiConsumer\ResourceOwner\TwitterResourceOwner;
 use Model\Link\Creator;
-use Model\User\Token\TokensModel;
+use Model\Token\TokensManager;
 use Tests\ApiConsumer\LinkProcessor\Processor\AbstractProcessorTest;
 
 class TwitterProfileProcessorTest extends AbstractProcessorTest
@@ -293,16 +293,16 @@ class TwitterProfileProcessorTest extends AbstractProcessorTest
 
     public function getProfileLink()
     {
-        return array(
-            'description' => 'Tool developer & data junkie',
-            'url' => 'https://twitter.com/yawmoght',
-            'thumbnail' => "http://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png",
-            'additionalLabels' => array('LinkTwitter', 'Creator'),
-            'resource' => TokensModel::TWITTER,
-            'timestamp' => 1000 * time(),
-            'processed' => 1,
-            'title' => 'yawmoght',
-        );
+        $link = new Creator();
+        $link->setUrl('https://twitter.com/yawmoght');
+        $link->setDescription('Tool developer & data junkie');
+        $link->setThumbnail("http://pbs.twimg.com/profile_images/639462703858380800/ZxusSbUW.png");
+        $link->setCreated(1000 * time());
+        $link->setProcessed(1);
+        $link->setTitle('yawmoght');
+        $link->addAdditionalLabels('LinkTwitter');
+
+        return $link;
     }
 
     public function getNewUrl()

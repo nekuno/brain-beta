@@ -28,7 +28,7 @@ class FacebookPageProcessor extends AbstractFacebookProcessor
     public function hydrateLink(PreprocessedLink $preprocessedLink, array $data)
     {
         $link = $preprocessedLink->getFirstLink();
-        $creator = Creator::buildFromArray($link->toArray());
+        $creator = Creator::buildFromLink($link);
         $preprocessedLink->setFirstLink($creator);
 
         parent::hydrateLink($preprocessedLink, $data);

@@ -14,7 +14,7 @@ class InstagramProfileProcessor extends InstagramProcessor
     {
         parent::hydrateLink($preprocessedLink, $data);
         $link = $preprocessedLink->getFirstLink();
-        $creator = Creator::buildFromArray($link->toArray());
+        $creator = Creator::buildFromLink($link);
         $preprocessedLink->setFirstLink($creator);
     }
 }

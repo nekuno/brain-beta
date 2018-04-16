@@ -49,7 +49,7 @@ class TwitterIntentProcessor extends AbstractTwitterProcessor
             $links = $this->resourceOwner->buildProfilesFromLookup($users);
 
             $link = reset($links);
-            return $link['url'];
+            return $link->getUrl();
         }
 
         return null;

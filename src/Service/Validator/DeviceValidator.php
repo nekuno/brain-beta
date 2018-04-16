@@ -2,6 +2,8 @@
 
 namespace Service\Validator;
 
+use Model\Exception\ErrorList;
+
 class DeviceValidator extends Validator
 {
     public function validateOnCreate($data)
@@ -23,7 +25,9 @@ class DeviceValidator extends Validator
     protected function validateRegistrationIdInData(array $data, $registrationIdRequired = true)
     {
         if ($registrationIdRequired && !isset($data['registrationId'])) {
-            $this->throwException(array('registrationId', 'Registration id is required for this action'));
+            $errorList = new ErrorList();
+            $errorList->addError('registrationId', 'Registration id is required for this action');
+            $this->throwException($errorList);
         }
 
         if (isset($data['registrationId'])) {
@@ -33,8 +37,8 @@ class DeviceValidator extends Validator
 
     protected function validateRegistrationId($registrationId, $desired = true)
     {
-        $errors = array('registrationId' => $this->existenceValidator->validateRegistrationId($registrationId, $desired));
-
-        $this->throwException($errors);
+        $errorList = new ErrorList();
+        $errorList->setErrors('registrationId', $this->existenceValidator->validateRegistrationId($registrationId, $desired));
+        $this->throwException($errorList);
     }
 }

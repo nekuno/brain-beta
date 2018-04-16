@@ -3,12 +3,12 @@
 namespace EventListener;
 
 use Event\PrivacyEvent;
-use Model\User\Group\GroupModel;
-use Model\User\InvitationModel;
-use Model\User\ProfileModel;
-use Manager\UserManager;
+use Model\Group\GroupManager;
+use Model\Invitation\InvitationManager;
+use Model\Profile\ProfileManager;
+use Model\User\UserManager;
 use Service\GroupService;
-use Silex\Translator;
+use Symfony\Component\Translation\Translator;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class PrivacySubscriber implements EventSubscriberInterface
@@ -19,7 +19,7 @@ class PrivacySubscriber implements EventSubscriberInterface
     protected $translator;
 
     /**
-     * @var GroupModel
+     * @var GroupManager
      */
     protected $groupModel;
 
@@ -29,7 +29,7 @@ class PrivacySubscriber implements EventSubscriberInterface
     protected $groupService;
 
     /**
-     * @var InvitationModel
+     * @var InvitationManager
      */
     protected $invitationModel;
 
@@ -44,21 +44,21 @@ class PrivacySubscriber implements EventSubscriberInterface
     protected $socialhost;
 
     /**
-     * @var ProfileModel
+     * @var ProfileManager
      */
     protected $profileModel;
 
     /**
      * PrivacySubscriber constructor.
      * @param Translator $translator
-     * @param GroupModel $groupModel
+     * @param GroupManager $groupModel
      * @param GroupService $groupService
      * @param UserManager $userManager
-     * @param ProfileModel $profileModel
-     * @param InvitationModel $invitationModel
+     * @param ProfileManager $profileModel
+     * @param InvitationManager $invitationModel
      * @param $socialhost
      */
-    public function __construct(Translator $translator, GroupModel $groupModel, GroupService $groupService, UserManager $userManager, ProfileModel $profileModel, InvitationModel $invitationModel, $socialhost)
+    public function __construct(Translator $translator, GroupManager $groupModel, GroupService $groupService, UserManager $userManager, ProfileManager $profileModel, InvitationManager $invitationModel, $socialhost)
     {
         $this->translator = $translator;
         $this->groupModel = $groupModel;
@@ -79,15 +79,14 @@ class PrivacySubscriber implements EventSubscriberInterface
     public function onPrivacyUpdated(PrivacyEvent $event)
     {
         $data = $event->getPrivacy();
+        $influencerId = $event->getUserId();
 
-        $groupsFollowers = $this->groupModel->getGroupFollowersFromInfluencerId($event->getUserId());
+        $groupsFollowers = $this->groupModel->getGroupFollowersFromInfluencerId($influencerId);
 
         if ($this->needsGroupFollowers($data)) {
-            $influencer = $this->userManager->getById($event->getUserId());
-            $influencerProfile = $this->profileModel->getById($event->getUserId());
-            if (isset($influencerProfile['interfaceLanguage'])) {
-                $this->translator->setLocale($influencerProfile['interfaceLanguage']);
-            }
+            $influencer = $this->userManager->getById($influencerId);
+            $interfaceLanguage = $this->profileModel->getInterfaceLocale($influencerId);
+            $this->translator->setLocale($interfaceLanguage);
 
             $groupName = $this->translator->trans('followers.group_name', array('%username%' => $influencer->getUsername()));
             $typeMatching = str_replace("min_", "", $data['messages']['key']);
@@ -103,7 +102,7 @@ class PrivacySubscriber implements EventSubscriberInterface
                     'country' => 'Spain'
                 ),
                 'followers' => true,
-                'influencer_id' => $event->getUserId(),
+                'influencer_id' => $influencerId,
                 'min_matching' => $data['messages']['value'],
                 'type_matching' => $typeMatching,
             );
@@ -111,16 +110,16 @@ class PrivacySubscriber implements EventSubscriberInterface
             if (isset($groupsFollowers[0])) {
                 $groupId = $groupsFollowers[0];
                 $group = $this->groupService->updateGroup($groupId, $groupData);
-                $this->invitationModel->setAvailableInvitations($group->getInvitation()['invitation_token'], InvitationModel::MAX_AVAILABLE);
+                $this->invitationModel->setAvailableInvitations($group->getInvitation()['invitation_token'], InvitationManager::MAX_AVAILABLE);
             } else {
                 $group = $this->groupService->createGroup($groupData);
                 $url = $influencer->getPhoto()->getUrl();
                 $compatibleOrSimilar = $typeMatching === 'compatibility' ? 'compatible' : 'similar';
                 $slogan = $this->translator->trans('followers.invitation_slogan', array('%username%' => $influencer->getUsername(), '%compatible_or_similar%' => $compatibleOrSimilar));
                 $invitationData = array(
-                    'userId' => $event->getUserId(),
+                    'userId' => $influencerId,
                     'groupId' => $group->getId(),
-                    'available' => InvitationModel::MAX_AVAILABLE,
+                    'available' => InvitationManager::MAX_AVAILABLE,
                     'slogan' => $slogan,
                     'image_url' => $url,
                 );

@@ -10,9 +10,9 @@ use ApiConsumer\LinkProcessor\UrlParser\YoutubeUrlParser;
 use Event\ExceptionEvent;
 use Event\FetchEvent;
 use GuzzleHttp\Exception\RequestException;
-use Model\User\SocialNetwork\SocialProfileManager;
-use Model\User\Token\Token;
-use Model\User\Token\TokensModel;
+use Model\SocialNetwork\SocialProfileManager;
+use Model\Token\Token;
+use Model\Token\TokensManager;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -37,7 +37,7 @@ class FetcherService implements LoggerAwareInterface
     protected $dispatcher;
 
     /**
-     * @var TokensModel
+     * @var TokensManager
      */
     protected $tokensModel;
 
@@ -54,7 +54,7 @@ class FetcherService implements LoggerAwareInterface
     public function __construct(
         FetcherFactory $fetcherFactory,
         EventDispatcher $dispatcher,
-        TokensModel $tokensModel,
+        TokensManager $tokensModel,
         SocialProfileManager $socialProfileManager,
         array $options
     ) {
@@ -155,7 +155,7 @@ class FetcherService implements LoggerAwareInterface
             //TODO: Improve exception management between services, controllers, workers...
             $originalException = $e->getOriginalException();
             if ($originalException instanceof RequestException && $originalException->getCode() == 429) {
-                if ($resourceOwner == TokensModel::TWITTER) {
+                if ($resourceOwner == TokensManager::TWITTER) {
                     $this->logger->warning('Pausing for 15 minutes due to Too Many Requests Error');
                     sleep(15 * 60);
                 }
@@ -184,7 +184,7 @@ class FetcherService implements LoggerAwareInterface
             //TODO: Improve exception management between services, controllers, workers...
             $originalException = $e->getOriginalException();
             if ($originalException instanceof RequestException && $originalException->getCode() == 429) {
-                if ($resourceOwner == TokensModel::TWITTER) {
+                if ($resourceOwner == TokensManager::TWITTER) {
                     $this->logger->warning('Pausing for 15 minutes due to Too Many Requests Error');
                     sleep(15 * 60);
                 }

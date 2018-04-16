@@ -5,8 +5,8 @@ namespace ApiConsumer\ResourceOwner;
 use ApiConsumer\Exception\TokenException;
 use ApiConsumer\LinkProcessor\UrlParser\SpotifyUrlParser;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\SpotifyResourceOwner as SpotifyResourceOwnerBase;
-use Model\User\Token\Token;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Model\Token\Token;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use Buzz\Message\RequestInterface as HttpRequestInterface;
 
 
@@ -60,7 +60,7 @@ class SpotifyResourceOwner extends SpotifyResourceOwnerBase
     /**
 	 * {@inheritDoc}
 	 */
-	protected function configureOptions(OptionsResolverInterface $resolver)
+	protected function configureOptions(OptionsResolver $resolver)
 	{
 		$this->traitConfigureOptions($resolver);
 		parent::configureOptions($resolver);

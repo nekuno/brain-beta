@@ -45,7 +45,7 @@ class AuthController
 
 	    $user = $authService->getUser($jwt);
 
-	    $profile = $app['users.profile.model']->getById($user->getId(), $locale);
+	    $profile = $app['users.profile.model']->getById($user->getId());
 
 	    $questionsFilters = array('id' => $user->getId(), 'locale' => $locale);
 	    $countQuestions = $app['users.questions.model']->countTotal($questionsFilters);

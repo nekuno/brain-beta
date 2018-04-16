@@ -6,9 +6,9 @@ use ApiConsumer\LinkProcessor\Processor\TwitterProcessor\AbstractTwitterProcesso
 use ApiConsumer\LinkProcessor\UrlParser\TwitterUrlParser;
 use Buzz\Exception\RequestException;
 use Buzz\Message\Response;
-use Model\User\Token\Token;
-use Model\User\Token\TokensModel;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Model\Link\Link;
+use Model\Token\Token;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\TwitterResourceOwner as TwitterResourceOwnerBase;
 
 class TwitterResourceOwner extends TwitterResourceOwnerBase
@@ -31,7 +31,7 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
     /**
      * {@inheritDoc}
      */
-    protected function configureOptions(OptionsResolverInterface $resolver)
+    protected function configureOptions(OptionsResolver $resolver)
     {
         $this->traitConfigureOptions($resolver);
         parent::configureOptions($resolver);
@@ -120,7 +120,7 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
 
     /**
      * @param $content array[]
-     * @return array[]
+     * @return Link[]
      */
     //TODO: Move this to Processor and use getImages. Is it really necessary in TwitterFollowingFetcher? Are we doing this multiple times?
     public function buildProfilesFromLookup(array $content)
@@ -134,26 +134,25 @@ class TwitterResourceOwner extends TwitterResourceOwnerBase
 
     /**
      * @param $user array
-     * @return array
+     * @return Link
      */
-    public function buildProfileFromLookup(array $user)
+    protected function buildProfileFromLookup(array $user)
     {
         if (!$user) {
-            return $user;
+            return null;
         }
 
-        $profile = array(
-            'description' => isset($user['description']) ? $user['description'] : $user['name'],
-            'url' => $this->getUserUrl($user),
-            'thumbnail' => $this->urlParser->getOriginalProfileUrl($user, null),
-            'thumbnailSmall' => $this->urlParser->getSmallProfileUrl($user, null),
-            'thumbnailMedium' => $this->urlParser->getMediumProfileUrl($user, null),
-            'resource' => TokensModel::TWITTER,
-            'timestamp' => 1000 * time(),
-            'processed' => 1,
-            'additionalLabels' => array(AbstractTwitterProcessor::TWITTER_LABEL),
-        );
-        $profile['title'] = isset($user['name']) ? $user['name'] : $profile['url'];
+        $profile = new Link();
+        $profile->setUrl($this->getUserUrl($user));
+        $profile->setTitle(isset($user['name']) ? $user['name'] : $profile->getUrl());
+        $profile->setDescription(isset($user['description']) ? $user['description'] : $profile->getTitle());
+        $profile->setThumbnail($this->urlParser->getOriginalProfileUrl($user, null));
+        $profile->setThumbnailMedium($this->urlParser->getMediumProfileUrl($user, null));
+        $profile->setThumbnailSmall($this->urlParser->getSmallProfileUrl($user, null));
+        $profile->setCreated(1000 * time());
+        $profile->addAdditionalLabels(AbstractTwitterProcessor::TWITTER_LABEL);
+        $profile->setProcessed(true);
+
         return $profile;
     }
 

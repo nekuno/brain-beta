@@ -2,13 +2,13 @@
 
 namespace Controller\User;
 
+use Model\Exception\ErrorList;
 use Model\Exception\ValidationException;
-use Model\User\Content\ContentPaginatedModel;
-use Model\Metadata\UserFilterMetadataManager;
-use Model\User\Rate\RateModel;
-use Model\User\Content\ContentReportModel;
-use Manager\UserManager;
-use Model\User;
+use Model\Content\ContentPaginatedManager;
+use Model\Rate\RateManager;
+use Model\Content\ContentReportManager;
+use Model\User\UserManager;
+use Model\User\User;
 use Service\AuthService;
 use Service\RecommendatorService;
 use Service\UserStatsService;
@@ -121,7 +121,7 @@ class UserController
 
         if (!$enabled) {
 
-            /** @var User\Device\DeviceModel $deviceModel */
+            /** @var \Model\Device\DeviceManager $deviceModel */
             $deviceModel = $app['users.device.model'];
             $allDevices = $deviceModel->getAll($user->getId());
             foreach ($allDevices as $device) {
@@ -143,7 +143,7 @@ class UserController
         try {
             $data = $request->request->all();
             if (!isset($data['user']) || !isset($data['profile']) || !isset($data['token']) || !isset($data['oauth']) || !isset($data['trackingData'])) {
-                throw new ValidationException(array('registration' => 'Bad format'));
+                $this->throwRegistrationException('Bad format');
             }
             $user = $app['register.service']->register($data['user'], $data['profile'], $data['token'], $data['oauth'], $data['trackingData']);
         } catch (\Exception $e) {
@@ -162,10 +162,21 @@ class UserController
             $app['mailer']->send($message);
 
             $exceptionMessage = $app['env'] === 'dev' ? $errorMessage . ' ' . $e->getFile() . ' ' . $e->getLine() : "Error registering user";
-            throw new ValidationException(array('registration' => $exceptionMessage));
+            $this->throwRegistrationException($exceptionMessage);
         }
 
         return $app->json($user, 201);
+    }
+
+    /**
+     * @param $message
+     * @throws ValidationException
+     */
+    protected function throwRegistrationException($message)
+    {
+        $errorList = new ErrorList();
+        $errorList->addError('registration', $message);
+        throw new ValidationException($errorList);
     }
 
     /**
@@ -211,9 +222,9 @@ class UserController
         }
 
         try {
-            /* @var $model \Model\User\Matching\MatchingModel */
+            /* @var $model \Model\Matching\MatchingManager */
             $model = $app['users.matching.model'];
-            $result = $model->getMatchingBetweenTwoUsersBasedOnAnswers($user->getId(), $otherUserId);
+            $matching = $model->getMatchingBetweenTwoUsersBasedOnAnswers($user->getId(), $otherUserId);
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
                 throw $e;
@@ -222,7 +233,7 @@ class UserController
             return $app->json(array(), 500);
         }
 
-        return $app->json($result, !empty($result) ? 201 : 200);
+        return $app->json($matching, !empty($matching) ? 201 : 200);
     }
 
     /**
@@ -241,10 +252,10 @@ class UserController
         }
 
         try {
-            /* @var $model \Model\User\Similarity\SimilarityModel */
+            /* @var $model \Model\Similarity\SimilarityManager */
             $model = $app['users.similarity.model'];
             $similarity = $model->getCurrentSimilarity($user->getId(), $otherUserId);
-            $result = array('similarity' => $similarity['similarity']);
+            $result = array('similarity' => $similarity->getSimilarity());
 
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
@@ -291,7 +302,7 @@ class UserController
             }
         }
 
-        /* @var $model ContentPaginatedModel */
+        /* @var $model ContentPaginatedManager */
         $model = $app['users.content.model'];
 
         try {
@@ -343,7 +354,7 @@ class UserController
             }
         }
 
-        /* @var $model \Model\User\Content\ContentComparePaginatedModel */
+        /* @var $model \Model\Content\ContentComparePaginatedManager */
         $model = $app['users.content.compare.model'];
 
         try {
@@ -376,7 +387,7 @@ class UserController
             $search = urldecode($search);
         }
 
-        /* @var $model \Model\User\Content\ContentTagModel */
+        /* @var $model \Model\Content\ContentTagManager */
         $model = $app['users.content.tag.model'];
 
         try {
@@ -414,7 +425,7 @@ class UserController
         $originContext = isset($data['originContext']) ? $data['originContext'] : null;
         $originName = isset($data['originName']) ? $data['originName'] : null;
         try {
-            /* @var RateModel $model */
+            /* @var RateManager $model */
             $model = $app['users.rate.model'];
             $result = $model->userRateLink($user->getId(), $data['id'], 'nekuno', null, $rate, true, $originContext, $originName);
         } catch (\Exception $e) {
@@ -435,7 +446,7 @@ class UserController
         $contentId = $request->request->get('contentId');
 
         try {
-            /* @var ContentReportModel $model */
+            /* @var ContentReportManager $model */
             $model = $app['users.content.report.model'];
             $result = $model->report($user->getId(), $contentId, $reason, $reasonText);
         } catch (\Exception $e) {
@@ -490,10 +501,9 @@ class UserController
         }
 
         try {
-            /* @var $model \Model\User\Affinity\AffinityModel */
+            /* @var $model \Model\Affinity\AffinityManager */
             $model = $app['users.affinity.model'];
             $affinity = $model->getAffinity($user->getId(), $linkId);
-            $result = array('affinity' => $affinity['affinity']);
         } catch (\Exception $e) {
             if ($app['env'] == 'dev') {
                 throw $e;
@@ -502,7 +512,7 @@ class UserController
             return $app->json(array(), 500);
         }
 
-        return $app->json($result, !empty($result) ? 201 : 200);
+        return $app->json($affinity, !empty($affinity) ? 201 : 200);
     }
 
     /**
@@ -547,7 +557,7 @@ class UserController
             $search = urldecode($search);
         }
 
-        /* @var $model \Model\User\Recommendation\ContentRecommendationTagModel */
+        /* @var $model \Model\Recommendation\ContentRecommendationTagModel */
         $model = $app['users.recommendation.content.tag.model'];
 
         try {
@@ -578,7 +588,7 @@ class UserController
             $search = urldecode($search);
         }
 
-        /* @var $model \Model\User\Recommendation\ContentRecommendationTagModel */
+        /* @var $model \Model\Recommendation\ContentRecommendationTagModel */
         $model = $app['users.recommendation.content.tag.model'];
 
         try {

@@ -3,11 +3,10 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
-use Model\User;
-use Model\User\Affinity\AffinityModel;
-use Model\Link\LinkModel;
-use Manager\UserManager;
-use Silex\Application;
+use Model\User\User;
+use Model\Affinity\AffinityManager;
+use Model\User\UserManager;
+use Service\LinkService;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -25,11 +24,10 @@ class UsersCalculateAffinityCommand extends ApplicationAwareCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-
         /* @var $userManager UserManager */
         $userManager = $this->app['users.manager'];
-        /* @var $linkModel LinkModel */
-        $linkModel = $this->app['links.model'];
+        /* @var $linkService LinkService */
+        $linkService = $this->app['link.service'];
 
         $user = $input->getOption('user');
         $linkId = $input->getOption('link');
@@ -47,13 +45,16 @@ class UsersCalculateAffinityCommand extends ApplicationAwareCommand
 
                 if (null === $linkId) {
 
-                    $affineLinks = $linkModel->findLinksByUser($userId, 'AFFINITY');
+                    $affineLinks = $linkService->findAffineLinks($userId);
 
                     foreach ($affineLinks as $link) {
 
-                        $output->write('Link: ' . $link['id'] . ' (' . $link['url'] . ') - ');
+                        $linkId = $link->getId();
+                        $linkUrl = $link->getUrl();
 
-                        $this->calculateAffinity($userId, $link['id'], $output);
+                        $output->write('Link: ' . $linkId . ' (' . $linkUrl . ') - ');
+
+                        $this->calculateAffinity($userId, $linkId, $output);
                     }
 
                 } else {
@@ -74,12 +75,12 @@ class UsersCalculateAffinityCommand extends ApplicationAwareCommand
 
     private function calculateAffinity($userId, $linkId, OutputInterface $output)
     {
-        /* @var $affinityModel AffinityModel */
+        /* @var $affinityModel AffinityManager */
         $affinityModel = $this->app['users.affinity.model'];
 
         $affinity = $affinityModel->getAffinity($userId, $linkId);
 
-        $output->writeln('Affinity: ' . $affinity['affinity'] . ' - Last Updated: ' . $affinity['updated']);
+        $output->writeln('Affinity: ' . $affinity->getAffinity() . ' - Last Updated: ' . $affinity->getUpdated());
 
     }
 }

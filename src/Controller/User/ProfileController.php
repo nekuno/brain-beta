@@ -2,9 +2,10 @@
 
 namespace Controller\User;
 
-use Model\User\ProfileModel;
-use Model\User\ProfileTagModel;
-use Model\User;
+use Model\User\UserManager;
+use Model\Profile\ProfileManager;
+use Model\Profile\ProfileTagManager;
+use Model\User\User;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -13,18 +14,16 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class ProfileController
 {
     /**
-     * @param Request $request
      * @param Application $app
      * @param User $user
      * @return JsonResponse
      */
-    public function getAction(Request $request, Application $app, User $user)
+    public function getAction(Application $app, User $user)
     {
-        $locale = $request->query->get('locale');
-        /* @var $model ProfileModel */
+        /* @var $model ProfileManager */
         $model = $app['users.profile.model'];
 
-        $profile = $model->getById($user->getId(), $locale);
+        $profile = $model->getById($user->getId());
 
         return $app->json($profile);
     }
@@ -36,12 +35,14 @@ class ProfileController
      */
     public function getOtherAction(Request $request, Application $app)
     {
-        $locale = $request->query->get('locale');
-        $id = $request->get('userId');
-        /* @var $model ProfileModel */
+        /* @var $model UserManager */
+        $userManager = $app['users.manager'];
+        $slug = $request->get('slug');
+        $userId = $userManager->getBySlug($slug)->getId();
+        /* @var $model ProfileManager */
         $model = $app['users.profile.model'];
 
-        $profile = $model->getById($id, $locale);
+        $profile = $model->getById($userId);
 
         return $app->json($profile);
     }
@@ -54,7 +55,7 @@ class ProfileController
      */
     public function putAction(Request $request, Application $app, User $user)
     {
-        /* @var $model ProfileModel */
+        /* @var $model ProfileManager */
         $model = $app['users.profile.model'];
 
         $profile = $model->update($user->getId(), $request->request->all());
@@ -69,7 +70,7 @@ class ProfileController
      */
     public function deleteAction(Application $app, User $user)
     {
-        /* @var $model ProfileModel */
+        /* @var $model ProfileManager */
         $model = $app['users.profile.model'];
 
         $profile = $model->getById($user->getId());
@@ -88,7 +89,7 @@ class ProfileController
         $locale = $request->query->get('locale', 'en');
 
         $metadataService = $app['metadata.service'];
-        $metadata = $metadataService->getProfileMetadata($locale);
+        $metadata = $metadataService->getProfileMetadataWithChoices($locale);
 
         return $app->json($metadata);
     }
@@ -133,7 +134,7 @@ class ProfileController
     {
         $type = $request->get('type');
         $search = $request->get('search', '');
-        $limit = $request->get('limit', 0);
+        $limit = $request->get('limit', 3);
 
         if (null === $type) {
             throw new NotFoundHttpException('type needed');
@@ -143,10 +144,10 @@ class ProfileController
             $search = urldecode($search);
         }
 
-        /* @var $model ProfileTagModel */
+        /* @var $model ProfileTagManager */
         $model = $app['users.profile.tag.model'];
 
-        $result = $model->getProfileTags($type, $search, $limit);
+        $result = $model->getProfileTagsSuggestion($type, $search, $limit);
 
         return $app->json($result);
     }

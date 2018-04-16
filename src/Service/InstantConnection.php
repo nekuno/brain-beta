@@ -2,7 +2,7 @@
 
 namespace Service;
 
-use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 
 class InstantConnection
@@ -13,7 +13,7 @@ class InstantConnection
      * InstantConnection constructor.
      * @param $client
      */
-    public function __construct(ClientInterface $client)
+    public function __construct(Client $client)
     {
         $this->client = $client;
     }

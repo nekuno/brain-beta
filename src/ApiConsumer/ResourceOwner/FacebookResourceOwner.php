@@ -7,8 +7,8 @@ use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 use Event\ExceptionEvent;
 use GuzzleHttp\Exception\RequestException;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\FacebookResourceOwner as FacebookResourceOwnerBase;
-use Model\User\Token\Token;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Model\Token\Token;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class FacebookResourceOwner extends FacebookResourceOwnerBase
 {
@@ -29,7 +29,7 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 	/**
 	 * {@inheritDoc}
 	 */
-	protected function configureOptions(OptionsResolverInterface $resolver)
+	protected function configureOptions(OptionsResolver $resolver)
 	{
 		$this->traitConfigureOptions($resolver);
 		parent::configureOptions($resolver);

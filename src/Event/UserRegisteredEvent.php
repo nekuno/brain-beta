@@ -2,7 +2,9 @@
 
 namespace Event;
 
-use Model\User;
+use Model\Profile\Profile;
+use Model\Token\Token;
+use Model\User\User;
 
 class UserRegisteredEvent extends UserEvent
 {
@@ -11,7 +13,7 @@ class UserRegisteredEvent extends UserEvent
     protected $token;
     protected $trackingData;
 
-    public function __construct(User $user, array $profile, $invitation, User\Token\Token $token, $trackingData)
+    public function __construct(User $user, Profile $profile, $invitation, Token $token, $trackingData)
     {
         parent::__construct($user);
         $this->profile = $profile;
