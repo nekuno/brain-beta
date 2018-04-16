@@ -135,7 +135,8 @@ class QuestionComparePaginatedManager implements PaginatedInterface
         }
 
         $resultArray = array();
-        if (!empty($other_questions_results) && !empty($own_questions_results))
+        $noResults = empty($other_questions_results);
+        if (!$noResults)
         {
             $resultArray = array($other_questions_results, $own_questions_results);
         }
