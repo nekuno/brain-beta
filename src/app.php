@@ -33,7 +33,6 @@ $replacements = array_merge($app['params'], array('app_root_dir' => __DIR__));
 $app->register(new ConfigServiceProvider(__DIR__ . "/../config/config.yml", $replacements));
 $app->register(new ConfigServiceProvider(__DIR__ . "/../config/config_{$app['env']}.yml", $replacements));
 $app->register(new ConfigServiceProvider(__DIR__ . "/../config/fields.yml", array(), null, 'fields'));
-$app->register(new ConfigServiceProvider(__DIR__ . "/../config/socialFields.yml", array(), null, 'socialFields'));
 $app->register(new ConfigServiceProvider(__DIR__ . "/../config/consistency.yml", array(), null, 'consistency'));
 $app->register(new ConfigServiceProvider(__DIR__ . "/../config/config_metadata.yml"));
 $app->register(new ConfigServiceProvider(__DIR__ . "/../config/config_validator.yml"));

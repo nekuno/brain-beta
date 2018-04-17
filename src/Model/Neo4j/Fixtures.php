@@ -2,7 +2,11 @@
 
 namespace Model\Neo4j;
 
+use ApiConsumer\LinkProcessor\Processor\SpotifyProcessor\SpotifyTrackProcessor;
+use ApiConsumer\LinkProcessor\Processor\SteamProcessor\SteamGameProcessor;
+use ApiConsumer\LinkProcessor\Processor\YoutubeProcessor\YoutubeVideoProcessor;
 use Model\Link\Audio;
+use Model\Link\Game;
 use Model\Link\Image;
 use Model\Link\Link;
 use Model\Link\LinkManager;
@@ -319,6 +323,7 @@ class Fixtures
 
             if ($i <= 50) {
                 $link = new Video();
+                $link->addAdditionalLabels(YoutubeVideoProcessor::YOUTUBE_LABEL);
                 $link->setUrl('https://www.youtube.com/watch?v=OPf0YbXqDm0' . '?' . $i);
                 $link->setTitle('Mark Ronson - Uptown Funk ft. Bruno Mars - YouTube');
                 $link->setDescription('Mark Ronson - Uptown Funk ft. Bruno Mars - YouTube');
@@ -329,6 +334,7 @@ class Fixtures
                 $link->addTag(array('name' => 'Video Tag 3'));
             } elseif ($i <= 150) {
                 $link = new Audio();
+                $link->addAdditionalLabels(SpotifyTrackProcessor::SPOTIFY_LABEL);
                 $link->setUrl('https://open.spotify.com/album/3vLaOYCNCzngDf8QdBg2V1/32OlwWuMpZ6b0aN2RZOeMS' . '?' . $i);
                 $link->setTitle('Uptown Funk');
                 $link->setDescription('Uptown Special : Mark Ronson, Bruno Mars');
@@ -347,7 +353,13 @@ class Fixtures
                 $link->addTag(array('name' => 'Image Tag 8'));
                 $link->addTag(array('name' => 'Image Tag 9'));
             } else {
-                continue;
+                $link = new Game();
+                $link->addAdditionalLabels(SteamGameProcessor::STEAM_LABEL);
+                $link->setTitle('Steam game ' . $i);
+                $link->setDescription('Description ' . $i);
+                $link->setUrl('https://www.nekuno.com/link' . $i);
+                $link->addTag(array('name' => 'Game tag 10'));
+                $link->addTag(array('name' => 'Game tag 11'));
             }
 
             $link->setLanguage('en');
@@ -409,7 +421,7 @@ class Fixtures
 
             $data['categories'] = $categories;
 
-            $this->questionService->createQuestion($data);
+            $this->questions[$i] = $this->questionService->createQuestion($data);
         }
     }
 
@@ -443,7 +455,7 @@ class Fixtures
 
         foreach ($likes as $like) {
             foreach (range($like['linkFrom'], $like['linkTo']) as $i) {
-                $this->rm->userRateLink($like['user'], $createdLinks[$i]['id']);
+                $this->rm->userRateLink($like['user'], $createdLinks[$i]->getId());
             }
         }
     }
@@ -459,10 +471,10 @@ class Fixtures
             foreach (range($answer['questionFrom'], $answer['questionTo']) as $i) {
 
                 $answerIds = array();
-                foreach ($this->questions[$i]['answers'] as $questionAnswer) {
-                    $answerIds[] = $questionAnswer['answerId'];
+                foreach ($this->questions[$i]->getAnswers() as $questionAnswer) {
+                    $answerIds[] = $questionAnswer->toArray()['answerId'];
                 }
-                $questionId = $this->questions[$i]['questionId'];
+                $questionId = $this->questions[$i]->getQuestionId();
                 $answerId = $answerIds[$answer['answer'] - 1];
                 $this->am->create(
                     array(
