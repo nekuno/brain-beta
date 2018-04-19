@@ -2,7 +2,7 @@
 
 namespace Model\Matching;
 
-class Matching
+class Matching implements \JsonSerializable
 {
     protected $matching = 0;
 
@@ -40,5 +40,11 @@ class Matching
         $this->timestamp = $timestamp;
     }
 
+    public function jsonSerialize()
+    {
+        return array(
+            'matching' => $this->matching,
+        );
+    }
 
 }

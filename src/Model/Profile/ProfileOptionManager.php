@@ -176,6 +176,8 @@ class ProfileOptionManager
             $currentResult = array($optionId);
         }
 
+        sort($currentResult);
+
         return $currentResult;
     }
 
