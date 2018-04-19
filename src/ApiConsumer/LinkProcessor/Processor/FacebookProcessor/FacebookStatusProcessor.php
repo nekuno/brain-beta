@@ -2,7 +2,9 @@
 
 namespace ApiConsumer\LinkProcessor\Processor\FacebookProcessor;
 
+use ApiConsumer\Images\ProcessingImage;
 use ApiConsumer\LinkProcessor\PreprocessedLink;
+use ApiConsumer\LinkProcessor\UrlParser\FacebookUrlParser;
 
 class FacebookStatusProcessor extends AbstractFacebookProcessor
 {
@@ -12,5 +14,12 @@ class FacebookStatusProcessor extends AbstractFacebookProcessor
         $token = $preprocessedLink->getToken();
 
         return $this->resourceOwner->requestStatus($id, $token);
+    }
+
+    public function getImages(PreprocessedLink $preprocessedLink, array $data)
+    {
+        $url = isset($data['picture']) ? $data['picture'] : $this->brainBaseUrl . FacebookUrlParser::DEFAULT_IMAGE_PATH;
+
+        return array(new ProcessingImage($url));
     }
 }
