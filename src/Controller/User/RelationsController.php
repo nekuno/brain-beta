@@ -37,7 +37,7 @@ class RelationsController
      */
     public function getAction(Application $app, User $user, $slugTo, $relation = null)
     {
-        /* @var $model UserManager */
+        /* @var $userManager UserManager */
         $userManager = $app['users.manager'];
         $to = $userManager->getBySlug($slugTo)->getId();
         /* @var $model RelationsManager */
@@ -45,6 +45,7 @@ class RelationsController
 
         if (!is_null($relation)) {
             $result = $model->get($user->getId(), $to, $relation);
+            $result = $this->unsetSensitiveData($result, $app);
         } else {
             $result = array();
             foreach (RelationsManager::getRelations() as $relation) {
@@ -77,6 +78,7 @@ class RelationsController
 
         if (!is_null($relation)) {
             $result = $model->get($from, $user->getId(), $relation);
+            $result = $this->unsetSensitiveData($result, $app);
         } else {
             $result = array();
             foreach (RelationsManager::getRelations() as $relation) {
@@ -112,6 +114,7 @@ class RelationsController
         $model = $app['users.relations.model'];
 
         $result = $model->create($user->getId(), $to, $relation, $data);
+        $result = $this->unsetSensitiveData($result, $app);
 
         return $app->json($result);
     }
@@ -133,7 +136,23 @@ class RelationsController
         $model = $app['users.relations.model'];
 
         $result = $model->remove($user->getId(), $to, $relation);
+        $result = $this->unsetSensitiveData($result, $app);
 
         return $app->json($result);
+    }
+
+    protected function unsetSensitiveData(array $result, Application $app)
+    {
+        /* @var $model UserManager */
+        $userManager = $app['users.manager'];
+
+        if (isset($result['from'])){
+            $result['from'] = $userManager->deleteOtherUserFields($result['from']);
+        }
+        if (isset($result['to'])){
+            $result['to'] = $userManager->deleteOtherUserFields($result['to']);
+        }
+
+        return $result;
     }
 }
