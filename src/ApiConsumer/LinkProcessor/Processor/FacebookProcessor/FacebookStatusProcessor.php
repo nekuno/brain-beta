@@ -18,7 +18,7 @@ class FacebookStatusProcessor extends AbstractFacebookProcessor
 
     public function getImages(PreprocessedLink $preprocessedLink, array $data)
     {
-        $url = isset($data['picture']) ? $data['picture'] : $this->brainBaseUrl . FacebookUrlParser::DEFAULT_IMAGE_PATH;
+        $url = isset($data['full_picture']) ? $data['full_picture'] : $this->brainBaseUrl . FacebookUrlParser::DEFAULT_IMAGE_PATH;
 
         return array(new ProcessingImage($url));
     }

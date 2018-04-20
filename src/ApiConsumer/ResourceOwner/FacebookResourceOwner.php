@@ -197,7 +197,7 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 
     public function requestStatus($id, $token)
     {
-        $fields = array('name', 'description', 'picture.width(500)');
+        $fields = array('name', 'description', 'full_picture');
         $query = array('fields' => implode(',', $fields));
 
         return $this->request($id, $query, $token);
