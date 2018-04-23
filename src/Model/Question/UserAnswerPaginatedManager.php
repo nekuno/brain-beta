@@ -19,18 +19,18 @@ class UserAnswerPaginatedManager implements PaginatedInterface
      */
     protected $am;
 
-    protected $questionModel;
+    protected $questionManager;
 
     /**
      * @param GraphManager $gm
      * @param \Model\Question\AnswerManager $am
-     * @param QuestionManager $questionModel
+     * @param QuestionManager $questionManager
      */
-    public function __construct(GraphManager $gm, AnswerManager $am, QuestionManager $questionModel)
+    public function __construct(GraphManager $gm, AnswerManager $am, QuestionManager $questionManager)
     {
         $this->gm = $gm;
         $this->am = $am;
-        $this->questionModel = $questionModel;
+        $this->questionManager = $questionManager;
     }
 
     /**
@@ -89,7 +89,7 @@ class UserAnswerPaginatedManager implements PaginatedInterface
 
             $questionData = $answerData['question'];
             $questionId = $questionData['questionId'];
-            $registerModes = $this->questionModel->getRegisterModes($questionId);
+            $registerModes = $this->questionManager->getRegisterModes($questionId);
             $questionData['registerModes'] = $registerModes;
 
             $answerData['question'] = $questionData;

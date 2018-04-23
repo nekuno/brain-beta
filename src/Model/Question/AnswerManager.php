@@ -107,8 +107,8 @@ class AnswerManager
 
         $this->handleAnswerAddedEvent($data);
 
-        return $this->getUserAnswer($data['userId'], $data['questionId'], $data['locale']);
-
+        $row = $this->getUserAnswer($data['userId'], $data['questionId'], $data['locale']);
+        return $this->build($row, $data['locale']);
     }
 
     public function update(array $data)
@@ -145,7 +145,8 @@ class AnswerManager
 
         $this->handleAnswerAddedEvent($data);
 
-        return $this->getUserAnswer($data['userId'], $data['questionId'], $data['locale']);
+        $row = $this->getUserAnswer($data['userId'], $data['questionId'], $data['locale']);
+        return $this->build($row, $data['locale']);
     }
 
     public function explain(array $data)
@@ -164,8 +165,8 @@ class AnswerManager
 
         $query->getResultSet();
 
-        return $this->getUserAnswer($data['userId'], $data['questionId'], $data['locale']);
-
+        $row = $this->getUserAnswer($data['userId'], $data['questionId'], $data['locale']);
+        return $this->build($row, $data['locale']);
     }
 
     /**
@@ -188,13 +189,13 @@ class AnswerManager
     public function getUserAnswer($userId, $questionId, $locale)
     {
         $this->validator->validateUserId($userId);
-        $question = $this->qm->getById($questionId, $locale);
+        $this->validator->validateQuestionId($questionId);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(q:Question)', '(u:User)')
             ->where('u.qnoow_id = { userId }', 'id(q) = { questionId }', "EXISTS(q.text_$locale)")
             ->setParameter('userId', $userId)
-            ->setParameter('questionId', $question['questionId'])
+            ->setParameter('questionId', $questionId)
             ->with('u', 'q')
             ->match('(u)-[ua:ANSWERS]->(a:Answer)-[:IS_ANSWER_OF]->(q)')
             ->match('(u)-[r:RATES]->(q)')
@@ -212,13 +213,13 @@ class AnswerManager
         $result = $query->getResultSet();
 
         if ($result->count() < 1) {
-            throw new NotFoundHttpException(sprintf('There is not answer for user "%s" to question "%s"', $userId, $question['questionId']));
+            throw new NotFoundHttpException(sprintf('There is not answer for user "%s" to question "%s"', $userId, $questionId));
         }
 
         /* @var $row Row */
         $row = $result->current();
 
-        return $this->build($row, $locale);
+        return $row;
     }
 
     /**
