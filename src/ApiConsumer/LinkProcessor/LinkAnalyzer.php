@@ -26,10 +26,6 @@ class LinkAnalyzer
             return $preprocessedLink->getType();
         }
 
-        if ($type = self::getTypeFromId($preprocessedLink)) {
-            return $type;
-        }
-
         return self::getProcessorNameFromUrl($preprocessedLink);
     }
 
@@ -49,18 +45,6 @@ class LinkAnalyzer
         }
 
         return $type;
-    }
-
-    protected static function getTypeFromId(PreprocessedLink $preprocessedLink)
-    {
-        if (self::isFacebook($preprocessedLink->getUrl())) {
-            $parser = new FacebookUrlParser();
-            if ($parser->isStatusId($preprocessedLink->getResourceItemId())) {
-                return FacebookUrlParser::FACEBOOK_STATUS;
-            }
-        }
-
-        return null;
     }
 
     public static function getResource($url)

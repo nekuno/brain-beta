@@ -100,6 +100,7 @@ abstract class AbstractFacebookFetcher extends BasicPaginationFetcher
 
                     $new = $this->build(trim($websiteUrl), $thisId, $item);
                     $new->setType(UrlParser::SCRAPPER);
+                    $parsed[] = $new;
                     $counter++;
                 }
             }
