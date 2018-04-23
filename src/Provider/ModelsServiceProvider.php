@@ -176,7 +176,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.answers.model'] = function ($app) {
 
             $validator = $app['validator.factory']->build('answers');
-            return new AnswerManager($app['neo4j.graph_manager'], $app['questionnaire.questions.model'], $app['users.manager'], $validator, $app['dispatcher']);
+            return new AnswerManager($app['neo4j.graph_manager'], $validator, $app['dispatcher']);
         };
 
         $app['users.questions.model'] = function ($app) {

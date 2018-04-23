@@ -5,31 +5,28 @@ namespace Model\Question;
 use Everyman\Neo4j\Query\Row;
 use Model\Neo4j\GraphManager;
 use Paginator\PaginatedInterface;
+use Service\AnswerService;
 
 class UserAnswerPaginatedManager implements PaginatedInterface
 {
-
     /**
      * @var GraphManager
      */
     protected $gm;
 
-    /**
-     * @var AnswerManager
-     */
-    protected $am;
+    protected $answerService;
 
     protected $questionManager;
 
     /**
      * @param GraphManager $gm
-     * @param \Model\Question\AnswerManager $am
+     * @param AnswerService $answerService
      * @param QuestionManager $questionManager
      */
-    public function __construct(GraphManager $gm, AnswerManager $am, QuestionManager $questionManager)
+    public function __construct(GraphManager $gm, AnswerService $answerService, QuestionManager $questionManager)
     {
         $this->gm = $gm;
-        $this->am = $am;
+        $this->answerService = $answerService;
         $this->questionManager = $questionManager;
     }
 
@@ -85,7 +82,7 @@ class UserAnswerPaginatedManager implements PaginatedInterface
         /* @var $row Row */
         foreach ($result as $row) {
 
-            $answerData = $this->am->build($row, $locale);
+            $answerData = $this->answerService->build($row, $locale);
 
             $questionData = $answerData['question'];
             $questionId = $questionData['questionId'];
