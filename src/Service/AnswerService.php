@@ -3,6 +3,7 @@
 namespace Service;
 
 use Everyman\Neo4j\Query\Row;
+use Model\Question\Answer;
 use Model\Question\AnswerBuilder;
 use Model\Question\AnswerManager;
 use Model\Question\QuestionManager;
@@ -43,6 +44,7 @@ class AnswerService
 
     public function update(array $data)
     {
+        $data = $this->addUserAnswer($data);
         $row = $this->answerManager->update($data);
         return $this->build($row, $data['locale']);
     }
@@ -68,6 +70,18 @@ class AnswerService
             'userAnswer' => $this->answerBuilder->buildUserAnswer($row),
             'question' => $this->questionManager->build($row, $locale),
         );
+    }
+
+    protected function addUserAnswer(array $data)
+    {
+        $answerResult = $this->getUserAnswer($data['userId'], $data['questionId'], $data['locale']);
+        /** @var Answer $answer */
+        $answer = $answerResult['userAnswer'];
+        $this->answerBuilder->updateEditable($answer);
+
+        $data['userAnswer'] = $answer;
+
+        return $data;
     }
 
 

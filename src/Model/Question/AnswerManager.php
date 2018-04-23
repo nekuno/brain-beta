@@ -230,20 +230,7 @@ class AnswerManager
 
     public function validateOnUpdate(array $data)
     {
-        $data = $this->addUserAnswer($data);
         $this->validator->validateOnUpdate($data);
-    }
-
-    protected function addUserAnswer(array $data)
-    {
-        $answerResult = $this->getUserAnswer($data['userId'], $data['questionId'], $data['locale']);
-        /** @var Answer $answer */
-        $answer = $answerResult['userAnswer'];
-        $this->answerBuilder->updateEditable($answer);
-
-        $data['userAnswer'] = $answer;
-
-        return $data;
     }
 
     protected function handleAnswerAddedEvent(array $data)

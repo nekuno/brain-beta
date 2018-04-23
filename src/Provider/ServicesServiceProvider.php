@@ -5,6 +5,7 @@ namespace Provider;
 use Pimple\Container;
 use Service\AffinityRecalculations;
 use Service\AMQPManager;
+use Service\AnswerService;
 use Service\AuthService;
 use Service\ChatMessageNotifications;
 use Service\Consistency\ConsistencyCheckerService;
@@ -153,6 +154,10 @@ class ServicesServiceProvider implements ServiceProviderInterface
 
         $app['question.service'] = function ($app) {
             return new QuestionService($app['questionnaire.questions.model'], $app['questionnaire.admin.questions.model'], $app['questionnaire.questions.category.manager'], $app['questionnaire.questions.next.selector'], $app['users.questionCorrelation.manager']);
+        };
+
+        $app['answer.service'] = function ($app) {
+            return new AnswerService($app['users.answers.model'], $app['questionnaire.questions.model']);
         };
 
         $app['metadata.service'] = function ($app) {

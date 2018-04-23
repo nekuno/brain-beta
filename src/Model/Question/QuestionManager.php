@@ -189,7 +189,7 @@ class QuestionManager
         $qb = $this->gm->createQueryBuilder();
         $qb
             ->match('(q:Question)', '(u:User)')
-            ->where('NOT (q)-[:REGISTERS]-(:Mode)-[:OPTION_OF]-(:Profile)-[:PROFILE_OF]-(u)', 'u.qnoow_id = { userId } AND id(q) = { id }')
+            ->where('u.qnoow_id = { userId } AND id(q) = { id }')
             ->setParameter('userId', $userId)
             ->setParameter('id', (integer)$id)
             ->createUnique('(u)-[r:SKIPS]->(q)')
