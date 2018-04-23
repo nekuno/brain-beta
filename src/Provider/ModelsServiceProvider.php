@@ -176,12 +176,12 @@ class ModelsServiceProvider implements ServiceProviderInterface
         $app['users.answers.model'] = function ($app) {
 
             $validator = $app['validator.factory']->build('answers');
-            return new AnswerManager($app['neo4j.graph_manager'], $app['questionnaire.questions.model'], $app['users.manager'], $validator, $app['dispatcher']);
+            return new AnswerManager($app['neo4j.graph_manager'], $validator, $app['dispatcher']);
         };
 
         $app['users.questions.model'] = function ($app) {
 
-            return new UserAnswerPaginatedManager($app['neo4j.graph_manager'], $app['users.answers.model'], $app['questionnaire.questions.model']);
+            return new UserAnswerPaginatedManager($app['neo4j.graph_manager'], $app['answer.service'], $app['questionnaire.questions.model']);
         };
 
         $app['users.questionCorrelation.manager'] = function ($app) {
@@ -196,7 +196,7 @@ class ModelsServiceProvider implements ServiceProviderInterface
 
         $app['users.questions.compare.model'] = function ($app) {
 
-            return new QuestionComparePaginatedManager($app['neo4j.graph_manager'], $app['users.answers.model'], $app['questionnaire.questions.model']);
+            return new QuestionComparePaginatedManager($app['neo4j.graph_manager'], $app['answer.service'], $app['questionnaire.questions.model']);
         };
 
         $app['users.content.model'] = function ($app) {

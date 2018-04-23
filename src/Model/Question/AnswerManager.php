@@ -3,12 +3,9 @@
 namespace Model\Question;
 
 use Event\AnswerEvent;
-use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
-use Everyman\Neo4j\Relationship;
 use Model\Exception\ValidationException;
 use Model\Neo4j\GraphManager;
-use Model\User\UserManager;
 use Service\Validator\AnswerValidator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -20,15 +17,7 @@ class AnswerManager
      */
     protected $gm;
 
-    /**
-     * @var QuestionManager
-     */
-    protected $qm;
-
-    /**
-     * @var UserManager
-     */
-    protected $um;
+    protected $answerBuilder;
 
     /**
      * @var EventDispatcher
@@ -40,46 +29,12 @@ class AnswerManager
      */
     protected $validator;
 
-    public function __construct(GraphManager $gm, QuestionManager $qm, UserManager $um, AnswerValidator $validator, EventDispatcher $eventDispatcher)
+    public function __construct(GraphManager $gm, AnswerValidator $validator, EventDispatcher $eventDispatcher)
     {
         $this->gm = $gm;
-        $this->qm = $qm;
-        $this->um = $um;
+        $this->answerBuilder = new AnswerBuilder();
         $this->validator = $validator;
         $this->eventDispatcher = $eventDispatcher;
-    }
-
-    public function countTotal(array $filters)
-    {
-        $count = 0;
-
-        $qb = $this->gm->createQueryBuilder();
-        $qb->match('(u:User)')
-            ->where('u.qnoow_id = { userId }')
-            ->setParameter('userId', (integer)$filters['id'])
-            ->match('(u)-[r:RATES]->(q:Question)')
-            ->returns('COUNT(DISTINCT r) AS total');
-
-        $query = $qb->getQuery();
-
-        $result = $query->getResultSet();
-
-        if ($result->count() > 0) {
-            $row = $result->current();
-            /* @var $row Row */
-            $count = $row->offsetGet('total');
-        }
-
-        return $count;
-    }
-
-    public function answer(array $data)
-    {
-        if ($this->isQuestionAnswered($data['userId'], $data['questionId'])) {
-            return $this->update($data);
-        } else {
-            return $this->create($data);
-        }
     }
 
     public function create(array $data)
@@ -108,7 +63,6 @@ class AnswerManager
         $this->handleAnswerAddedEvent($data);
 
         return $this->getUserAnswer($data['userId'], $data['questionId'], $data['locale']);
-
     }
 
     public function update(array $data)
@@ -165,7 +119,6 @@ class AnswerManager
         $query->getResultSet();
 
         return $this->getUserAnswer($data['userId'], $data['questionId'], $data['locale']);
-
     }
 
     /**
@@ -182,19 +135,28 @@ class AnswerManager
 
         $query = $qb->getQuery();
 
-        return $query->getResultSet();
+        $result = $query->getResultSet();
+
+        $count = 0;
+        if ($result->count() > 0) {
+            /* @var $row Row */
+            $row = $result->current();
+            $count = $row->offsetGet('nOfAnswers');
+        }
+
+        return $count;
     }
 
     public function getUserAnswer($userId, $questionId, $locale)
     {
         $this->validator->validateUserId($userId);
-        $question = $this->qm->getById($questionId, $locale);
+        $this->validator->validateQuestionId($questionId);
 
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(q:Question)', '(u:User)')
             ->where('u.qnoow_id = { userId }', 'id(q) = { questionId }', "EXISTS(q.text_$locale)")
             ->setParameter('userId', $userId)
-            ->setParameter('questionId', $question['questionId'])
+            ->setParameter('questionId', $questionId)
             ->with('u', 'q')
             ->match('(u)-[ua:ANSWERS]->(a:Answer)-[:IS_ANSWER_OF]->(q)')
             ->match('(u)-[r:RATES]->(q)')
@@ -212,13 +174,13 @@ class AnswerManager
         $result = $query->getResultSet();
 
         if ($result->count() < 1) {
-            throw new NotFoundHttpException(sprintf('There is not answer for user "%s" to question "%s"', $userId, $question['questionId']));
+            throw new NotFoundHttpException(sprintf('There is not answer for user "%s" to question "%s"', $userId, $questionId));
         }
 
         /* @var $row Row */
         $row = $result->current();
 
-        return $this->build($row, $locale);
+        return $row;
     }
 
     /**
@@ -268,60 +230,13 @@ class AnswerManager
 
     public function validateOnUpdate(array $data)
     {
-        $data = $this->addUserAnswer($data);
         $this->validator->validateOnUpdate($data);
     }
 
-    protected function addUserAnswer(array $data)
+    protected function handleAnswerAddedEvent(array $data)
     {
-        $answerResult = $this->getUserAnswer($data['userId'], $data['questionId'], $data['locale']);
-        /** @var Answer $answer */
-        $answer = $answerResult['userAnswer'];
-        $this->updateEditable($answer);
-
-        $data['userAnswer'] = $answer;
-
-        return $data;
-    }
-
-    public function build(Row $row, $locale)
-    {
-        return array(
-            'userAnswer' => $this->buildUserAnswer($row),
-            'question' => $this->qm->build($row, $locale),
-        );
-    }
-
-    protected function buildUserAnswer(Row $row)
-    {
-        $this->checkMandatoryKeys($row);
-
-        list($question, $answerNode, $userAnswer, $rates) = $this->getRowData($row);
-
-        $acceptedAnswers = $this->buildAcceptedAnswers($row);
-
-        $answer = new Answer();
-        $answer->setQuestionId($question->getId());
-        $answer->setAnswerId($answerNode->getId());
-        $answer->setAcceptedAnswers($acceptedAnswers);
-        $answer->setRating($rates->getProperty('rating'));
-        $answer->setExplanation($userAnswer->getProperty('explanation'));
-        $answer->setPrivate($userAnswer->getProperty('private'));
-        $answer->setAnsweredAt($userAnswer->getProperty('answeredAt'));
-        $this->updateEditable($answer);
-
-        return $answer;
-    }
-
-    protected function updateEditable(Answer $answer)
-    {
-        $answeredAt = floor($answer->getAnsweredAt() / 1000);
-        $now = time();
-        $oneDay = 24 * 3600;
-
-        $untilNextEdit = ($answeredAt + $oneDay) - $now;
-        $answer->setEditableIn($untilNextEdit);
-        $answer->setEditable($untilNextEdit < 0);
+        $event = new AnswerEvent($data['userId'], $data['questionId']);
+        $this->eventDispatcher->dispatch(\AppEvents::ANSWER_ADDED, $event);
     }
 
     /**
@@ -330,7 +245,7 @@ class AnswerManager
      * @return bool
      * @throws \Exception
      */
-    protected function isQuestionAnswered($userId, $questionId)
+    public function isQuestionAnswered($userId, $questionId)
     {
         $qb = $this->gm->createQueryBuilder();
         $qb->match('(q:Question)<-[:IS_ANSWER_OF]-(a:Answer)<-[ua:ANSWERS]->(u:User)')
@@ -344,57 +259,5 @@ class AnswerManager
         $result = $query->getResultSet();
 
         return $result->count() > 0;
-    }
-
-    protected function handleAnswerAddedEvent(array $data)
-    {
-        $event = new AnswerEvent($data['userId'], $data['questionId']);
-        $this->eventDispatcher->dispatch(\AppEvents::ANSWER_ADDED, $event);
-    }
-
-    /**
-     * @param Row $row
-     */
-    protected function checkMandatoryKeys(Row $row)
-    {
-        $keys = array('question', 'answer', 'userAnswer', 'rates', 'acceptedAnswers');
-        foreach ($keys as $key) {
-            if (!$row->offsetExists($key)) {
-                throw new \RuntimeException(sprintf('"%s" key needed in row', $key));
-            }
-        }
-    }
-
-    /**
-     * @param Row $row
-     * @return array
-     */
-    protected function buildAcceptedAnswers(Row $row)
-    {
-        $acceptedAnswers = array();
-        foreach ($row->offsetGet('acceptedAnswers') as $acceptedAnswer) {
-            /* @var $acceptedAnswer Node */
-            $acceptedAnswers[] = $acceptedAnswer->getId();
-        }
-
-        return $acceptedAnswers;
-    }
-
-    /**
-     * @param Row $row
-     * @return array
-     */
-    protected function getRowData(Row $row)
-    {
-        /* @var $question Node */
-        $question = $row->offsetGet('question');
-        /* @var $answerNode Node */
-        $answerNode = $row->offsetGet('answer');
-        /* @var $userAnswer Node */
-        $userAnswer = $row->offsetGet('userAnswer');
-        /* @var $rates Relationship */
-        $rates = $row->offsetGet('rates');
-
-        return array($question, $answerNode, $userAnswer, $rates);
     }
 }
