@@ -167,12 +167,7 @@ class FacebookStatusProcessorTest extends AbstractProcessorTest
         return array(
             "name" => $this->getTitle(),
             "description" => $this->getDescription(),
-            "picture" => array(
-                "data" => array(
-                    "is_silhouette" => false,
-                    "url" => $this->getThumbnailUrl(),
-                )
-            ),
+            "full_picture" => $this->getThumbnailUrl(),
             "id" => "10153571968389307_10155807625414307"
         );
     }
