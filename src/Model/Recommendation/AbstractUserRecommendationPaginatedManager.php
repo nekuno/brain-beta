@@ -246,7 +246,7 @@ abstract class AbstractUserRecommendationPaginatedManager implements PaginatedIn
                         $matches[] = $matchQuery . ' WHERE (' . implode(' OR ', $whereQueries) . ')';
                         break;
                     case 'tags':
-                        $canonicalText = $this->languageTextManager->buildCanonical($value);
+                        $canonicalText = $this->languageTextManager->buildCanonical($value['name']);
                         $tagLabelName = $this->metadataUtilities->typeToLabel($name);
                         $matchQuery = "(p)<-[:TAGGED]-(tag$name:$tagLabelName)";
                         $whereQuery = " (tag$name)<-[:TEXT_OF]-(:TextLanguage{canonical: '$canonicalText'})";
@@ -258,7 +258,7 @@ abstract class AbstractUserRecommendationPaginatedManager implements PaginatedIn
                         $whereQueries = array();
                         foreach ($value as $dataValue) {
                             $tagValue = $dataValue['tag'];
-                            $canonicalText = $this->languageTextManager->buildCanonical($tagValue);
+                            $canonicalText = $this->languageTextManager->buildCanonical($tagValue['name']);
                             $choice = isset($dataValue['choices']) ? $dataValue['choices'] : null;
                             $whereQuery = " (tag$name)<-[:TEXT_OF]-(:TextLanguage{canonical: '$canonicalText'})";
                             if (!null == $choice) {
@@ -275,7 +275,7 @@ abstract class AbstractUserRecommendationPaginatedManager implements PaginatedIn
                         $whereQueries = array();
                         foreach ($value as $dataValue) {
                             $tagValue = $dataValue['tag'];
-                            $canonicalText = $this->languageTextManager->buildCanonical($tagValue);
+                            $canonicalText = $this->languageTextManager->buildCanonical($tagValue['name']);
                             $choices = isset($dataValue['choices']) ? $dataValue['choices'] : array();
 
                             $whereQuery = " (tag$name)<-[:TEXT_OF]-(:TextLanguage{canonical: '$canonicalText'})";
@@ -427,5 +427,13 @@ abstract class AbstractUserRecommendationPaginatedManager implements PaginatedIn
         $valuePerOne = intval($value) / 100;
 
         return "($valuePerOne <= $attribute)";
+    }
+
+    protected function getCanonicalTags($tags)
+    {
+        foreach ($tags as $tag)
+        {
+
+        }
     }
 }
