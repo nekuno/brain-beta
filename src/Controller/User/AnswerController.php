@@ -7,6 +7,7 @@ use Model\Metadata\MetadataManager;
 use Model\Question\QuestionManager;
 use Model\Question\UserAnswerPaginatedManager;
 use Model\User\User;
+use Service\AnswerService;
 use Silex\Application;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
@@ -74,7 +75,9 @@ class AnswerController
         $data['userId'] = $user->getId();
         $data['locale'] = $this->getLocale($request, $app['locale.options']['default']);
 
-        $userAnswer = $app['users.answers.model']->answer($data);
+        /** @var AnswerService $answerService */
+        $answerService = $app['answer.service'];
+        $userAnswer = $answerService->answer($data);
 
         // TODO: Refactor this to listener
         /* @var $questionModel QuestionManager */
@@ -97,8 +100,9 @@ class AnswerController
         $data['userId'] = $user->getId();
         $data['locale'] = $this->getLocale($request, $app['locale.options']['default']);
 
-        $userAnswer = $app['users.answers.model']->update($data);
-
+        /** @var AnswerService $answerService */
+        $answerService = $app['answer.service'];
+        $userAnswer = $answerService->update($data);
         // TODO: Refactor this to listener
         /* @var $questionModel QuestionManager */
         $questionModel = $app['questionnaire.questions.model'];
@@ -120,8 +124,9 @@ class AnswerController
         $data['userId'] = $user->getId();
         $data['locale'] = $this->getLocale($request, $app['locale.options']['default']);
 
-        $userAnswer = $app['users.answers.model']->explain($data);
-
+        /** @var AnswerService $answerService */
+        $answerService = $app['answer.service'];
+        $userAnswer = $answerService->explain($data);
         return $app->json($userAnswer);
     }
 
@@ -135,17 +140,14 @@ class AnswerController
     {
         $userAnswerResult = $app['users.answers.model']->getNumberOfUserAnswers($user->getId());
 
-        $data = array(
-            'userId' => $user->getId(),
-        );
-
-        foreach ($userAnswerResult as $row) {
-            $data['nOfAnswers'] = $row['nOfAnswers'];
-        }
-
-        if (empty($data)) {
+        if ($userAnswerResult === 0) {
             return $app->json('The user has not answered to any question', 404);
         }
+
+        $data = array(
+            'userId' => $user->getId(),
+            'nOfAnswers' => $userAnswerResult,
+        );
 
         return $app->json($data);
     }

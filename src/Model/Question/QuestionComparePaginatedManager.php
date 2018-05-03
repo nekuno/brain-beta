@@ -7,13 +7,11 @@ use Model\Neo4j\GraphManager;
 use Paginator\PaginatedInterface;
 
 use Everyman\Neo4j\Query\Row;
+use Service\AnswerService;
 
 class QuestionComparePaginatedManager implements PaginatedInterface
 {
-    /**
-     * @var AnswerManager
-     */
-    protected $am;
+    protected $answerService;
 
     protected $questionModel;
 
@@ -21,13 +19,13 @@ class QuestionComparePaginatedManager implements PaginatedInterface
 
     /**
      * @param GraphManager $graphManager
-     * @param AnswerManager $am
+     * @param AnswerService $answerService
      * @param QuestionManager $questionModel
      */
-    public function __construct(GraphManager $graphManager, AnswerManager $am, QuestionManager $questionModel)
+    public function __construct(GraphManager $graphManager, AnswerService $answerService, QuestionManager $questionModel)
     {
         $this->graphManager = $graphManager;
-        $this->am = $am;
+        $this->answerService = $answerService;
         $this->questionModel = $questionModel;
     }
 
@@ -152,7 +150,7 @@ class QuestionComparePaginatedManager implements PaginatedInterface
             if ($row->offsetGet($questionsKey)->offsetExists('userAnswer')) {
                 $questions = $row->offsetGet($questionsKey);
                 $questionId = $questions->offsetGet('question')->getId();
-                $questions_results['questions'][$questionId] = $this->am->build($questions, $locale);
+                $questions_results['questions'][$questionId] = $this->answerService->build($questions, $locale);
 
                 if ($questions->offsetExists('isCommon')) {
                     $questions_results['questions'][$questionId]['question']['isCommon'] = $questions->offsetGet('isCommon');

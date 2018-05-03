@@ -57,9 +57,9 @@ class UsersCalculateSimilarityCommand extends ApplicationAwareCommand
             $userIds = $this->app['users.manager']->getAllIds();
 
             foreach ($userIds as $userId) {
-                $output->writeln('Calculating similarities by questions for '.$userA);
+                $output->writeln(sprintf('Calculating similarities by questions for %d', $userId));
                 $model->recalculateSimilaritiesByQuestions($userId);
-                $output->writeln('Calculating similarities by interests for '.$userA);
+                $output->writeln(sprintf('Calculating similarities by interests for %d', $userId));
                 $model->recalculateSimilaritiesByInterests($userId);
             }
         }

@@ -104,7 +104,7 @@ class FacebookMetadataParser implements MetadataParserInterface
             }
         );
 
-        if (!count($scrapedTags)) {
+        if (!is_array($scrapedTags) || !count($scrapedTags)) {
             return array();
         }
 

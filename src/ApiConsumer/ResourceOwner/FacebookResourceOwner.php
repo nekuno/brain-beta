@@ -181,7 +181,7 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
     {
         $url = (string)$id;
         $query = array(
-            'fields' => 'description,picture.type(large)'
+            'fields' => 'description,picture.width(500)'
         );
 
         return $this->request($url, $query, $token);
@@ -189,7 +189,7 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 
     public function requestPage($id, $token)
     {
-        $fields = array('name', 'description', 'picture.type(large)');
+        $fields = array('name', 'description', 'picture.width(500)');
         $query = array('fields' => implode(',', $fields));
 
         return $this->request($id, $query, $token);
@@ -197,7 +197,7 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 
     public function requestStatus($id, $token)
     {
-        $fields = array('name', 'description', 'picture.type(large)');
+        $fields = array('name', 'description', 'full_picture');
         $query = array('fields' => implode(',', $fields));
 
         return $this->request($id, $query, $token);
@@ -205,7 +205,7 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 
     public function requestProfile($id, $token)
     {
-        $fields = array('name', 'picture.type(large)');
+        $fields = array('name', 'picture.width(500)');
         $query = array('fields' => implode(',', $fields));
 
         return $this->request($id, $query, $token);

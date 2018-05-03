@@ -41,6 +41,14 @@ class FacebookPageProcessor extends AbstractFacebookProcessor
 
     public function getImages(PreprocessedLink $preprocessedLink, array $data)
     {
+        if (isset($data['full_picture']) && !isset($data['full_picture']['data'])) {
+            return array(new ProcessingImage($data['full_picture']));
+        }
+        if (isset($data['picture']) && !isset($data['picture']['data'])) {
+            return array(new ProcessingImage($data['picture']));
+        }
+
+
         $images = parent::getImages($preprocessedLink, $data);
 
         $imagesArray = isset($data['images']) && is_array($data['images']) ? $data['images'] : array();

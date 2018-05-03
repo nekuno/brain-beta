@@ -14,7 +14,7 @@ class QuestionService
     /**
      * @var QuestionManager
      */
-    protected $questionModel;
+    protected $questionManager;
 
     /**
      * @var QuestionAdminManager
@@ -30,15 +30,15 @@ class QuestionService
     protected $questionCorrelationManager;
 
     /**
-     * @param QuestionManager $questionModel
+     * @param QuestionManager $questionManager
      * @param QuestionAdminManager $questionAdminManager
      * @param QuestionCategoryManager $questionCategoryManager
      * @param QuestionNextSelector $questionNextSelector
      * @param QuestionCorrelationManager $questionCorrelationManager
      */
-    public function __construct(QuestionManager $questionModel, QuestionAdminManager $questionAdminManager, QuestionCategoryManager $questionCategoryManager, QuestionNextSelector $questionNextSelector, QuestionCorrelationManager $questionCorrelationManager)
+    public function __construct(QuestionManager $questionManager, QuestionAdminManager $questionAdminManager, QuestionCategoryManager $questionCategoryManager, QuestionNextSelector $questionNextSelector, QuestionCorrelationManager $questionCorrelationManager)
     {
-        $this->questionModel = $questionModel;
+        $this->questionManager = $questionManager;
         $this->questionAdminManager = $questionAdminManager;
         $this->questionCategoryManager = $questionCategoryManager;
         $this->questionNextSelector = $questionNextSelector;
@@ -68,7 +68,7 @@ class QuestionService
 
     public function getById($questionId, $locale)
     {
-        return $this->questionModel->getById($questionId, $locale);
+        return $this->questionManager->getById($questionId, $locale);
 
     }
 
@@ -85,19 +85,19 @@ class QuestionService
 
         $data = array('questionId' => $questionId);
 
-        return $this->questionModel->delete($data);
+        return $this->questionManager->delete($data);
     }
     
     public function getNextByUser($userId, $locale, $sortByRanking = true)
     {
         $row = $this->questionNextSelector->getNextByUser($userId, $locale, $sortByRanking);
-        return $this->questionModel->build($row, $locale);
+        return $this->questionManager->build($row, $locale);
     }
 
     public function getNextByOtherUser($userId, $otherUserId, $locale, $sortByRanking = true)
     {
         $row = $this->questionNextSelector->getNextByOtherUser($userId, $otherUserId, $locale, $sortByRanking);
-        return $this->questionModel->build($row, $locale);
+        return $this->questionManager->build($row, $locale);
     }
 
     public function getDivisiveQuestions($locale)
@@ -107,7 +107,7 @@ class QuestionService
         $questions = array();
         foreach ($result as $row)
         {
-            $questions[] = $this->questionModel->build($row, $locale);
+            $questions[] = $this->questionManager->build($row, $locale);
         }
 
         return $questions;

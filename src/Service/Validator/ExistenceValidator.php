@@ -33,6 +33,11 @@ class ExistenceValidator
         return $this->validateNodeId('Invitation', $invitationId, $desired);
     }
 
+    public function validateQuestionId($questionId, $desired = true)
+    {
+        return $this->validateNodeId('Question', $questionId, $desired);
+    }
+
     public function validateInvitationToken($token, $excludedId = null, $desired = true)
     {
         $qb = $this->graphManager->createQueryBuilder();

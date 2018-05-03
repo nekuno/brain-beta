@@ -1,32 +1,32 @@
-valid_ips: ['127.0.0.1', %dev_custom_ip_1%, %dev_custom_ip_2%, %dev_custom_ip_3%, %dev_custom_ip_4%]
-support_emails: [%support_email_1%, %support_email_2%, %support_email_3%]
+valid_ips: ['127.0.0.1', "%dev_custom_ip_1%", "%dev_custom_ip_2%", "%dev_custom_ip_3%", "%dev_custom_ip_4%"]
+support_emails: ["%support_email_1%", "%support_email_2%", "%support_email_3%"]
 
-secret: %secret%
-instant_api_secret: %instant_api_secret%
+secret: "%secret%"
+instant_api_secret: "%instant_api_secret%"
 life_time: 5184000 # 60 days
 
-push_public_key: %push_public_key%
-push_private_key: %push_private_key%
-firebase_url: %firebase_url%
-firebase_api_key: %firebase_api_key%
+push_public_key: "%push_public_key%"
+push_private_key: "%push_private_key%"
+firebase_url: "%firebase_url%"
+firebase_api_key: "%firebase_api_key%"
 
 locale.options:
-    default: %locale.default%
+    default: "%locale.default%"
 
-images_relative_dir: %images_relative_dir%
+images_relative_dir: "%images_relative_dir%"
 
-brain_base_url: %brain_base_url%
+brain_base_url: "%brain_base_url%"
 
-instant.host: %instant.host%
-guzzle.verify: %guzzle.verify%
+instant.host: "%instant.host%"
+guzzle.verify: "%guzzle.verify%"
 
 dbs.options:
     mysql_brain:
-        driver: %dbs.mysql_brain.driver%
-        host: %dbs.mysql_brain.host%
-        dbname: %dbs.mysql_brain.dbname%
-        user: %dbs.mysql_brain.user%
-        password: %dbs.mysql_brain.pass%
+        driver: "%dbs.mysql_brain.driver%"
+        host: "%dbs.mysql_brain.host%"
+        dbname: "%dbs.mysql_brain.dbname%"
+        user: "%dbs.mysql_brain.user%"
+        password: "%dbs.mysql_brain.pass%"
         charset: utf8mb4
 
 orm.proxies_dir: "%app_root_dir%/../cache/DoctrineProxy"
@@ -44,105 +44,105 @@ orm.ems.options:
 dataFile.dir: "%app_root_dir%/../var"
 
 neo4j.options:
-    host: %db.neo4j.host%
-    port: %db.neo4j.port%
-    auth: %db.neo4j.auth%
-    user: %db.neo4j.user%
-    pass: %db.neo4j.pass%
+    host: "%db.neo4j.host%"
+    port: "%db.neo4j.port%"
+    auth: "%db.neo4j.auth%"
+    user: "%db.neo4j.user%"
+    pass: "%db.neo4j.pass%"
 
 swiftmailer.options:
-    host: %swiftmailer.host%
-    port: %swiftmailer.port%
-    username: %swiftmailer.username%
-    password: %swiftmailer.password%
-    encryption: %swiftmailer.encryption%
-    auth_mode: %swiftmailer.auth_mode%
+    host: "%swiftmailer.host%"
+    port: "%swiftmailer.port%"
+    username: "%swiftmailer.username%"
+    password: "%swiftmailer.password%"
+    encryption: "%swiftmailer.encryption%"
+    auth_mode: "%swiftmailer.auth_mode%"
     spool:      { type: memory }
-    sender_address: %swiftmailer.sender_address%
+    sender_address: "%swiftmailer.sender_address%"
 
 amqp.options:
-    host: %rabbitmq.host%
-    port: %rabbitmq.port%
-    user: %rabbitmq.user%
-    pass: %rabbitmq.pass%
-    vhost: %rabbitmq.vhost%
+    host: "%rabbitmq.host%"
+    port: "%rabbitmq.port%"
+    user: "%rabbitmq.user%"
+    pass: "%rabbitmq.pass%"
+    vhost: "%rabbitmq.vhost%"
 
 api_consumer.config:
     resource_owner:
         twitter:
-            consumer_key: %twitter.consumer_key%
-            consumer_secret: %twitter.consumer_secret%
+            consumer_key: "%twitter.consumer_key%"
+            consumer_secret: "%twitter.consumer_secret%"
             client_credential:
-                application_token: %twitter.application_token%
+                application_token: "%twitter.application_token%"
 
         google: &resource_owner.google
-            consumer_key: %google.consumer_key%
-            consumer_secret: %google.consumer_secret%
+            consumer_key: "%google.consumer_key%"
+            consumer_secret: "%google.consumer_secret%"
             client_credential:
-                application_token: %google.application_token%
-                service_account_email: %google.service_account_email%
-                key_file: %google.key_file%
-                key_password: %google.key_password%
+                application_token: "%google.application_token%"
+                service_account_email: "%google.service_account_email%"
+                key_file: "%google.key_file%"
+                key_password: "%google.key_password%"
                 scopes:
                     - 'https://www.googleapis.com/auth/youtube'
 
         google_profile: *resource_owner.google
 
         spotify:
-            consumer_key: %spotify.consumer_key%
-            consumer_secret: %spotify.consumer_secret%
+            consumer_key: "%spotify.consumer_key%"
+            consumer_secret: "%spotify.consumer_secret%"
 
         facebook:
-            consumer_key: %facebook.consumer_key%
-            consumer_secret: %facebook.consumer_secret%
-            redirect_uri: %facebook.redirect_uri%
+            consumer_key: "%facebook.consumer_key%"
+            consumer_secret: "%facebook.consumer_secret%"
+            redirect_uri: "%facebook.redirect_uri%"
 
         tumblr:
-            consumer_key: %tumblr.consumer_key%
-            consumer_secret:  %tumblr.consumer_secret%
+            consumer_key: "%tumblr.consumer_key%"
+            consumer_secret:  "%tumblr.consumer_secret%"
             scope: "read"
             client_credential:
-                application_token: %tumblr.application_token%
+                application_token: "%tumblr.application_token%"
 
         steam:
             client_credential:
-                application_token: %steam.application_token%
+                application_token: "%steam.application_token%"
 
         linkedin:
-            consumer_key: %linkedin.consumer_key%
-            consumer_secret:  %linkedin.consumer_secret%
+            consumer_key: "%linkedin.consumer_key%"
+            consumer_secret:  "%linkedin.consumer_secret%"
 
-admin_domain_plus_post: %admin.domain_plus_port%
-social_host: %social.host%
+admin_domain_plus_post: "%admin.domain_plus_port%"
+social_host: "%social.host%"
 
-fullContact.url: %fullContact.url%
-fullContact.consumer_key: %fullContact.consumer_key%
-peopleGraph.url: %peopleGraph.url%
-peopleGraph.consumer_key: %peopleGraph.consumer_key%
+fullContact.url: "%fullContact.url%"
+fullContact.consumer_key: "%fullContact.consumer_key%"
+peopleGraph.url: "%peopleGraph.url%"
+peopleGraph.consumer_key: "%peopleGraph.consumer_key%"
 
 # HWIOAuthBundle
 hwi_oauth:
     resource_owners:
         facebook:
             type:                facebook
-            client_id:           %facebook.consumer_key%
-            client_secret:       %facebook.consumer_secret%
+            client_id:           "%facebook.consumer_key%"
+            client_secret:       "%facebook.consumer_secret%"
         google:
             type:                google
-            client_id:           %google.consumer_key%
-            client_secret:       %google.consumer_secret%
+            client_id:           "%google.consumer_key%"
+            client_secret:       "%google.consumer_secret%"
         twitter:
             type:                twitter
-            client_id:           %twitter.consumer_key%
-            client_secret:       %twitter.consumer_secret%
+            client_id:           "%twitter.consumer_key%"
+            client_secret:       "%twitter.consumer_secret%"
         spotify:
             type:                spotify
-            client_id:           %spotify.consumer_key%
-            client_secret:       %spotify.consumer_secret%
+            client_id:           "%spotify.consumer_key%"
+            client_secret:       "%spotify.consumer_secret%"
         tumblr:
             type:                oauth1
-            client_id:           %tumblr.consumer_key%
-            client_secret:       %tumblr.consumer_secret%
+            client_id:           "%tumblr.consumer_key%"
+            client_secret:       "%tumblr.consumer_secret%"
             user_response_class: HWI\Bundle\OAuthBundle\OAuth\Response\PathUserResponse
             paths:
                 identifier:     response.user.name
@@ -150,5 +150,5 @@ hwi_oauth:
                 realname:       response.user.name
         linkedin:
             type:                linkedin
-            client_id:           %linkedin.consumer_key%
-            client_secret:       %linkedin.consumer_secret%
+            client_id:           "%linkedin.consumer_key%"
+            client_secret:       "%linkedin.consumer_secret%"

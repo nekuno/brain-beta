@@ -53,4 +53,12 @@ class AnswerValidator extends Validator
 
         $this->throwException($errorList);
     }
+
+    public function validateQuestionId($questionId)
+    {
+        $errorList = new ErrorList();
+        $errorList->setErrors('questionId', $this->existenceValidator->validateQuestionId($questionId));
+
+        $this->throwException($errorList);
+    }
 }
