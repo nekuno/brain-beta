@@ -168,7 +168,6 @@ class SimilarityManager
             /* @var $row Row */
             $row = $result->current();
             $similarity = $this->buildSimilarity($row);
-
         }
 
         return $similarity;
@@ -407,7 +406,7 @@ class SimilarityManager
             ->optionalMatch('(l)-[:HAS_POPULARITY]-(popularity:Popularity)')
             ->where('EXISTS(l.unpopularity) OR EXISTS(popularity.unpopularity)')
             ->with('userA, userB, COUNT(DISTINCT l) AS numberCommonContent, SUM(l.unpopularity) + SUM(popularity.unpopularity) AS common')
-            ->with('userA', 'userB', 'CASE WHEN numberCommonContent > 4 THEN true ELSE false END AS valid', 'common')
+            ->with('userA', 'userB', 'CASE WHEN numberCommonContent > 4 AND common > 0 THEN true ELSE false END AS valid', 'common')
             ->with('userA', 'userB', 'valid', 'CASE WHEN valid THEN common ELSE 1 END AS common')//prevents divide by zero
             ->with('userA', 'userB', 'valid', 'common');
 
@@ -426,8 +425,8 @@ class SimilarityManager
             ->with(' userA, userB, valid, common, onlyUserA, SUM(COALESCE(popularity.popularity, 0)) AS onlyUserB');
 
         $qb
-            ->with('userA, userB, valid, sqrt( common / (onlyUserA + common)) * sqrt( common / (onlyUserB + common)) AS similarity')
-            ->with('userA', 'userB', 'CASE WHEN valid THEN similarity ELSE 0 END AS similarity');
+            ->with('userA, userB, CASE WHEN valid THEN common / (onlyUserA + common) ELSE 0 END AS rateA, CASE WHEN valid THEN common / (onlyUserB + common) ELSE 0 END AS rateB')
+            ->with('userA, userB, sqrt(rateA) * sqrt(rateB) AS similarity');
 
         $qb
             ->merge('(userA)-[s:SIMILARITY]-(userB)')
@@ -630,7 +629,8 @@ class SimilarityManager
     private function buildSimilarity(Row $row)
     {
         $similarity = new Similarity();
-
+        var_dump('interests');
+var_dump($row->offsetGet('interests'));
         $similarity->setQuestions($row->offsetExists('questions') ? $row->offsetGet('questions') : 0);
         $similarity->setQuestionsUpdated($row->offsetExists('questionsUpdated') ? $row->offsetGet('questionsUpdated') : 0);
         $similarity->setInterests($row->offsetExists('interests') ? $row->offsetGet('interests') : 0);

@@ -23,9 +23,7 @@ class PopularityManager
     {
         $max_popularity = $this->getMaxPopularity();
 
-        if (null === $max_popularity) {
-            return true;
-        }
+        $maxAmount = $max_popularity ? floatval($max_popularity->getAmount()) : 1.0;
 
         $qb = $this->gm->createQueryBuilder();
 
@@ -38,12 +36,21 @@ class PopularityManager
             ->optionalMatch('(l)<-[likes:LIKES]-(:User)')
             ->with('popularity', 'count(likes) AS total');
 
-        $qb->setParameter('max', floatval($max_popularity->getAmount()));
+        $qb->setParameter('max', $maxAmount);
         $qb->set(
             'popularity.popularity = (total/{max})^3',
             'popularity.unpopularity = (1-(total/{max}))^3',
             'popularity.timestamp = timestamp()'
         );
+        $qb->returns(
+            'id(popularity) AS id',
+            'popularity.popularity AS popularity',
+            'popularity.unpopularity AS unpopularity',
+            'popularity.timestamp AS timestamp',
+            'total AS amount',
+            'true AS new'
+        )
+            ->orderBy('popularity DESC');
 
         $query = $qb->getQuery();
         $result = $query->getResultSet();
@@ -111,7 +118,7 @@ class PopularityManager
         );
 
         $qb->returns(
-            '   id(popularity) AS id',
+            'id(popularity) AS id',
             'popularity.popularity AS popularity',
             'popularity.unpopularity AS unpopularity',
             'popularity.timestamp AS timestamp',
@@ -285,6 +292,11 @@ class PopularityManager
             return $popularities[0];
         }
 
+//        $maxPopularities = $this->calculateNewMaxPopularity();
+//        if (!empty($maxPopularities)) {
+//            return $maxPopularities[0];
+//        }
+
         return null;
     }
 
@@ -364,6 +376,34 @@ class PopularityManager
                                             WHEN 0 THEN 0
                                             ELSE timestamp()
                                         END'
+            )
+            ->returns(
+                ' id(popularity) AS id,
+                        popularity.popularity AS popularity,
+                        popularity.unpopularity AS unpopularity,
+                        popularity.timestamp AS timestamp,
+                        amount,
+                        true AS new'
+            );
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        return $this->build($result);
+    }
+
+    private function calculateNewMaxPopularity()
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(popularity)')
+            ->optionalMatch('(popularity)<-[:HAS_POPULARITY]-(:Link)<-[likes:LIKES]-()')
+            ->with('popularity', 'count(likes) AS amount')
+            ->orderBy('amount DESC')
+            ->limit(1)
+            ->set(
+                'popularity.popularity = 1',
+                'popularity.unpopularity = 0',
+                'popularity.timestamp = timestamp()'
             )
             ->returns(
                 ' id(popularity) AS id,

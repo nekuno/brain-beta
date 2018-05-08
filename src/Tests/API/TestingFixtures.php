@@ -18,6 +18,7 @@ use Model\Rate\RateManager;
 use Model\Invitation\InvitationManager;
 use Psr\Log\LoggerInterface;
 use Service\GroupService;
+use Service\LinkService;
 use Service\QuestionService;
 use Service\RegisterService;
 use Silex\Application;
@@ -89,9 +90,9 @@ class TestingFixtures
     protected $im;
 
     /**
-     * @var RateManager
+     * @var LinkService
      */
-    protected $rm;
+    protected $linkService;
 
     public function __construct(Application $app)
     {
@@ -103,7 +104,7 @@ class TestingFixtures
         $this->lm = $app['links.model'];
         $this->questionService = $app['question.service'];
         $this->correlationManager = $app['users.questionCorrelation.manager'];
-        $this->rm = $app['users.rate.model'];
+        $this->linkService = $app['link.service'];
         $this->logger = $app['logger'];
     }
 
@@ -262,8 +263,7 @@ class TestingFixtures
 
             $link->setLanguage('en');
 
-            $createdLinks[$i] = $this->lm->mergeLink($link);
-
+            $createdLinks[$i] = $this->linkService->merge($link);
         }
 
         return $createdLinks;
@@ -343,11 +343,11 @@ class TestingFixtures
      */
     protected function loadLikes(array $createdLinks)
     {
-
         $this->logger->notice('Loading likes');
 
         foreach ($createdLinks as $link) {
-            $this->rm->userRateLink(1, $link->getId());
+            $this->linkService->like(1, $link->getId());
+            $this->linkService->like(2, $link->getId());
         }
     }
 

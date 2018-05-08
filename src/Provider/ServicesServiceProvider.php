@@ -53,7 +53,7 @@ class ServicesServiceProvider implements ServiceProviderInterface
         };
 
         $app['link.service'] = function ($app) {
-            return new LinkService($app['links.model'], $app['popularity.manager'], $app['users.affinity.model']);
+            return new LinkService($app['links.model'], $app['popularity.manager'], $app['users.affinity.model'], $app['users.rate.model']);
         };
 
         $app['register.service'] = function ($app) {
