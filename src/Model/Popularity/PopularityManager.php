@@ -23,9 +23,7 @@ class PopularityManager
     {
         $max_popularity = $this->getMaxPopularity();
 
-        if (null === $max_popularity) {
-            return true;
-        }
+        $maxAmount = $max_popularity ? floatval($max_popularity->getAmount()) : 1.0;
 
         $qb = $this->gm->createQueryBuilder();
 
@@ -36,14 +34,25 @@ class PopularityManager
         $qb->merge('(l)-[:HAS_POPULARITY]->(popularity:Popularity)')
             ->with('l', 'popularity')
             ->optionalMatch('(l)<-[likes:LIKES]-(:User)')
-            ->with('popularity', 'count(likes) AS total');
+            ->with('popularity', 'toFloat(count(likes)) AS total')
+            ->setParameter('max', $maxAmount)
+            ->with('popularity', 'total', '(total/{max})^3 AS popularityValue', '(1.0-(total/{max}))^3 AS unpopularityValue')
+            ->with('popularity', 'total', 'CASE WHEN popularityValue > 1 THEN 1 ELSE popularityValue END AS popularityValue', 'CASE WHEN unpopularityValue < 0 THEN 0 ELSE unpopularityValue END AS unpopularityValue');
 
-        $qb->setParameter('max', floatval($max_popularity->getAmount()));
         $qb->set(
-            'popularity.popularity = (total/{max})^3',
-            'popularity.unpopularity = (1-(total/{max}))^3',
+            'popularity.popularity = popularityValue',
+            'popularity.unpopularity = unpopularityValue',
             'popularity.timestamp = timestamp()'
         );
+        $qb->returns(
+            'id(popularity) AS id',
+            'popularity.popularity AS popularity',
+            'popularity.unpopularity AS unpopularity',
+            'popularity.timestamp AS timestamp',
+            'total AS amount',
+            'true AS new'
+        )
+            ->orderBy('popularity DESC');
 
         $query = $qb->getQuery();
         $result = $query->getResultSet();
@@ -54,6 +63,11 @@ class PopularityManager
 
         $popularity = $this->buildOne($result->current());
         $this->checkIfDelete($popularity);
+
+        $isNewLink = $maxAmount == 1;
+        if ($isNewLink || $popularity->getPopularity() == 1){
+            $this->updateMaxPopularity();
+        }
 
         return $popularity;
     }
@@ -111,7 +125,7 @@ class PopularityManager
         );
 
         $qb->returns(
-            '   id(popularity) AS id',
+            'id(popularity) AS id',
             'popularity.popularity AS popularity',
             'popularity.unpopularity AS unpopularity',
             'popularity.timestamp AS timestamp',
@@ -285,6 +299,11 @@ class PopularityManager
             return $popularities[0];
         }
 
+//        $maxPopularities = $this->calculateNewMaxPopularity();
+//        if (!empty($maxPopularities)) {
+//            return $maxPopularities[0];
+//        }
+
         return null;
     }
 
@@ -364,6 +383,34 @@ class PopularityManager
                                             WHEN 0 THEN 0
                                             ELSE timestamp()
                                         END'
+            )
+            ->returns(
+                ' id(popularity) AS id,
+                        popularity.popularity AS popularity,
+                        popularity.unpopularity AS unpopularity,
+                        popularity.timestamp AS timestamp,
+                        amount,
+                        true AS new'
+            );
+        $query = $qb->getQuery();
+        $result = $query->getResultSet();
+
+        return $this->build($result);
+    }
+
+    private function calculateNewMaxPopularity()
+    {
+        $qb = $this->gm->createQueryBuilder();
+
+        $qb->match('(popularity)')
+            ->optionalMatch('(popularity)<-[:HAS_POPULARITY]-(:Link)<-[likes:LIKES]-()')
+            ->with('popularity', 'count(likes) AS amount')
+            ->orderBy('amount DESC')
+            ->limit(1)
+            ->set(
+                'popularity.popularity = 1',
+                'popularity.unpopularity = 0',
+                'popularity.timestamp = timestamp()'
             )
             ->returns(
                 ' id(popularity) AS id,

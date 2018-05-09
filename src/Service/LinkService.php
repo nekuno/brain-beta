@@ -6,12 +6,14 @@ use Model\Affinity\AffinityManager;
 use Model\Link\Link;
 use Model\Link\LinkManager;
 use Model\Popularity\PopularityManager;
+use Model\Rate\RateManager;
 
 class LinkService
 {
     protected $linkManager;
     protected $popularityManager;
     protected $affinityManager;
+    protected $rateManager;
 
     /**
      * LinkService constructor.
@@ -19,11 +21,12 @@ class LinkService
      * @param PopularityManager $popularityManager
      * @param AffinityManager $affinityManager
      */
-    public function __construct(LinkManager $linkModel, PopularityManager $popularityManager, AffinityManager $affinityManager)
+    public function __construct(LinkManager $linkModel, PopularityManager $popularityManager, AffinityManager $affinityManager, RateManager $rateManager)
     {
         $this->linkManager = $linkModel;
         $this->popularityManager = $popularityManager;
         $this->affinityManager = $affinityManager;
+        $this->rateManager = $rateManager;
     }
 
     public function deleteNotLiked(array $linkUrls)
@@ -59,6 +62,22 @@ class LinkService
         }
 
         return $links;
+    }
+
+    public function like($userId, $linkId)
+    {
+        $rate = $this->rateManager->userRateLink($userId, $linkId);
+        $this->popularityManager->updatePopularity($linkId);
+
+        return $rate;
+    }
+
+    public function merge(Link $link)
+    {
+        $link = $this->linkManager->mergeLink($link);
+        $this->popularityManager->updatePopularity($link->getId());
+
+        return $link;
     }
 
 }

@@ -14,10 +14,10 @@ use Model\Neo4j\ProfileOptions;
 use Model\Question\QuestionCorrelationManager;
 use Model\Question\AnswerManager;
 use Model\Profile\ProfileManager;
-use Model\Rate\RateManager;
 use Model\Invitation\InvitationManager;
 use Psr\Log\LoggerInterface;
 use Service\GroupService;
+use Service\LinkService;
 use Service\QuestionService;
 use Service\RegisterService;
 use Silex\Application;
@@ -25,13 +25,17 @@ use Silex\Application;
 class TestingFixtures
 {
 
-    const NUM_OF_LINKS = 5;
+    const NUM_OF_LINKS = 20;
     const NUM_OF_TAGS = 10;
     const NUM_OF_QUESTIONS = 10;
     const USER_A_OAUTH_TOKEN = 'TESTING_OAUTH_TOKEN_A';
     const USER_B_OAUTH_TOKEN = 'TESTING_OAUTH_TOKEN_B';
+    const USER_C_OAUTH_TOKEN = 'TESTING_OAUTH_TOKEN_C';
+    const USER_D_OAUTH_TOKEN = 'TESTING_OAUTH_TOKEN_D';
     const USER_A_RESOURCE_ID = '12345';
     const USER_B_RESOURCE_ID = '54321';
+    const USER_C_RESOURCE_ID = '67890';
+    const USER_D_RESOURCE_ID = '06789';
 
     /**
      * @var LoggerInterface
@@ -89,9 +93,9 @@ class TestingFixtures
     protected $im;
 
     /**
-     * @var RateManager
+     * @var LinkService
      */
-    protected $rm;
+    protected $linkService;
 
     public function __construct(Application $app)
     {
@@ -103,7 +107,7 @@ class TestingFixtures
         $this->lm = $app['links.model'];
         $this->questionService = $app['question.service'];
         $this->correlationManager = $app['users.questionCorrelation.manager'];
-        $this->rm = $app['users.rate.model'];
+        $this->linkService = $app['link.service'];
         $this->logger = $app['logger'];
     }
 
@@ -135,7 +139,6 @@ class TestingFixtures
 
     protected function clean()
     {
-
         $this->logger->notice('Cleaning database');
 
         $qb = $this->gm->createQueryBuilder();
@@ -186,6 +189,24 @@ class TestingFixtures
         $trackingDataBFixtures = $this->getUserBTrackingDataFixtures();
 
         $this->registerService->register($userBFixtures, $profileBFixtures, $invitationTokenFixtures, $tokenBFixtures, $trackingDataBFixtures);
+
+        $this->logger->notice('Loading UserC');
+
+        $userCFixtures = $this->getUserCFixtures();
+        $profileCFixtures = $this->getUserCProfileFixtures();
+        $tokenCFixtures = $this->getUserCTokenFixtures();
+        $trackingDataCFixtures = $this->getUserCTrackingDataFixtures();
+
+        $this->registerService->register($userCFixtures, $profileCFixtures, $invitationTokenFixtures, $tokenCFixtures, $trackingDataCFixtures);
+
+        $this->logger->notice('Loading UserD');
+
+        $userCFixtures = $this->getUserDFixtures();
+        $profileCFixtures = $this->getUserDProfileFixtures();
+        $tokenCFixtures = $this->getUserDTokenFixtures();
+        $trackingDataCFixtures = $this->getUserDTrackingDataFixtures();
+
+        $this->registerService->register($userCFixtures, $profileCFixtures, $invitationTokenFixtures, $tokenCFixtures, $trackingDataCFixtures);
     }
 
     protected function loadGroups()
@@ -262,8 +283,7 @@ class TestingFixtures
 
             $link->setLanguage('en');
 
-            $createdLinks[$i] = $this->lm->mergeLink($link);
-
+            $createdLinks[$i] = $this->linkService->merge($link);
         }
 
         return $createdLinks;
@@ -343,11 +363,23 @@ class TestingFixtures
      */
     protected function loadLikes(array $createdLinks)
     {
-
         $this->logger->notice('Loading likes');
 
-        foreach ($createdLinks as $link) {
-            $this->rm->userRateLink(1, $link->getId());
+        foreach ($createdLinks as $index => $link) {
+            if ($index <= 12){
+                $this->linkService->like(1, $link->getId());
+            }
+            if ($index < 15 && $index > 5) {
+                $this->linkService->like(2, $link->getId());
+            }
+            if ($index >= 8)
+            {
+                $this->linkService->like(3, $link->getId());
+            }
+            if ($index >= 11)
+            {
+                $this->linkService->like(4, $link->getId());
+            }
         }
     }
 
@@ -494,6 +526,90 @@ class TestingFixtures
     }
 
     protected function getUserBTrackingDataFixtures()
+    {
+        return '{}';
+    }
+
+    protected function getUserCFixtures()
+    {
+        return array(
+            'username' => 'CarrieFisher',
+            'email' => 'nekuno-carriefisher@gmail.com',
+        );
+    }
+
+    protected function getUserCProfileFixtures()
+    {
+        return array(
+            "birthday" => "1970-01-01",
+            "location" => array(
+                "locality" => "Madrid",
+                "address" => "Madrid",
+                "country" => "Spain",
+                "longitude" => -3.7037902,
+                "latitude" => 40.4167754
+            ),
+            "gender" => "male",
+            "orientation" => array("heterosexual"),
+            "interfaceLanguage" => "es",
+            "mode" => "explore"
+        );
+    }
+
+    protected function getUserCTokenFixtures()
+    {
+        return array(
+            'resourceOwner' => 'facebook',
+            'oauthToken' => self::USER_C_OAUTH_TOKEN,
+            'resourceId' => self::USER_C_RESOURCE_ID,
+            'expireTime' => strtotime("+1 week"),
+            'refreshToken' => null
+        );
+    }
+
+    protected function getUserCTrackingDataFixtures()
+    {
+        return '{}';
+    }
+
+    protected function getUserDFixtures()
+    {
+        return array(
+            'username' => 'DavidTennant',
+            'email' => 'david-tennant@gmail.com',
+        );
+    }
+
+    protected function getUserDProfileFixtures()
+    {
+        return array(
+            "birthday" => "1970-01-01",
+            "location" => array(
+                "locality" => "Madrid",
+                "address" => "Madrid",
+                "country" => "Spain",
+                "longitude" => -3.7037902,
+                "latitude" => 40.4167754
+            ),
+            "gender" => "male",
+            "orientation" => array("heterosexual"),
+            "interfaceLanguage" => "es",
+            "mode" => "explore"
+        );
+    }
+
+    protected function getUserDTokenFixtures()
+    {
+        return array(
+            'resourceOwner' => 'facebook',
+            'oauthToken' => self::USER_D_OAUTH_TOKEN,
+            'resourceId' => self::USER_D_RESOURCE_ID,
+            'expireTime' => strtotime("+1 week"),
+            'refreshToken' => null
+        );
+    }
+
+    protected function getUserDTrackingDataFixtures()
     {
         return '{}';
     }

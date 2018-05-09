@@ -28,9 +28,11 @@ class FacebookUrlParser extends UrlParser
     {
         if ($this->isFacebookPage($url)) {
             return self::FACEBOOK_PAGE;
+        } else if ($this->isFacebookUrl($url)) {
+            return self::FACEBOOK_STATUS;
         }
 
-        return self::FACEBOOK_STATUS;
+        throw new UrlNotValidException($url);
     }
 
     public function getVideoId($url)
@@ -75,5 +77,15 @@ class FacebookUrlParser extends UrlParser
 
     public function isStatusId($id){
         return strpos($id, '_') !== false;
+    }
+
+    public function isFacebookUrl($url)
+    {
+        $parsedUrl = parse_url($url);
+        if (preg_match('/^https?:\/\/(www\.)?facebook\.com\//i', $parsedUrl['host'])) {
+            return true;
+        }
+
+        return false;
     }
 }

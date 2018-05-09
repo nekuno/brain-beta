@@ -76,6 +76,15 @@ class ThreadsTest extends ThreadsAPITest
         $this->assertEquals(30, $formattedResponse['filters']['userFilters']['birthday']['min'], 'filters["userFilters"]["birthday"]["min"] is equal to 30');
         $this->assertArrayHasKey('max', $formattedResponse['filters']['userFilters']['birthday'], 'Edit thread response has filters["userFilters"]["birthday"]["max"] key');
         $this->assertEquals(40, $formattedResponse['filters']['userFilters']['birthday']['max'], 'filters["userFilters"]["birthday"]["max"] is equal to 40');
+
+        $this->assertArrayHasKey(0, $formattedResponse['filters']['userFilters']['language'], 'Create thread response has filters["userFilters"]["language"][0] key');
+        $this->assertArrayHasKey('tag', $formattedResponse['filters']['userFilters']['language'][0], 'Create thread response has filters["userFilters"]["language"][0]["tag"] key');
+        $this->assertEquals('English', $formattedResponse['filters']['userFilters']['language'][0]['tag'], 'filters["userFilters"]["language"][0]["tag"] is equal to "English"');
+        $this->assertArrayHasKey('choices', $formattedResponse['filters']['userFilters']['language'][0], 'Create thread response has filters["userFilters"]["language"][0]["choices"] key');
+        $this->assertArrayHasKey(0, $formattedResponse['filters']['userFilters']['language'][0]['choices'], 'Create thread response has filters["userFilters"]["language"][0]["choices"][0] key');
+        $this->assertArrayHasKey(1, $formattedResponse['filters']['userFilters']['language'][0]['choices'], 'Create thread response has filters["userFilters"]["language"][0]["choices"][1] key');
+        $this->assertContains('full_professional', $formattedResponse['filters']['userFilters']['language'][0]['choices'], 'filters["userFilters"]["language"][0]["choices"][0] contains "full_professional"');
+        $this->assertContains('professional_working', $formattedResponse['filters']['userFilters']['language'][0]['choices'], 'filters["userFilters"]["language"][0]["choices"][1] contains "professional_working"');
     }
 
     public function assertCreateThread()
@@ -289,6 +298,15 @@ class ThreadsTest extends ThreadsAPITest
                     'birthday' => array(
                         'max' => 40,
                         'min' => 30,
+                    ),
+                    'language' => array(
+                        array(
+                            'tag' => 'English',
+                            'choices' => array(
+                                'full_professional',
+                                'professional_working'
+                            )
+                        )
                     ),
                 ),
             ),
