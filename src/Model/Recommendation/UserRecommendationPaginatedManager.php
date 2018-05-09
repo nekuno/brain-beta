@@ -95,7 +95,6 @@ class UserRecommendationPaginatedManager extends AbstractUserRecommendationPagin
         $response = $this->buildResponseFromResult($result);
         $return['items'] = array_merge($return['items'], $response['items']);
 
-
         $needContent = $this->needMoreContent($limit, $return);
         if ($needContent) {
 
