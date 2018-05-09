@@ -95,10 +95,12 @@ class SimilarityManager
             }
 
             $similarity = $this->getCurrentSimilarity($idA, $idB);
+            $similarity = $this->returnSimilarity($similarity, $idA, $idB);
+
             $this->dispatcher->dispatch(\AppEvents::SIMILARITY_UPDATED, new SimilarityEvent($idA, $idB, $similarity->getSimilarity()));
         }
 
-        return $this->returnSimilarity($similarity, $idA, $idB);
+        return $similarity;
     }
 
     /**
@@ -130,8 +132,11 @@ class SimilarityManager
                 return new Similarity();
         }
         $similarity = $this->getCurrentSimilarity($idA, $idB);
+        $similarity = $this->returnSimilarity($similarity, $idA, $idB);
+
         $this->dispatcher->dispatch(\AppEvents::SIMILARITY_UPDATED, new SimilarityEvent($idA, $idB, $similarity->getSimilarity()));
-        return $this->returnSimilarity($similarity, $idA, $idB);
+
+        return $similarity;
     }
 
     public function getCurrentSimilarity($idA, $idB)
@@ -425,8 +430,8 @@ class SimilarityManager
             ->with(' userA, userB, valid, common, onlyUserA, SUM(COALESCE(popularity.popularity, 0)) AS onlyUserB');
 
         $qb
-            ->with('userA, userB, CASE WHEN valid THEN common / (onlyUserA + common) ELSE 0 END AS rateA, CASE WHEN valid THEN common / (onlyUserB + common) ELSE 0 END AS rateB')
-            ->with('userA, userB, sqrt(rateA) * sqrt(rateB) AS similarity');
+            ->with('userA, userB, CASE WHEN valid THEN common / (onlyUserA + common) ELSE 0 END AS rateA, CASE WHEN valid THEN common / (onlyUserB + common) ELSE 0 END AS rateB', 'valid')
+            ->with('userA, userB, sqrt(rateA) * sqrt(rateB) AS similarity', 'valid', 'rateA', 'rateB');
 
         $qb
             ->merge('(userA)-[s:SIMILARITY]-(userB)')
@@ -437,7 +442,7 @@ class SimilarityManager
                 's.interestsUpdated = timestamp()',
                 's.similarityUpdated = timestamp()'
             )
-            ->returns('similarity');
+            ->returns('similarity', 'valid', 'rateA', 'rateB');
 
         $qb->setParameters(
             array(
@@ -455,6 +460,7 @@ class SimilarityManager
             $row = $result->current();
             $similarity = $row->offsetGet('similarity');
         }
+
         return $similarity;
     }
 
@@ -569,6 +575,7 @@ class SimilarityManager
 
         //"Do not use questions if and only if any user has no questions and has more than 100 links"
         $questionsFactor = ((($userALinks || $userASkills) && !$userAQuestions) || (($userBLinks || $userBSkills) && !$userBQuestions)) ? 0 : 1;
+        //Use contents if both users have either enough links or enough questions liked
         $contentsFactor = ($userALinks || $userAQuestions) && ($userBLinks || $userBQuestions) ? 1 : 0; //include questions to be consistent with previous behaviour
 //        $skillsFactor = $userASkills & $userBSkills ? 1 : 0;
         $skillsFactor = $similarity->getSkills() > 0 ? 1 : 0;
@@ -629,8 +636,6 @@ class SimilarityManager
     private function buildSimilarity(Row $row)
     {
         $similarity = new Similarity();
-        var_dump('interests');
-var_dump($row->offsetGet('interests'));
         $similarity->setQuestions($row->offsetExists('questions') ? $row->offsetGet('questions') : 0);
         $similarity->setQuestionsUpdated($row->offsetExists('questionsUpdated') ? $row->offsetGet('questionsUpdated') : 0);
         $similarity->setInterests($row->offsetExists('interests') ? $row->offsetGet('interests') : 0);

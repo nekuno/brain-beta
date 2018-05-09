@@ -34,12 +34,14 @@ class PopularityManager
         $qb->merge('(l)-[:HAS_POPULARITY]->(popularity:Popularity)')
             ->with('l', 'popularity')
             ->optionalMatch('(l)<-[likes:LIKES]-(:User)')
-            ->with('popularity', 'count(likes) AS total');
+            ->with('popularity', 'toFloat(count(likes)) AS total')
+            ->setParameter('max', $maxAmount)
+            ->with('popularity', 'total', '(total/{max})^3 AS popularityValue', '(1.0-(total/{max}))^3 AS unpopularityValue')
+            ->with('popularity', 'total', 'CASE WHEN popularityValue > 1 THEN 1 ELSE popularityValue END AS popularityValue', 'CASE WHEN unpopularityValue < 0 THEN 0 ELSE unpopularityValue END AS unpopularityValue');
 
-        $qb->setParameter('max', $maxAmount);
         $qb->set(
-            'popularity.popularity = (total/{max})^3',
-            'popularity.unpopularity = (1-(total/{max}))^3',
+            'popularity.popularity = popularityValue',
+            'popularity.unpopularity = unpopularityValue',
             'popularity.timestamp = timestamp()'
         );
         $qb->returns(
@@ -61,6 +63,11 @@ class PopularityManager
 
         $popularity = $this->buildOne($result->current());
         $this->checkIfDelete($popularity);
+
+        $isNewLink = $maxAmount == 1;
+        if ($isNewLink || $popularity->getPopularity() == 1){
+            $this->updateMaxPopularity();
+        }
 
         return $popularity;
     }
