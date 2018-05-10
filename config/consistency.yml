@@ -200,6 +200,7 @@ filterUsers:
 
 link:
     label: Link
+    solverClass: Service\Consistency\LinkConsistencySolver
 
     relationships:
         popularity:
