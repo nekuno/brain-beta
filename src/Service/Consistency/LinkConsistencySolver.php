@@ -59,8 +59,6 @@ class LinkConsistencySolver extends ConsistencySolver
         $qb->detachDelete('p');
 
         $qb->getQuery()->getResultSet();
-
-        var_dump($linkId);
     }
 
 }

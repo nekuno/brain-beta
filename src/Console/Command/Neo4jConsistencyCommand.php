@@ -3,6 +3,7 @@
 namespace Console\Command;
 
 use Console\ApplicationAwareCommand;
+use Model\Neo4j\GraphManager;
 use Service\Consistency\ConsistencyCheckerService;
 use Service\Consistency\ConsistencyErrors\ConsistencyError;
 use Service\Consistency\ConsistencyErrors\MissingPropertyConsistencyError;
@@ -35,14 +36,28 @@ class Neo4jConsistencyCommand extends ApplicationAwareCommand
 
         /** @var ConsistencyCheckerService $consistencyChecker */
         $consistencyChecker = $this->app['consistency.service'];
+        /** @var GraphManager $graphManager */
+        $graphManager = $this->app['neo4j.graph_manager'];
+        $totalAmount = $graphManager->countLabel($label);
 
-        $errors = $consistencyChecker->getDatabaseErrors($label, $offset, $limit);
-        $this->outputErrors($errors, $output);
+        $paginationSize = 10000; //Used for error logging
+        do {
+            $output->writeln('ANALYZING PAGE');
 
-        if ($solve) {
-            $solved = $consistencyChecker->solveDatabaseErrors($errors);
-            $this->outputErrors($solved, $output);
-        }
+            $errors = $consistencyChecker->getDatabaseErrors($label, $offset, $paginationSize);
+            $this->outputErrors($errors, $output);
+
+            if ($solve) {
+                $solved = $consistencyChecker->solveDatabaseErrors($errors);
+                $this->outputErrors($solved, $output);
+            }
+
+            $limitReached = $offset > $limit;
+            $databaseCompleted = $offset > $totalAmount;
+
+            $offset += $paginationSize;
+
+        } while (!$limitReached && !$databaseCompleted);
 
         $output->writeln('Finished.');
     }

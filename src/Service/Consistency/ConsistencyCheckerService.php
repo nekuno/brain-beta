@@ -39,7 +39,7 @@ class ConsistencyCheckerService
     {
         //dispatch consistency start
         $this->dispatcher->dispatch(\AppEvents::CONSISTENCY_START);
-        $paginationSize = 1000;
+        $paginationSize = 1000; //Used for query performance
 
         $errors = array();
         do {
