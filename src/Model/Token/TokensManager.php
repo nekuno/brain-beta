@@ -162,6 +162,7 @@ class TokensManager
         list($userNode, $tokenNode) = $this->getUserAndTokenNodesById($id, $resourceOwner);
 
         $data['resourceOwner'] = $resourceOwner;
+        $data['resourceId'] = $tokenNode->getProperty('resourceId');
         $this->validateOnUpdate($data, $id);
 
         $this->saveTokenData($tokenNode, $data);
