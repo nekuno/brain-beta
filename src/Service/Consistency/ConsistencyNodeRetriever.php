@@ -42,13 +42,13 @@ class ConsistencyNodeRetriever
         $qb->optionalMatch('(node)-[outgoing]->(otherNode)');
         $qb->with('node', 'outgoing', 'otherNode', 'keys(outgoing) AS relKeys');
         $qb->with('node', 'outgoing', 'otherNode', 'extract(relKey in relKeys | {key: relKey, value: outgoing[relKey]}) AS relProperties');
-        $qb->with('node', '{id:id(outgoing), endNodeLabels: labels(otherNode), startNodeLabels: labels(node), type: type(outgoing), properties: relProperties} AS outgoing');
+        $qb->with('node', '{id:id(outgoing), endNodeLabels: labels(otherNode), endNodeId: id(otherNode), startNodeLabels: labels(node), startNodeId: id(node), type: type(outgoing), properties: relProperties} AS outgoing');
         $qb->with('node', 'collect(outgoing) AS outgoings');
 
         $qb->optionalMatch('(node)<-[incoming]-(otherNode)');
         $qb->with('node', 'outgoings', 'incoming', 'otherNode', 'keys(incoming) AS relKeys');
         $qb->with('node', 'outgoings', 'incoming', 'otherNode', 'extract(relKey in relKeys | {key: relKey, value: incoming[relKey]}) AS relProperties');
-        $qb->with('node', 'outgoings', '{id:id(incoming), startNodeLabels: labels(otherNode), endNodeLabels: labels(node), type: type(incoming), properties: relProperties} AS incoming');
+        $qb->with('node', 'outgoings', '{id:id(incoming), startNodeLabels: labels(otherNode), startNodeId: id(otherNode), endNodeLabels: labels(node), endNodeId: id(node), type: type(incoming), properties: relProperties} AS incoming');
         $qb->with('node', 'outgoings', 'collect(incoming) AS incomings');
 
         $qb->returns('id(node) AS nodeId', 'labels(node) AS nodeLabels', 'extract(nodeKey in keys(node) | {key: nodeKey, value: node[nodeKey]}) AS nodeProperties', 'outgoings', 'incomings');

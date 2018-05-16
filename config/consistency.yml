@@ -79,10 +79,6 @@ user:
             type: CREATED_INVITATION
             direction: outgoing
             otherNode: Invitation
-        language:
-            type: SPEAKS_LANGUAGE
-            direction: outgoing
-            otherNode: Language
 
     properties:
         qnoow_id:
@@ -148,6 +144,32 @@ profile:
             required: true
         height:
             type: integer
+
+profileOption:
+    label: ProfileOption
+
+    relationships:
+        option:
+            type: OPTION_OF
+            direction: outgoing
+            otherNode: Profile
+
+    properties:
+        id:
+            required: true
+        name_es:
+            required: true
+        name:en:
+            required: true
+
+profileTag:
+    label: ProfileTag
+
+    relationships:
+        option:
+            type: TAGGED
+            direction: outgoing
+            otherNode: Profile
 
 thread:
     label: Thread

@@ -17,5 +17,7 @@ class SimilarityTest extends SimilarityAPITest
         $similarityModel = $this->app['users.similarity.model'];
         $similarityModel->getSimilarity(1, 2);
         $response = $this->getSimilarity(2);
+        $popularityManager = $this->app['popularity.manager'];
+        $popularityManager->updatePopularityByUser(1);
     }
 }

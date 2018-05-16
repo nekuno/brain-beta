@@ -7,6 +7,7 @@ use Model\Exception\ValidationException;
 use Service\Consistency\ConsistencyErrors\ConsistencyError;
 use Service\Consistency\ConsistencyErrors\MissingPropertyConsistencyError;
 use Service\Consistency\ConsistencyErrors\RelationshipAmountConsistencyError;
+use Service\Consistency\ConsistencyErrors\RelationshipMultipleSimilarConsistencyError;
 use Service\Consistency\ConsistencyErrors\RelationshipOtherLabelConsistencyError;
 use Service\Consistency\ConsistencyErrors\ReverseRelationshipConsistencyError;
 
@@ -24,16 +25,18 @@ class ConsistencyChecker
      * @internal param array $totalRelationships
      * @internal param $nodeId
      */
-    protected function checkNodeRelationships(ConsistencyNodeData $nodeData,  ConsistencyNodeRule $rule)
+    protected function checkNodeRelationships(ConsistencyNodeData $nodeData, ConsistencyNodeRule $rule)
     {
         $relationshipRules = $rule->getRelationships();
         $nodeId = $nodeData->getId();
         foreach ($relationshipRules as $relationshipRule) {
             $rule = new ConsistencyRelationshipRule($relationshipRule);
-
-            list($incoming, $outgoing) = $this->chooseByRule($nodeData, $rule);
-            $totalRelationships = array_merge($incoming + $outgoing);
             $errors = new ErrorList();
+
+            list($incoming, $outgoing) = $this->chooseRelationshipsByType($nodeData, $rule);
+            $type = $rule->getType();
+            /** @var ConsistencyRelationshipData[] $totalRelationships */
+            $totalRelationships = array_merge($incoming + $outgoing);
 
             $count = count($totalRelationships);
             if ($count < $rule->getMinimum() || $count > $rule->getMaximum()) {
@@ -41,41 +44,43 @@ class ConsistencyChecker
                 $error->setCurrentAmount($count);
                 $error->setMinimum($rule->getMinimum());
                 $error->setMaximum($rule->getMaximum());
-                $error->setType($rule->getType());
-                $errors->addError($rule->getType(), $error);
+                $error->setType($type);
+                $errors->addError($type, $error);
             }
 
+            $errorsLabelAmount = $this->analyzeLabelAmount($incoming, $outgoing);
+            $errors->addErrors($type, $errorsLabelAmount);
+
             foreach ($incoming as $relationship) {
-                if ($rule->getDirection() == 'outgoing'){
-                    $errors[] = new ReverseRelationshipConsistencyError($relationship->getId());
+                if ($rule->getDirection() == 'outgoing') {
+                    $errors->addError($type, new ReverseRelationshipConsistencyError($relationship->getId()));
                 }
 
                 $otherNodeLabels = $relationship->getStartNodeLabels();
 
                 if (!in_array($rule->getOtherNode(), $otherNodeLabels)) {
                     $error = new RelationshipOtherLabelConsistencyError();
-                    $error->setType($relationship->getType());
+                    $error->setType($type);
                     $error->setOtherNodeLabel($rule->getOtherNode());
                     $error->setRelationshipId($relationship->getId());
-                    $errors->addError($relationship->getType(), $error);
+                    $errors->addError($type, $error);
                 }
 
                 $this->checkProperties($relationship->getProperties(), $relationship->getId(), $rule->getProperties());
             }
 
             foreach ($outgoing as $relationship) {
-                if ($rule->getDirection() == 'incoming'){
+                if ($rule->getDirection() == 'incoming') {
                     $error = new ReverseRelationshipConsistencyError($relationship->getId());
-                    $errors->addError($relationship->getType(), $error);
+                    $errors->addError($type, $error);
                 }
 
                 $otherNodeLabels = $relationship->getEndNodeLabels();
 
-
                 if (!in_array($rule->getOtherNode(), $otherNodeLabels)) {
                     $error = new ConsistencyError();
                     $error->setMessage(sprintf('Label of node for relationship %d is not correct', $relationship->getId()));
-                    $errors->addError($relationship->getType(), $error);
+                    $errors->addError($type, $error);
                 }
 
                 $this->checkProperties($relationship->getProperties(), $relationship->getId(), $rule->getProperties());
@@ -173,19 +178,19 @@ class ConsistencyChecker
 
     protected function getDateTimeFromTimestamp($timestamp)
     {
+        var_dump($timestamp);
         $dateTime = new \DateTime();
         $dateTime->setTimestamp($timestamp);
 
         return $dateTime;
     }
 
-
     /**
      * @param ConsistencyNodeData $nodeData
      * @param ConsistencyRelationshipRule $rule
      * @return ConsistencyRelationshipData[][]
      */
-    protected function chooseByRule(ConsistencyNodeData $nodeData, ConsistencyRelationshipRule $rule)
+    protected function chooseRelationshipsByType(ConsistencyNodeData $nodeData, ConsistencyRelationshipRule $rule)
     {
         $incoming = array();
         foreach ($nodeData->getIncoming() as $candidateRelationship) {
@@ -202,6 +207,44 @@ class ConsistencyChecker
         }
 
         return array($incoming, $outgoing);
+    }
+
+    /**
+     * Two or more relationships between two nodes with the same type is forbidden
+     * @param ConsistencyRelationshipData[] $incoming
+     * @param ConsistencyRelationshipData[] $outgoing
+     * @return array
+     */
+    protected function analyzeLabelAmount(array $incoming, array $outgoing)
+    {
+        $errors = array();
+        $nodeId = null;
+
+        $otherNodes = array();
+        foreach ($incoming as $relationship) {
+            $nodeId = $relationship->getEndNodeId();
+            $otherNodeId = $relationship->getStartNodeId();
+            $otherNodes[(integer)$otherNodeId][] = $otherNodeId;
+        }
+        foreach ($outgoing as $relationship) {
+            $nodeId = $relationship->getStartNodeId();
+            $otherNodeId = $relationship->getEndNodeId();
+            $otherNodes[(integer)$otherNodeId][] = $otherNodeId;
+        }
+
+        foreach ($otherNodes as $otherNodeId => $relationships) {
+            $amount = count($relationships);
+            if ($amount > 1) {
+                $error = new RelationshipMultipleSimilarConsistencyError();
+                $error->setCurrentAmount($amount);
+                $error->setNodeId($nodeId);
+                $error->setOtherNodeId($otherNodeId);
+
+                $errors[] = $error;
+            }
+        }
+
+        return $errors;
     }
 
     protected function throwErrors(ErrorList $errors, $id)

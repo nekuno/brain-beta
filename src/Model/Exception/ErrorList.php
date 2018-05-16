@@ -15,6 +15,13 @@ class ErrorList implements \JsonSerializable
         $this->errors[$field][] = $error;
     }
 
+    public function addErrors($field, array $errors)
+    {
+        foreach ($errors as $error){
+            $this->addError($field, $error);
+        }
+    }
+
     public function setErrors($field, array $errors)
     {
         $this->errors[$field] = $errors;
