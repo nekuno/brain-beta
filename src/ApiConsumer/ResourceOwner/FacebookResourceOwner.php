@@ -115,7 +115,7 @@ class FacebookResourceOwner extends FacebookResourceOwnerBase
 		return $token;
 	}
 
-    protected function canRefresh($token)
+    public function canRefresh($token)
     {
         return true;
     }

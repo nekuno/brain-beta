@@ -132,8 +132,8 @@ class AccountConnectSubscriber implements EventSubscriberInterface
 
         try {
             $facebookResourceOwner->extend($token);
-            if ($token->getRefreshToken()) {
-                $facebookResourceOwner->forceRefreshAccessToken($token);
+            if ($facebookResourceOwner->canRefresh($token)) {
+//                $facebookResourceOwner->forceRefreshAccessToken($token);
             }
         } catch (\Exception $e) {
             if ($attempts < 5) {
