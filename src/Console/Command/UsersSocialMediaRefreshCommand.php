@@ -2,6 +2,7 @@
 
 namespace Console\Command;
 
+use ApiConsumer\Factory\ResourceOwnerFactory;
 use ApiConsumer\ResourceOwner\FacebookResourceOwner;
 use Console\BaseCommand;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\AbstractResourceOwner;
@@ -38,8 +39,10 @@ class UsersSocialMediaRefreshCommand extends BaseCommand
             $users = $usersModel->getAll();
         }
 
-        /* @var $resourceOwner AbstractResourceOwner */
-        $resourceOwner = $this->app['api_consumer.resource_owner.' . $input->getArgument('resource')];
+        $resource = $input->getArgument('resource');
+        /** @var ResourceOwnerFactory $resourceOwnerFactory */
+        $resourceOwnerFactory = $this->app['api_consumer.resource_owner_factory'];
+        $resourceOwner = $resourceOwnerFactory->build($resource);
 
         /* @var $tokensModel TokensManager */
         $tokensModel = $this->app['users.tokens.model'];

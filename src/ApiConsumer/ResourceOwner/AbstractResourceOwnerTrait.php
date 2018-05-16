@@ -245,7 +245,7 @@ trait AbstractResourceOwnerTrait
         return $hasExpirationTime && $hasExpired;
     }
 
-    protected function canRefresh(Token $token)
+    public function canRefresh(Token $token)
     {
         return $token->getRefreshToken();
     }
