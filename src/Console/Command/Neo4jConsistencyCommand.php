@@ -8,6 +8,7 @@ use Service\Consistency\ConsistencyCheckerService;
 use Service\Consistency\ConsistencyErrors\ConsistencyError;
 use Service\Consistency\ConsistencyErrors\MissingPropertyConsistencyError;
 use Service\Consistency\ConsistencyErrors\RelationshipAmountConsistencyError;
+use Service\Consistency\ConsistencyErrors\RelationshipMultipleSimilarConsistencyError;
 use Service\Consistency\ConsistencyErrors\RelationshipOtherLabelConsistencyError;
 use Service\Consistency\ConsistencyErrors\ReverseRelationshipConsistencyError;
 use Symfony\Component\Console\Input\InputInterface;

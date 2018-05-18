@@ -77,7 +77,7 @@ class RelationshipOtherLabelConsistencyError extends ConsistencyError
 
     public function getMessage()
     {
-        return sprintf('Label %s desired on node linked by relationship type %s not present', $this->otherNodeLabel, $this->type);
+        return sprintf('Label %s desired on node linked by relationship type %s not present', json_encode($this->otherNodeLabel), $this->type);
     }
 
 

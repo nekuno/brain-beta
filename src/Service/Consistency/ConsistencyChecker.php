@@ -29,65 +29,35 @@ class ConsistencyChecker
     {
         $relationshipRules = $rule->getRelationships();
         $nodeId = $nodeData->getId();
+        $errors = new ErrorList();
+
         foreach ($relationshipRules as $relationshipRule) {
             $rule = new ConsistencyRelationshipRule($relationshipRule);
-            $errors = new ErrorList();
 
             list($incoming, $outgoing) = $this->chooseRelationshipsByType($nodeData, $rule);
             $type = $rule->getType();
-            /** @var ConsistencyRelationshipData[] $totalRelationships */
-            $totalRelationships = array_merge($incoming + $outgoing);
-
-            $count = count($totalRelationships);
-            if ($count < $rule->getMinimum() || $count > $rule->getMaximum()) {
-                $error = new RelationshipAmountConsistencyError();
-                $error->setCurrentAmount($count);
-                $error->setMinimum($rule->getMinimum());
-                $error->setMaximum($rule->getMaximum());
-                $error->setType($type);
-                $errors->addError($type, $error);
-            }
 
             $errorsLabelAmount = $this->analyzeLabelAmount($incoming, $outgoing);
             $errors->addErrors($type, $errorsLabelAmount);
 
-            foreach ($incoming as $relationship) {
-                if ($rule->getDirection() == 'outgoing') {
-                    $errors->addError($type, new ReverseRelationshipConsistencyError($relationship->getId()));
-                }
+            $errorsReverseDirection = $this->analyzeDirection($rule, $incoming, $outgoing);
+            $errors->addErrors($type, $errorsReverseDirection);
 
-                $otherNodeLabels = $relationship->getStartNodeLabels();
+            $errorsOtherNodeLabel = $this->analyzeOtherNodeLabels($rule, $incoming, $outgoing);
+            $errors->addErrors($type, $errorsOtherNodeLabel);
 
-                if (!in_array($rule->getOtherNode(), $otherNodeLabels)) {
-                    $error = new RelationshipOtherLabelConsistencyError();
-                    $error->setType($type);
-                    $error->setOtherNodeLabel($rule->getOtherNode());
-                    $error->setRelationshipId($relationship->getId());
-                    $errors->addError($type, $error);
-                }
+            /** @var ConsistencyRelationshipData[] $totalRelationships */
+            $totalRelationships = array_merge($incoming + $outgoing);
 
+            $errorRelationshipsAmount = $this->analyzeRelationshipAmount($rule, $totalRelationships);
+            $errors->addError($type, $errorRelationshipsAmount);
+
+            foreach ($totalRelationships as $relationship) {
                 $this->checkProperties($relationship->getProperties(), $relationship->getId(), $rule->getProperties());
             }
-
-            foreach ($outgoing as $relationship) {
-                if ($rule->getDirection() == 'incoming') {
-                    $error = new ReverseRelationshipConsistencyError($relationship->getId());
-                    $errors->addError($type, $error);
-                }
-
-                $otherNodeLabels = $relationship->getEndNodeLabels();
-
-                if (!in_array($rule->getOtherNode(), $otherNodeLabels)) {
-                    $error = new ConsistencyError();
-                    $error->setMessage(sprintf('Label of node for relationship %d is not correct', $relationship->getId()));
-                    $errors->addError($type, $error);
-                }
-
-                $this->checkProperties($relationship->getProperties(), $relationship->getId(), $rule->getProperties());
-            }
-
-            $this->throwErrors($errors, $nodeId);
         }
+
+        $this->throwErrors($errors, $nodeId);
     }
 
     protected function checkProperties(array $properties, $id, array $propertyRules)
@@ -178,9 +148,12 @@ class ConsistencyChecker
 
     protected function getDateTimeFromTimestamp($timestamp)
     {
-        var_dump($timestamp);
-        $dateTime = new \DateTime();
-        $dateTime->setTimestamp($timestamp);
+        if (is_int($timestamp) || is_float($timestamp)) {
+            $dateTime = new \DateTime();
+            $dateTime->setTimestamp($timestamp);
+        } else {
+            $dateTime = new \DateTime($timestamp);
+        }
 
         return $dateTime;
     }
@@ -247,10 +220,106 @@ class ConsistencyChecker
         return $errors;
     }
 
+    protected function analyzeRelationshipAmount(ConsistencyRelationshipRule $rule, array $relationships)
+    {
+        $error = null;
+
+        $count = count($relationships);
+        $tooFew = $count < $rule->getMinimum();
+        $tooMany = $count > $rule->getMaximum();
+        if ($tooFew || $tooMany) {
+            $error = new RelationshipAmountConsistencyError();
+            $error->setCurrentAmount($count);
+            $error->setMinimum($rule->getMinimum());
+            $error->setMaximum($rule->getMaximum());
+            $error->setType($rule->getType());
+        }
+
+        return $error;
+    }
+
+    /**
+     * @param ConsistencyRelationshipRule $rule
+     * @param ConsistencyRelationshipData[] $incoming
+     * @param ConsistencyRelationshipData[] $outgoing
+     * @return array
+     */
+    protected function analyzeDirection(ConsistencyRelationshipRule $rule, array $incoming, array $outgoing)
+    {
+        $errors = array();
+
+        if ($rule->getDirection() == 'outgoing') {
+            foreach ($incoming as $rel) {
+                $error = new ReverseRelationshipConsistencyError($rel->getId());
+                $errors[] = $error;
+            }
+        }
+
+        if ($rule->getDirection() == 'incoming') {
+            foreach ($outgoing as $rel) {
+                $error = new ReverseRelationshipConsistencyError($rel->getId());
+                $errors[] = $error;
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * @param ConsistencyRelationshipRule $rule
+     * @param ConsistencyRelationshipData[] $incoming
+     * @param ConsistencyRelationshipData[] $outgoing
+     * @return RelationshipOtherLabelConsistencyError[]
+     */
+    protected function analyzeOtherNodeLabels(ConsistencyRelationshipRule $rule, array $incoming, array $outgoing)
+    {
+        $errors = array();
+
+        $allowedLabels = $rule->getOtherNode();
+        if (null === $allowedLabels)
+        {
+            return $errors;
+        }
+
+        if (is_string($allowedLabels)){
+            $allowedLabels = array($allowedLabels);
+        }
+
+        foreach ($incoming as $relationship) {
+            $otherNodeLabels = $relationship->getStartNodeLabels();
+
+            $allowedNodeLabels = array_filter($otherNodeLabels, function($label) use ($allowedLabels) {return in_array($label, $allowedLabels);});
+            $hasAllowedLabel = !empty($allowedNodeLabels);
+            if (!$hasAllowedLabel) {
+                $error = new RelationshipOtherLabelConsistencyError();
+                $error->setType($rule->getType());
+                $error->setOtherNodeLabel($rule->getOtherNode());
+                $error->setRelationshipId($relationship->getId());
+                $errors[] = $error;
+            }
+        }
+
+        foreach ($outgoing as $relationship) {
+            $otherNodeLabels = $relationship->getEndNodeLabels();
+
+            $allowedNodeLabels = array_filter($otherNodeLabels, function($label) use ($allowedLabels) {return in_array($label, $allowedLabels);});
+            $hasAllowedLabel = !empty($allowedNodeLabels);
+            if (!$hasAllowedLabel) {
+                $error = new RelationshipOtherLabelConsistencyError();
+                $error->setType($rule->getType());
+                $error->setOtherNodeLabel($rule->getOtherNode());
+                $error->setRelationshipId($relationship->getId());
+                $errors[] = $error;
+            }
+        }
+
+        return $errors;
+    }
+
     protected function throwErrors(ErrorList $errors, $id)
     {
         if ($errors->hasErrors()) {
-            throw new ValidationException($errors, 'Properties consistency error for element ' . $id);
+            throw new ValidationException($errors, 'Consistency error for element ' . $id);
         }
     }
 }

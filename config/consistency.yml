@@ -134,6 +134,14 @@ profile:
             type: LOCATION
             direction: outgoing
             otherNode: Location
+        profile_of:
+            type: PROFILE_OF
+            direction: outgoing
+            otherNode:
+                -UserEnabled
+                -UserDisabled
+            minimum: 1
+            maximum: 1
 
     properties:
         birthday:
@@ -141,7 +149,6 @@ profile:
             maximum: "now"
         orientationRequired:
             type: boolean
-            required: true
         height:
             type: integer
 
@@ -159,17 +166,47 @@ profileOption:
             required: true
         name_es:
             required: true
-        name:en:
+        name_en:
             required: true
+
+mode:
+    label: Mode
+
+    relationships:
+        option:
+            type: OPTION_OF
+            direction: outgoing
+            otherNode: Profile
+        included_in:
+            type: INCLUDED_IN
+            direction: incoming
+            otherNode: QuestionCategory
 
 profileTag:
     label: ProfileTag
 
     relationships:
-        option:
+        tagged:
             type: TAGGED
             direction: outgoing
             otherNode: Profile
+        text_of:
+            type: TEXT_OF
+            direction: incoming
+            otherNode: TextLanguage
+            minimum: 1
+            maximum: 2
+
+textLanguage:
+    label: TextLanguage
+
+    relationships:
+        text_of:
+            type: TEXT_OF
+            direction: outgoing
+            minimum: 1
+            maximum: 1
+
 
 thread:
     label: Thread
@@ -180,10 +217,12 @@ thread:
             type: HAS_FILTER
             direction: outgoing
             otherNode: Filter
+            maximum: 1
         user:
             type: HAS_THREAD
             direction: incoming
             otherNode: User
+            minimum: 1
             maximum: 1
 
     properties:
@@ -220,6 +259,16 @@ filterUsers:
         age_max:
             type: integer
 
+    relationships:
+        filters_by:
+            type: FILTERS_BY
+            direction: outgoing
+            otherNode:
+                - ProfileOption
+                - ProfileTag
+                - Location
+                - Group
+
 link:
     label: Link
     solverClass: Service\Consistency\LinkConsistencySolver
@@ -229,6 +278,7 @@ link:
             type: HAS_POPULARITY
             direction: outgoing
             otherNode: Popularity
+            minimum: 1
             maximum: 1
         affinity:
             type: AFFINITY
@@ -238,6 +288,7 @@ link:
             type: LIKES
             direction: incoming
             otherNode: User
+            minimum: 1
         tagged:
             type: TAGGED
             diretion: outgoing
@@ -310,3 +361,15 @@ answer:
             direction: incoming
             otherNode: User
 
+questionCategory:
+    label: QuestionCategory
+
+    relationships:
+        included_in:
+            type: INCLUDED_IN
+            direction: outgoing
+            otherNode: Mode
+        category_of:
+            type: CATEGORY_OF
+            direction: outgoing
+            otherNode: Question

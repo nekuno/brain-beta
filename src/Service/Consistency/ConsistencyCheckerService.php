@@ -104,7 +104,7 @@ class ConsistencyCheckerService
                         $newError->setNodeId($nodeId);
                     }
 
-                    $errors += $fieldErrors;
+                    $errors = array_merge($errors, $fieldErrors);
                 }
 
                 $this->dispatcher->dispatch(\AppEvents::CONSISTENCY_ERROR, new ExceptionEvent($e, 'Checking node ' . $nodeId));
